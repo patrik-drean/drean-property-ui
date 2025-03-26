@@ -20,7 +20,9 @@ import {
   FormControl,
   InputLabel,
   Tooltip,
+  IconButton,
 } from '@mui/material';
+import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
 import { getProperties, addProperty, archiveProperty, updateProperty, getZillowData } from '../services/api';
 
@@ -136,6 +138,42 @@ const PropertiesPage: React.FC = () => {
     if (value === 0) return '';
     return value.toLocaleString('en-US');
   };
+
+  const getStatusColor = (status: PropertyStatus) => {
+    switch (status) {
+      case 'Opportunity':
+        return '#4CAF50'; // Green
+      case 'Soft Offer':
+        return '#FFC107'; // Amber
+      case 'Hard Offer':
+        return '#FF9800'; // Orange
+      case 'Rehab':
+        return '#F44336'; // Red
+      default:
+        return '#757575'; // Grey
+    }
+  };
+
+  const getStatusOrder = (status: PropertyStatus) => {
+    switch (status) {
+      case 'Opportunity':
+        return 0;
+      case 'Soft Offer':
+        return 1;
+      case 'Hard Offer':
+        return 2;
+      case 'Rehab':
+        return 3;
+      default:
+        return 4;
+    }
+  };
+
+  const sortedProperties = [...properties].sort((a, b) => {
+    const orderA = getStatusOrder(a.status);
+    const orderB = getStatusOrder(b.status);
+    return orderA - orderB;
+  });
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -368,14 +406,29 @@ const PropertiesPage: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {properties.map((property) => (
+            {sortedProperties.map((property) => (
               <TableRow key={property.id}>
                 <TableCell>
                   <a href={property.zillowLink} target="_blank" rel="noopener noreferrer">
                     {property.address}
                   </a>
                 </TableCell>
-                <TableCell>{property.status}</TableCell>
+                <TableCell>
+                  <span
+                    style={{
+                      backgroundColor: getStatusColor(property.status),
+                      color: 'white',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      display: 'inline-block',
+                    }}
+                  >
+                    {property.status}
+                  </span>
+                </TableCell>
                 <TableCell>{formatCurrency(property.listingPrice)}</TableCell>
                 <TableCell>{formatCurrency(property.offerPrice)}</TableCell>
                 <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
@@ -388,21 +441,26 @@ const PropertiesPage: React.FC = () => {
                 <TableCell>{formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}</TableCell>
                 <TableCell>{property.score}/10</TableCell>
                 <TableCell>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={() => handleEditProperty(property)}
-                    sx={{ mr: 1 }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={() => handleArchive(property.id)}
-                  >
-                    Archive
-                  </Button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <Tooltip title="Edit Property">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleEditProperty(property)}
+                        size="small"
+                      >
+                        <Icons.Edit />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Archive Property">
+                      <IconButton
+                        color="secondary"
+                        onClick={() => handleArchive(property.id)}
+                        size="small"
+                      >
+                        <Icons.Archive />
+                      </IconButton>
+                    </Tooltip>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

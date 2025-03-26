@@ -22,35 +22,81 @@ import {
   Tooltip,
 } from '@mui/material';
 import { Property, PropertyStatus } from '../types/property';
+import { getProperties, addProperty, archiveProperty } from '../services/api';
 
 const PropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [newProperty, setNewProperty] = useState<Partial<Property>>({
+  const [newProperty, setNewProperty] = useState<Omit<Property, 'id'>>({
+    address: '',
     status: 'Opportunity',
+    listingPrice: 0,
+    offerPrice: 0,
+    rehabCosts: 0,
+    potentialRent: 0,
+    arv: 0,
+    rentCastEstimates: {
+      price: 0,
+      priceLow: 0,
+      priceHigh: 0,
+      rent: 0,
+      rentLow: 0,
+      rentHigh: 0
+    },
+    notes: '',
+    score: 0,
+    zillowLink: ''
   });
 
-  const handleAddProperty = () => {
-    // TODO: Implement API call to add property
-    setOpenDialog(false);
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const data = await getProperties();
+        setProperties(data);
+      } catch (error) {
+        console.error('Error fetching properties:', error);
+      }
+    };
+    fetchProperties();
+  }, []);
+
+  const handleAddProperty = async () => {
+    try {
+      const addedProperty = await addProperty(newProperty);
+      setProperties([...properties, addedProperty]);
+      setOpenDialog(false);
+      setNewProperty({
+        address: '',
+        status: 'Opportunity',
+        listingPrice: 0,
+        offerPrice: 0,
+        rehabCosts: 0,
+        potentialRent: 0,
+        arv: 0,
+        rentCastEstimates: {
+          price: 0,
+          priceLow: 0,
+          priceHigh: 0,
+          rent: 0,
+          rentLow: 0,
+          rentHigh: 0
+        },
+        notes: '',
+        score: 0,
+        zillowLink: ''
+      });
+    } catch (error) {
+      console.error('Error adding property:', error);
+    }
   };
 
-  const calculateScore = (property: Property): number => {
-    let score = 0;
-    
-    // Rent to price ratio (1% or higher)
-    if ((property.potentialRent * 12) / property.offerPrice >= 0.01) score += 4;
-    
-    // ARV ratio (80% or higher)
-    if ((property.offerPrice + property.rehabCosts) / property.arv >= 0.8) score += 3;
-    
-    // Discount (85% or higher)
-    if ((property.listingPrice - property.offerPrice) / property.listingPrice >= 0.85) score += 2;
-    
-    // Rehab costs less than 50K
-    if (property.rehabCosts < 50000) score += 1;
-
-    return score;
+  const handleArchive = async (id: string) => {
+    try {
+      await archiveProperty(id);
+      setProperties(properties.filter(p => p.id !== id));
+    } catch (error) {
+      console.error('Error archiving property:', error);
+    }
   };
 
   return (
@@ -80,18 +126,15 @@ const PropertiesPage: React.FC = () => {
               <TableCell>Potential Rent</TableCell>
               <TableCell>ARV</TableCell>
               <TableCell>
-                <Tooltip title="Hover to see range">
+                <Tooltip title="Hover to see rent range">
                   <span>Estimated Rent</span>
                 </Tooltip>
               </TableCell>
               <TableCell>
-                <Tooltip title="Hover to see range">
+                <Tooltip title="Hover to see price range">
                   <span>Estimated Price</span>
                 </Tooltip>
               </TableCell>
-              <TableCell>Rent/Price Ratio</TableCell>
-              <TableCell>ARV Ratio</TableCell>
-              <TableCell>Discount</TableCell>
               <TableCell>Score</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
@@ -110,25 +153,14 @@ const PropertiesPage: React.FC = () => {
                 <TableCell>${property.rehabCosts.toLocaleString()}</TableCell>
                 <TableCell>${property.potentialRent.toLocaleString()}</TableCell>
                 <TableCell>${property.arv.toLocaleString()}</TableCell>
-                <TableCell>
-                  <Tooltip title={`Range: $${property.estimatedRentLow?.toLocaleString()} - $${property.estimatedRentHigh?.toLocaleString()}`}>
-                    <span>${property.estimatedRent?.toLocaleString()}</span>
-                  </Tooltip>
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={`Range: $${property.estimatedPriceLow?.toLocaleString()} - $${property.estimatedPriceHigh?.toLocaleString()}`}>
-                    <span>${property.estimatedPrice?.toLocaleString()}</span>
-                  </Tooltip>
-                </TableCell>
-                <TableCell>{(property.rentToPriceRatio * 100).toFixed(2)}%</TableCell>
-                <TableCell>{(property.arvRatio * 100).toFixed(2)}%</TableCell>
-                <TableCell>{(property.discount * 100).toFixed(2)}%</TableCell>
+                <TableCell>${property.rentCastEstimates.rent.toLocaleString()}</TableCell>
+                <TableCell>${property.rentCastEstimates.price.toLocaleString()}</TableCell>
                 <TableCell>{property.score}/10</TableCell>
                 <TableCell>
                   <Button
                     variant="outlined"
                     color="secondary"
-                    onClick={() => {/* TODO: Implement archive */}}
+                    onClick={() => handleArchive(property.id)}
                   >
                     Archive
                   </Button>
@@ -145,14 +177,14 @@ const PropertiesPage: React.FC = () => {
           <TextField
             fullWidth
             label="Address"
-            value={newProperty.address || ''}
+            value={newProperty.address}
             onChange={(e) => setNewProperty({ ...newProperty, address: e.target.value })}
             margin="normal"
           />
           <FormControl fullWidth margin="normal">
             <InputLabel>Status</InputLabel>
             <Select
-              value={newProperty.status || 'Opportunity'}
+              value={newProperty.status}
               onChange={(e) => setNewProperty({ ...newProperty, status: e.target.value as PropertyStatus })}
             >
               <MenuItem value="Opportunity">Opportunity</MenuItem>
@@ -165,7 +197,7 @@ const PropertiesPage: React.FC = () => {
             fullWidth
             label="Listing Price"
             type="number"
-            value={newProperty.listingPrice || ''}
+            value={newProperty.listingPrice}
             onChange={(e) => setNewProperty({ ...newProperty, listingPrice: Number(e.target.value) })}
             margin="normal"
           />
@@ -173,7 +205,7 @@ const PropertiesPage: React.FC = () => {
             fullWidth
             label="Offer Price"
             type="number"
-            value={newProperty.offerPrice || ''}
+            value={newProperty.offerPrice}
             onChange={(e) => setNewProperty({ ...newProperty, offerPrice: Number(e.target.value) })}
             margin="normal"
           />
@@ -181,7 +213,7 @@ const PropertiesPage: React.FC = () => {
             fullWidth
             label="Rehab Costs"
             type="number"
-            value={newProperty.rehabCosts || ''}
+            value={newProperty.rehabCosts}
             onChange={(e) => setNewProperty({ ...newProperty, rehabCosts: Number(e.target.value) })}
             margin="normal"
           />
@@ -189,7 +221,7 @@ const PropertiesPage: React.FC = () => {
             fullWidth
             label="Potential Monthly Rent"
             type="number"
-            value={newProperty.potentialRent || ''}
+            value={newProperty.potentialRent}
             onChange={(e) => setNewProperty({ ...newProperty, potentialRent: Number(e.target.value) })}
             margin="normal"
           />
@@ -197,8 +229,15 @@ const PropertiesPage: React.FC = () => {
             fullWidth
             label="ARV"
             type="number"
-            value={newProperty.arv || ''}
+            value={newProperty.arv}
             onChange={(e) => setNewProperty({ ...newProperty, arv: Number(e.target.value) })}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="Zillow Link"
+            value={newProperty.zillowLink}
+            onChange={(e) => setNewProperty({ ...newProperty, zillowLink: e.target.value })}
             margin="normal"
           />
           <TextField
@@ -206,7 +245,7 @@ const PropertiesPage: React.FC = () => {
             label="Notes"
             multiline
             rows={4}
-            value={newProperty.notes || ''}
+            value={newProperty.notes}
             onChange={(e) => setNewProperty({ ...newProperty, notes: e.target.value })}
             margin="normal"
           />

@@ -1,34 +1,25 @@
 export type PropertyStatus = 'Opportunity' | 'Soft Offer' | 'Hard Offer' | 'Rehab';
 
-export interface RentcastData {
+export interface RentCastEstimates {
     price: number;
-    priceRangeLow: number;
-    priceRangeHigh: number;
+    priceLow: number;
+    priceHigh: number;
     rent: number;
-    rentRangeLow: number;
-    rentRangeHigh: number;
+    rentLow: number;
+    rentHigh: number;
 }
 
 export interface Property {
     id: string;
     address: string;
-    zillowLink?: string;
     status: PropertyStatus;
     listingPrice: number;
     offerPrice: number;
     rehabCosts: number;
     potentialRent: number;
     arv: number;
-    estimatedRent?: number;
-    estimatedRentLow?: number;
-    estimatedRentHigh?: number;
-    estimatedPrice?: number;
-    estimatedPriceLow?: number;
-    estimatedPriceHigh?: number;
-    rentToPriceRatio: number;
-    arvRatio: number;
-    discount: number;
+    rentCastEstimates: RentCastEstimates;
     notes: string;
     score: number;
-    archived: boolean;
+    zillowLink: string;
 } 

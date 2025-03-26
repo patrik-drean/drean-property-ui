@@ -32,4 +32,9 @@ export const updateProperty = async (id: string, property: Omit<Property, 'id'>)
 
 export const archiveProperty = async (id: string): Promise<void> => {
   await api.put(`/api/Properties/${id}/archive`);
+};
+
+export const getZillowData = async (url: string): Promise<{ address: string; price: number }> => {
+  const response = await api.get<{ address: string; price: number }>(`/api/Properties/zillow?url=${encodeURIComponent(url)}`);
+  return response.data;
 }; 

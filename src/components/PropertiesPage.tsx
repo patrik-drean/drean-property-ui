@@ -22,7 +22,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { Property, PropertyStatus } from '../types/property';
-import { getProperties, addProperty, archiveProperty, updateProperty } from '../services/api';
+import { getProperties, addProperty, archiveProperty, updateProperty, getZillowData } from '../services/api';
 
 const PropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -57,6 +57,73 @@ const PropertiesPage: React.FC = () => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  const formatPercentage = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'percent',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(value);
+  };
+
+  const calculateRentRatio = (rent: number, offerPrice: number, rehabCosts: number) => {
+    const totalInvestment = offerPrice + rehabCosts;
+    if (!totalInvestment) return 0;
+    return rent / totalInvestment;
+  };
+
+  const calculateARVRatio = (offerPrice: number, rehabCosts: number, arv: number) => {
+    if (!arv) return 0;
+    return (offerPrice + rehabCosts) / arv;
+  };
+
+  const calculateDiscount = (listingPrice: number, offerPrice: number) => {
+    if (!listingPrice) return 0;
+    return (listingPrice - offerPrice) / listingPrice;
+  };
+
+  const calculateScore = (property: Omit<Property, 'id'>) => {
+    let score = 0;
+    const maxScore = 10;
+    
+    // Rent to price ratio (4 points) - highest priority
+    const rentRatio = calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts);
+    if (rentRatio >= 0.01) { // 1% or higher
+      score += 4;
+    } else if (rentRatio >= 0.008) { // Close to 1%
+      score += 3;
+    } else if (rentRatio >= 0.006) { // Getting there
+      score += 2;
+    } else if (rentRatio >= 0.004) { // Not great but not terrible
+      score += 1;
+    }
+
+    // ARV ratio (3 points)
+    const arvRatio = calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv);
+    if (arvRatio <= 0.8) { // 80% or lower is good
+      score += 3;
+    } else if (arvRatio <= 0.85) {
+      score += 2;
+    } else if (arvRatio <= 0.9) {
+      score += 1;
+    }
+
+    // Discount (2 points)
+    const discount = calculateDiscount(property.listingPrice, property.offerPrice);
+    if (discount >= 0.15) { // 15% or higher discount
+      score += 2;
+    } else if (discount >= 0.1) {
+      score += 1;
+    }
+
+    // Rehab costs (1 point)
+    if (property.rehabCosts < 50000) {
+      score += 1;
+    }
+
+    // Ensure minimum score of 1
+    return Math.max(1, score);
   };
 
   const handleCurrencyInput = (value: string) => {
@@ -103,20 +170,53 @@ const PropertiesPage: React.FC = () => {
 
   const handleSaveProperty = async () => {
     try {
+      const propertyWithScore = {
+        ...newProperty,
+        score: calculateScore(newProperty)
+      };
+
       if (isEditing && editingId) {
-        // Update existing property
-        const updatedProperty = await updateProperty(editingId, newProperty);
+        // Update existing property - only send the fields that can be updated
+        const propertyToUpdate = {
+          address: propertyWithScore.address,
+          status: propertyWithScore.status,
+          listingPrice: propertyWithScore.listingPrice,
+          offerPrice: propertyWithScore.offerPrice,
+          rehabCosts: propertyWithScore.rehabCosts,
+          potentialRent: propertyWithScore.potentialRent,
+          arv: propertyWithScore.arv,
+          notes: propertyWithScore.notes,
+          score: propertyWithScore.score,
+          zillowLink: propertyWithScore.zillowLink,
+          // Send a new object for rentCastEstimates to avoid tracking issues
+          rentCastEstimates: {
+            price: propertyWithScore.rentCastEstimates.price || 0,
+            priceLow: propertyWithScore.rentCastEstimates.priceLow || 0,
+            priceHigh: propertyWithScore.rentCastEstimates.priceHigh || 0,
+            rent: propertyWithScore.rentCastEstimates.rent || 0,
+            rentLow: propertyWithScore.rentCastEstimates.rentLow || 0,
+            rentHigh: propertyWithScore.rentCastEstimates.rentHigh || 0
+          }
+        };
+        
+        console.log('Updating property:', propertyToUpdate);
+        const updatedProperty = await updateProperty(editingId, propertyToUpdate);
+        
+        // Update local state with the returned property
         setProperties(properties.map(p => 
-          p.id === editingId ? { ...updatedProperty } : p
+          p.id === editingId ? updatedProperty : p
         ));
       } else {
         // Add new property
-        const addedProperty = await addProperty(newProperty);
+        const addedProperty = await addProperty(propertyWithScore);
         setProperties([...properties, addedProperty]);
       }
       handleCloseDialog();
-    } catch (error) {
-      console.error('Error saving property:', error);
+    } catch (err: any) {
+      console.error('Error saving property:', err);
+      if (err.response) {
+        console.error('Error response:', err.response.data);
+      }
     }
   };
 
@@ -144,6 +244,63 @@ const PropertiesPage: React.FC = () => {
       score: 0,
       zillowLink: ''
     });
+  };
+
+  const parseZillowLink = (url: string) => {
+    try {
+      // Extract address from URL
+      const addressMatch = url.match(/\/homedetails\/([^/]+)/);
+      if (addressMatch) {
+        const address = addressMatch[1]
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        
+        // Extract price from URL - try multiple patterns
+        let price = 0;
+        
+        // Try to find price in the URL path
+        const pathPriceMatch = url.match(/\$(\d{3}(?:,\d{3})*(?:\.\d{2})?)/);
+        if (pathPriceMatch) {
+          price = handleCurrencyInput(pathPriceMatch[1]);
+        }
+        
+        // If no price in path, try to find it in the title/description part
+        if (!price) {
+          const titlePriceMatch = url.match(/title=([^&]+)/);
+          if (titlePriceMatch) {
+            const title = decodeURIComponent(titlePriceMatch[1]);
+            const priceMatch = title.match(/\$(\d{3}(?:,\d{3})*(?:\.\d{2})?)/);
+            if (priceMatch) {
+              price = handleCurrencyInput(priceMatch[1]);
+            }
+          }
+        }
+
+        return { address, price };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error parsing Zillow link:', error);
+      return null;
+    }
+  };
+
+  const handleZillowLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setNewProperty({ ...newProperty, zillowLink: url });
+    
+    // Only parse if we're not editing and the URL is a valid Zillow link
+    if (!isEditing && url.includes('zillow.com')) {
+      const parsedData = parseZillowLink(url);
+      if (parsedData) {
+        setNewProperty(prev => ({
+          ...prev,
+          address: parsedData.address,
+          zillowLink: url
+        }));
+      }
+    }
   };
 
   const handleArchive = async (id: string) => {
@@ -191,6 +348,21 @@ const PropertiesPage: React.FC = () => {
                   <span>Estimated Price</span>
                 </Tooltip>
               </TableCell>
+              <TableCell>
+                <Tooltip title="Monthly Rent / (Offer Price + Rehab)">
+                  <span>Rent Ratio</span>
+                </Tooltip>
+              </TableCell>
+              <TableCell>
+                <Tooltip title="(Offer Price + Rehab) / ARV">
+                  <span>ARV Ratio</span>
+                </Tooltip>
+              </TableCell>
+              <TableCell>
+                <Tooltip title="(Listing - Offer) / Listing">
+                  <span>Discount</span>
+                </Tooltip>
+              </TableCell>
               <TableCell>Score</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
@@ -211,6 +383,9 @@ const PropertiesPage: React.FC = () => {
                 <TableCell>{formatCurrency(property.arv)}</TableCell>
                 <TableCell>{formatCurrency(property.rentCastEstimates.rent)}</TableCell>
                 <TableCell>{formatCurrency(property.rentCastEstimates.price)}</TableCell>
+                <TableCell>{formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}</TableCell>
+                <TableCell>{formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}</TableCell>
+                <TableCell>{formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}</TableCell>
                 <TableCell>{property.score}/10</TableCell>
                 <TableCell>
                   <Button
@@ -238,6 +413,14 @@ const PropertiesPage: React.FC = () => {
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>{isEditing ? 'Edit Property' : 'Add New Property'}</DialogTitle>
         <DialogContent>
+          <TextField
+            fullWidth
+            label="Zillow Link"
+            value={newProperty.zillowLink}
+            onChange={handleZillowLinkChange}
+            margin="normal"
+            placeholder="Paste Zillow link to auto-fill address and price"
+          />
           <TextField
             fullWidth
             label="Address"
@@ -306,13 +489,6 @@ const PropertiesPage: React.FC = () => {
             InputProps={{
               startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
             }}
-          />
-          <TextField
-            fullWidth
-            label="Zillow Link"
-            value={newProperty.zillowLink}
-            onChange={(e) => setNewProperty({ ...newProperty, zillowLink: e.target.value })}
-            margin="normal"
           />
           <TextField
             fullWidth

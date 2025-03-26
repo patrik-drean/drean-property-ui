@@ -22,4 +22,4 @@ export interface Property {
     notes: string;
     score: number;
     zillowLink: string;
-} 
+}

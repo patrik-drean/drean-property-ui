@@ -1,33 +1,27 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { createBrowserRouter, RouterProvider, createRoutesFromElements, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
 import Navigation from './components/Navigation';
 import PropertiesPage from './components/PropertiesPage';
-import CalculatorPage from './components/CalculatorPage';
+import ArchivedPropertiesPage from './components/ArchivedPropertiesPage';
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route element={<Navigation />}>
+      <Route path="/" element={<Navigate to="/properties" replace />} />
+      <Route path="/properties" element={<PropertiesPage />} />
+      <Route path="/archived" element={<ArchivedPropertiesPage />} />
+    </Route>
+  )
+);
 
 const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <Navigation />
-        <Routes>
-          <Route path="/" element={<Navigate to="/properties" replace />} />
-          <Route path="/properties" element={<PropertiesPage />} />
-          <Route path="/calculator" element={<CalculatorPage />} />
-        </Routes>
-      </Router>
+      <RouterProvider router={router} />
     </ThemeProvider>
   );
 };

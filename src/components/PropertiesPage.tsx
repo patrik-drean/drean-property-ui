@@ -22,11 +22,13 @@ import {
   Tooltip,
 } from '@mui/material';
 import { Property, PropertyStatus } from '../types/property';
-import { getProperties, addProperty, archiveProperty } from '../services/api';
+import { getProperties, addProperty, archiveProperty, updateProperty } from '../services/api';
 
 const PropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newProperty, setNewProperty] = useState<Omit<Property, 'id'>>({
     address: '',
     status: 'Opportunity',
@@ -48,6 +50,26 @@ const PropertiesPage: React.FC = () => {
     zillowLink: ''
   });
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const handleCurrencyInput = (value: string) => {
+    // Remove any non-digit characters
+    const numericValue = value.replace(/[^0-9]/g, '');
+    return numericValue ? parseInt(numericValue) : 0;
+  };
+
+  const formatInputCurrency = (value: number) => {
+    if (value === 0) return '';
+    return value.toLocaleString('en-US');
+  };
+
   useEffect(() => {
     const fetchProperties = async () => {
       try {
@@ -60,34 +82,68 @@ const PropertiesPage: React.FC = () => {
     fetchProperties();
   }, []);
 
-  const handleAddProperty = async () => {
+  const handleEditProperty = (property: Property) => {
+    setIsEditing(true);
+    setEditingId(property.id);
+    setNewProperty({
+      address: property.address,
+      status: property.status,
+      listingPrice: property.listingPrice,
+      offerPrice: property.offerPrice,
+      rehabCosts: property.rehabCosts,
+      potentialRent: property.potentialRent,
+      arv: property.arv,
+      rentCastEstimates: property.rentCastEstimates,
+      notes: property.notes,
+      score: property.score,
+      zillowLink: property.zillowLink
+    });
+    setOpenDialog(true);
+  };
+
+  const handleSaveProperty = async () => {
     try {
-      const addedProperty = await addProperty(newProperty);
-      setProperties([...properties, addedProperty]);
-      setOpenDialog(false);
-      setNewProperty({
-        address: '',
-        status: 'Opportunity',
-        listingPrice: 0,
-        offerPrice: 0,
-        rehabCosts: 0,
-        potentialRent: 0,
-        arv: 0,
-        rentCastEstimates: {
-          price: 0,
-          priceLow: 0,
-          priceHigh: 0,
-          rent: 0,
-          rentLow: 0,
-          rentHigh: 0
-        },
-        notes: '',
-        score: 0,
-        zillowLink: ''
-      });
+      if (isEditing && editingId) {
+        // Update existing property
+        const updatedProperty = await updateProperty(editingId, newProperty);
+        setProperties(properties.map(p => 
+          p.id === editingId ? { ...updatedProperty } : p
+        ));
+      } else {
+        // Add new property
+        const addedProperty = await addProperty(newProperty);
+        setProperties([...properties, addedProperty]);
+      }
+      handleCloseDialog();
     } catch (error) {
-      console.error('Error adding property:', error);
+      console.error('Error saving property:', error);
     }
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setIsEditing(false);
+    setEditingId(null);
+    setNewProperty({
+      address: '',
+      status: 'Opportunity',
+      listingPrice: 0,
+      offerPrice: 0,
+      rehabCosts: 0,
+      potentialRent: 0,
+      arv: 0,
+      rentCastEstimates: {
+        price: 0,
+        priceLow: 0,
+        priceHigh: 0,
+        rent: 0,
+        rentLow: 0,
+        rentHigh: 0
+      },
+      notes: '',
+      score: 0,
+      zillowLink: ''
+    });
   };
 
   const handleArchive = async (id: string) => {
@@ -148,15 +204,23 @@ const PropertiesPage: React.FC = () => {
                   </a>
                 </TableCell>
                 <TableCell>{property.status}</TableCell>
-                <TableCell>${property.listingPrice.toLocaleString()}</TableCell>
-                <TableCell>${property.offerPrice.toLocaleString()}</TableCell>
-                <TableCell>${property.rehabCosts.toLocaleString()}</TableCell>
-                <TableCell>${property.potentialRent.toLocaleString()}</TableCell>
-                <TableCell>${property.arv.toLocaleString()}</TableCell>
-                <TableCell>${property.rentCastEstimates.rent.toLocaleString()}</TableCell>
-                <TableCell>${property.rentCastEstimates.price.toLocaleString()}</TableCell>
+                <TableCell>{formatCurrency(property.listingPrice)}</TableCell>
+                <TableCell>{formatCurrency(property.offerPrice)}</TableCell>
+                <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
+                <TableCell>{formatCurrency(property.potentialRent)}</TableCell>
+                <TableCell>{formatCurrency(property.arv)}</TableCell>
+                <TableCell>{formatCurrency(property.rentCastEstimates.rent)}</TableCell>
+                <TableCell>{formatCurrency(property.rentCastEstimates.price)}</TableCell>
                 <TableCell>{property.score}/10</TableCell>
                 <TableCell>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={() => handleEditProperty(property)}
+                    sx={{ mr: 1 }}
+                  >
+                    Edit
+                  </Button>
                   <Button
                     variant="outlined"
                     color="secondary"
@@ -171,8 +235,8 @@ const PropertiesPage: React.FC = () => {
         </Table>
       </TableContainer>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Add New Property</DialogTitle>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+        <DialogTitle>{isEditing ? 'Edit Property' : 'Add New Property'}</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
@@ -196,42 +260,52 @@ const PropertiesPage: React.FC = () => {
           <TextField
             fullWidth
             label="Listing Price"
-            type="number"
-            value={newProperty.listingPrice}
-            onChange={(e) => setNewProperty({ ...newProperty, listingPrice: Number(e.target.value) })}
+            value={formatInputCurrency(newProperty.listingPrice)}
+            onChange={(e) => setNewProperty({ ...newProperty, listingPrice: handleCurrencyInput(e.target.value) })}
             margin="normal"
+            InputProps={{
+              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+            }}
           />
           <TextField
             fullWidth
             label="Offer Price"
-            type="number"
-            value={newProperty.offerPrice}
-            onChange={(e) => setNewProperty({ ...newProperty, offerPrice: Number(e.target.value) })}
+            value={formatInputCurrency(newProperty.offerPrice)}
+            onChange={(e) => setNewProperty({ ...newProperty, offerPrice: handleCurrencyInput(e.target.value) })}
             margin="normal"
+            InputProps={{
+              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+            }}
           />
           <TextField
             fullWidth
             label="Rehab Costs"
-            type="number"
-            value={newProperty.rehabCosts}
-            onChange={(e) => setNewProperty({ ...newProperty, rehabCosts: Number(e.target.value) })}
+            value={formatInputCurrency(newProperty.rehabCosts)}
+            onChange={(e) => setNewProperty({ ...newProperty, rehabCosts: handleCurrencyInput(e.target.value) })}
             margin="normal"
+            InputProps={{
+              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+            }}
           />
           <TextField
             fullWidth
             label="Potential Monthly Rent"
-            type="number"
-            value={newProperty.potentialRent}
-            onChange={(e) => setNewProperty({ ...newProperty, potentialRent: Number(e.target.value) })}
+            value={formatInputCurrency(newProperty.potentialRent)}
+            onChange={(e) => setNewProperty({ ...newProperty, potentialRent: handleCurrencyInput(e.target.value) })}
             margin="normal"
+            InputProps={{
+              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+            }}
           />
           <TextField
             fullWidth
             label="ARV"
-            type="number"
-            value={newProperty.arv}
-            onChange={(e) => setNewProperty({ ...newProperty, arv: Number(e.target.value) })}
+            value={formatInputCurrency(newProperty.arv)}
+            onChange={(e) => setNewProperty({ ...newProperty, arv: handleCurrencyInput(e.target.value) })}
             margin="normal"
+            InputProps={{
+              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+            }}
           />
           <TextField
             fullWidth
@@ -251,9 +325,9 @@ const PropertiesPage: React.FC = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleAddProperty} variant="contained" color="primary">
-            Add Property
+          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handleSaveProperty} variant="contained" color="primary">
+            {isEditing ? 'Save Changes' : 'Add Property'}
           </Button>
         </DialogActions>
       </Dialog>

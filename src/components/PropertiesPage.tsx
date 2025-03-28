@@ -390,12 +390,12 @@ const PropertiesPage: React.FC = () => {
               <TableCell>Potential Rent</TableCell>
               <TableCell>ARV</TableCell>
               <TableCell>
-                <Tooltip title="Hover to see rent range">
+                <Tooltip title="Hover over values to see the estimated rent range from Rentcast">
                   <span>Estimated Rent</span>
                 </Tooltip>
               </TableCell>
               <TableCell>
-                <Tooltip title="Hover to see price range">
+                <Tooltip title="Hover over values to see the estimated price range from Rentcast">
                   <span>Estimated Price</span>
                 </Tooltip>
               </TableCell>
@@ -420,7 +420,9 @@ const PropertiesPage: React.FC = () => {
           </TableHead>
           <TableBody>
             {sortedProperties.map((property) => (
-              <TableRow key={property.id}>
+              <TableRow 
+                key={property.id}
+              >
                 <TableCell>
                   <a href={property.zillowLink} target="_blank" rel="noopener noreferrer">
                     {property.address}
@@ -449,7 +451,7 @@ const PropertiesPage: React.FC = () => {
                 <TableCell>{formatCurrency(property.arv)}</TableCell>
                 <TableCell>
                   {property.hasRentcastData ? (
-                    <Tooltip title="Using Rentcast data">
+                    <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.rentLow)} - ${formatCurrency(property.rentCastEstimates.rentHigh)}`}>
                       <span style={{ display: 'flex', alignItems: 'center' }}>
                         {formatCurrency(property.rentCastEstimates.rent)}
                         <Icons.Check color="success" style={{ fontSize: 16, marginLeft: 4 }} />
@@ -461,7 +463,7 @@ const PropertiesPage: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   {property.hasRentcastData ? (
-                    <Tooltip title="Using Rentcast data">
+                    <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.priceLow)} - ${formatCurrency(property.rentCastEstimates.priceHigh)}`}>
                       <span style={{ display: 'flex', alignItems: 'center' }}>
                         {formatCurrency(property.rentCastEstimates.price)}
                         <Icons.Check color="success" style={{ fontSize: 16, marginLeft: 4 }} />

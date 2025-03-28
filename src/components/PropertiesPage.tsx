@@ -21,6 +21,7 @@ import {
   InputLabel,
   Tooltip,
   IconButton,
+  Box,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
@@ -363,6 +364,25 @@ const PropertiesPage: React.FC = () => {
     }
   };
 
+  // Helper functions to get cell colors based on values
+  const getRentRatioColor = (ratio: number) => {
+    if (ratio >= 0.01) return '#4CAF50'; // Green for >= 1%
+    if (ratio >= 0.009) return '#FFC107'; // Yellow for >= 0.9%
+    return '#F44336'; // Red for < 0.9%
+  };
+
+  const getARVRatioColor = (ratio: number) => {
+    if (ratio <= 0.75) return '#4CAF50'; // Green for <= 75%
+    if (ratio <= 0.85) return '#FFC107'; // Yellow for <= 85%
+    return '#F44336'; // Red for > 85%
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 9) return '#4CAF50'; // Green for 9-10
+    if (score >= 7) return '#FFC107'; // Yellow for 7-8
+    return '#F44336'; // Red for <= 6
+  };
+
   return (
     <Container maxWidth="xl" sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
@@ -378,6 +398,76 @@ const PropertiesPage: React.FC = () => {
         Add Property
       </Button>
 
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+        <Box 
+          sx={{ 
+            width: 16, 
+            height: 16, 
+            backgroundColor: '#f5f5f5', 
+            border: '1px solid #e0e0e0',
+            mr: 1 
+          }} 
+        />
+        <Typography variant="caption" color="text.secondary">
+          Calculated or auto-generated fields
+        </Typography>
+      </Box>
+
+      {/* Legend for color-coded metrics */}
+      <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>Metrics Color Guide:</Typography>
+        
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Rent Ratio:</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box component="span" sx={{ color: '#F44336', fontWeight: 'bold', width: 50 }}>Red</Box>
+              <Typography variant="caption">{'< 0.9%'}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box component="span" sx={{ color: '#FFC107', fontWeight: 'bold', width: 50 }}>Yellow</Box>
+              <Typography variant="caption">{'>= 0.9%'}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box component="span" sx={{ color: '#4CAF50', fontWeight: 'bold', width: 50 }}>Green</Box>
+              <Typography variant="caption">{'>= 1%'}</Typography>
+            </Box>
+          </Box>
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>ARV Ratio:</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box component="span" sx={{ color: '#4CAF50', fontWeight: 'bold', width: 50 }}>Green</Box>
+              <Typography variant="caption">{'<= 75%'}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box component="span" sx={{ color: '#FFC107', fontWeight: 'bold', width: 50 }}>Yellow</Box>
+              <Typography variant="caption">{'<= 85%'}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box component="span" sx={{ color: '#F44336', fontWeight: 'bold', width: 50 }}>Red</Box>
+              <Typography variant="caption">{'> 85%'}</Typography>
+            </Box>
+          </Box>
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Score:</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box component="span" sx={{ color: '#F44336', fontWeight: 'bold', width: 50 }}>Red</Box>
+              <Typography variant="caption">{'<= 6'}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box component="span" sx={{ color: '#FFC107', fontWeight: 'bold', width: 50 }}>Yellow</Box>
+              <Typography variant="caption">{'7-8'}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box component="span" sx={{ color: '#4CAF50', fontWeight: 'bold', width: 50 }}>Green</Box>
+              <Typography variant="caption">{'9-10'}</Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -389,33 +479,33 @@ const PropertiesPage: React.FC = () => {
               <TableCell>Rehab Costs</TableCell>
               <TableCell>Potential Rent</TableCell>
               <TableCell>ARV</TableCell>
-              <TableCell>
+              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
                 <Tooltip title="Hover over values to see the estimated rent range from Rentcast">
                   <span>Estimated Rent</span>
                 </Tooltip>
               </TableCell>
-              <TableCell>
+              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
                 <Tooltip title="Hover over values to see the estimated price range from Rentcast">
                   <span>Estimated Price</span>
                 </Tooltip>
               </TableCell>
-              <TableCell>
+              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
                 <Tooltip title="Monthly Rent / (Offer Price + Rehab)">
                   <span>Rent Ratio</span>
                 </Tooltip>
               </TableCell>
-              <TableCell>
+              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
                 <Tooltip title="(Offer Price + Rehab) / ARV">
                   <span>ARV Ratio</span>
                 </Tooltip>
               </TableCell>
-              <TableCell>
+              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
                 <Tooltip title="(Listing - Offer) / Listing">
                   <span>Discount</span>
                 </Tooltip>
               </TableCell>
-              <TableCell>Score</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>Score</TableCell>
+              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -449,7 +539,7 @@ const PropertiesPage: React.FC = () => {
                 <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
                 <TableCell>{formatCurrency(property.potentialRent)}</TableCell>
                 <TableCell>{formatCurrency(property.arv)}</TableCell>
-                <TableCell>
+                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
                   {property.hasRentcastData ? (
                     <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.rentLow)} - ${formatCurrency(property.rentCastEstimates.rentHigh)}`}>
                       <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -461,7 +551,7 @@ const PropertiesPage: React.FC = () => {
                     formatCurrency(property.rentCastEstimates.rent)
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
                   {property.hasRentcastData ? (
                     <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.priceLow)} - ${formatCurrency(property.rentCastEstimates.priceHigh)}`}>
                       <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -473,11 +563,32 @@ const PropertiesPage: React.FC = () => {
                     formatCurrency(property.rentCastEstimates.price)
                   )}
                 </TableCell>
-                <TableCell>{formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}</TableCell>
-                <TableCell>{formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}</TableCell>
-                <TableCell>{formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}</TableCell>
-                <TableCell>{property.score}/10</TableCell>
-                <TableCell>
+                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
+                  <span style={{ 
+                    color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts)),
+                    fontWeight: 'bold'
+                  }}>
+                    {formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}
+                  </span>
+                </TableCell>
+                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
+                  <span style={{ 
+                    color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv)),
+                    fontWeight: 'bold'
+                  }}>
+                    {formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}
+                  </span>
+                </TableCell>
+                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>{formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}</TableCell>
+                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
+                  <span style={{ 
+                    color: getScoreColor(property.score),
+                    fontWeight: 'bold'
+                  }}>
+                    {property.score}/10
+                  </span>
+                </TableCell>
+                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <Tooltip title="Edit Property">
                       <IconButton

@@ -26,6 +26,7 @@ import {
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
 import { getProperties, addProperty, archiveProperty, updateProperty, getZillowData, updatePropertyRentcast } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 const PropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -53,6 +54,7 @@ const PropertiesPage: React.FC = () => {
     score: 0,
     zillowLink: ''
   });
+  const navigate = useNavigate();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -379,6 +381,17 @@ const PropertiesPage: React.FC = () => {
     return '#F44336'; // Red for <= 6
   };
 
+  // Send property data to calculator
+  const handleSendToCalculator = (property: Property) => {
+    const params = new URLSearchParams({
+      offerPrice: property.offerPrice.toString(),
+      rehabCosts: property.rehabCosts.toString(),
+      potentialRent: property.potentialRent.toString(),
+      arv: property.arv.toString()
+    });
+    navigate(`/calculator?${params.toString()}`);
+  };
+
   return (
     <Container maxWidth="xl" sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
@@ -543,6 +556,15 @@ const PropertiesPage: React.FC = () => {
                         size="small"
                       >
                         <Icons.Refresh />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Send to Calculator">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleSendToCalculator(property)}
+                        size="small"
+                      >
+                        <Icons.Calculate />
                       </IconButton>
                     </Tooltip>
                   </div>

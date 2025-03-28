@@ -42,4 +42,9 @@ export const updatePropertyRentcast = async (id: string): Promise<Property> => {
 export const getZillowData = async (url: string): Promise<{ address: string; price: number }> => {
   const response = await api.get<{ address: string; price: number }>(`/api/Properties/zillow?url=${encodeURIComponent(url)}`);
   return response.data;
+};
+
+export const getArchivedProperties = async (): Promise<Property[]> => {
+  const response = await api.get<Property[]>('/api/Properties/archived');
+  return response.data;
 }; 

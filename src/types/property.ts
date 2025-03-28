@@ -19,6 +19,7 @@ export interface Property {
     potentialRent: number;
     arv: number;
     rentCastEstimates: RentCastEstimates;
+    hasRentcastData: boolean;
     notes: string;
     score: number;
     zillowLink: string;

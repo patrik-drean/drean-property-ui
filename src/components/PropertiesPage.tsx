@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
-import { getProperties, addProperty, archiveProperty, updateProperty, getZillowData } from '../services/api';
+import { getProperties, addProperty, archiveProperty, updateProperty, getZillowData, updatePropertyRentcast } from '../services/api';
 
 const PropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -47,6 +47,7 @@ const PropertiesPage: React.FC = () => {
       rentLow: 0,
       rentHigh: 0
     },
+    hasRentcastData: false,
     notes: '',
     score: 0,
     zillowLink: ''
@@ -199,6 +200,7 @@ const PropertiesPage: React.FC = () => {
       potentialRent: property.potentialRent,
       arv: property.arv,
       rentCastEstimates: property.rentCastEstimates,
+      hasRentcastData: property.hasRentcastData,
       notes: property.notes,
       score: property.score,
       zillowLink: property.zillowLink
@@ -226,6 +228,7 @@ const PropertiesPage: React.FC = () => {
           notes: propertyWithScore.notes,
           score: propertyWithScore.score,
           zillowLink: propertyWithScore.zillowLink,
+          hasRentcastData: propertyWithScore.hasRentcastData,
           // Send a new object for rentCastEstimates to avoid tracking issues
           rentCastEstimates: {
             price: propertyWithScore.rentCastEstimates.price || 0,
@@ -278,6 +281,7 @@ const PropertiesPage: React.FC = () => {
         rentLow: 0,
         rentHigh: 0
       },
+      hasRentcastData: false,
       notes: '',
       score: 0,
       zillowLink: ''
@@ -347,6 +351,15 @@ const PropertiesPage: React.FC = () => {
       setProperties(properties.filter(p => p.id !== id));
     } catch (error) {
       console.error('Error archiving property:', error);
+    }
+  };
+
+  const handleUpdateRentcast = async (id: string) => {
+    try {
+      const updatedProperty = await updatePropertyRentcast(id);
+      setProperties(properties.map(p => p.id === id ? updatedProperty : p));
+    } catch (error) {
+      console.error('Error updating Rentcast data:', error);
     }
   };
 
@@ -434,8 +447,30 @@ const PropertiesPage: React.FC = () => {
                 <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
                 <TableCell>{formatCurrency(property.potentialRent)}</TableCell>
                 <TableCell>{formatCurrency(property.arv)}</TableCell>
-                <TableCell>{formatCurrency(property.rentCastEstimates.rent)}</TableCell>
-                <TableCell>{formatCurrency(property.rentCastEstimates.price)}</TableCell>
+                <TableCell>
+                  {property.hasRentcastData ? (
+                    <Tooltip title="Using Rentcast data">
+                      <span style={{ display: 'flex', alignItems: 'center' }}>
+                        {formatCurrency(property.rentCastEstimates.rent)}
+                        <Icons.Check color="success" style={{ fontSize: 16, marginLeft: 4 }} />
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    formatCurrency(property.rentCastEstimates.rent)
+                  )}
+                </TableCell>
+                <TableCell>
+                  {property.hasRentcastData ? (
+                    <Tooltip title="Using Rentcast data">
+                      <span style={{ display: 'flex', alignItems: 'center' }}>
+                        {formatCurrency(property.rentCastEstimates.price)}
+                        <Icons.Check color="success" style={{ fontSize: 16, marginLeft: 4 }} />
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    formatCurrency(property.rentCastEstimates.price)
+                  )}
+                </TableCell>
                 <TableCell>{formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}</TableCell>
                 <TableCell>{formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}</TableCell>
                 <TableCell>{formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}</TableCell>
@@ -458,6 +493,15 @@ const PropertiesPage: React.FC = () => {
                         size="small"
                       >
                         <Icons.Archive />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Update Rentcast Data">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleUpdateRentcast(property.id)}
+                        size="small"
+                      >
+                        <Icons.Refresh />
                       </IconButton>
                     </Tooltip>
                   </div>

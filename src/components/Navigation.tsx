@@ -31,6 +31,13 @@ const Navigation: React.FC = () => {
             >
               Archived
             </Button>
+            <Button
+              color="inherit"
+              component={RouterLink}
+              to="/calculator"
+            >
+              Calculator
+            </Button>
           </Box>
         </Toolbar>
       </AppBar>

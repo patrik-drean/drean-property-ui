@@ -6,6 +6,7 @@ import theme from './theme';
 import Navigation from './components/Navigation';
 import PropertiesPage from './components/PropertiesPage';
 import ArchivedPropertiesPage from './components/ArchivedPropertiesPage';
+import Calculator from './components/Calculator';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -13,6 +14,7 @@ const router = createBrowserRouter(
       <Route path="/" element={<Navigate to="/properties" replace />} />
       <Route path="/properties" element={<PropertiesPage />} />
       <Route path="/archived" element={<ArchivedPropertiesPage />} />
+      <Route path="/calculator" element={<Calculator />} />
     </Route>
   )
 );

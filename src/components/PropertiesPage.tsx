@@ -99,27 +99,23 @@ const PropertiesPage: React.FC = () => {
       score += 3;
     } else if (rentRatio >= 0.006) { // Getting there
       score += 2;
-    } else if (rentRatio >= 0.004) { // Not great but not terrible
-      score += 1;
-    }
+    } 
 
     // ARV ratio (3 points)
     const arvRatio = calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv);
-    if (arvRatio <= 0.8) { // 80% or lower is good
+    if (arvRatio <= 0.75) { // 80% or lower is good
+      score += 4;
+    } else if (arvRatio <= 0.80) {
       score += 3;
     } else if (arvRatio <= 0.85) {
       score += 2;
-    } else if (arvRatio <= 0.9) {
-      score += 1;
     }
 
     // Discount (2 points)
     const discount = calculateDiscount(property.listingPrice, property.offerPrice);
-    if (discount >= 0.15) { // 15% or higher discount
-      score += 2;
-    } else if (discount >= 0.1) {
+    if (discount >= 0.1) { // 15% or higher discount
       score += 1;
-    }
+    } 
 
     // Rehab costs (1 point)
     if (property.rehabCosts < 50000) {
@@ -398,76 +394,6 @@ const PropertiesPage: React.FC = () => {
         Add Property
       </Button>
 
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-        <Box 
-          sx={{ 
-            width: 16, 
-            height: 16, 
-            backgroundColor: '#f5f5f5', 
-            border: '1px solid #e0e0e0',
-            mr: 1 
-          }} 
-        />
-        <Typography variant="caption" color="text.secondary">
-          Calculated or auto-generated fields
-        </Typography>
-      </Box>
-
-      {/* Legend for color-coded metrics */}
-      <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Typography variant="subtitle2" sx={{ mb: 1 }}>Metrics Color Guide:</Typography>
-        
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Rent Ratio:</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box component="span" sx={{ color: '#F44336', fontWeight: 'bold', width: 50 }}>Red</Box>
-              <Typography variant="caption">{'< 0.9%'}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box component="span" sx={{ color: '#FFC107', fontWeight: 'bold', width: 50 }}>Yellow</Box>
-              <Typography variant="caption">{'>= 0.9%'}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box component="span" sx={{ color: '#4CAF50', fontWeight: 'bold', width: 50 }}>Green</Box>
-              <Typography variant="caption">{'>= 1%'}</Typography>
-            </Box>
-          </Box>
-          
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>ARV Ratio:</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box component="span" sx={{ color: '#4CAF50', fontWeight: 'bold', width: 50 }}>Green</Box>
-              <Typography variant="caption">{'<= 75%'}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box component="span" sx={{ color: '#FFC107', fontWeight: 'bold', width: 50 }}>Yellow</Box>
-              <Typography variant="caption">{'<= 85%'}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box component="span" sx={{ color: '#F44336', fontWeight: 'bold', width: 50 }}>Red</Box>
-              <Typography variant="caption">{'> 85%'}</Typography>
-            </Box>
-          </Box>
-          
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Score:</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box component="span" sx={{ color: '#F44336', fontWeight: 'bold', width: 50 }}>Red</Box>
-              <Typography variant="caption">{'<= 6'}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box component="span" sx={{ color: '#FFC107', fontWeight: 'bold', width: 50 }}>Yellow</Box>
-              <Typography variant="caption">{'7-8'}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box component="span" sx={{ color: '#4CAF50', fontWeight: 'bold', width: 50 }}>Green</Box>
-              <Typography variant="caption">{'9-10'}</Typography>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -514,9 +440,11 @@ const PropertiesPage: React.FC = () => {
                 key={property.id}
               >
                 <TableCell>
-                  <a href={property.zillowLink} target="_blank" rel="noopener noreferrer">
-                    {property.address}
-                  </a>
+                  <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
+                    <a href={property.zillowLink} target="_blank" rel="noopener noreferrer">
+                      {property.address}
+                    </a>
+                  </Tooltip>
                 </TableCell>
                 <TableCell>
                   <span

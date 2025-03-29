@@ -30,7 +30,7 @@ import {
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
-import { getProperties, addProperty, archiveProperty, updateProperty, getZillowData, updatePropertyRentcast } from '../services/api';
+import { api } from '../services/apiConfig';
 import { useNavigate } from 'react-router-dom';
 
 // Styled components for consistent UI elements
@@ -249,7 +249,7 @@ const PropertiesPage: React.FC = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const data = await getProperties();
+        const data = await api.getProperties();
         setProperties(data);
       } catch (error) {
         console.error('Error fetching properties:', error);
@@ -311,7 +311,7 @@ const PropertiesPage: React.FC = () => {
         };
         
         console.log('Updating property:', propertyToUpdate);
-        const updatedProperty = await updateProperty(editingId, propertyToUpdate);
+        const updatedProperty = await api.updateProperty(editingId, propertyToUpdate);
         
         // Update local state with the returned property
         setProperties(properties.map(p => 
@@ -319,7 +319,7 @@ const PropertiesPage: React.FC = () => {
         ));
       } else {
         // Add new property
-        const addedProperty = await addProperty(propertyWithScore);
+        const addedProperty = await api.addProperty(propertyWithScore);
         setProperties([...properties, addedProperty]);
       }
       handleCloseDialog();
@@ -417,7 +417,7 @@ const PropertiesPage: React.FC = () => {
 
   const handleArchive = async (id: string) => {
     try {
-      await archiveProperty(id);
+      await api.archiveProperty(id);
       setProperties(properties.filter(p => p.id !== id));
     } catch (error) {
       console.error('Error archiving property:', error);
@@ -426,7 +426,7 @@ const PropertiesPage: React.FC = () => {
 
   const handleUpdateRentcast = async (id: string) => {
     try {
-      const updatedProperty = await updatePropertyRentcast(id);
+      const updatedProperty = await api.updatePropertyRentcast(id);
       setProperties(properties.map(p => p.id === id ? updatedProperty : p));
     } catch (error) {
       console.error('Error updating Rentcast data:', error);

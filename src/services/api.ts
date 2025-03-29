@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { Property } from '../types/property';
 
-const API_BASE_URL = 'http://localhost:5271';
+// Use environment variables if available, otherwise use default local development URL
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5271';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

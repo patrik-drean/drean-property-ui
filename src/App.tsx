@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter, RouterProvider, createRoutesFromElements, Route, Navigate } from 'react-router-dom';
+import { createHashRouter, RouterProvider, createRoutesFromElements, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
@@ -8,7 +8,7 @@ import PropertiesPage from './components/PropertiesPage';
 import ArchivedPropertiesPage from './components/ArchivedPropertiesPage';
 import Calculator from './components/Calculator';
 
-const router = createBrowserRouter(
+const router = createHashRouter(
   createRoutesFromElements(
     <Route element={<Navigation />}>
       <Route path="/" element={<Navigate to="/properties" replace />} />

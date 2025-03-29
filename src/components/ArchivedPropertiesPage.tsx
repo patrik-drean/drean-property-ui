@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
-import { getArchivedProperties, restoreProperty } from '../services/api';
+import { api } from '../services/apiConfig';
 
 const ArchivedPropertiesPage: React.FC = () => {
   const [archivedProperties, setArchivedProperties] = useState<Property[]>([]);
@@ -35,7 +35,7 @@ const ArchivedPropertiesPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getArchivedProperties();
+      const data = await api.getArchivedProperties();
       setArchivedProperties(data);
     } catch (error) {
       console.error('Error fetching archived properties:', error);
@@ -51,7 +51,7 @@ const ArchivedPropertiesPage: React.FC = () => {
 
   const handleRestore = async (property: Property) => {
     try {
-      await restoreProperty(property.id, property);
+      await api.restoreProperty(property.id, property);
       setSnackbar({
         open: true,
         message: 'Property restored successfully',

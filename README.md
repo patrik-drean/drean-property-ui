@@ -61,6 +61,52 @@ dotnet run
 
 The API will be available at `http://localhost:5000`.
 
+## Deployment Options
+
+### GitHub Pages Deployment
+
+GitHub Pages is a free and easy way to deploy static websites directly from your GitHub repository.
+
+1. Install GitHub Pages package:
+```bash
+npm install --save gh-pages
+```
+
+2. Make sure your `package.json` has the correct homepage URL and deployment scripts:
+```json
+"homepage": "https://patrik-drean.github.io/drean-property-ui",
+"scripts": {
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d build"
+}
+```
+
+3. Run the deploy command:
+```bash
+npm run deploy
+```
+
+4. The app will be available at `https://patrik-drean.github.io/drean-property-ui`
+
+By default, the GitHub Pages deployment uses the mock API with sample data, controlled by setting `REACT_APP_USE_MOCK_API=true` in `.env.production`. 
+
+### Other Free Deployment Options
+
+#### Netlify
+1. Create an account at [netlify.com](https://www.netlify.com/)
+2. Connect your GitHub repository or simply drag and drop your build folder
+3. Set environment variables in the Netlify dashboard
+
+#### Vercel
+1. Create an account at [vercel.com](https://vercel.com/)
+2. Import your GitHub repository 
+3. Configure your build settings and environment variables
+
+#### Firebase Hosting
+1. Create a Firebase account and project
+2. Install Firebase tools: `npm install -g firebase-tools`
+3. Initialize and deploy: `firebase init` then `firebase deploy`
+
 ## Usage
 
 1. Properties Page:

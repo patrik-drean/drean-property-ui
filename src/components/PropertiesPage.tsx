@@ -22,11 +22,91 @@ import {
   Tooltip,
   IconButton,
   Box,
+  Card,
+  CardContent,
+  styled,
+  Chip,
+  ChipProps,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
 import { getProperties, addProperty, archiveProperty, updateProperty, getZillowData, updatePropertyRentcast } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+
+// Styled components for consistent UI elements
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  padding: '12px 16px',
+  '&.header': {
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.common.white,
+    fontWeight: 'bold',
+  },
+  '&.metric': {
+    backgroundColor: theme.palette.primary.light,
+    color: theme.palette.common.white,
+  }
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  '&:nth-of-type(odd)': {
+    backgroundColor: theme.palette.action.hover,
+  },
+  '&:last-child td, &:last-child th': {
+    border: 0,
+  },
+  '&:hover': {
+    backgroundColor: '#f8f9fa',
+  }
+}));
+
+// Helper function to get status color
+const getStatusColor = (status: PropertyStatus): string => {
+  switch (status) {
+    case 'Opportunity':
+      return '#4CAF50'; // Green
+    case 'Soft Offer':
+      return '#FFC107'; // Amber
+    case 'Hard Offer':
+      return '#FF9800'; // Orange
+    case 'Rehab':
+      return '#F44336'; // Red
+    default:
+      return '#757575'; // Grey
+  }
+};
+
+// Status chip component
+interface StatusChipProps extends ChipProps {
+  status: PropertyStatus;
+}
+
+const StatusChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== 'status',
+})<StatusChipProps>(({ theme, status }) => ({
+  backgroundColor: getStatusColor(status),
+  color: 'white',
+  fontWeight: 500,
+  borderRadius: '16px',
+  minWidth: '90px',
+  '& .MuiChip-label': {
+    padding: '0 12px',
+  }
+}));
+
+// Action button styling
+const ActionIconButton = styled(IconButton)(({ theme }) => ({
+  backgroundColor: 'rgba(25, 118, 210, 0.08)',
+  '&:hover': { 
+    backgroundColor: 'rgba(25, 118, 210, 0.15)'
+  }
+}));
+
+const DeleteIconButton = styled(IconButton)(({ theme }) => ({
+  backgroundColor: 'rgba(211, 47, 47, 0.08)',
+  '&:hover': { 
+    backgroundColor: 'rgba(211, 47, 47, 0.15)'
+  }
+}));
 
 const PropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -137,21 +217,6 @@ const PropertiesPage: React.FC = () => {
   const formatInputCurrency = (value: number) => {
     if (value === 0) return '';
     return value.toLocaleString('en-US');
-  };
-
-  const getStatusColor = (status: PropertyStatus) => {
-    switch (status) {
-      case 'Opportunity':
-        return '#4CAF50'; // Green
-      case 'Soft Offer':
-        return '#FFC107'; // Amber
-      case 'Hard Offer':
-        return '#FF9800'; // Orange
-      case 'Rehab':
-        return '#F44336'; // Red
-      default:
-        return '#757575'; // Grey
-    }
   };
 
   const getStatusOrder = (status: PropertyStatus) => {
@@ -392,287 +457,368 @@ const PropertiesPage: React.FC = () => {
     navigate(`/calculator?${params.toString()}`);
   };
 
-  return (
-    <Container maxWidth="xl" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Properties
-      </Typography>
-      
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={() => setOpenDialog(true)}
-        sx={{ mb: 2 }}
-      >
-        Add Property
-      </Button>
+  // Helper functions for the newly calculated fields
+  const calculateDownPayment = (offerPrice: number, rehabCosts: number) => {
+    return (offerPrice + rehabCosts) * 0.25;
+  };
 
-      <TableContainer component={Paper}>
-        <Table>
+  const calculateLoanAmount = (offerPrice: number, rehabCosts: number) => {
+    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
+    return (offerPrice + rehabCosts) - downPayment;
+  };
+
+  const calculateNewLoan = (arv: number) => {
+    return arv * 0.75;
+  };
+
+  const calculateCashToPullOut = (offerPrice: number, rehabCosts: number, arv: number) => {
+    const loanAmount = calculateLoanAmount(offerPrice, rehabCosts);
+    const newLoan = calculateNewLoan(arv);
+    return newLoan - loanAmount;
+  };
+
+  const calculateCashRemaining = (offerPrice: number, rehabCosts: number, arv: number) => {
+    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
+    const cashToPullOut = calculateCashToPullOut(offerPrice, rehabCosts, arv);
+    return downPayment - cashToPullOut;
+  };
+
+  const calculateHomeEquity = (arv: number) => {
+    const newLoan = calculateNewLoan(arv);
+    return arv - newLoan;
+  };
+
+  return (
+    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1600, mx: 'auto' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => setOpenDialog(true)}
+          startIcon={<Icons.Add />}
+          sx={{ borderRadius: 2 }}
+        >
+          Add Property
+        </Button>
+      </Box>
+
+      <TableContainer 
+        component={Paper} 
+        elevation={2} 
+        sx={{ 
+          borderRadius: 2, 
+          mb: 4, 
+          overflow: 'hidden',
+          width: '100%'
+        }}
+      >
+        <Table size="medium" sx={{ minWidth: 1200, tableLayout: 'fixed' }}>
           <TableHead>
             <TableRow>
-              <TableCell>Address</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Listing Price</TableCell>
-              <TableCell>Offer Price</TableCell>
-              <TableCell>Rehab Costs</TableCell>
-              <TableCell>Potential Rent</TableCell>
-              <TableCell>ARV</TableCell>
-              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
+              <StyledTableCell className="header" width="14%">Address</StyledTableCell>
+              <StyledTableCell className="header" width="9%">Status</StyledTableCell>
+              <StyledTableCell className="header" width="6%">Listing Price</StyledTableCell>
+              <StyledTableCell className="header" width="6%">Offer Price</StyledTableCell>
+              <StyledTableCell className="header" width="6%">Rehab Costs</StyledTableCell>
+              <StyledTableCell className="header" width="6%">Potential Rent</StyledTableCell>
+              <StyledTableCell className="header" width="6%">ARV</StyledTableCell>
+              <StyledTableCell className="header metric" width="7%">
                 <Tooltip title="Hover over values to see the estimated rent range from Rentcast">
                   <span>Estimated Rent</span>
                 </Tooltip>
-              </TableCell>
-              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
+              </StyledTableCell>
+              <StyledTableCell className="header metric" width="7%">
                 <Tooltip title="Hover over values to see the estimated price range from Rentcast">
                   <span>Estimated Price</span>
                 </Tooltip>
-              </TableCell>
-              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
+              </StyledTableCell>
+              <StyledTableCell className="header metric" width="5%">
                 <Tooltip title="Monthly Rent / (Offer Price + Rehab)">
                   <span>Rent Ratio</span>
                 </Tooltip>
-              </TableCell>
-              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
+              </StyledTableCell>
+              <StyledTableCell className="header metric" width="5%">
                 <Tooltip title="(Offer Price + Rehab) / ARV">
                   <span>ARV Ratio</span>
                 </Tooltip>
-              </TableCell>
-              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
+              </StyledTableCell>
+              <StyledTableCell className="header metric" width="6%">
+                <Tooltip title="Amount left invested in the property after refinance">
+                  <span>Cash Remaining</span>
+                </Tooltip>
+              </StyledTableCell>
+              <StyledTableCell className="header metric" width="5%">
                 <Tooltip title="(Listing - Offer) / Listing">
                   <span>Discount</span>
                 </Tooltip>
-              </TableCell>
-              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>Score</TableCell>
-              <TableCell sx={{ backgroundColor: '#f5f5f5' }}>Actions</TableCell>
+              </StyledTableCell>
+              <StyledTableCell className="header metric" width="5%">Score</StyledTableCell>
+              <StyledTableCell className="header metric" width="13%">Actions</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {sortedProperties.map((property) => (
-              <TableRow 
-                key={property.id}
-              >
+              <StyledTableRow key={property.id}>
                 <TableCell>
                   <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
-                    <a href={property.zillowLink} target="_blank" rel="noopener noreferrer">
+                    <a 
+                      href={property.zillowLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ 
+                        color: '#1976d2', 
+                        textDecoration: 'none',
+                        fontWeight: 500
+                      }}
+                    >
                       {property.address}
                     </a>
                   </Tooltip>
                 </TableCell>
                 <TableCell>
-                  <span
-                    style={{
-                      backgroundColor: getStatusColor(property.status),
-                      color: 'white',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '0.875rem',
-                      fontWeight: 500,
-                      whiteSpace: 'nowrap',
-                      display: 'inline-block',
-                    }}
-                  >
-                    {property.status}
-                  </span>
+                  <StatusChip 
+                    label={property.status} 
+                    status={property.status} 
+                    size="small"
+                  />
                 </TableCell>
                 <TableCell>{formatCurrency(property.listingPrice)}</TableCell>
                 <TableCell>{formatCurrency(property.offerPrice)}</TableCell>
                 <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
                 <TableCell>{formatCurrency(property.potentialRent)}</TableCell>
                 <TableCell>{formatCurrency(property.arv)}</TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
+                <TableCell className="metric">
                   {property.hasRentcastData ? (
                     <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.rentLow)} - ${formatCurrency(property.rentCastEstimates.rentHigh)}`}>
-                      <span style={{ display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         {formatCurrency(property.rentCastEstimates.rent)}
-                        <Icons.Check color="success" style={{ fontSize: 16, marginLeft: 4 }} />
-                      </span>
+                        <Icons.Check color="success" sx={{ fontSize: 16, ml: 0.5 }} />
+                      </Box>
                     </Tooltip>
                   ) : (
                     formatCurrency(property.rentCastEstimates.rent)
                   )}
                 </TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
+                <TableCell className="metric">
                   {property.hasRentcastData ? (
                     <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.priceLow)} - ${formatCurrency(property.rentCastEstimates.priceHigh)}`}>
-                      <span style={{ display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         {formatCurrency(property.rentCastEstimates.price)}
-                        <Icons.Check color="success" style={{ fontSize: 16, marginLeft: 4 }} />
-                      </span>
+                        <Icons.Check color="success" sx={{ fontSize: 16, ml: 0.5 }} />
+                      </Box>
                     </Tooltip>
                   ) : (
                     formatCurrency(property.rentCastEstimates.price)
                   )}
                 </TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                  <span style={{ 
-                    color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts)),
-                    fontWeight: 'bold'
+                <TableCell className="metric">
+                  <Typography sx={{ 
+                    color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))
                   }}>
                     {formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}
-                  </span>
+                  </Typography>
                 </TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                  <span style={{ 
-                    color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv)),
-                    fontWeight: 'bold'
+                <TableCell className="metric">
+                  <Typography sx={{ 
+                    color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))
                   }}>
                     {formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}
-                  </span>
+                  </Typography>
                 </TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>{formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}</TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                  <span style={{ 
-                    color: getScoreColor(property.score),
-                    fontWeight: 'bold'
+                <TableCell className="metric">
+                  <Tooltip 
+                    title={
+                      <>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Financing Details:</Typography>
+                        <Typography variant="body2">Down Payment: {formatCurrency(calculateDownPayment(property.offerPrice, property.rehabCosts))}</Typography>
+                        <Typography variant="body2">Loan Amount: {formatCurrency(calculateLoanAmount(property.offerPrice, property.rehabCosts))}</Typography>
+                        <Typography variant="body2">New Loan: {formatCurrency(calculateNewLoan(property.arv))}</Typography>
+                        <Typography variant="body2">Cash to Pull Out: {formatCurrency(calculateCashToPullOut(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
+                        <Typography variant="body2">Home Equity: {formatCurrency(calculateHomeEquity(property.arv))}</Typography>
+                      </>
+                    } 
+                    arrow 
+                    placement="top"
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {formatCurrency(calculateCashRemaining(property.offerPrice, property.rehabCosts, property.arv))}
+                    </Box>
+                  </Tooltip>
+                </TableCell>
+                <TableCell className="metric">{formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}</TableCell>
+                <TableCell className="metric">
+                  <Typography sx={{ 
+                    color: getScoreColor(property.score)
                   }}>
                     {property.score}/10
-                  </span>
+                  </Typography>
                 </TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                <TableCell className="metric">
+                  <Box sx={{ 
+                    display: 'flex',
+                    gap: 1
+                  }}>
                     <Tooltip title="Edit Property">
-                      <IconButton
+                      <ActionIconButton
                         color="primary"
                         onClick={() => handleEditProperty(property)}
                         size="small"
                       >
-                        <Icons.Edit />
-                      </IconButton>
+                        <Icons.Edit fontSize="small" />
+                      </ActionIconButton>
                     </Tooltip>
                     <Tooltip title="Archive Property">
-                      <IconButton
+                      <DeleteIconButton
                         color="secondary"
                         onClick={() => handleArchive(property.id)}
                         size="small"
                       >
-                        <Icons.Archive />
-                      </IconButton>
+                        <Icons.Archive fontSize="small" />
+                      </DeleteIconButton>
                     </Tooltip>
                     <Tooltip title="Update Rentcast Data">
-                      <IconButton
+                      <ActionIconButton
                         color="primary"
                         onClick={() => handleUpdateRentcast(property.id)}
                         size="small"
                       >
-                        <Icons.Refresh />
-                      </IconButton>
+                        <Icons.Refresh fontSize="small" />
+                      </ActionIconButton>
                     </Tooltip>
                     <Tooltip title="Send to Calculator">
-                      <IconButton
+                      <ActionIconButton
                         color="primary"
                         onClick={() => handleSendToCalculator(property)}
                         size="small"
                       >
-                        <Icons.Calculate />
-                      </IconButton>
+                        <Icons.Calculate fontSize="small" />
+                      </ActionIconButton>
                     </Tooltip>
-                  </div>
+                  </Box>
                 </TableCell>
-              </TableRow>
+              </StyledTableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>{isEditing ? 'Edit Property' : 'Add New Property'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Zillow Link"
-            value={newProperty.zillowLink}
-            onChange={handleZillowLinkChange}
-            margin="normal"
-            placeholder="Paste Zillow link to auto-fill address and price"
-          />
-          <TextField
-            fullWidth
-            label="Address"
-            value={newProperty.address}
-            onChange={(e) => setNewProperty({ ...newProperty, address: e.target.value })}
-            margin="normal"
-          />
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={newProperty.status}
-              onChange={(e) => setNewProperty({ ...newProperty, status: e.target.value as PropertyStatus })}
-            >
-              <MenuItem value="Opportunity">Opportunity</MenuItem>
-              <MenuItem value="Soft Offer">Soft Offer</MenuItem>
-              <MenuItem value="Hard Offer">Hard Offer</MenuItem>
-              <MenuItem value="Rehab">Rehab</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField
-            fullWidth
-            label="Listing Price"
-            value={formatInputCurrency(newProperty.listingPrice)}
-            onChange={(e) => setNewProperty({ ...newProperty, listingPrice: handleCurrencyInput(e.target.value) })}
-            margin="normal"
-            InputProps={{
-              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-            }}
-          />
-          <TextField
-            fullWidth
-            label="Offer Price"
-            value={formatInputCurrency(newProperty.offerPrice)}
-            onChange={(e) => setNewProperty({ ...newProperty, offerPrice: handleCurrencyInput(e.target.value) })}
-            margin="normal"
-            InputProps={{
-              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-            }}
-          />
-          <TextField
-            fullWidth
-            label="Rehab Costs"
-            value={formatInputCurrency(newProperty.rehabCosts)}
-            onChange={(e) => setNewProperty({ ...newProperty, rehabCosts: handleCurrencyInput(e.target.value) })}
-            margin="normal"
-            InputProps={{
-              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-            }}
-          />
-          <TextField
-            fullWidth
-            label="Potential Monthly Rent"
-            value={formatInputCurrency(newProperty.potentialRent)}
-            onChange={(e) => setNewProperty({ ...newProperty, potentialRent: handleCurrencyInput(e.target.value) })}
-            margin="normal"
-            InputProps={{
-              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-            }}
-          />
-          <TextField
-            fullWidth
-            label="ARV"
-            value={formatInputCurrency(newProperty.arv)}
-            onChange={(e) => setNewProperty({ ...newProperty, arv: handleCurrencyInput(e.target.value) })}
-            margin="normal"
-            InputProps={{
-              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-            }}
-          />
-          <TextField
-            fullWidth
-            label="Notes"
-            multiline
-            rows={4}
-            value={newProperty.notes}
-            onChange={(e) => setNewProperty({ ...newProperty, notes: e.target.value })}
-            margin="normal"
-          />
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog} 
+        maxWidth="md" 
+        fullWidth 
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
+        <DialogTitle sx={{ fontSize: '1.25rem', fontWeight: 500, pb: 1 }}>
+          {isEditing ? 'Edit Property' : 'Add New Property'}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ p: 1 }}>
+            <TextField
+              fullWidth
+              label="Zillow Link"
+              value={newProperty.zillowLink}
+              onChange={handleZillowLinkChange}
+              margin="normal"
+              placeholder="Paste Zillow link to auto-fill address and price"
+              variant="outlined"
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              label="Address"
+              value={newProperty.address}
+              onChange={(e) => setNewProperty({ ...newProperty, address: e.target.value })}
+              margin="normal"
+            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={newProperty.status}
+                onChange={(e) => setNewProperty({ ...newProperty, status: e.target.value as PropertyStatus })}
+              >
+                <MenuItem value="Opportunity">Opportunity</MenuItem>
+                <MenuItem value="Soft Offer">Soft Offer</MenuItem>
+                <MenuItem value="Hard Offer">Hard Offer</MenuItem>
+                <MenuItem value="Rehab">Rehab</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              fullWidth
+              label="Listing Price"
+              value={formatInputCurrency(newProperty.listingPrice)}
+              onChange={(e) => setNewProperty({ ...newProperty, listingPrice: handleCurrencyInput(e.target.value) })}
+              margin="normal"
+              InputProps={{
+                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Offer Price"
+              value={formatInputCurrency(newProperty.offerPrice)}
+              onChange={(e) => setNewProperty({ ...newProperty, offerPrice: handleCurrencyInput(e.target.value) })}
+              margin="normal"
+              InputProps={{
+                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Rehab Costs"
+              value={formatInputCurrency(newProperty.rehabCosts)}
+              onChange={(e) => setNewProperty({ ...newProperty, rehabCosts: handleCurrencyInput(e.target.value) })}
+              margin="normal"
+              InputProps={{
+                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Potential Monthly Rent"
+              value={formatInputCurrency(newProperty.potentialRent)}
+              onChange={(e) => setNewProperty({ ...newProperty, potentialRent: handleCurrencyInput(e.target.value) })}
+              margin="normal"
+              InputProps={{
+                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+              }}
+            />
+            <TextField
+              fullWidth
+              label="ARV"
+              value={formatInputCurrency(newProperty.arv)}
+              onChange={(e) => setNewProperty({ ...newProperty, arv: handleCurrencyInput(e.target.value) })}
+              margin="normal"
+              InputProps={{
+                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Notes"
+              multiline
+              rows={4}
+              value={newProperty.notes}
+              onChange={(e) => setNewProperty({ ...newProperty, notes: e.target.value })}
+              margin="normal"
+            />
+          </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSaveProperty} variant="contained" color="primary">
-            {isEditing ? 'Save Changes' : 'Add Property'}
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleCloseDialog} color="inherit" sx={{ borderRadius: 2 }}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveProperty} 
+            variant="contained" 
+            color="primary"
+            sx={{ borderRadius: 2 }}
+          >
+            {isEditing ? 'Update' : 'Add'} Property
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </Box>
   );
 };
 

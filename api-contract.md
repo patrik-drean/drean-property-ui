@@ -7,6 +7,11 @@ Base URL: `http://localhost:5271`
 ### Get All Properties
 - **Method**: GET
 - **Endpoint**: `/api/Properties`
+- **Query Parameters**: 
+  - `showArchived` (boolean, optional): Filter by archived status
+    - `null` or not specified: Return only non-archived properties (default)
+    - `true`: Return only archived properties
+    - `false`: Return only non-archived properties
 - **Response**: Array of Property objects
 ```json
 [

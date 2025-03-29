@@ -45,6 +45,27 @@ export const getZillowData = async (url: string): Promise<{ address: string; pri
 };
 
 export const getArchivedProperties = async (): Promise<Property[]> => {
-  const response = await api.get<Property[]>('/api/Properties/archived');
+  const response = await api.get<Property[]>('/api/Properties', {
+    params: { showArchived: true }
+  });
   return response.data;
+};
+
+export const restoreProperty = async (id: string, property: Property): Promise<void> => {
+  // Use the update endpoint to update the property
+  // This should reset any internal archived flag when sent back to the server
+  await api.put(`/api/Properties/${id}`, {
+    address: property.address,
+    status: property.status,
+    listingPrice: property.listingPrice,
+    offerPrice: property.offerPrice,
+    rehabCosts: property.rehabCosts,
+    potentialRent: property.potentialRent,
+    arv: property.arv,
+    rentCastEstimates: property.rentCastEstimates,
+    hasRentcastData: property.hasRentcastData,
+    notes: property.notes,
+    score: property.score,
+    zillowLink: property.zillowLink
+  });
 }; 

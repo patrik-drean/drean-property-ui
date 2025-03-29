@@ -12,25 +12,76 @@ import {
   Typography,
   Tooltip,
   IconButton,
+  CircularProgress,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
-import { getArchivedProperties } from '../services/api';
+import { getArchivedProperties, restoreProperty } from '../services/api';
 
 const ArchivedPropertiesPage: React.FC = () => {
   const [archivedProperties, setArchivedProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  const fetchArchivedProperties = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getArchivedProperties();
+      setArchivedProperties(data);
+    } catch (error) {
+      console.error('Error fetching archived properties:', error);
+      setError('Failed to load archived properties. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchArchivedProperties = async () => {
-      try {
-        const data = await getArchivedProperties();
-        setArchivedProperties(data);
-      } catch (error) {
-        console.error('Error fetching archived properties:', error);
-      }
-    };
     fetchArchivedProperties();
   }, []);
+
+  const handleRestore = async (property: Property) => {
+    try {
+      await restoreProperty(property.id, property);
+      setSnackbar({
+        open: true,
+        message: 'Property restored successfully',
+        severity: 'success',
+      });
+      // Refresh the list after restoration
+      fetchArchivedProperties();
+    } catch (error: any) {
+      console.error('Error restoring property:', error);
+      let errorMessage = 'Failed to restore property';
+      
+      // Check if backend returned a specific error message
+      if (error.response) {
+        if (error.response.status === 404) {
+          errorMessage = 'Property not found';
+        } else if (error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        }
+      }
+      
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -105,7 +156,13 @@ const ArchivedPropertiesPage: React.FC = () => {
         Archived Properties
       </Typography>
       
-      {archivedProperties.length === 0 ? (
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+          <CircularProgress />
+        </div>
+      ) : error ? (
+        <Typography color="error">{error}</Typography>
+      ) : archivedProperties.length === 0 ? (
         <Typography>No archived properties found.</Typography>
       ) : (
         <TableContainer component={Paper}>
@@ -145,6 +202,7 @@ const ArchivedPropertiesPage: React.FC = () => {
                   </Tooltip>
                 </TableCell>
                 <TableCell sx={{ backgroundColor: '#f5f5f5' }}>Score</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -227,12 +285,34 @@ const ArchivedPropertiesPage: React.FC = () => {
                       {property.score}/10
                     </span>
                   </TableCell>
+                  <TableCell>
+                    <Tooltip title="Restore property">
+                      <IconButton 
+                        onClick={() => handleRestore(property)} 
+                        color="primary"
+                        size="small"
+                      >
+                        <Icons.Restore />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
       )}
+      
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

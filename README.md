@@ -83,14 +83,23 @@ npm install --save gh-pages
 }
 ```
 
-3. Run the deploy command:
+3. Configure the API endpoint in `.env.production`:
+```
+# Production API URL
+REACT_APP_API_BASE_URL=https://p7mxmmgxaw.us-west-2.awsapprunner.com
+
+# Set to false to use the real API backend instead of mock data
+REACT_APP_USE_MOCK_API=false
+```
+
+4. Run the deploy command:
 ```bash
 npm run deploy
 ```
 
-4. The app will be available at `https://patrik-drean.github.io/drean-property-ui`
+5. The app will be available at `https://patrik-drean.github.io/drean-property-ui`
 
-By default, the GitHub Pages deployment uses the mock API with sample data, controlled by setting `REACT_APP_USE_MOCK_API=true` in `.env.production`. 
+The current live demo is configured to use the real backend API hosted on AWS App Runner at `https://p7mxmmgxaw.us-west-2.awsapprunner.com`.
 
 ### Other Free Deployment Options
 

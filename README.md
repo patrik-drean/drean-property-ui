@@ -2,6 +2,8 @@
 
 A full-stack application for analyzing and managing real estate investment properties.
 
+**Live Demo:** [https://patrik-drean.github.io/drean-property-ui/](https://patrik-drean.github.io/drean-property-ui/)
+
 ## Features
 
 - Property management with detailed information tracking

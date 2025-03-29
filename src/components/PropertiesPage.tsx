@@ -183,9 +183,9 @@ const PropertiesPage: React.FC = () => {
       score += 2;
     } 
 
-    // ARV ratio (3 points)
+    // ARV ratio (4 points)
     const arvRatio = calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv);
-    if (arvRatio <= 0.75) { // 80% or lower is good
+    if (arvRatio <= 0.75) { // 75% or lower is good
       score += 4;
     } else if (arvRatio <= 0.80) {
       score += 3;
@@ -193,14 +193,20 @@ const PropertiesPage: React.FC = () => {
       score += 2;
     }
 
-    // Discount (2 points)
+    // Discount (1 point)
     const discount = calculateDiscount(property.listingPrice, property.offerPrice);
-    if (discount >= 0.1) { // 15% or higher discount
+    if (discount >= 0.1) { // 10% or higher discount
       score += 1;
     } 
 
-    // Rehab costs (1 point)
-    if (property.rehabCosts < 50000) {
+    // Cash remaining after refinance (1 point)
+    const downPayment = (property.offerPrice + property.rehabCosts) * 0.25; // 25% down payment
+    const loanAmount = (property.offerPrice + property.rehabCosts) - downPayment;
+    const newLoan = property.arv * 0.75; // 75% of ARV
+    const cashToPullOut = newLoan - loanAmount;
+    const cashRemaining = downPayment - cashToPullOut;
+    
+    if (cashRemaining < 15000) { // Less than $15k cash remaining is good
       score += 1;
     }
 
@@ -430,14 +436,20 @@ const PropertiesPage: React.FC = () => {
   // Helper functions to get cell colors based on values
   const getRentRatioColor = (ratio: number) => {
     if (ratio >= 0.01) return '#4CAF50'; // Green for >= 1%
-    if (ratio >= 0.009) return '#FFC107'; // Yellow for >= 0.9%
-    return '#F44336'; // Red for < 0.9%
+    if (ratio >= 0.008) return '#FFC107'; // Yellow for >= 0.8%
+    return '#F44336'; // Red for < 0.8%
   };
 
   const getARVRatioColor = (ratio: number) => {
     if (ratio <= 0.75) return '#4CAF50'; // Green for <= 75%
     if (ratio <= 0.85) return '#FFC107'; // Yellow for <= 85%
     return '#F44336'; // Red for > 85%
+  };
+
+  const getCashRemainingColor = (amount: number) => {
+    if (amount < 15000) return '#4CAF50'; // Green for < $15k
+    if (amount < 25000) return '#FFC107'; // Yellow for < $25k
+    return '#F44336'; // Red for >= $25k
   };
 
   const getScoreColor = (score: number) => {
@@ -517,8 +529,7 @@ const PropertiesPage: React.FC = () => {
             <TableRow>
               <StyledTableCell className="header" width="14%">Address</StyledTableCell>
               <StyledTableCell className="header" width="9%">Status</StyledTableCell>
-              <StyledTableCell className="header" width="6%">Listing Price</StyledTableCell>
-              <StyledTableCell className="header" width="6%">Offer Price</StyledTableCell>
+              <StyledTableCell className="header" width="7%">Offer Price</StyledTableCell>
               <StyledTableCell className="header" width="6%">Rehab Costs</StyledTableCell>
               <StyledTableCell className="header" width="6%">Potential Rent</StyledTableCell>
               <StyledTableCell className="header" width="6%">ARV</StyledTableCell>
@@ -542,7 +553,7 @@ const PropertiesPage: React.FC = () => {
                   <span>ARV Ratio</span>
                 </Tooltip>
               </StyledTableCell>
-              <StyledTableCell className="header metric" width="6%">
+              <StyledTableCell className="header metric" width="7%">
                 <Tooltip title="Amount left invested in the property after refinance">
                   <span>Cash Remaining</span>
                 </Tooltip>
@@ -553,7 +564,7 @@ const PropertiesPage: React.FC = () => {
                 </Tooltip>
               </StyledTableCell>
               <StyledTableCell className="header metric" width="5%">Score</StyledTableCell>
-              <StyledTableCell className="header metric" width="13%">Actions</StyledTableCell>
+              <StyledTableCell className="header metric" width="14%">Actions</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -582,8 +593,13 @@ const PropertiesPage: React.FC = () => {
                     size="small"
                   />
                 </TableCell>
-                <TableCell>{formatCurrency(property.listingPrice)}</TableCell>
-                <TableCell>{formatCurrency(property.offerPrice)}</TableCell>
+                <TableCell>
+                  <Tooltip title={`Listing Price: ${formatCurrency(property.listingPrice)}`} arrow placement="top">
+                    <Box component="span">
+                      {formatCurrency(property.offerPrice)}
+                    </Box>
+                  </Tooltip>
+                </TableCell>
                 <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
                 <TableCell>{formatCurrency(property.potentialRent)}</TableCell>
                 <TableCell>{formatCurrency(property.arv)}</TableCell>
@@ -640,7 +656,9 @@ const PropertiesPage: React.FC = () => {
                     arrow 
                     placement="top"
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box component="span" sx={{ 
+                      color: getCashRemainingColor(calculateCashRemaining(property.offerPrice, property.rehabCosts, property.arv))
+                    }}>
                       {formatCurrency(calculateCashRemaining(property.offerPrice, property.rehabCosts, property.arv))}
                     </Box>
                   </Tooltip>

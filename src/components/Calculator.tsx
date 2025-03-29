@@ -144,12 +144,28 @@ const Calculator: React.FC = () => {
 
   // Format number with commas
   const formatNumber = (num: number): string => {
+    // Return empty string if value is 0 to avoid displaying leading zeros
+    if (num === 0) return '';
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
   // Parse formatted input to remove commas
   const parseFormattedInput = (value: string): number => {
+    // Only parse if there's actual content
+    if (!value) return 0;
     return parseInt(value.replace(/,/g, ''), 10) || 0;
+  };
+
+  // Modified input handling functions for percentage fields
+  const formatPercentage = (num: number): string => {
+    // Return empty string if value is 0
+    if (num === 0) return '';
+    return num.toString();
+  };
+
+  const parsePercentageInput = (value: string): number => {
+    if (!value) return 0;
+    return Number(value) || 0;
   };
 
   // Calculate derived values
@@ -199,14 +215,20 @@ const Calculator: React.FC = () => {
                 </TableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="Purchase Price"
                       fullWidth
-                      value={formatNumber(inputs.purchasePrice)}
-                      onChange={(e) => handleInputChange('purchasePrice', parseFormattedInput(e.target.value))}
+                      value={inputs.purchasePrice === 0 ? '' : formatNumber(inputs.purchasePrice)}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : parseFormattedInput(e.target.value);
+                        handleInputChange('purchasePrice', value);
+                      }}
                       InputProps={{ startAdornment: '$' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>Purchase Price</TableCell>
@@ -216,14 +238,20 @@ const Calculator: React.FC = () => {
                 </StyledTableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="Immediate Repairs"
                       fullWidth
-                      value={formatNumber(inputs.immediateRepairs)}
-                      onChange={(e) => handleInputChange('immediateRepairs', parseFormattedInput(e.target.value))}
+                      value={inputs.immediateRepairs === 0 ? '' : formatNumber(inputs.immediateRepairs)}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : parseFormattedInput(e.target.value);
+                        handleInputChange('immediateRepairs', value);
+                      }}
                       InputProps={{ startAdornment: '$' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>Immediate Repairs</TableCell>
@@ -233,15 +261,21 @@ const Calculator: React.FC = () => {
                 </StyledTableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="Closing Costs %"
                       type="number"
                       fullWidth
-                      value={inputs.closingCostsPercent}
-                      onChange={(e) => handleInputChange('closingCostsPercent', Number(e.target.value))}
+                      value={inputs.closingCostsPercent === 0 ? '' : inputs.closingCostsPercent}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : Number(e.target.value);
+                        handleInputChange('closingCostsPercent', value);
+                      }}
                       InputProps={{ endAdornment: '%' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>Closing Costs</TableCell>
@@ -270,15 +304,21 @@ const Calculator: React.FC = () => {
                 </TableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="Down Payment %"
                       type="number"
                       fullWidth
-                      value={inputs.downPaymentPercent}
-                      onChange={(e) => handleInputChange('downPaymentPercent', Number(e.target.value))}
+                      value={inputs.downPaymentPercent === 0 ? '' : inputs.downPaymentPercent}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : Number(e.target.value);
+                        handleInputChange('downPaymentPercent', value);
+                      }}
                       InputProps={{ endAdornment: '%' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>Down Payment</TableCell>
@@ -289,14 +329,20 @@ const Calculator: React.FC = () => {
                 </StyledTableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="After Repair Value"
                       fullWidth
-                      value={formatNumber(inputs.afterRepairValue)}
-                      onChange={(e) => handleInputChange('afterRepairValue', parseFormattedInput(e.target.value))}
+                      value={inputs.afterRepairValue === 0 ? '' : formatNumber(inputs.afterRepairValue)}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : parseFormattedInput(e.target.value);
+                        handleInputChange('afterRepairValue', value);
+                      }}
                       InputProps={{ startAdornment: '$' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>Loan Amount</TableCell>
@@ -307,15 +353,21 @@ const Calculator: React.FC = () => {
                 </StyledTableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="Interest Rate"
                       type="number"
                       fullWidth
-                      value={inputs.interestRate}
-                      onChange={(e) => handleInputChange('interestRate', Number(e.target.value))}
+                      value={inputs.interestRate === 0 ? '' : inputs.interestRate}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : Number(e.target.value);
+                        handleInputChange('interestRate', value);
+                      }}
                       InputProps={{ endAdornment: '%' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>Interest Rate</TableCell>
@@ -326,15 +378,21 @@ const Calculator: React.FC = () => {
                 </StyledTableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="New Loan %"
                       type="number"
                       fullWidth
-                      value={inputs.newLoanPercent}
-                      onChange={(e) => handleInputChange('newLoanPercent', Number(e.target.value))}
+                      value={inputs.newLoanPercent === 0 ? '' : inputs.newLoanPercent}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : Number(e.target.value);
+                        handleInputChange('newLoanPercent', value);
+                      }}
                       InputProps={{ endAdornment: '%' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell colSpan={3}></TableCell>
@@ -363,14 +421,20 @@ const Calculator: React.FC = () => {
                 </TableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="Rental Income"
                       fullWidth
-                      value={formatNumber(inputs.rentalIncome)}
-                      onChange={(e) => handleInputChange('rentalIncome', parseFormattedInput(e.target.value))}
+                      value={inputs.rentalIncome === 0 ? '' : formatNumber(inputs.rentalIncome)}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : parseFormattedInput(e.target.value);
+                        handleInputChange('rentalIncome', value);
+                      }}
                       InputProps={{ startAdornment: '$' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>Rental Income</TableCell>
@@ -385,15 +449,21 @@ const Calculator: React.FC = () => {
                 </TableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="Property Management Fee %"
                       type="number"
                       fullWidth
-                      value={inputs.propertyManagementFeePercent}
-                      onChange={(e) => handleInputChange('propertyManagementFeePercent', Number(e.target.value))}
+                      value={inputs.propertyManagementFeePercent === 0 ? '' : inputs.propertyManagementFeePercent}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : Number(e.target.value);
+                        handleInputChange('propertyManagementFeePercent', value);
+                      }}
                       InputProps={{ endAdornment: '%' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>Property Management Fee</TableCell>
@@ -424,15 +494,21 @@ const Calculator: React.FC = () => {
                 </StyledTableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="Real Estate Taxes %"
                       type="number"
                       fullWidth
-                      value={inputs.taxesPercent}
-                      onChange={(e) => handleInputChange('taxesPercent', Number(e.target.value))}
+                      value={inputs.taxesPercent === 0 ? '' : inputs.taxesPercent}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : Number(e.target.value);
+                        handleInputChange('taxesPercent', value);
+                      }}
                       InputProps={{ endAdornment: '%' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>Real Estate Taxes</TableCell>
@@ -442,14 +518,20 @@ const Calculator: React.FC = () => {
                 </StyledTableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="Insurance"
                       fullWidth
-                      value={formatNumber(inputs.insurance)}
-                      onChange={(e) => handleInputChange('insurance', parseFormattedInput(e.target.value))}
+                      value={inputs.insurance === 0 ? '' : formatNumber(inputs.insurance)}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : parseFormattedInput(e.target.value);
+                        handleInputChange('insurance', value);
+                      }}
                       InputProps={{ startAdornment: '$' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>Insurance</TableCell>
@@ -466,14 +548,20 @@ const Calculator: React.FC = () => {
                 </StyledTableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee', py: 2 }}>
-                    <StyledInputTextField
+                    <TextField
                       label="Other Expenses"
                       fullWidth
-                      value={formatNumber(inputs.otherExpenses)}
-                      onChange={(e) => handleInputChange('otherExpenses', parseFormattedInput(e.target.value))}
+                      value={inputs.otherExpenses === 0 ? '' : formatNumber(inputs.otherExpenses)}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : parseFormattedInput(e.target.value);
+                        handleInputChange('otherExpenses', value);
+                      }}
                       InputProps={{ startAdornment: '$' }}
                       size="small"
                       variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>Other Ongoing Expenses</TableCell>

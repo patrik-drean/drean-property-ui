@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  Box,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
@@ -151,22 +152,31 @@ const ArchivedPropertiesPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4 }}>
+    <Box sx={{ maxWidth: 1600, mx: 'auto', width: '100%' }}>
       <Typography variant="h4" gutterBottom>
         Archived Properties
       </Typography>
       
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
           <CircularProgress />
-        </div>
+        </Box>
       ) : error ? (
         <Typography color="error">{error}</Typography>
       ) : archivedProperties.length === 0 ? (
         <Typography>No archived properties found.</Typography>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
+        <TableContainer 
+          component={Paper} 
+          elevation={2} 
+          sx={{ 
+            borderRadius: 2, 
+            mb: 4, 
+            overflow: 'hidden',
+            width: '100%'
+          }}
+        >
+          <Table size="medium" sx={{ minWidth: 1200 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Address</TableCell>
@@ -313,7 +323,7 @@ const ArchivedPropertiesPage: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
   );
 };
 

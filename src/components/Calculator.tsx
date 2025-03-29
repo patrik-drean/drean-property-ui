@@ -203,10 +203,10 @@ const Calculator: React.FC = () => {
   const cashOnCashClass = cashOnCash >= 0 ? 'positive' : 'negative';
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
       <Grid container spacing={4}>
         <Grid item xs={12}>
-          <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+          <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2, overflow: 'visible' }}>
             <Table>
               <TableBody>
                 {/* Initial Investment Section */}

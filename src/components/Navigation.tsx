@@ -27,6 +27,7 @@ const Navigation: React.FC = () => {
     padding: '8px 16px',
     textTransform: 'none',
     fontWeight: 500,
+    minWidth: '120px',
   };
 
   // Active button style
@@ -40,22 +41,37 @@ const Navigation: React.FC = () => {
 
   return (
     <>
-      <AppBar position="static" elevation={0} sx={{ backgroundColor: '#2E3B55' }}>
-        <Container maxWidth="xl">
-          <Toolbar disableGutters sx={{ display: 'flex', justifyContent: 'space-between' }}>
+      {/* Add a placeholder for the fixed AppBar height to prevent content jumping */}
+      <AppBar 
+        position="fixed" 
+        elevation={1} 
+        sx={{ 
+          backgroundColor: '#2E3B55',
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          width: '100%',
+          left: 0,
+          right: 0,
+        }}
+      >
+        <Container maxWidth={false} sx={{ px: 3 }}>
+          <Toolbar sx={{ height: '64px', p: 0 }}>
             <Typography 
               variant="h5" 
               component="div" 
               sx={{ 
                 fontWeight: 600,
                 letterSpacing: '0.5px',
-                color: '#FFFFFF'
+                color: '#FFFFFF',
+                flexGrow: 1,
               }}
             >
               Property Analyzer
             </Typography>
             
-            <Stack direction="row" spacing={1}>
+            <Stack 
+              direction="row" 
+              spacing={1}
+            >
               <Button
                 component={RouterLink}
                 to="/properties"
@@ -86,9 +102,19 @@ const Navigation: React.FC = () => {
           </Toolbar>
         </Container>
       </AppBar>
-      <Box sx={{ p: 3 }}>
+      {/* Toolbar placeholder to push content below appbar */}
+      <Toolbar sx={{ height: '64px', mb: 2 }} />
+      
+      {/* Content container with scrolling capabilities */}
+      <Container maxWidth={false} sx={{ 
+        flexGrow: 1, 
+        p: 3, 
+        height: 'calc(100vh - 64px)',
+        overflowY: 'auto',
+        overflowX: 'hidden'
+      }}>
         <Outlet />
-      </Box>
+      </Container>
     </>
   );
 };

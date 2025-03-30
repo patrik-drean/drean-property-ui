@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -8,13 +8,26 @@ import {
   Box,
   Container,
   Stack,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  IconButton,
+  useMediaQuery,
+  useTheme,
+  Divider,
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import CalculateIcon from '@mui/icons-material/Calculate';
+import MenuIcon from '@mui/icons-material/Menu';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [drawerOpen, setDrawerOpen] = useState(false);
   
   // Helper to determine if a path is active
   const isActive = (path: string) => location.pathname === path;
@@ -39,6 +52,64 @@ const Navigation: React.FC = () => {
     },
   });
 
+  const toggleDrawer = () => {
+    setDrawerOpen(!drawerOpen);
+  };
+
+  const mobileMenu = (
+    <Drawer
+      anchor="left"
+      open={drawerOpen}
+      onClose={toggleDrawer}
+    >
+      <Box
+        sx={{ width: 250 }}
+        role="presentation"
+        onClick={toggleDrawer}
+      >
+        <Box sx={{ p: 2 }}>
+          <Typography variant="h6" fontWeight="bold">Property Analyzer</Typography>
+        </Box>
+        <Divider />
+        <List>
+          <ListItem 
+            button 
+            component={RouterLink} 
+            to="/properties"
+            selected={isActive('/properties')}
+          >
+            <ListItemIcon>
+              <HomeIcon color={isActive('/properties') ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Properties" />
+          </ListItem>
+          <ListItem 
+            button 
+            component={RouterLink} 
+            to="/archived"
+            selected={isActive('/archived')}
+          >
+            <ListItemIcon>
+              <ArchiveIcon color={isActive('/archived') ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Archived" />
+          </ListItem>
+          <ListItem 
+            button 
+            component={RouterLink} 
+            to="/calculator"
+            selected={isActive('/calculator')}
+          >
+            <ListItemIcon>
+              <CalculateIcon color={isActive('/calculator') ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Calculator" />
+          </ListItem>
+        </List>
+      </Box>
+    </Drawer>
+  );
+
   return (
     <>
       {/* Add a placeholder for the fixed AppBar height to prevent content jumping */}
@@ -53,8 +124,20 @@ const Navigation: React.FC = () => {
           right: 0,
         }}
       >
-        <Container maxWidth={false} sx={{ px: 3 }}>
+        <Container maxWidth={false} sx={{ px: { xs: 1, sm: 3 } }}>
           <Toolbar sx={{ height: '64px', p: 0 }}>
+            {isMobile && (
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={toggleDrawer}
+                sx={{ mr: 2 }}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
+            
             <Typography 
               variant="h5" 
               component="div" 
@@ -63,52 +146,58 @@ const Navigation: React.FC = () => {
                 letterSpacing: '0.5px',
                 color: '#FFFFFF',
                 flexGrow: 1,
+                fontSize: { xs: '1.2rem', sm: '1.5rem' }
               }}
             >
               Property Analyzer
             </Typography>
             
-            <Stack 
-              direction="row" 
-              spacing={1}
-            >
-              <Button
-                component={RouterLink}
-                to="/properties"
-                startIcon={<HomeIcon />}
-                sx={getNavButtonStyle('/properties')}
+            {!isMobile && (
+              <Stack 
+                direction="row" 
+                spacing={1}
               >
-                Properties
-              </Button>
-              
-              <Button
-                component={RouterLink}
-                to="/archived"
-                startIcon={<ArchiveIcon />}
-                sx={getNavButtonStyle('/archived')}
-              >
-                Archived
-              </Button>
-              
-              <Button
-                component={RouterLink}
-                to="/calculator"
-                startIcon={<CalculateIcon />}
-                sx={getNavButtonStyle('/calculator')}
-              >
-                Calculator
-              </Button>
-            </Stack>
+                <Button
+                  component={RouterLink}
+                  to="/properties"
+                  startIcon={<HomeIcon />}
+                  sx={getNavButtonStyle('/properties')}
+                >
+                  Properties
+                </Button>
+                
+                <Button
+                  component={RouterLink}
+                  to="/archived"
+                  startIcon={<ArchiveIcon />}
+                  sx={getNavButtonStyle('/archived')}
+                >
+                  Archived
+                </Button>
+                
+                <Button
+                  component={RouterLink}
+                  to="/calculator"
+                  startIcon={<CalculateIcon />}
+                  sx={getNavButtonStyle('/calculator')}
+                >
+                  Calculator
+                </Button>
+              </Stack>
+            )}
           </Toolbar>
         </Container>
       </AppBar>
+      {/* Mobile drawer menu */}
+      {isMobile && mobileMenu}
+      
       {/* Toolbar placeholder to push content below appbar */}
       <Toolbar sx={{ height: '64px', mb: 2 }} />
       
       {/* Content container with scrolling capabilities */}
       <Container maxWidth={false} sx={{ 
         flexGrow: 1, 
-        p: 3, 
+        p: { xs: 1, sm: 2, md: 3 }, 
         height: 'calc(100vh - 64px)',
         overflowY: 'auto',
         overflowX: 'hidden'

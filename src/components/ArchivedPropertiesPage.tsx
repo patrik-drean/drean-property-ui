@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Paper,
   Table,
   TableBody,
@@ -16,10 +15,75 @@ import {
   Snackbar,
   Alert,
   Box,
+  Chip,
+  styled,
+  useTheme,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
 import { api } from '../services/apiConfig';
+
+// Helper function to get status color
+const getStatusColor = (status: PropertyStatus): string => {
+  switch (status) {
+    case 'Opportunity':
+      return '#4CAF50'; // Green
+    case 'Soft Offer':
+      return '#FFC107'; // Amber
+    case 'Hard Offer':
+      return '#FF9800'; // Orange
+    case 'Rehab':
+      return '#F44336'; // Red
+    default:
+      return '#757575'; // Grey
+  }
+};
+
+// Styled components for consistent UI elements
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  padding: '12px 16px',
+  '&.header': {
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.common.white,
+    fontWeight: 'bold',
+  },
+  '&.metric': {
+    backgroundColor: theme.palette.primary.light,
+    color: theme.palette.common.white,
+  }
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  '&:nth-of-type(odd)': {
+    backgroundColor: theme.palette.action.hover,
+  },
+  '&:last-child td, &:last-child th': {
+    border: 0,
+  },
+  '&:hover': {
+    backgroundColor: '#f8f9fa',
+  }
+}));
+
+// Status chip component
+interface StatusChipProps {
+  status: PropertyStatus;
+  label?: string;
+  size?: 'small' | 'medium';
+}
+
+const StatusChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== 'status',
+})<StatusChipProps>(({ theme, status }) => ({
+  backgroundColor: getStatusColor(status),
+  color: 'white',
+  fontWeight: 500,
+  borderRadius: '16px',
+  minWidth: '90px',
+  '& .MuiChip-label': {
+    padding: '0 12px',
+  }
+}));
 
 const ArchivedPropertiesPage: React.FC = () => {
   const [archivedProperties, setArchivedProperties] = useState<Property[]>([]);
@@ -30,6 +94,7 @@ const ArchivedPropertiesPage: React.FC = () => {
     message: '',
     severity: 'success',
   });
+  const theme = useTheme();
 
   const fetchArchivedProperties = async () => {
     try {
@@ -117,21 +182,6 @@ const ArchivedPropertiesPage: React.FC = () => {
     return (listingPrice - offerPrice) / listingPrice;
   };
 
-  const getStatusColor = (status: PropertyStatus) => {
-    switch (status) {
-      case 'Opportunity':
-        return '#4CAF50'; // Green
-      case 'Soft Offer':
-        return '#FFC107'; // Amber
-      case 'Hard Offer':
-        return '#FF9800'; // Orange
-      case 'Rehab':
-        return '#F44336'; // Red
-      default:
-        return '#757575'; // Grey
-    }
-  };
-
   // Helper functions to get cell colors based on values
   const getRentRatioColor = (ratio: number) => {
     if (ratio >= 0.01) return '#4CAF50'; // Green for >= 1%
@@ -152,8 +202,8 @@ const ArchivedPropertiesPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 1600, mx: 'auto', width: '100%' }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ p: { xs: 1, md: 3 }, maxWidth: 1600, mx: 'auto', width: '100%' }}>
+      <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
         Archived Properties
       </Typography>
       
@@ -164,155 +214,263 @@ const ArchivedPropertiesPage: React.FC = () => {
       ) : error ? (
         <Typography color="error">{error}</Typography>
       ) : archivedProperties.length === 0 ? (
-        <Typography>No archived properties found.</Typography>
+        <Paper sx={{ p: 3, borderRadius: 2 }}>
+          <Typography>No archived properties found.</Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            sx={{ mt: 2 }}
+            onClick={() => window.history.back()}
+          >
+            Go Back
+          </Button>
+        </Paper>
       ) : (
-        <TableContainer 
-          component={Paper} 
-          elevation={2} 
-          sx={{ 
-            borderRadius: 2, 
-            mb: 4, 
-            overflow: 'hidden',
-            width: '100%'
-          }}
-        >
-          <Table size="medium" sx={{ minWidth: 1200 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell>Address</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Listing Price</TableCell>
-                <TableCell>Offer Price</TableCell>
-                <TableCell>Rehab Costs</TableCell>
-                <TableCell>Potential Rent</TableCell>
-                <TableCell>ARV</TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                  <Tooltip title="Hover over values to see the estimated rent range from Rentcast">
-                    <span>Estimated Rent</span>
-                  </Tooltip>
-                </TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                  <Tooltip title="Hover over values to see the estimated price range from Rentcast">
-                    <span>Estimated Price</span>
-                  </Tooltip>
-                </TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                  <Tooltip title="Monthly Rent / (Offer Price + Rehab)">
-                    <span>Rent Ratio</span>
-                  </Tooltip>
-                </TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                  <Tooltip title="(Offer Price + Rehab) / ARV">
-                    <span>ARV Ratio</span>
-                  </Tooltip>
-                </TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                  <Tooltip title="(Listing - Offer) / Listing">
-                    <span>Discount</span>
-                  </Tooltip>
-                </TableCell>
-                <TableCell sx={{ backgroundColor: '#f5f5f5' }}>Score</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {archivedProperties.map((property) => (
-                <TableRow key={property.id}>
-                  <TableCell>
-                    <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
-                      <a href={property.zillowLink} target="_blank" rel="noopener noreferrer">
-                        {property.address}
-                      </a>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      style={{
-                        backgroundColor: getStatusColor(property.status),
-                        color: 'white',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '0.875rem',
-                        fontWeight: 500,
-                        whiteSpace: 'nowrap',
-                        display: 'inline-block',
-                      }}
-                    >
-                      {property.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>{formatCurrency(property.listingPrice)}</TableCell>
-                  <TableCell>{formatCurrency(property.offerPrice)}</TableCell>
-                  <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
-                  <TableCell>{formatCurrency(property.potentialRent)}</TableCell>
-                  <TableCell>{formatCurrency(property.arv)}</TableCell>
-                  <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                    {property.hasRentcastData ? (
-                      <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.rentLow)} - ${formatCurrency(property.rentCastEstimates.rentHigh)}`}>
-                        <span style={{ display: 'flex', alignItems: 'center' }}>
-                          {formatCurrency(property.rentCastEstimates.rent)}
-                          <Icons.Check color="success" style={{ fontSize: 16, marginLeft: 4 }} />
-                        </span>
+        <>
+          {/* Desktop view - Table */}
+          <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>
+            <TableContainer 
+              component={Paper} 
+              elevation={2} 
+              sx={{ 
+                borderRadius: 2, 
+                mb: 4, 
+                overflow: 'hidden',
+                width: '100%'
+              }}
+            >
+              <Table size="medium" sx={{ minWidth: 1200 }}>
+                <TableHead>
+                  <TableRow>
+                    <StyledTableCell className="header">Address</StyledTableCell>
+                    <StyledTableCell className="header">Status</StyledTableCell>
+                    <StyledTableCell className="header">Listing Price</StyledTableCell>
+                    <StyledTableCell className="header">Offer Price</StyledTableCell>
+                    <StyledTableCell className="header">Rehab Costs</StyledTableCell>
+                    <StyledTableCell className="header">Potential Rent</StyledTableCell>
+                    <StyledTableCell className="header">ARV</StyledTableCell>
+                    <StyledTableCell className="header metric">
+                      <Tooltip title="Monthly Rent / (Offer Price + Rehab)">
+                        <span>Rent Ratio</span>
                       </Tooltip>
-                    ) : (
-                      formatCurrency(property.rentCastEstimates.rent)
-                    )}
-                  </TableCell>
-                  <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                    {property.hasRentcastData ? (
-                      <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.priceLow)} - ${formatCurrency(property.rentCastEstimates.priceHigh)}`}>
-                        <span style={{ display: 'flex', alignItems: 'center' }}>
-                          {formatCurrency(property.rentCastEstimates.price)}
-                          <Icons.Check color="success" style={{ fontSize: 16, marginLeft: 4 }} />
-                        </span>
+                    </StyledTableCell>
+                    <StyledTableCell className="header metric">
+                      <Tooltip title="(Offer Price + Rehab) / ARV">
+                        <span>ARV Ratio</span>
                       </Tooltip>
-                    ) : (
-                      formatCurrency(property.rentCastEstimates.price)
-                    )}
-                  </TableCell>
-                  <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                    <span style={{ 
-                      color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts)),
-                      fontWeight: 'bold'
-                    }}>
-                      {formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}
-                    </span>
-                  </TableCell>
-                  <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                    <span style={{ 
-                      color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv)),
-                      fontWeight: 'bold'
-                    }}>
-                      {formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}
-                    </span>
-                  </TableCell>
-                  <TableCell sx={{ backgroundColor: '#f5f5f5' }}>{formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}</TableCell>
-                  <TableCell sx={{ backgroundColor: '#f5f5f5' }}>
-                    <span style={{ 
+                    </StyledTableCell>
+                    <StyledTableCell className="header metric">Score</StyledTableCell>
+                    <StyledTableCell className="header">Actions</StyledTableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {archivedProperties.map((property) => (
+                    <StyledTableRow key={property.id}>
+                      <TableCell>
+                        <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
+                          <a 
+                            href={property.zillowLink} 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ 
+                              color: '#1976d2', 
+                              textDecoration: 'none',
+                              fontWeight: 500
+                            }}
+                          >
+                            {property.address}
+                          </a>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell>
+                        <StatusChip 
+                          status={property.status}
+                          label={property.status}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{formatCurrency(property.listingPrice)}</TableCell>
+                      <TableCell>{formatCurrency(property.offerPrice)}</TableCell>
+                      <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
+                      <TableCell>{formatCurrency(property.potentialRent)}</TableCell>
+                      <TableCell>{formatCurrency(property.arv)}</TableCell>
+                      <TableCell className="metric">
+                        <Typography sx={{ 
+                          color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))
+                        }}>
+                          {formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}
+                        </Typography>
+                      </TableCell>
+                      <TableCell className="metric">
+                        <Typography sx={{ 
+                          color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))
+                        }}>
+                          {formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}
+                        </Typography>
+                      </TableCell>
+                      <TableCell className="metric">
+                        <Typography sx={{ 
+                          color: getScoreColor(property.score)
+                        }}>
+                          {property.score}/10
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleRestore(property)}
+                          startIcon={<Icons.RestoreFromTrash />}
+                        >
+                          Restore
+                        </Button>
+                      </TableCell>
+                    </StyledTableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+
+          {/* Mobile & Tablet view - Cards */}
+          <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'column', gap: 2 }}>
+            {archivedProperties.map((property) => (
+              <Paper 
+                key={property.id}
+                elevation={2}
+                sx={{ 
+                  borderRadius: 2, 
+                  overflow: 'hidden',
+                  p: 2
+                }}
+              >
+                {/* Card Header with Status and Score */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <StatusChip 
+                    status={property.status}
+                    label={property.status}
+                    size="small"
+                  />
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    backgroundColor: theme.palette.primary.light,
+                    color: '#fff',
+                    p: 0.5,
+                    px: 1,
+                    borderRadius: 1
+                  }}>
+                    <Typography sx={{ 
                       color: getScoreColor(property.score),
-                      fontWeight: 'bold'
+                      fontWeight: 'bold',
+                      mr: 0.5
                     }}>
                       {property.score}/10
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip title="Restore property">
-                      <IconButton 
-                        onClick={() => handleRestore(property)} 
-                        color="primary"
-                        size="small"
-                      >
-                        <Icons.Restore />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                    </Typography>
+                    <Typography variant="body2">Score</Typography>
+                  </Box>
+                </Box>
+
+                {/* Address with Zillow link */}
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  component="a"
+                  href={property.zillowLink}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  sx={{
+                    color: '#1976d2', 
+                    textDecoration: 'none',
+                    display: 'block',
+                    mb: 2
+                  }}
+                >
+                  {property.address}
+                </Typography>
+
+                {/* Financial details grid */}
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' },
+                  gap: 2,
+                  mb: 2
+                }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Listing Price</Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {formatCurrency(property.listingPrice)}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Offer Price</Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {formatCurrency(property.offerPrice)}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Rehab Costs</Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {formatCurrency(property.rehabCosts)}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Potential Rent</Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {formatCurrency(property.potentialRent)}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">ARV</Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {formatCurrency(property.arv)}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Rent Ratio</Typography>
+                    <Typography 
+                      variant="body1" 
+                      fontWeight="medium"
+                      sx={{ 
+                        color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))
+                      }}
+                    >
+                      {formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {/* Notes section */}
+                {property.notes && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="caption" color="text.secondary">Notes</Typography>
+                    <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                      {property.notes}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Actions */}
+                <Box sx={{ 
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  mt: 2
+                }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<Icons.RestoreFromTrash />}
+                    onClick={() => handleRestore(property)}
+                  >
+                    Restore Property
+                  </Button>
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+        </>
       )}
-      
+
       <Snackbar 
         open={snackbar.open} 
         autoHideDuration={6000} 

@@ -27,6 +27,7 @@ import {
   styled,
   Chip,
   ChipProps,
+  useTheme,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
@@ -135,6 +136,7 @@ const PropertiesPage: React.FC = () => {
     zillowLink: ''
   });
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -501,7 +503,7 @@ const PropertiesPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1600, mx: 'auto' }}>
+    <Box sx={{ p: { xs: 1, md: 3 }, maxWidth: 1600, mx: 'auto' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Button
           variant="contained"
@@ -514,211 +516,377 @@ const PropertiesPage: React.FC = () => {
         </Button>
       </Box>
 
-      <TableContainer 
-        component={Paper} 
-        elevation={2} 
-        sx={{ 
-          borderRadius: 2, 
-          mb: 4, 
-          overflow: 'hidden',
-          width: '100%'
-        }}
-      >
-        <Table size="medium" sx={{ minWidth: 1200, tableLayout: 'fixed' }}>
-          <TableHead>
-            <TableRow>
-              <StyledTableCell className="header" width="14%">Address</StyledTableCell>
-              <StyledTableCell className="header" width="9%">Status</StyledTableCell>
-              <StyledTableCell className="header" width="7%">Offer Price</StyledTableCell>
-              <StyledTableCell className="header" width="6%">Rehab Costs</StyledTableCell>
-              <StyledTableCell className="header" width="6%">Potential Rent</StyledTableCell>
-              <StyledTableCell className="header" width="6%">ARV</StyledTableCell>
-              <StyledTableCell className="header metric" width="7%">
-                <Tooltip title="Hover over values to see the estimated rent range from Rentcast">
-                  <span>Estimated Rent</span>
-                </Tooltip>
-              </StyledTableCell>
-              <StyledTableCell className="header metric" width="7%">
-                <Tooltip title="Hover over values to see the estimated price range from Rentcast">
-                  <span>Estimated Price</span>
-                </Tooltip>
-              </StyledTableCell>
-              <StyledTableCell className="header metric" width="5%">
-                <Tooltip title="Monthly Rent / (Offer Price + Rehab)">
-                  <span>Rent Ratio</span>
-                </Tooltip>
-              </StyledTableCell>
-              <StyledTableCell className="header metric" width="5%">
-                <Tooltip title="(Offer Price + Rehab) / ARV">
-                  <span>ARV Ratio</span>
-                </Tooltip>
-              </StyledTableCell>
-              <StyledTableCell className="header metric" width="7%">
-                <Tooltip title="Amount left invested in the property after refinance">
-                  <span>Cash Remaining</span>
-                </Tooltip>
-              </StyledTableCell>
-              <StyledTableCell className="header metric" width="5%">
-                <Tooltip title="(Listing - Offer) / Listing">
-                  <span>Discount</span>
-                </Tooltip>
-              </StyledTableCell>
-              <StyledTableCell className="header metric" width="5%">Score</StyledTableCell>
-              <StyledTableCell className="header metric" width="14%">Actions</StyledTableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedProperties.map((property) => (
-              <StyledTableRow key={property.id}>
-                <TableCell>
-                  <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
-                    <a 
-                      href={property.zillowLink} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      style={{ 
-                        color: '#1976d2', 
-                        textDecoration: 'none',
-                        fontWeight: 500
-                      }}
-                    >
-                      {property.address}
-                    </a>
+      {/* Desktop view - Table */}
+      <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>
+        <TableContainer 
+          component={Paper} 
+          elevation={2} 
+          sx={{ 
+            borderRadius: 2, 
+            mb: 4, 
+            overflow: 'hidden',
+            width: '100%'
+          }}
+        >
+          <Table size="medium" sx={{ minWidth: 1200, tableLayout: 'fixed' }}>
+            <TableHead>
+              <TableRow>
+                <StyledTableCell className="header" width="14%">Address</StyledTableCell>
+                <StyledTableCell className="header" width="9%">Status</StyledTableCell>
+                <StyledTableCell className="header" width="7%">Offer Price</StyledTableCell>
+                <StyledTableCell className="header" width="6%">Rehab Costs</StyledTableCell>
+                <StyledTableCell className="header" width="6%">Potential Rent</StyledTableCell>
+                <StyledTableCell className="header" width="6%">ARV</StyledTableCell>
+                <StyledTableCell className="header metric" width="7%">
+                  <Tooltip title="Hover over values to see the estimated rent range from Rentcast">
+                    <span>Estimated Rent</span>
                   </Tooltip>
-                </TableCell>
-                <TableCell>
-                  <StatusChip 
-                    label={property.status} 
-                    status={property.status} 
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={`Listing Price: ${formatCurrency(property.listingPrice)}`} arrow placement="top">
-                    <Box component="span">
-                      {formatCurrency(property.offerPrice)}
-                    </Box>
+                </StyledTableCell>
+                <StyledTableCell className="header metric" width="7%">
+                  <Tooltip title="Hover over values to see the estimated price range from Rentcast">
+                    <span>Estimated Price</span>
                   </Tooltip>
-                </TableCell>
-                <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
-                <TableCell>{formatCurrency(property.potentialRent)}</TableCell>
-                <TableCell>{formatCurrency(property.arv)}</TableCell>
-                <TableCell className="metric">
-                  {property.hasRentcastData ? (
-                    <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.rentLow)} - ${formatCurrency(property.rentCastEstimates.rentHigh)}`}>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {formatCurrency(property.rentCastEstimates.rent)}
-                        <Icons.Check color="success" sx={{ fontSize: 16, ml: 0.5 }} />
+                </StyledTableCell>
+                <StyledTableCell className="header metric" width="5%">
+                  <Tooltip title="Monthly Rent / (Offer Price + Rehab)">
+                    <span>Rent Ratio</span>
+                  </Tooltip>
+                </StyledTableCell>
+                <StyledTableCell className="header metric" width="5%">
+                  <Tooltip title="(Offer Price + Rehab) / ARV">
+                    <span>ARV Ratio</span>
+                  </Tooltip>
+                </StyledTableCell>
+                <StyledTableCell className="header metric" width="7%">
+                  <Tooltip title="Amount left invested in the property after refinance">
+                    <span>Cash Remaining</span>
+                  </Tooltip>
+                </StyledTableCell>
+                <StyledTableCell className="header metric" width="5%">
+                  <Tooltip title="(Listing - Offer) / Listing">
+                    <span>Discount</span>
+                  </Tooltip>
+                </StyledTableCell>
+                <StyledTableCell className="header metric" width="5%">Score</StyledTableCell>
+                <StyledTableCell className="header metric" width="14%">Actions</StyledTableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {sortedProperties.map((property) => (
+                <StyledTableRow key={property.id}>
+                  <TableCell>
+                    <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
+                      <a 
+                        href={property.zillowLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ 
+                          color: '#1976d2', 
+                          textDecoration: 'none',
+                          fontWeight: 500
+                        }}
+                      >
+                        {property.address}
+                      </a>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <StatusChip 
+                      label={property.status} 
+                      status={property.status} 
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={`Listing Price: ${formatCurrency(property.listingPrice)}`} arrow placement="top">
+                      <Box component="span">
+                        {formatCurrency(property.offerPrice)}
                       </Box>
                     </Tooltip>
-                  ) : (
-                    formatCurrency(property.rentCastEstimates.rent)
-                  )}
-                </TableCell>
-                <TableCell className="metric">
-                  {property.hasRentcastData ? (
-                    <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.priceLow)} - ${formatCurrency(property.rentCastEstimates.priceHigh)}`}>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {formatCurrency(property.rentCastEstimates.price)}
-                        <Icons.Check color="success" sx={{ fontSize: 16, ml: 0.5 }} />
-                      </Box>
-                    </Tooltip>
-                  ) : (
-                    formatCurrency(property.rentCastEstimates.price)
-                  )}
-                </TableCell>
-                <TableCell className="metric">
-                  <Typography sx={{ 
-                    color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))
-                  }}>
-                    {formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}
-                  </Typography>
-                </TableCell>
-                <TableCell className="metric">
-                  <Typography sx={{ 
-                    color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))
-                  }}>
-                    {formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}
-                  </Typography>
-                </TableCell>
-                <TableCell className="metric">
-                  <Tooltip 
-                    title={
-                      <>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Financing Details:</Typography>
-                        <Typography variant="body2">Down Payment: {formatCurrency(calculateDownPayment(property.offerPrice, property.rehabCosts))}</Typography>
-                        <Typography variant="body2">Loan Amount: {formatCurrency(calculateLoanAmount(property.offerPrice, property.rehabCosts))}</Typography>
-                        <Typography variant="body2">New Loan: {formatCurrency(calculateNewLoan(property.arv))}</Typography>
-                        <Typography variant="body2">Cash to Pull Out: {formatCurrency(calculateCashToPullOut(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
-                        <Typography variant="body2">Home Equity: {formatCurrency(calculateHomeEquity(property.arv))}</Typography>
-                      </>
-                    } 
-                    arrow 
-                    placement="top"
-                  >
-                    <Box component="span" sx={{ 
-                      color: getCashRemainingColor(calculateCashRemaining(property.offerPrice, property.rehabCosts, property.arv))
+                  </TableCell>
+                  <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
+                  <TableCell>{formatCurrency(property.potentialRent)}</TableCell>
+                  <TableCell>{formatCurrency(property.arv)}</TableCell>
+                  <TableCell className="metric">
+                    {property.hasRentcastData ? (
+                      <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.rentLow)} - ${formatCurrency(property.rentCastEstimates.rentHigh)}`}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {formatCurrency(property.rentCastEstimates.rent)}
+                          <Icons.Check color="success" sx={{ fontSize: 16, ml: 0.5 }} />
+                        </Box>
+                      </Tooltip>
+                    ) : (
+                      formatCurrency(property.rentCastEstimates.rent)
+                    )}
+                  </TableCell>
+                  <TableCell className="metric">
+                    {property.hasRentcastData ? (
+                      <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.priceLow)} - ${formatCurrency(property.rentCastEstimates.priceHigh)}`}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {formatCurrency(property.rentCastEstimates.price)}
+                          <Icons.Check color="success" sx={{ fontSize: 16, ml: 0.5 }} />
+                        </Box>
+                      </Tooltip>
+                    ) : (
+                      formatCurrency(property.rentCastEstimates.price)
+                    )}
+                  </TableCell>
+                  <TableCell className="metric">
+                    <Typography sx={{ 
+                      color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))
                     }}>
-                      {formatCurrency(calculateCashRemaining(property.offerPrice, property.rehabCosts, property.arv))}
+                      {formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}
+                    </Typography>
+                  </TableCell>
+                  <TableCell className="metric">
+                    <Typography sx={{ 
+                      color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))
+                    }}>
+                      {formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}
+                    </Typography>
+                  </TableCell>
+                  <TableCell className="metric">
+                    <Tooltip 
+                      title={
+                        <>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Financing Details:</Typography>
+                          <Typography variant="body2">Down Payment: {formatCurrency(calculateDownPayment(property.offerPrice, property.rehabCosts))}</Typography>
+                          <Typography variant="body2">Loan Amount: {formatCurrency(calculateLoanAmount(property.offerPrice, property.rehabCosts))}</Typography>
+                          <Typography variant="body2">New Loan: {formatCurrency(calculateNewLoan(property.arv))}</Typography>
+                          <Typography variant="body2">Cash to Pull Out: {formatCurrency(calculateCashToPullOut(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
+                          <Typography variant="body2">Home Equity: {formatCurrency(calculateHomeEquity(property.arv))}</Typography>
+                        </>
+                      } 
+                      arrow 
+                      placement="top"
+                    >
+                      <Box component="span" sx={{ 
+                        color: getCashRemainingColor(calculateCashRemaining(property.offerPrice, property.rehabCosts, property.arv))
+                      }}>
+                        {formatCurrency(calculateCashRemaining(property.offerPrice, property.rehabCosts, property.arv))}
+                      </Box>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell className="metric">{formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}</TableCell>
+                  <TableCell className="metric">
+                    <Typography sx={{ 
+                      color: getScoreColor(property.score)
+                    }}>
+                      {property.score}/10
+                    </Typography>
+                  </TableCell>
+                  <TableCell className="metric">
+                    <Box sx={{ 
+                      display: 'flex',
+                      gap: 1
+                    }}>
+                      <Tooltip title="Edit Property">
+                        <ActionIconButton
+                          color="primary"
+                          onClick={() => handleEditProperty(property)}
+                          size="small"
+                        >
+                          <Icons.Edit fontSize="small" />
+                        </ActionIconButton>
+                      </Tooltip>
+                      <Tooltip title="Archive Property">
+                        <DeleteIconButton
+                          color="secondary"
+                          onClick={() => handleArchive(property.id)}
+                          size="small"
+                        >
+                          <Icons.Archive fontSize="small" />
+                        </DeleteIconButton>
+                      </Tooltip>
+                      <Tooltip title="Update Rentcast Data">
+                        <ActionIconButton
+                          color="primary"
+                          onClick={() => handleUpdateRentcast(property.id)}
+                          size="small"
+                        >
+                          <Icons.Refresh fontSize="small" />
+                        </ActionIconButton>
+                      </Tooltip>
+                      <Tooltip title="Send to Calculator">
+                        <ActionIconButton
+                          color="primary"
+                          onClick={() => handleSendToCalculator(property)}
+                          size="small"
+                        >
+                          <Icons.Calculate fontSize="small" />
+                        </ActionIconButton>
+                      </Tooltip>
                     </Box>
-                  </Tooltip>
-                </TableCell>
-                <TableCell className="metric">{formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}</TableCell>
-                <TableCell className="metric">
-                  <Typography sx={{ 
-                    color: getScoreColor(property.score)
-                  }}>
-                    {property.score}/10
-                  </Typography>
-                </TableCell>
-                <TableCell className="metric">
-                  <Box sx={{ 
-                    display: 'flex',
-                    gap: 1
-                  }}>
-                    <Tooltip title="Edit Property">
-                      <ActionIconButton
-                        color="primary"
-                        onClick={() => handleEditProperty(property)}
-                        size="small"
-                      >
-                        <Icons.Edit fontSize="small" />
-                      </ActionIconButton>
-                    </Tooltip>
-                    <Tooltip title="Archive Property">
-                      <DeleteIconButton
-                        color="secondary"
-                        onClick={() => handleArchive(property.id)}
-                        size="small"
-                      >
-                        <Icons.Archive fontSize="small" />
-                      </DeleteIconButton>
-                    </Tooltip>
-                    <Tooltip title="Update Rentcast Data">
-                      <ActionIconButton
-                        color="primary"
-                        onClick={() => handleUpdateRentcast(property.id)}
-                        size="small"
-                      >
-                        <Icons.Refresh fontSize="small" />
-                      </ActionIconButton>
-                    </Tooltip>
-                    <Tooltip title="Send to Calculator">
-                      <ActionIconButton
-                        color="primary"
-                        onClick={() => handleSendToCalculator(property)}
-                        size="small"
-                      >
-                        <Icons.Calculate fontSize="small" />
-                      </ActionIconButton>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-              </StyledTableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                  </TableCell>
+                </StyledTableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+
+      {/* Mobile & Tablet view - Cards */}
+      <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'column', gap: 2 }}>
+        {sortedProperties.map((property) => (
+          <Paper 
+            key={property.id}
+            elevation={2}
+            sx={{ 
+              borderRadius: 2, 
+              overflow: 'hidden',
+              p: 2
+            }}
+          >
+            {/* Card Header with Status and Score */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <StatusChip 
+                label={property.status} 
+                status={property.status} 
+                size="small"
+              />
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                backgroundColor: theme.palette.primary.light,
+                color: '#fff',
+                p: 0.5,
+                px: 1,
+                borderRadius: 1
+              }}>
+                <Typography sx={{ 
+                  color: getScoreColor(property.score),
+                  fontWeight: 'bold',
+                  mr: 0.5
+                }}>
+                  {property.score}/10
+                </Typography>
+                <Typography variant="body2">Score</Typography>
+              </Box>
+            </Box>
+
+            {/* Address with Zillow link */}
+            <Typography 
+              variant="h6" 
+              gutterBottom
+              component="a"
+              href={property.zillowLink}
+              target="_blank" 
+              rel="noopener noreferrer"
+              sx={{
+                color: '#1976d2', 
+                textDecoration: 'none',
+                display: 'block',
+                mb: 2
+              }}
+            >
+              {property.address}
+            </Typography>
+
+            {/* Financial details grid */}
+            <Box sx={{ 
+              display: 'grid', 
+              gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' },
+              gap: 2,
+              mb: 2
+            }}>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Offer Price</Typography>
+                <Typography variant="body1" fontWeight="medium">
+                  {formatCurrency(property.offerPrice)}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Rehab Costs</Typography>
+                <Typography variant="body1" fontWeight="medium">
+                  {formatCurrency(property.rehabCosts)}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">ARV</Typography>
+                <Typography variant="body1" fontWeight="medium">
+                  {formatCurrency(property.arv)}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Potential Rent</Typography>
+                <Typography variant="body1" fontWeight="medium">
+                  {formatCurrency(property.potentialRent)}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Rent Ratio</Typography>
+                <Typography 
+                  variant="body1" 
+                  fontWeight="medium"
+                  sx={{ 
+                    color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))
+                  }}
+                >
+                  {formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">ARV Ratio</Typography>
+                <Typography 
+                  variant="body1" 
+                  fontWeight="medium"
+                  sx={{ 
+                    color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))
+                  }}
+                >
+                  {formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Notes section */}
+            {property.notes && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary">Notes</Typography>
+                <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                  {property.notes}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Actions */}
+            <Box sx={{ 
+              display: 'flex',
+              gap: 1,
+              justifyContent: 'flex-end',
+              mt: 2
+            }}>
+              <Button
+                variant="outlined"
+                startIcon={<Icons.Edit />}
+                size="small"
+                onClick={() => handleEditProperty(property)}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<Icons.Archive />}
+                size="small"
+                onClick={() => handleArchive(property.id)}
+              >
+                Archive
+              </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<Icons.Update />}
+                size="small"
+                onClick={() => handleUpdateRentcast(property.id)}
+                disabled={property.hasRentcastData}
+              >
+                {property.hasRentcastData ? 'Updated' : 'Update Data'}
+              </Button>
+            </Box>
+          </Paper>
+        ))}
+      </Box>
 
       <Dialog 
         open={openDialog} 

@@ -109,6 +109,21 @@ const DeleteIconButton = styled(IconButton)(({ theme }) => ({
   }
 }));
 
+// Styled MenuItem for status dropdown
+const StyledMenuItem = styled(MenuItem)<{ statuscolor: string }>(({ statuscolor }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  '&::before': {
+    content: '""',
+    display: 'block',
+    width: '16px',
+    height: '16px',
+    borderRadius: '50%',
+    backgroundColor: statuscolor,
+  },
+}));
+
 const PropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -922,11 +937,32 @@ const PropertiesPage: React.FC = () => {
               <Select
                 value={newProperty.status}
                 onChange={(e) => setNewProperty({ ...newProperty, status: e.target.value as PropertyStatus })}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box 
+                      sx={{ 
+                        width: 16, 
+                        height: 16, 
+                        borderRadius: '50%', 
+                        backgroundColor: getStatusColor(selected as PropertyStatus),
+                      }} 
+                    />
+                    {selected}
+                  </Box>
+                )}
               >
-                <MenuItem value="Opportunity">Opportunity</MenuItem>
-                <MenuItem value="Soft Offer">Soft Offer</MenuItem>
-                <MenuItem value="Hard Offer">Hard Offer</MenuItem>
-                <MenuItem value="Rehab">Rehab</MenuItem>
+                <StyledMenuItem value="Opportunity" statuscolor={getStatusColor('Opportunity')}>
+                  Opportunity
+                </StyledMenuItem>
+                <StyledMenuItem value="Soft Offer" statuscolor={getStatusColor('Soft Offer')}>
+                  Soft Offer
+                </StyledMenuItem>
+                <StyledMenuItem value="Hard Offer" statuscolor={getStatusColor('Hard Offer')}>
+                  Hard Offer
+                </StyledMenuItem>
+                <StyledMenuItem value="Rehab" statuscolor={getStatusColor('Rehab')}>
+                  Rehab
+                </StyledMenuItem>
               </Select>
             </FormControl>
             <TextField

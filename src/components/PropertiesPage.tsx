@@ -475,6 +475,12 @@ const PropertiesPage: React.FC = () => {
     return '#F44336'; // Red for <= 6
   };
 
+  const getHomeEquityColor = (equity: number) => {
+    if (equity >= 65000) return '#4CAF50'; // Green for >= $65k
+    if (equity >= 45000) return '#FFC107'; // Yellow for >= $45k
+    return '#F44336'; // Red for < $45k
+  };
+
   // Send property data to calculator
   const handleSendToCalculator = (property: Property) => {
     const params = new URLSearchParams({
@@ -573,8 +579,8 @@ const PropertiesPage: React.FC = () => {
                   </Tooltip>
                 </StyledTableCell>
                 <StyledTableCell className="header metric" width="7%">
-                  <Tooltip title="Amount left invested in the property after refinance">
-                    <span>Cash Remaining</span>
+                  <Tooltip title="The equity you have in the property after refinance">
+                    <span>Home Equity</span>
                   </Tooltip>
                 </StyledTableCell>
                 <StyledTableCell className="header metric" width="5%">
@@ -669,16 +675,16 @@ const PropertiesPage: React.FC = () => {
                           <Typography variant="body2">Loan Amount: {formatCurrency(calculateLoanAmount(property.offerPrice, property.rehabCosts))}</Typography>
                           <Typography variant="body2">New Loan: {formatCurrency(calculateNewLoan(property.arv))}</Typography>
                           <Typography variant="body2">Cash to Pull Out: {formatCurrency(calculateCashToPullOut(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
-                          <Typography variant="body2">Home Equity: {formatCurrency(calculateHomeEquity(property.arv))}</Typography>
+                          <Typography variant="body2">Cash Remaining: {formatCurrency(calculateCashRemaining(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
                         </>
                       } 
                       arrow 
                       placement="top"
                     >
                       <Box component="span" sx={{ 
-                        color: getCashRemainingColor(calculateCashRemaining(property.offerPrice, property.rehabCosts, property.arv))
+                        color: getHomeEquityColor(calculateHomeEquity(property.arv))
                       }}>
-                        {formatCurrency(calculateCashRemaining(property.offerPrice, property.rehabCosts, property.arv))}
+                        {formatCurrency(calculateHomeEquity(property.arv))}
                       </Box>
                     </Tooltip>
                   </TableCell>
@@ -850,6 +856,16 @@ const PropertiesPage: React.FC = () => {
                   }}
                 >
                   {formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Home Equity</Typography>
+                <Typography 
+                  variant="body1" 
+                  fontWeight="medium"
+                  sx={{ color: getHomeEquityColor(calculateHomeEquity(property.arv)) }}
+                >
+                  {formatCurrency(calculateHomeEquity(property.arv))}
                 </Typography>
               </Box>
             </Box>

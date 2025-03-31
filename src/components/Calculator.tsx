@@ -396,13 +396,13 @@ const Calculator: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell colSpan={3}></TableCell>
-                  <TableCell sx={{ fontWeight: 500 }}>Cash remaining in property</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>Cash Remaining</TableCell>
                   <TableCell>${cashRemainingInProperty.toLocaleString()}</TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee' }}></TableCell>
                   <TableCell colSpan={3}></TableCell>
-                  <TableCell sx={{ fontWeight: 500 }}>Equity in home</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>Home Equity</TableCell>
                   <TableCell>${equityInHome.toLocaleString()}</TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
@@ -590,12 +590,6 @@ const Calculator: React.FC = () => {
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee' }}></TableCell>
                   <TableCell colSpan={2} sx={{ fontWeight: 600, fontSize: '1.05rem' }}>Cash Flow</TableCell>
                   <StyledTableCell className={cashFlowClass} sx={{ fontSize: '1.05rem' }}>${cashFlow.toFixed(0)}</StyledTableCell>
-                  <TableCell colSpan={2}></TableCell>
-                </StyledTableRow>
-                <StyledTableRow className="summary">
-                  <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee' }}></TableCell>
-                  <TableCell colSpan={2} sx={{ fontWeight: 600 }}>Ratio</TableCell>
-                  <TableCell>${cashFlowRatio}</TableCell>
                   <TableCell colSpan={2}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow className="summary">

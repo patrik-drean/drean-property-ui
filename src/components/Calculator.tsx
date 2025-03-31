@@ -88,7 +88,7 @@ const Calculator: React.FC = () => {
     closingCosts: 0,
     closingCostsPercent: 5,
     downPaymentPercent: 25,
-    interestRate: 8,
+    interestRate: 7,
     rentalIncome: 1900,
     propertyManagementFeePercent: 12,
     taxesPercent: 2.5,

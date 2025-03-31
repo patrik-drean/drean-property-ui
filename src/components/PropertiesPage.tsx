@@ -216,14 +216,17 @@ const PropertiesPage: React.FC = () => {
       score += 1;
     } 
 
-    // Cash remaining after refinance (1 point)
-    const downPayment = (property.offerPrice + property.rehabCosts) * 0.25; // 25% down payment
+    // Home Equity point (1 point)
+    // Calculate home equity based on our fixed cash remaining approach
+    const downPayment = (property.offerPrice + property.rehabCosts) * 0.25;
     const loanAmount = (property.offerPrice + property.rehabCosts) - downPayment;
-    const newLoan = property.arv * 0.75; // 75% of ARV
-    const cashToPullOut = newLoan - loanAmount;
-    const cashRemaining = downPayment - cashToPullOut;
-    
-    if (cashRemaining < 15000) { // Less than $15k cash remaining is good
+    const cashRemaining = 20000; // Fixed at $20,000
+    const cashToPullOut = downPayment - cashRemaining;
+    const newLoan = loanAmount + cashToPullOut;
+    const homeEquity = property.arv - newLoan;
+
+    // Award a point for good equity levels
+    if (homeEquity >= 65000) { // $65k or more equity is good
       score += 1;
     }
 
@@ -463,10 +466,9 @@ const PropertiesPage: React.FC = () => {
     return '#F44336'; // Red for > 85%
   };
 
-  const getCashRemainingColor = (amount: number) => {
-    if (amount < 15000) return '#4CAF50'; // Green for < $15k
-    if (amount < 25000) return '#FFC107'; // Yellow for < $25k
-    return '#F44336'; // Red for >= $25k
+  const getCashRemainingColor = () => {
+    // Always return the same color since cash remaining is fixed at $20,000
+    return '#FFC107'; // Yellow for $20k
   };
 
   const getScoreColor = (score: number) => {
@@ -483,11 +485,15 @@ const PropertiesPage: React.FC = () => {
 
   // Send property data to calculator
   const handleSendToCalculator = (property: Property) => {
+    // Calculate new loan percentage for the calculator
+    const newLoanPercent = Math.round(calculateNewLoanPercent(property.offerPrice, property.rehabCosts, property.arv) * 100);
+    
     const params = new URLSearchParams({
       offerPrice: property.offerPrice.toString(),
       rehabCosts: property.rehabCosts.toString(),
       potentialRent: property.potentialRent.toString(),
-      arv: property.arv.toString()
+      arv: property.arv.toString(),
+      newLoanPercent: newLoanPercent.toString()
     });
     navigate(`/calculator?${params.toString()}`);
   };
@@ -502,25 +508,33 @@ const PropertiesPage: React.FC = () => {
     return (offerPrice + rehabCosts) - downPayment;
   };
 
-  const calculateNewLoan = (arv: number) => {
-    return arv * 0.75;
+  const calculateCashRemaining = () => {
+    // Fixed at $20,000
+    return 20000;
+  };
+
+  const calculateNewLoan = (offerPrice: number, rehabCosts: number, arv: number) => {
+    // Instead of using a fixed 75% of ARV, calculate based on fixed cash remaining
+    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
+    const loanAmount = calculateLoanAmount(offerPrice, rehabCosts);
+    return loanAmount + (downPayment - calculateCashRemaining());
   };
 
   const calculateCashToPullOut = (offerPrice: number, rehabCosts: number, arv: number) => {
-    const loanAmount = calculateLoanAmount(offerPrice, rehabCosts);
-    const newLoan = calculateNewLoan(arv);
-    return newLoan - loanAmount;
-  };
-
-  const calculateCashRemaining = (offerPrice: number, rehabCosts: number, arv: number) => {
     const downPayment = calculateDownPayment(offerPrice, rehabCosts);
-    const cashToPullOut = calculateCashToPullOut(offerPrice, rehabCosts, arv);
-    return downPayment - cashToPullOut;
+    // Cash to pull out is downPayment minus fixed cash remaining
+    return downPayment - calculateCashRemaining();
   };
 
-  const calculateHomeEquity = (arv: number) => {
-    const newLoan = calculateNewLoan(arv);
+  const calculateHomeEquity = (offerPrice: number, rehabCosts: number, arv: number) => {
+    const newLoan = calculateNewLoan(offerPrice, rehabCosts, arv);
     return arv - newLoan;
+  };
+
+  const calculateNewLoanPercent = (offerPrice: number, rehabCosts: number, arv: number) => {
+    if (!arv) return 0;
+    const newLoan = calculateNewLoan(offerPrice, rehabCosts, arv);
+    return newLoan / arv;
   };
 
   return (
@@ -673,18 +687,19 @@ const PropertiesPage: React.FC = () => {
                           <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Financing Details:</Typography>
                           <Typography variant="body2">Down Payment: {formatCurrency(calculateDownPayment(property.offerPrice, property.rehabCosts))}</Typography>
                           <Typography variant="body2">Loan Amount: {formatCurrency(calculateLoanAmount(property.offerPrice, property.rehabCosts))}</Typography>
-                          <Typography variant="body2">New Loan: {formatCurrency(calculateNewLoan(property.arv))}</Typography>
+                          <Typography variant="body2">New Loan: {formatCurrency(calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
+                          <Typography variant="body2">New Loan %: {formatPercentage(calculateNewLoanPercent(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
                           <Typography variant="body2">Cash to Pull Out: {formatCurrency(calculateCashToPullOut(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
-                          <Typography variant="body2">Cash Remaining: {formatCurrency(calculateCashRemaining(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
+                          <Typography variant="body2">Cash Remaining: {formatCurrency(calculateCashRemaining())}</Typography>
                         </>
                       } 
                       arrow 
                       placement="top"
                     >
                       <Box component="span" sx={{ 
-                        color: getHomeEquityColor(calculateHomeEquity(property.arv))
+                        color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))
                       }}>
-                        {formatCurrency(calculateHomeEquity(property.arv))}
+                        {formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}
                       </Box>
                     </Tooltip>
                   </TableCell>
@@ -863,9 +878,9 @@ const PropertiesPage: React.FC = () => {
                 <Typography 
                   variant="body1" 
                   fontWeight="medium"
-                  sx={{ color: getHomeEquityColor(calculateHomeEquity(property.arv)) }}
+                  sx={{ color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv)) }}
                 >
-                  {formatCurrency(calculateHomeEquity(property.arv))}
+                  {formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}
                 </Typography>
               </Box>
             </Box>

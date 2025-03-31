@@ -105,6 +105,7 @@ const Calculator: React.FC = () => {
     const rehabCosts = params.get('rehabCosts');
     const potentialRent = params.get('potentialRent');
     const arv = params.get('arv');
+    const newLoanPercent = params.get('newLoanPercent');
 
     const updatedInputs = { ...inputs };
     let hasUpdates = false;
@@ -126,6 +127,11 @@ const Calculator: React.FC = () => {
     
     if (arv) {
       updatedInputs.afterRepairValue = parseInt(arv, 10);
+      hasUpdates = true;
+    }
+    
+    if (newLoanPercent) {
+      updatedInputs.newLoanPercent = parseInt(newLoanPercent, 10);
       hasUpdates = true;
     }
 
@@ -409,7 +415,7 @@ const Calculator: React.FC = () => {
                   <TableCell colSpan={3} sx={{ borderRight: '1px solid #eee' }}></TableCell>
                   <TableCell colSpan={3}></TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>ARV Ratio</TableCell>
-                  <TableCell>${arvRatio}%</TableCell>
+                  <TableCell>{arvRatio}%</TableCell>
                 </StyledTableRow>
 
                 {/* Cashflow Section */}

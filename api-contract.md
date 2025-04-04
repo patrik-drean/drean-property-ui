@@ -1,6 +1,6 @@
 # Property Analyzer API Contract
 
-Base URL: `http://localhost:5271`
+Base URL: `http://localhost:8080`
 
 ## Endpoints
 

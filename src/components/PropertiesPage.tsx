@@ -186,49 +186,44 @@ const PropertiesPage: React.FC = () => {
     return (listingPrice - offerPrice) / listingPrice;
   };
 
+  // Helper functions to calculate individual score components
+  const calculateRentRatioScore = (rentRatio: number): number => {
+    if (rentRatio >= 0.01) return 4; // 1% or higher
+    if (rentRatio >= 0.008) return 3; // Close to 1%
+    if (rentRatio >= 0.006) return 2; // Getting there
+    return 0;
+  };
+
+  const calculateARVRatioScore = (arvRatio: number): number => {
+    if (arvRatio <= 0.75) return 4; // 75% or lower is good
+    if (arvRatio <= 0.80) return 3;
+    if (arvRatio <= 0.85) return 2;
+    return 0;
+  };
+
+  const calculateHomeEquityScore = (homeEquity: number): number => {
+    if (homeEquity >= 65000) return 2; // $65k or more equity is good
+    if (homeEquity >= 50000) return 1;
+    return 0;
+  };
+
   const calculateScore = (property: Omit<Property, 'id'>) => {
     let score = 0;
-    const maxScore = 10;
     
-    // Rent to price ratio (4 points) - highest priority
+    // Rent to price ratio (4 points)
     const rentRatio = calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts);
-    if (rentRatio >= 0.01) { // 1% or higher
-      score += 4;
-    } else if (rentRatio >= 0.008) { // Close to 1%
-      score += 3;
-    } else if (rentRatio >= 0.006) { // Getting there
-      score += 2;
-    } 
+    const rentRatioScore = calculateRentRatioScore(rentRatio);
+    score += rentRatioScore;
 
     // ARV ratio (4 points)
     const arvRatio = calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv);
-    if (arvRatio <= 0.75) { // 75% or lower is good
-      score += 4;
-    } else if (arvRatio <= 0.80) {
-      score += 3;
-    } else if (arvRatio <= 0.85) {
-      score += 2;
-    }
+    const arvRatioScore = calculateARVRatioScore(arvRatio);
+    score += arvRatioScore;
 
-    // Discount (1 point)
-    const discount = calculateDiscount(property.listingPrice, property.offerPrice);
-    if (discount >= 0.1) { // 10% or higher discount
-      score += 1;
-    } 
-
-    // Home Equity point (1 point)
-    // Calculate home equity based on our fixed cash remaining approach
-    const downPayment = (property.offerPrice + property.rehabCosts) * 0.25;
-    const loanAmount = (property.offerPrice + property.rehabCosts) - downPayment;
-    const cashRemaining = 20000; // Fixed at $20,000
-    const cashToPullOut = downPayment - cashRemaining;
-    const newLoan = loanAmount + cashToPullOut;
-    const homeEquity = property.arv - newLoan;
-
-    // Award a point for good equity levels
-    if (homeEquity >= 65000) { // $65k or more equity is good
-      score += 1;
-    }
+    // Home Equity (2 points)
+    const homeEquity = calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv);
+    const homeEquityScore = calculateHomeEquityScore(homeEquity);
+    score += homeEquityScore;
 
     // Ensure minimum score of 1
     return Math.max(1, score);
@@ -319,7 +314,7 @@ const PropertiesPage: React.FC = () => {
           score: propertyWithScore.score,
           zillowLink: propertyWithScore.zillowLink,
           hasRentcastData: propertyWithScore.hasRentcastData,
-          // Send a new object for rentCastEstimates to avoid tracking issues
+                    // Send a new object for rentCastEstimates to avoid tracking issues
           rentCastEstimates: {
             price: propertyWithScore.rentCastEstimates.price || 0,
             priceLow: propertyWithScore.rentCastEstimates.priceLow || 0,
@@ -705,11 +700,33 @@ const PropertiesPage: React.FC = () => {
                   </TableCell>
                   <TableCell className="metric">{formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}</TableCell>
                   <TableCell className="metric">
-                    <Typography sx={{ 
-                      color: getScoreColor(property.score)
-                    }}>
-                      {property.score}/10
-                    </Typography>
+                    <Tooltip 
+                      title={
+                        <>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Score Breakdown:</Typography>
+                          <Typography variant="body2">
+                            Rent Ratio: {calculateRentRatioScore(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}/4 points
+                            {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
+                          </Typography>
+                          <Typography variant="body2">
+                            ARV Ratio: {calculateARVRatioScore(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}/4 points
+                            {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
+                          </Typography>
+                          <Typography variant="body2">
+                            Home Equity: {calculateHomeEquityScore(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}/2 points
+                            {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
+                          </Typography>
+                        </>
+                      } 
+                      arrow 
+                      placement="top"
+                    >
+                      <Typography sx={{ 
+                        color: getScoreColor(property.score)
+                      }}>
+                        {property.score}/10
+                      </Typography>
+                    </Tooltip>
                   </TableCell>
                   <TableCell className="metric">
                     <Box sx={{ 
@@ -789,13 +806,35 @@ const PropertiesPage: React.FC = () => {
                 px: 1,
                 borderRadius: 1
               }}>
-                <Typography sx={{ 
-                  color: getScoreColor(property.score),
-                  fontWeight: 'bold',
-                  mr: 0.5
-                }}>
-                  {property.score}/10
-                </Typography>
+                <Tooltip 
+                  title={
+                    <>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Score Breakdown:</Typography>
+                      <Typography variant="body2">
+                        Rent Ratio: {calculateRentRatioScore(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}/4 points
+                        {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
+                      </Typography>
+                      <Typography variant="body2">
+                        ARV Ratio: {calculateARVRatioScore(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}/4 points
+                        {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
+                      </Typography>
+                      <Typography variant="body2">
+                        Home Equity: {calculateHomeEquityScore(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}/2 points
+                        {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
+                      </Typography>
+                    </>
+                  } 
+                  arrow 
+                  placement="top"
+                >
+                  <Typography sx={{ 
+                    color: getScoreColor(property.score),
+                    fontWeight: 'bold',
+                    mr: 0.5
+                  }}>
+                    {property.score}/10
+                  </Typography>
+                </Tooltip>
                 <Typography variant="body2">Score</Typography>
               </Box>
             </Box>

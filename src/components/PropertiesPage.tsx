@@ -722,9 +722,9 @@ const PropertiesPage: React.FC = () => {
                       placement="top"
                     >
                       <Typography sx={{ 
-                        color: getScoreColor(property.score)
+                        color: getScoreColor(calculateScore(property))
                       }}>
-                        {property.score}/10
+                        {calculateScore(property)}/10
                       </Typography>
                     </Tooltip>
                   </TableCell>
@@ -828,11 +828,11 @@ const PropertiesPage: React.FC = () => {
                   placement="top"
                 >
                   <Typography sx={{ 
-                    color: getScoreColor(property.score),
+                    color: getScoreColor(calculateScore(property)),
                     fontWeight: 'bold',
                     mr: 0.5
                   }}>
-                    {property.score}/10
+                    {calculateScore(property)}/10
                   </Typography>
                 </Tooltip>
                 <Typography variant="body2">Score</Typography>

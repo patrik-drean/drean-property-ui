@@ -303,9 +303,10 @@ const PropertiesPage: React.FC = () => {
       return orderA - orderB;
     }
     
-    // Then sort by stored score in descending order
-    // Using the stored score instead of calculating it again
-    return b.score - a.score;
+    // Then sort by calculated score in descending order
+    const scoreA = calculateScore(a);
+    const scoreB = calculateScore(b);
+    return scoreB - scoreA;
   });
 
   useEffect(() => {

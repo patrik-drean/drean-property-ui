@@ -186,6 +186,45 @@ const PropertiesPage: React.FC = () => {
     return (listingPrice - offerPrice) / listingPrice;
   };
 
+  // Helper functions for the newly calculated fields
+  const calculateDownPayment = (offerPrice: number, rehabCosts: number) => {
+    return (offerPrice + rehabCosts) * 0.25;
+  };
+
+  const calculateLoanAmount = (offerPrice: number, rehabCosts: number) => {
+    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
+    return (offerPrice + rehabCosts) - downPayment;
+  };
+
+  const calculateCashRemaining = () => {
+    // Fixed at $20,000
+    return 20000;
+  };
+
+  const calculateNewLoan = (offerPrice: number, rehabCosts: number, arv: number) => {
+    // Instead of using a fixed 75% of ARV, calculate based on fixed cash remaining
+    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
+    const loanAmount = calculateLoanAmount(offerPrice, rehabCosts);
+    return loanAmount + (downPayment - calculateCashRemaining());
+  };
+
+  const calculateCashToPullOut = (offerPrice: number, rehabCosts: number, arv: number) => {
+    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
+    // Cash to pull out is downPayment minus fixed cash remaining
+    return downPayment - calculateCashRemaining();
+  };
+
+  const calculateHomeEquity = (offerPrice: number, rehabCosts: number, arv: number) => {
+    const newLoan = calculateNewLoan(offerPrice, rehabCosts, arv);
+    return arv - newLoan;
+  };
+
+  const calculateNewLoanPercent = (offerPrice: number, rehabCosts: number, arv: number) => {
+    if (!arv) return 0;
+    const newLoan = calculateNewLoan(offerPrice, rehabCosts, arv);
+    return newLoan / arv;
+  };
+
   // Helper functions to calculate individual score components
   const calculateRentRatioScore = (rentRatio: number): number => {
     if (rentRatio >= 0.01) return 4; // 1% or higher
@@ -258,7 +297,15 @@ const PropertiesPage: React.FC = () => {
   const sortedProperties = [...properties].sort((a, b) => {
     const orderA = getStatusOrder(a.status);
     const orderB = getStatusOrder(b.status);
-    return orderA - orderB;
+    
+    // First sort by status
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    
+    // Then sort by stored score in descending order
+    // Using the stored score instead of calculating it again
+    return b.score - a.score;
   });
 
   useEffect(() => {
@@ -491,45 +538,6 @@ const PropertiesPage: React.FC = () => {
       newLoanPercent: newLoanPercent.toString()
     });
     navigate(`/calculator?${params.toString()}`);
-  };
-
-  // Helper functions for the newly calculated fields
-  const calculateDownPayment = (offerPrice: number, rehabCosts: number) => {
-    return (offerPrice + rehabCosts) * 0.25;
-  };
-
-  const calculateLoanAmount = (offerPrice: number, rehabCosts: number) => {
-    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
-    return (offerPrice + rehabCosts) - downPayment;
-  };
-
-  const calculateCashRemaining = () => {
-    // Fixed at $20,000
-    return 20000;
-  };
-
-  const calculateNewLoan = (offerPrice: number, rehabCosts: number, arv: number) => {
-    // Instead of using a fixed 75% of ARV, calculate based on fixed cash remaining
-    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
-    const loanAmount = calculateLoanAmount(offerPrice, rehabCosts);
-    return loanAmount + (downPayment - calculateCashRemaining());
-  };
-
-  const calculateCashToPullOut = (offerPrice: number, rehabCosts: number, arv: number) => {
-    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
-    // Cash to pull out is downPayment minus fixed cash remaining
-    return downPayment - calculateCashRemaining();
-  };
-
-  const calculateHomeEquity = (offerPrice: number, rehabCosts: number, arv: number) => {
-    const newLoan = calculateNewLoan(offerPrice, rehabCosts, arv);
-    return arv - newLoan;
-  };
-
-  const calculateNewLoanPercent = (offerPrice: number, rehabCosts: number, arv: number) => {
-    if (!arv) return 0;
-    const newLoan = calculateNewLoan(offerPrice, rehabCosts, arv);
-    return newLoan / arv;
   };
 
   return (

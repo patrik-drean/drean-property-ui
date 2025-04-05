@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Property } from '../types/property';
+import { Property, PropertyLead, CreatePropertyLead, UpdatePropertyLead, BatchCreatePropertyLeads, BatchCreateResponse } from '../types/property';
 
 // Use environment variables if available, otherwise use default local development URL
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
@@ -69,4 +69,34 @@ export const restoreProperty = async (id: string, property: Property): Promise<v
     score: property.score,
     zillowLink: property.zillowLink
   });
+};
+
+// Property Lead API Methods
+export const getPropertyLeads = async (): Promise<PropertyLead[]> => {
+  const response = await api.get<PropertyLead[]>('/api/PropertyLeads');
+  return response.data;
+};
+
+export const getPropertyLead = async (id: string): Promise<PropertyLead> => {
+  const response = await api.get<PropertyLead>(`/api/PropertyLeads/${id}`);
+  return response.data;
+};
+
+export const addPropertyLead = async (propertyLead: CreatePropertyLead): Promise<PropertyLead> => {
+  const response = await api.post<PropertyLead>('/api/PropertyLeads', propertyLead);
+  return response.data;
+};
+
+export const addPropertyLeadsBatch = async (batch: BatchCreatePropertyLeads): Promise<BatchCreateResponse> => {
+  const response = await api.post<BatchCreateResponse>('/api/PropertyLeads/batch', batch);
+  return response.data;
+};
+
+export const updatePropertyLead = async (id: string, propertyLead: UpdatePropertyLead): Promise<PropertyLead> => {
+  const response = await api.put<PropertyLead>(`/api/PropertyLeads/${id}`, propertyLead);
+  return response.data;
+};
+
+export const deletePropertyLead = async (id: string): Promise<void> => {
+  await api.delete(`/api/PropertyLeads/${id}`);
 }; 

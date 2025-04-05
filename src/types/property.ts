@@ -24,3 +24,43 @@ export interface Property {
     score: number;
     zillowLink: string;
 }
+
+export interface PropertyLead {
+    id: string;
+    address: string;
+    zillowLink: string;
+    listingPrice: number;
+    sellerPhone: string;
+    sellerEmail: string;
+    lastContactDate: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreatePropertyLead {
+    address: string;
+    zillowLink: string;
+    listingPrice: number;
+    sellerPhone: string;
+    sellerEmail: string;
+}
+
+export interface UpdatePropertyLead {
+    address: string;
+    zillowLink: string;
+    listingPrice: number;
+    sellerPhone: string;
+    sellerEmail: string;
+    lastContactDate: string | null;
+}
+
+export interface BatchCreatePropertyLeads {
+    leads: CreatePropertyLead[];
+}
+
+export interface BatchCreateResponse {
+    successCount: number;
+    leads: PropertyLead[];
+    errorCount: number;
+    errors: string[];
+}

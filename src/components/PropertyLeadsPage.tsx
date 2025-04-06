@@ -22,6 +22,7 @@ import {
   Box,
   Link,
   styled,
+  Checkbox,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { PropertyLead, CreatePropertyLead } from '../types/property';
@@ -66,6 +67,7 @@ const DeleteIconButton = styled(IconButton)(({ theme }) => ({
 
 const PropertyLeadsPage: React.FC = () => {
   const [propertyLeads, setPropertyLeads] = useState<PropertyLead[]>([]);
+  const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -84,6 +86,7 @@ const PropertyLeadsPage: React.FC = () => {
     message: '',
     severity: 'success' as 'success' | 'error',
   });
+  const [copiedToClipboard, setCopiedToClipboard] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -261,6 +264,82 @@ const PropertyLeadsPage: React.FC = () => {
     }
   };
 
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      setSelectedLeads(propertyLeads.map(lead => lead.id));
+    } else {
+      setSelectedLeads([]);
+    }
+  };
+
+  const handleSelectLead = (id: string) => {
+    setSelectedLeads(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(leadId => leadId !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (window.confirm(`Are you sure you want to delete ${selectedLeads.length} property leads?`)) {
+      try {
+        await Promise.all(selectedLeads.map(id => deletePropertyLead(id)));
+        setSnackbar({
+          open: true,
+          message: `Successfully deleted ${selectedLeads.length} property leads`,
+          severity: 'success',
+        });
+        setSelectedLeads([]);
+        fetchPropertyLeads();
+      } catch (err) {
+        console.error('Error deleting property leads:', err);
+        setSnackbar({
+          open: true,
+          message: 'Failed to delete some property leads',
+          severity: 'error',
+        });
+      }
+    }
+  };
+
+  const copyToClipboard = (text: string, successMessage: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedToClipboard(true);
+      setSnackbar({
+        open: true,
+        message: successMessage,
+        severity: 'success',
+      });
+      
+      setTimeout(() => {
+        setCopiedToClipboard(false);
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy text: ', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to copy to clipboard',
+        severity: 'error',
+      });
+    });
+  };
+
+  const copyPhoneNumber = (phone: string) => {
+    copyToClipboard(phone, 'Phone number copied to clipboard!');
+  };
+
+  const copyTemplatedMessage = (lead: PropertyLead) => {
+    const discountedPrice = Math.round(lead.listingPrice * 0.75);
+    const formattedPrice = formatCurrency(discountedPrice);
+    
+    const message = `Hi there! My name is Patrik. I really like this property and believe it has great potential. I'd like to explore an offer of ${formattedPrice}. I'm an experienced investor who is reliable and quick when it comes to closing. If this number is in the ballpark, I'd love to discuss further. Let me know what you and the seller think! Have a great day! 
+${lead.zillowLink || ''}`;
+    
+    copyToClipboard(message, 'Templated message copied to clipboard!');
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -281,14 +360,27 @@ const PropertyLeadsPage: React.FC = () => {
     <>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4" component="h1">Property Leads</Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Icons.Add />}
-          onClick={handleAddLead}
-        >
-          Add Lead
-        </Button>
+        <Box>
+          {selectedLeads.length > 0 && (
+            <Button
+              variant="contained"
+              color="error"
+              startIcon={<Icons.Delete />}
+              onClick={handleBulkDelete}
+              sx={{ mr: 2 }}
+            >
+              Delete Selected ({selectedLeads.length})
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Icons.Add />}
+            onClick={handleAddLead}
+          >
+            Add Lead
+          </Button>
+        </Box>
       </Box>
 
       <Paper elevation={2}>
@@ -296,9 +388,16 @@ const PropertyLeadsPage: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
+                <StyledTableCell className="header" padding="checkbox">
+                  <Checkbox
+                    color="primary"
+                    indeterminate={selectedLeads.length > 0 && selectedLeads.length < propertyLeads.length}
+                    checked={propertyLeads.length > 0 && selectedLeads.length === propertyLeads.length}
+                    onChange={handleSelectAll}
+                  />
+                </StyledTableCell>
                 <StyledTableCell className="header">Address</StyledTableCell>
                 <StyledTableCell className="header">Listing Price</StyledTableCell>
-                <StyledTableCell className="header">Listing</StyledTableCell>
                 <StyledTableCell className="header">Seller Contact</StyledTableCell>
                 <StyledTableCell className="header">Last Contact</StyledTableCell>
                 <StyledTableCell className="header">Actions</StyledTableCell>
@@ -316,36 +415,65 @@ const PropertyLeadsPage: React.FC = () => {
               ) : (
                 propertyLeads.map((lead) => (
                   <StyledTableRow key={lead.id}>
-                    <TableCell>{lead.address}</TableCell>
-                    <TableCell>{formatCurrency(lead.listingPrice)}</TableCell>
-                    <TableCell>
-                      {lead.zillowLink ? (
-                        <Link href={lead.zillowLink} target="_blank" rel="noopener noreferrer">
-                          {extractDomain(lead.zillowLink)}
-                        </Link>
-                      ) : (
-                        'N/A'
-                      )}
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        color="primary"
+                        checked={selectedLeads.includes(lead.id)}
+                        onChange={() => handleSelectLead(lead.id)}
+                      />
                     </TableCell>
                     <TableCell>
-                      {lead.sellerPhone && (
-                        <Tooltip title="Call Seller">
-                          <Link href={`tel:${lead.sellerPhone}`} sx={{ mr: 1 }}>
-                            <ActionIconButton size="small">
-                              <Icons.Phone fontSize="small" />
-                            </ActionIconButton>
-                          </Link>
-                        </Tooltip>
+                      {lead.zillowLink ? (
+                        <Link 
+                          href={lead.zillowLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          sx={{ 
+                            color: 'primary.main',
+                            textDecoration: 'none',
+                            '&:hover': {
+                              textDecoration: 'underline'
+                            }
+                          }}
+                        >
+                          {lead.address}
+                        </Link>
+                      ) : (
+                        lead.address
                       )}
-                      {lead.sellerEmail && (
-                        <Tooltip title="Email Seller">
-                          <Link href={`mailto:${lead.sellerEmail}`}>
-                            <ActionIconButton size="small">
-                              <Icons.Email fontSize="small" />
-                            </ActionIconButton>
-                          </Link>
-                        </Tooltip>
-                      )}
+                    </TableCell>
+                    <TableCell>{formatCurrency(lead.listingPrice)}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {lead.sellerPhone ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Tooltip title="Copy phone number">
+                              <Button
+                                variant="text"
+                                size="small"
+                                onClick={() => copyPhoneNumber(lead.sellerPhone)}
+                                sx={{ 
+                                  textTransform: 'none',
+                                  minWidth: 'auto',
+                                  padding: '4px 8px'
+                                }}
+                              >
+                                {lead.sellerPhone}
+                              </Button>
+                            </Tooltip>
+                            <Tooltip title="Copy templated message">
+                              <ActionIconButton 
+                                size="small"
+                                onClick={() => copyTemplatedMessage(lead)}
+                              >
+                                <Icons.Message fontSize="small" />
+                              </ActionIconButton>
+                            </Tooltip>
+                          </Box>
+                        ) : (
+                          'No phone'
+                        )}
+                      </Box>
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>

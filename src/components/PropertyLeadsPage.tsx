@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { PropertyLead, CreatePropertyLead } from '../types/property';
-import { getPropertyLeads, addPropertyLead, updatePropertyLead, deletePropertyLead } from '../services/api';
+import { getPropertyLeads, addPropertyLead, updatePropertyLead, deletePropertyLead, addProperty } from '../services/api';
 
 // Styled components for consistent UI elements
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -340,6 +340,44 @@ ${lead.zillowLink || ''}`;
     copyToClipboard(message, 'Templated message copied to clipboard!');
   };
 
+  const handleConvertToProperty = async (lead: PropertyLead) => {
+    try {
+      await addProperty({
+        address: lead.address,
+        status: 'Opportunity',
+        listingPrice: lead.listingPrice,
+        offerPrice: 0,
+        rehabCosts: 0,
+        potentialRent: 0,
+        arv: 0,
+        rentCastEstimates: {
+          price: 0,
+          priceLow: 0,
+          priceHigh: 0,
+          rent: 0,
+          rentLow: 0,
+          rentHigh: 0
+        },
+        hasRentcastData: false,
+        notes: '',
+        score: 0,
+        zillowLink: lead.zillowLink
+      });
+      setSnackbar({
+        open: true,
+        message: 'Successfully converted lead to property',
+        severity: 'success',
+      });
+    } catch (err) {
+      console.error('Error converting lead to property:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to convert lead to property',
+        severity: 'error',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -491,6 +529,15 @@ ${lead.zillowLink || ''}`;
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex' }}>
+                        <Tooltip title="Convert to Property">
+                          <ActionIconButton 
+                            size="small" 
+                            sx={{ mr: 1 }}
+                            onClick={() => handleConvertToProperty(lead)}
+                          >
+                            <Icons.Transform fontSize="small" />
+                          </ActionIconButton>
+                        </Tooltip>
                         <Tooltip title="Edit Lead">
                           <ActionIconButton 
                             size="small" 

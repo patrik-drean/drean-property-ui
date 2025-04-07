@@ -28,6 +28,8 @@ import {
   Chip,
   ChipProps,
   useTheme,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
@@ -150,6 +152,7 @@ const PropertiesPage: React.FC = () => {
     score: 0,
     zillowLink: ''
   });
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -541,6 +544,29 @@ const PropertiesPage: React.FC = () => {
     navigate(`/calculator?${params.toString()}`);
   };
 
+  // Helper function to format the message template
+  const formatMessageTemplate = (property: Property) => {
+    return `Got another potential proprety, what are your thoughts?
+- Seller says we could offer around ${formatCurrency(property.offerPrice)}
+- How much to repair? (Ideally under ${formatCurrency(property.rehabCosts)})
+- ARV potential? (Ideally ${formatCurrency(property.arv)}+)
+- How much can we rent? (Ideally ${formatCurrency(property.potentialRent)})
+- Any concerns with the area? (Should be at least C class)
+
+${property.zillowLink}`;
+  };
+
+  // Function to handle copying to clipboard
+  const handleCopyMessage = async (property: Property) => {
+    try {
+      const message = formatMessageTemplate(property);
+      await navigator.clipboard.writeText(message);
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Failed to copy message:', error);
+    }
+  };
+
   return (
     <Box sx={{ p: { xs: 1, md: 3 }, maxWidth: 1600, mx: 'auto' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -738,10 +764,7 @@ const PropertiesPage: React.FC = () => {
                     </Tooltip>
                   </TableCell>
                   <TableCell className="metric">
-                    <Box sx={{ 
-                      display: 'flex',
-                      gap: 1
-                    }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
                       <Tooltip title="Edit Property">
                         <ActionIconButton
                           color="primary"
@@ -776,6 +799,15 @@ const PropertiesPage: React.FC = () => {
                           size="small"
                         >
                           <Icons.Calculate fontSize="small" />
+                        </ActionIconButton>
+                      </Tooltip>
+                      <Tooltip title="Copy Property Message">
+                        <ActionIconButton
+                          color="primary"
+                          onClick={() => handleCopyMessage(property)}
+                          size="small"
+                        >
+                          <Icons.ContentCopy fontSize="small" />
                         </ActionIconButton>
                       </Tooltip>
                     </Box>
@@ -977,6 +1009,15 @@ const PropertiesPage: React.FC = () => {
               >
                 {property.hasRentcastData ? 'Updated' : 'Update Data'}
               </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<Icons.ContentCopy />}
+                size="small"
+                onClick={() => handleCopyMessage(property)}
+              >
+                Copy Message
+              </Button>
             </Box>
           </Paper>
         ))}
@@ -1119,6 +1160,17 @@ const PropertiesPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%' }}>
+          Message copied to clipboard!
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

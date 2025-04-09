@@ -97,6 +97,11 @@ const PropertyLeadsPage: React.FC = () => {
     }).format(value);
   };
 
+  const formatCurrencyInK = (value: number) => {
+    const inK = Math.round(value / 1000);
+    return `$${inK}K`;
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not contacted';
     const date = new Date(dateString);
@@ -332,7 +337,7 @@ const PropertyLeadsPage: React.FC = () => {
 
   const copyTemplatedMessage = (lead: PropertyLead) => {
     const discountedPrice = Math.round(lead.listingPrice * 0.75);
-    const formattedPrice = formatCurrency(discountedPrice);
+    const formattedPrice = formatCurrencyInK(discountedPrice);
     
     const message = `Hi there! My name is Patrik. I really like this property and believe it has great potential. I'd like to explore an offer of ${formattedPrice}. I'm an experienced investor who is reliable and quick when it comes to closing. If this number is in the ballpark, I'd love to discuss further. Let me know what you and the seller think! Have a great day! 
 ${lead.zillowLink || ''}`;
@@ -485,6 +490,14 @@ ${lead.zillowLink || ''}`;
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         {lead.sellerPhone ? (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Tooltip title="Copy templated message">
+                              <ActionIconButton 
+                                size="small"
+                                onClick={() => copyTemplatedMessage(lead)}
+                              >
+                                <Icons.Message fontSize="small" />
+                              </ActionIconButton>
+                            </Tooltip>
                             <Tooltip title="Copy phone number">
                               <Button
                                 variant="text"
@@ -498,14 +511,6 @@ ${lead.zillowLink || ''}`;
                               >
                                 {lead.sellerPhone}
                               </Button>
-                            </Tooltip>
-                            <Tooltip title="Copy templated message">
-                              <ActionIconButton 
-                                size="small"
-                                onClick={() => copyTemplatedMessage(lead)}
-                              >
-                                <Icons.Message fontSize="small" />
-                              </ActionIconButton>
                             </Tooltip>
                           </Box>
                         ) : (

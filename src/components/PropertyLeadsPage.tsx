@@ -151,6 +151,20 @@ const PropertyLeadsPage: React.FC = () => {
     fetchPropertyLeads();
   }, []);
 
+  // Add sorting function for property leads
+  const sortPropertyLeads = (leads: PropertyLead[]) => {
+    return [...leads].sort((a, b) => {
+      // If neither has been contacted, maintain original order
+      if (!a.lastContactDate && !b.lastContactDate) return 0;
+      // If a hasn't been contacted, it should come first
+      if (!a.lastContactDate) return -1;
+      // If b hasn't been contacted, it should come after
+      if (!b.lastContactDate) return 1;
+      // Otherwise sort by most recent contact date
+      return new Date(b.lastContactDate).getTime() - new Date(a.lastContactDate).getTime();
+    });
+  };
+
   const handleAddLead = () => {
     setIsEditing(false);
     setEditingId(null);
@@ -335,14 +349,41 @@ const PropertyLeadsPage: React.FC = () => {
     copyToClipboard(phone, 'Phone number copied to clipboard!');
   };
 
-  const copyTemplatedMessage = (lead: PropertyLead) => {
+  const copyTemplatedMessage = async (lead: PropertyLead) => {
     const discountedPrice = Math.round(lead.listingPrice * 0.75);
     const formattedPrice = formatCurrencyInK(discountedPrice);
     
     const message = `Hi there! My name is Patrik. I really like this property and believe it has great potential. I'd like to explore an offer of ${formattedPrice}. I'm an experienced investor who is reliable and quick when it comes to closing. If this number is in the ballpark, I'd love to discuss further. Let me know what you and the seller think! Have a great day! 
 ${lead.zillowLink || ''}`;
-    
-    copyToClipboard(message, 'Templated message copied to clipboard!');
+
+    try {
+      // First copy the message
+      await navigator.clipboard.writeText(message);
+      setSnackbar({
+        open: true,
+        message: 'Message copied to clipboard!',
+        severity: 'success',
+      });
+
+      // Wait a brief moment before copying the phone number
+      setTimeout(async () => {
+        if (lead.sellerPhone) {
+          await navigator.clipboard.writeText(lead.sellerPhone);
+          setSnackbar({
+            open: true,
+            message: 'Phone number copied to clipboard!',
+            severity: 'success',
+          });
+        }
+      }, 500); // Wait half a second before copying phone number
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to copy to clipboard',
+        severity: 'error',
+      });
+    }
   };
 
   const handleConvertToProperty = async (lead: PropertyLead) => {
@@ -456,7 +497,7 @@ ${lead.zillowLink || ''}`;
                   </TableCell>
                 </TableRow>
               ) : (
-                propertyLeads.map((lead) => (
+                sortPropertyLeads(propertyLeads).map((lead) => (
                   <StyledTableRow key={lead.id}>
                     <TableCell padding="checkbox">
                       <Checkbox

@@ -578,15 +578,27 @@ ${property.zillowLink}`;
   return (
     <Box sx={{ p: { xs: 1, md: 3 }, maxWidth: 1600, mx: 'auto' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setOpenDialog(true)}
-          startIcon={<Icons.Add />}
-          sx={{ borderRadius: 2 }}
-        >
-          Add Property
-        </Button>
+        <Typography variant="h4" component="h1">Properties</Typography>
+        <Box>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => navigate('/archived')}
+            startIcon={<Icons.Archive />}
+            sx={{ mr: 2, borderRadius: 2 }}
+          >
+            Archived Properties
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setOpenDialog(true)}
+            startIcon={<Icons.Add />}
+            sx={{ borderRadius: 2 }}
+          >
+            Add Property
+          </Button>
+        </Box>
       </Box>
 
       {/* Desktop view - Table */}

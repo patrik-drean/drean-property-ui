@@ -473,12 +473,23 @@ ${lead.zillowLink || ''}`;
             <TableHead>
               <TableRow>
                 <StyledTableCell className="header" padding="checkbox">
-                  <Checkbox
-                    color="primary"
-                    indeterminate={selectedLeads.length > 0 && selectedLeads.length < propertyLeads.length}
-                    checked={propertyLeads.length > 0 && selectedLeads.length === propertyLeads.length}
-                    onChange={handleSelectAll}
-                  />
+                  <Tooltip title="Select All Leads">
+                    <Checkbox
+                      color="default"
+                      indeterminate={selectedLeads.length > 0 && selectedLeads.length < propertyLeads.length}
+                      checked={propertyLeads.length > 0 && selectedLeads.length === propertyLeads.length}
+                      onChange={handleSelectAll}
+                      sx={{
+                        color: 'white',
+                        '&.Mui-checked': {
+                          color: 'white',
+                        },
+                        '&.MuiCheckbox-indeterminate': {
+                          color: 'white',
+                        }
+                      }}
+                    />
+                  </Tooltip>
                 </StyledTableCell>
                 <StyledTableCell className="header">Address</StyledTableCell>
                 <StyledTableCell className="header">Listing Price</StyledTableCell>

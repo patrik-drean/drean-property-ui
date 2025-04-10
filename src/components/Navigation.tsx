@@ -98,17 +98,6 @@ const Navigation: React.FC = () => {
           <ListItem 
             button 
             component={RouterLink} 
-            to="/archived"
-            selected={isActive('/archived')}
-          >
-            <ListItemIcon>
-              <ArchiveIcon color={isActive('/archived') ? 'primary' : 'inherit'} />
-            </ListItemIcon>
-            <ListItemText primary="Archived" />
-          </ListItem>
-          <ListItem 
-            button 
-            component={RouterLink} 
             to="/calculator"
             selected={isActive('/calculator')}
           >
@@ -185,15 +174,6 @@ const Navigation: React.FC = () => {
                   sx={getNavButtonStyle('/leads')}
                 >
                   Leads
-                </Button>
-                
-                <Button
-                  component={RouterLink}
-                  to="/archived"
-                  startIcon={<ArchiveIcon />}
-                  sx={getNavButtonStyle('/archived')}
-                >
-                  Archived
                 </Button>
                 
                 <Button

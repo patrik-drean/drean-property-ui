@@ -764,11 +764,17 @@ ${property.zillowLink}`;
                       arrow 
                       placement="top"
                     >
-                      <Typography sx={{ 
-                        color: getScoreColor(calculateScore(property))
+                      <Box sx={{ 
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        backgroundColor: getScoreBackgroundColor(calculateScore(property)),
+                        color: getScoreColor(calculateScore(property)),
+                        p: '4px 8px',
+                        borderRadius: 1,
+                        fontWeight: 'medium'
                       }}>
                         {calculateScore(property)}/10
-                      </Typography>
+                      </Box>
                     </Tooltip>
                   </TableCell>
                   <TableCell className="metric">

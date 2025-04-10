@@ -78,6 +78,20 @@ const getStatusColor = (status: PropertyStatus): string => {
   }
 };
 
+// Add new helper function for score background color
+const getScoreBackgroundColor = (score: number): string => {
+  if (score >= 9) return '#4CAF50'; // Green
+  if (score >= 7) return '#FFC107'; // Amber
+  return '#F44336'; // Red
+};
+
+// Update the getScoreColor function to ensure text contrast
+const getScoreColor = (score: number): string => {
+  if (score >= 9) return '#E8F5E9'; // Light green text for green background
+  if (score >= 7) return '#212121'; // Dark text for amber background
+  return '#FFEBEE'; // Light red text for red background
+};
+
 // Status chip component
 interface StatusChipProps extends ChipProps {
   status: PropertyStatus;
@@ -517,12 +531,6 @@ const PropertiesPage: React.FC = () => {
     return '#FFC107'; // Yellow for $20k
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 9) return '#4CAF50'; // Green for 9-10
-    if (score >= 7) return '#FFC107'; // Yellow for 7-8
-    return '#F44336'; // Red for <= 6
-  };
-
   const getHomeEquityColor = (equity: number) => {
     if (equity >= 65000) return '#4CAF50'; // Green for >= $65k
     if (equity >= 45000) return '#FFC107'; // Yellow for >= $45k
@@ -840,42 +848,20 @@ ${property.zillowLink}`;
               />
               <Box sx={{ 
                 display: 'flex', 
-                alignItems: 'center', 
-                backgroundColor: theme.palette.primary.light,
-                color: '#fff',
-                p: 0.5,
-                px: 1,
-                borderRadius: 1
+                alignItems: 'center',
+                backgroundColor: getScoreBackgroundColor(calculateScore(property)),
+                color: getScoreColor(calculateScore(property)),
+                p: 0.75,
+                px: 1.5,
+                borderRadius: 1,
+                fontWeight: 'medium'
               }}>
-                <Tooltip 
-                  title={
-                    <>
-                      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Score Breakdown:</Typography>
-                      <Typography variant="body2">
-                        Rent Ratio: {calculateRentRatioScore(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}/4 points
-                        {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
-                      </Typography>
-                      <Typography variant="body2">
-                        ARV Ratio: {calculateARVRatioScore(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}/4 points
-                        {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
-                      </Typography>
-                      <Typography variant="body2">
-                        Home Equity: {calculateHomeEquityScore(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}/2 points
-                        {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
-                      </Typography>
-                    </>
-                  } 
-                  arrow 
-                  placement="top"
-                >
-                  <Typography sx={{ 
-                    color: getScoreColor(calculateScore(property)),
-                    fontWeight: 'bold',
-                    mr: 0.5
-                  }}>
-                    {calculateScore(property)}/10
-                  </Typography>
-                </Tooltip>
+                <Typography sx={{ 
+                  fontWeight: 'bold',
+                  mr: 0.5
+                }}>
+                  {calculateScore(property)}/10
+                </Typography>
                 <Typography variant="body2">Score</Typography>
               </Box>
             </Box>
@@ -898,13 +884,19 @@ ${property.zillowLink}`;
               {property.address}
             </Typography>
 
-            {/* Financial details grid */}
+            {/* Primary Financial Details */}
             <Box sx={{ 
               display: 'grid', 
-              gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' },
+              gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(2, 1fr)' },
               gap: 2,
-              mb: 2
+              mb: 3
             }}>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Listing Price</Typography>
+                <Typography variant="body1" fontWeight="medium">
+                  {formatCurrency(property.listingPrice)}
+                </Typography>
+              </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary">Offer Price</Typography>
                 <Typography variant="body1" fontWeight="medium">
@@ -923,53 +915,158 @@ ${property.zillowLink}`;
                   {formatCurrency(property.arv)}
                 </Typography>
               </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Potential Rent</Typography>
-                <Typography variant="body1" fontWeight="medium">
-                  {formatCurrency(property.potentialRent)}
-                </Typography>
+            </Box>
+
+            {/* Rental Information */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Rental Information</Typography>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(2, 1fr)' },
+                gap: 2
+              }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Potential Rent</Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {formatCurrency(property.potentialRent)}
+                  </Typography>
+                </Box>
+                {property.hasRentcastData && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Rentcast Estimate</Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {formatCurrency(property.rentCastEstimates.rent)}
+                      <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                        ({formatCurrency(property.rentCastEstimates.rentLow)} - {formatCurrency(property.rentCastEstimates.rentHigh)})
+                      </Typography>
+                    </Typography>
+                  </Box>
+                )}
               </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Rent Ratio</Typography>
-                <Typography 
-                  variant="body1" 
-                  fontWeight="medium"
-                  sx={{ 
-                    color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))
-                  }}
-                >
-                  {formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}
-                </Typography>
+            </Box>
+
+            {/* Key Metrics */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Key Metrics</Typography>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(2, 1fr)' },
+                gap: 2
+              }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Rent Ratio</Typography>
+                  <Typography 
+                    variant="body1" 
+                    fontWeight="medium"
+                    sx={{ 
+                      color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))
+                    }}
+                  >
+                    {formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">ARV Ratio</Typography>
+                  <Typography 
+                    variant="body1" 
+                    fontWeight="medium"
+                    sx={{ 
+                      color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))
+                    }}
+                  >
+                    {formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Discount</Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Home Equity</Typography>
+                  <Typography 
+                    variant="body1" 
+                    fontWeight="medium"
+                    sx={{ color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv)) }}
+                  >
+                    {formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}
+                  </Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">ARV Ratio</Typography>
-                <Typography 
-                  variant="body1" 
-                  fontWeight="medium"
-                  sx={{ 
-                    color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))
-                  }}
-                >
-                  {formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}
-                </Typography>
+            </Box>
+
+            {/* Financing Details */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Financing Details</Typography>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(2, 1fr)' },
+                gap: 2
+              }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Down Payment</Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {formatCurrency(calculateDownPayment(property.offerPrice, property.rehabCosts))}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Loan Amount</Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {formatCurrency(calculateLoanAmount(property.offerPrice, property.rehabCosts))}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">New Loan</Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {formatCurrency(calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">New Loan %</Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {formatPercentage(calculateNewLoanPercent(property.offerPrice, property.rehabCosts, property.arv))}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Cash to Pull Out</Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {formatCurrency(calculateCashToPullOut(property.offerPrice, property.rehabCosts, property.arv))}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Cash Remaining</Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {formatCurrency(calculateCashRemaining())}
+                  </Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">Home Equity</Typography>
-                <Typography 
-                  variant="body1" 
-                  fontWeight="medium"
-                  sx={{ color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv)) }}
-                >
-                  {formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}
+            </Box>
+
+            {/* Score Breakdown */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Score Breakdown</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="body2">
+                  Rent Ratio: {calculateRentRatioScore(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}/4 points
+                  {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
+                </Typography>
+                <Typography variant="body2">
+                  ARV Ratio: {calculateARVRatioScore(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}/4 points
+                  {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
+                </Typography>
+                <Typography variant="body2">
+                  Home Equity: {calculateHomeEquityScore(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}/2 points
+                  {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
                 </Typography>
               </Box>
             </Box>
 
             {/* Notes section */}
             {property.notes && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" color="text.secondary">Notes</Typography>
-                <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>Notes</Typography>
+                <Typography variant="body2">
                   {property.notes}
                 </Typography>
               </Box>
@@ -977,9 +1074,9 @@ ${property.zillowLink}`;
 
             {/* Actions */}
             <Box sx={{ 
-              display: 'flex',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
               gap: 1,
-              justifyContent: 'flex-end',
               mt: 2
             }}>
               <Button
@@ -987,6 +1084,7 @@ ${property.zillowLink}`;
                 startIcon={<Icons.Edit />}
                 size="small"
                 onClick={() => handleEditProperty(property)}
+                fullWidth
               >
                 Edit
               </Button>
@@ -996,8 +1094,18 @@ ${property.zillowLink}`;
                 startIcon={<Icons.Archive />}
                 size="small"
                 onClick={() => handleArchive(property.id)}
+                fullWidth
               >
                 Archive
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<Icons.Calculate />}
+                size="small"
+                onClick={() => handleSendToCalculator(property)}
+                fullWidth
+              >
+                Calculator
               </Button>
               <Button
                 variant="outlined"
@@ -1006,6 +1114,7 @@ ${property.zillowLink}`;
                 size="small"
                 onClick={() => handleUpdateRentcast(property.id)}
                 disabled={property.hasRentcastData}
+                fullWidth
               >
                 {property.hasRentcastData ? 'Updated' : 'Update Data'}
               </Button>
@@ -1015,6 +1124,7 @@ ${property.zillowLink}`;
                 startIcon={<Icons.ContentCopy />}
                 size="small"
                 onClick={() => handleCopyMessage(property)}
+                fullWidth
               >
                 Copy Message
               </Button>

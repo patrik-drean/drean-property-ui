@@ -23,10 +23,19 @@ import {
   Link,
   styled,
   Checkbox,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { PropertyLead, CreatePropertyLead } from '../types/property';
-import { getPropertyLeads, addPropertyLead, updatePropertyLead, deletePropertyLead, addProperty } from '../services/api';
+import { 
+  getPropertyLeadsWithArchivedStatus, 
+  addPropertyLead, 
+  updatePropertyLead, 
+  deletePropertyLead, 
+  addProperty, 
+  archivePropertyLead 
+} from '../services/api';
 
 // Styled components for consistent UI elements
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -73,7 +82,8 @@ const PropertyLeadsPage: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Omit<PropertyLead, 'id' | 'createdAt' | 'updatedAt'>>({
+  const [showArchived, setShowArchived] = useState(false);
+  const [formData, setFormData] = useState<Omit<PropertyLead, 'id' | 'createdAt' | 'updatedAt' | 'archived' | 'tags' | 'convertedToProperty' | 'squareFootage'>>({
     address: '',
     zillowLink: '',
     listingPrice: 0,
@@ -137,7 +147,7 @@ const PropertyLeadsPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getPropertyLeads();
+      const data = await getPropertyLeadsWithArchivedStatus(showArchived);
       setPropertyLeads(data);
     } catch (err) {
       console.error('Error fetching property leads:', err);
@@ -149,18 +159,20 @@ const PropertyLeadsPage: React.FC = () => {
 
   useEffect(() => {
     fetchPropertyLeads();
-  }, []);
+  }, [showArchived]);
 
-  // Add sorting function for property leads
+  // Add sorting function for property leads - modified to handle archived status
   const sortPropertyLeads = (leads: PropertyLead[]) => {
     return [...leads].sort((a, b) => {
-      // If neither has been contacted, maintain original order
+      // First sort by archived status
+      if (a.archived !== b.archived) {
+        return a.archived ? 1 : -1; // Non-archived leads first
+      }
+      
+      // Then sort by last contact date
       if (!a.lastContactDate && !b.lastContactDate) return 0;
-      // If a hasn't been contacted, it should come first
       if (!a.lastContactDate) return -1;
-      // If b hasn't been contacted, it should come after
       if (!b.lastContactDate) return 1;
-      // Otherwise sort by most recent contact date
       return new Date(b.lastContactDate).getTime() - new Date(a.lastContactDate).getTime();
     });
   };
@@ -388,6 +400,7 @@ ${lead.zillowLink || ''}`;
 
   const handleConvertToProperty = async (lead: PropertyLead) => {
     try {
+      // First create the property
       await addProperty({
         address: lead.address,
         status: 'Opportunity',
@@ -409,11 +422,19 @@ ${lead.zillowLink || ''}`;
         score: 0,
         zillowLink: lead.zillowLink
       });
+
+      // Then mark the lead as converted
+      await updatePropertyLead(lead.id, {
+        ...lead,
+        convertedToProperty: true
+      });
+
       setSnackbar({
         open: true,
         message: 'Successfully converted lead to property',
         severity: 'success',
       });
+      fetchPropertyLeads();
     } catch (err) {
       console.error('Error converting lead to property:', err);
       setSnackbar({
@@ -422,6 +443,52 @@ ${lead.zillowLink || ''}`;
         severity: 'error',
       });
     }
+  };
+
+  const handleArchiveLead = async (id: string) => {
+    try {
+      await archivePropertyLead(id);
+      setSnackbar({
+        open: true,
+        message: 'Property lead archived successfully',
+        severity: 'success',
+      });
+      fetchPropertyLeads();
+    } catch (err) {
+      console.error('Error archiving property lead:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to archive property lead',
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleUnarchiveLead = async (id: string) => {
+    try {
+      // Unarchive by updating the lead with archived set to false
+      await updatePropertyLead(id, { 
+        ...propertyLeads.find(lead => lead.id === id)!,
+        archived: false
+      });
+      setSnackbar({
+        open: true,
+        message: 'Property lead unarchived successfully',
+        severity: 'success',
+      });
+      fetchPropertyLeads();
+    } catch (err) {
+      console.error('Error unarchiving property lead:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to unarchive property lead',
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleToggleShowArchived = () => {
+    setShowArchived(!showArchived);
   };
 
   if (loading) {
@@ -444,7 +511,18 @@ ${lead.zillowLink || ''}`;
     <>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4" component="h1">Property Leads</Typography>
-        <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showArchived}
+                onChange={handleToggleShowArchived}
+                color="primary"
+              />
+            }
+            label="Show Archived"
+            sx={{ mr: 2 }}
+          />
           {selectedLeads.length > 0 && (
             <Button
               variant="contained"
@@ -509,7 +587,35 @@ ${lead.zillowLink || ''}`;
                 </TableRow>
               ) : (
                 sortPropertyLeads(propertyLeads).map((lead) => (
-                  <StyledTableRow key={lead.id}>
+                  <StyledTableRow 
+                    key={lead.id}
+                    sx={{
+                      ...(lead.archived ? {
+                        opacity: 0.6,
+                        backgroundColor: '#f5f5f5',
+                        '&:hover': {
+                          backgroundColor: '#eeeeee',
+                        }
+                      } : {}),
+                      ...(lead.convertedToProperty ? {
+                        borderLeft: '4px solid #4caf50',
+                        '& td:first-of-type': {
+                          position: 'relative',
+                          '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            top: '50%',
+                            right: '8px',
+                            transform: 'translateY(-50%)',
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: '#4caf50',
+                          }
+                        }
+                      } : {})
+                    }}
+                  >
                     <TableCell padding="checkbox">
                       <Checkbox
                         color="primary"
@@ -586,15 +692,54 @@ ${lead.zillowLink || ''}`;
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex' }}>
-                        <Tooltip title="Convert to Property">
-                          <ActionIconButton 
-                            size="small" 
-                            sx={{ mr: 1 }}
-                            onClick={() => handleConvertToProperty(lead)}
-                          >
-                            <Icons.Transform fontSize="small" />
-                          </ActionIconButton>
-                        </Tooltip>
+                        {lead.archived ? (
+                          <Tooltip title="Unarchive Lead">
+                            <ActionIconButton 
+                              size="small" 
+                              sx={{ mr: 1 }}
+                              onClick={() => handleUnarchiveLead(lead.id)}
+                            >
+                              <Icons.Unarchive fontSize="small" />
+                            </ActionIconButton>
+                          </Tooltip>
+                        ) : (
+                          <>
+                            {!lead.convertedToProperty && (
+                              <Tooltip title="Convert to Property">
+                                <ActionIconButton 
+                                  size="small" 
+                                  sx={{ mr: 1 }}
+                                  onClick={() => handleConvertToProperty(lead)}
+                                >
+                                  <Icons.Transform fontSize="small" />
+                                </ActionIconButton>
+                              </Tooltip>
+                            )}
+                            {lead.convertedToProperty && (
+                              <Tooltip title="Already Converted to Property">
+                                <Box 
+                                  sx={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    mr: 1,
+                                    color: 'success.main' 
+                                  }}
+                                >
+                                  <Icons.CheckCircle fontSize="small" />
+                                </Box>
+                              </Tooltip>
+                            )}
+                            <Tooltip title="Archive Lead">
+                              <ActionIconButton 
+                                size="small" 
+                                sx={{ mr: 1 }}
+                                onClick={() => handleArchiveLead(lead.id)}
+                              >
+                                <Icons.Archive fontSize="small" />
+                              </ActionIconButton>
+                            </Tooltip>
+                          </>
+                        )}
                         <Tooltip title="Edit Lead">
                           <ActionIconButton 
                             size="small" 

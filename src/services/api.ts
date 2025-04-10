@@ -99,4 +99,15 @@ export const updatePropertyLead = async (id: string, propertyLead: UpdatePropert
 
 export const deletePropertyLead = async (id: string): Promise<void> => {
   await api.delete(`/api/PropertyLeads/${id}`);
+};
+
+export const archivePropertyLead = async (id: string): Promise<void> => {
+  await api.put(`/api/PropertyLeads/${id}/archive`);
+};
+
+export const getPropertyLeadsWithArchivedStatus = async (showArchived?: boolean): Promise<PropertyLead[]> => {
+  const response = await api.get<PropertyLead[]>('/api/PropertyLeads', {
+    params: { showArchived }
+  });
+  return response.data;
 }; 

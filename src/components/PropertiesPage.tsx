@@ -554,7 +554,7 @@ const PropertiesPage: React.FC = () => {
 
   // Helper function to format the message template
   const formatMessageTemplate = (property: Property) => {
-    return `Got another potential proprety, what are your thoughts?
+    return `
 - Seller says we could offer around ${formatCurrency(property.offerPrice)}
 - How much to repair? (Ideally under ${formatCurrency(property.rehabCosts)})
 - ARV potential? (Ideally ${formatCurrency(property.arv)}+)

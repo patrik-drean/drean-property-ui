@@ -35,6 +35,10 @@ export interface PropertyLead {
     lastContactDate: string | null;
     createdAt: string;
     updatedAt: string;
+    archived: boolean;
+    tags: string[];
+    convertedToProperty: boolean;
+    squareFootage: number | null;
 }
 
 export interface CreatePropertyLead {
@@ -43,6 +47,8 @@ export interface CreatePropertyLead {
     listingPrice: number;
     sellerPhone: string;
     sellerEmail: string;
+    tags?: string[];
+    squareFootage?: number | null;
 }
 
 export interface UpdatePropertyLead {
@@ -52,6 +58,10 @@ export interface UpdatePropertyLead {
     sellerPhone: string;
     sellerEmail: string;
     lastContactDate: string | null;
+    archived?: boolean;
+    tags?: string[];
+    convertedToProperty?: boolean;
+    squareFootage?: number | null;
 }
 
 export interface BatchCreatePropertyLeads {

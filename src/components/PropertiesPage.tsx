@@ -622,6 +622,7 @@ ${property.zillowLink}`;
               <TableRow>
                 <StyledTableCell className="header" width="14%">Address</StyledTableCell>
                 <StyledTableCell className="header" width="9%">Status</StyledTableCell>
+                <StyledTableCell className="header" width="6%">Square Feet</StyledTableCell>
                 <StyledTableCell className="header" width="7%">Offer Price</StyledTableCell>
                 <StyledTableCell className="header" width="6%">Rehab Costs</StyledTableCell>
                 <StyledTableCell className="header" width="6%">Potential Rent</StyledTableCell>
@@ -686,6 +687,7 @@ ${property.zillowLink}`;
                       size="small"
                     />
                   </TableCell>
+                  <TableCell>{property.squareFootage !== null ? property.squareFootage : ''}</TableCell>
                   <TableCell>
                     <Tooltip title={`Listing Price: ${formatCurrency(property.listingPrice)}`} arrow placement="top">
                       <Box component="span">
@@ -1093,6 +1095,20 @@ ${property.zillowLink}`;
                 </Typography>
               </Box>
             )}
+
+            {/* Additional Details */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Additional Details</Typography>
+              <Typography variant="body2" color="textSecondary">
+                Status: {property.status}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Square Feet: {property.squareFootage !== null ? property.squareFootage : 'N/A'}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Offer Price: {formatCurrency(property.offerPrice)}
+              </Typography>
+            </Box>
 
             {/* Actions */}
             <Box sx={{ 

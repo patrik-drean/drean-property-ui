@@ -811,15 +811,25 @@ ${lead.zillowLink || ''}`;
                     <TableCell>
                       <Box sx={{ display: 'flex' }}>
                         {lead.archived ? (
-                          <Tooltip title="Unarchive Lead">
-                            <ActionIconButton 
-                              size="small" 
-                              sx={{ mr: 1 }}
-                              onClick={() => handleUnarchiveLead(lead.id)}
-                            >
-                              <Icons.Unarchive fontSize="small" />
-                            </ActionIconButton>
-                          </Tooltip>
+                          <>
+                            <Tooltip title="Unarchive Lead">
+                              <ActionIconButton 
+                                size="small" 
+                                sx={{ mr: 1 }}
+                                onClick={() => handleUnarchiveLead(lead.id)}
+                              >
+                                <Icons.Unarchive fontSize="small" />
+                              </ActionIconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete Lead">
+                              <DeleteIconButton 
+                                size="small"
+                                onClick={() => handleDeleteLead(lead.id)}
+                              >
+                                <Icons.Delete fontSize="small" />
+                              </DeleteIconButton>
+                            </Tooltip>
+                          </>
                         ) : (
                           <>
                             {!lead.convertedToProperty && !locallyConvertedLeads.has(lead.id) && (
@@ -856,25 +866,17 @@ ${lead.zillowLink || ''}`;
                                 <Icons.Archive fontSize="small" />
                               </ActionIconButton>
                             </Tooltip>
+                            <Tooltip title="Edit Lead">
+                              <ActionIconButton 
+                                size="small" 
+                                sx={{ mr: 1 }}
+                                onClick={() => handleEditLead(lead)}
+                              >
+                                <Icons.Edit fontSize="small" />
+                              </ActionIconButton>
+                            </Tooltip>
                           </>
                         )}
-                        <Tooltip title="Edit Lead">
-                          <ActionIconButton 
-                            size="small" 
-                            sx={{ mr: 1 }}
-                            onClick={() => handleEditLead(lead)}
-                          >
-                            <Icons.Edit fontSize="small" />
-                          </ActionIconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete Lead">
-                          <DeleteIconButton 
-                            size="small"
-                            onClick={() => handleDeleteLead(lead.id)}
-                          >
-                            <Icons.Delete fontSize="small" />
-                          </DeleteIconButton>
-                        </Tooltip>
                       </Box>
                     </TableCell>
                   </StyledTableRow>

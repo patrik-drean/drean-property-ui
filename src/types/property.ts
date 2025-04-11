@@ -23,6 +23,7 @@ export interface Property {
     notes: string;
     score: number;
     zillowLink: string;
+    squareFootage: number | null;
 }
 
 export interface PropertyLead {

@@ -93,7 +93,9 @@ export const addPropertyLeadsBatch = async (batch: BatchCreatePropertyLeads): Pr
 };
 
 export const updatePropertyLead = async (id: string, propertyLead: UpdatePropertyLead): Promise<PropertyLead> => {
+  console.log(`Sending update for lead ${id}:`, propertyLead);
   const response = await api.put<PropertyLead>(`/api/PropertyLeads/${id}`, propertyLead);
+  console.log(`Update response for lead ${id}:`, response.data);
   return response.data;
 };
 
@@ -103,6 +105,10 @@ export const deletePropertyLead = async (id: string): Promise<void> => {
 
 export const archivePropertyLead = async (id: string): Promise<void> => {
   await api.put(`/api/PropertyLeads/${id}/archive`);
+};
+
+export const convertPropertyLead = async (id: string): Promise<void> => {
+  await api.put(`/api/PropertyLeads/${id}/convert`);
 };
 
 export const getPropertyLeadsWithArchivedStatus = async (showArchived?: boolean): Promise<PropertyLead[]> => {

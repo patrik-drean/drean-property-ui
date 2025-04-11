@@ -164,7 +164,8 @@ const PropertiesPage: React.FC = () => {
     hasRentcastData: false,
     notes: '',
     score: 0,
-    zillowLink: ''
+    zillowLink: '',
+    squareFootage: null
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const navigate = useNavigate();
@@ -353,7 +354,8 @@ const PropertiesPage: React.FC = () => {
       hasRentcastData: property.hasRentcastData,
       notes: property.notes,
       score: property.score,
-      zillowLink: property.zillowLink
+      zillowLink: property.zillowLink,
+      squareFootage: property.squareFootage
     });
     setOpenDialog(true);
   };
@@ -379,7 +381,7 @@ const PropertiesPage: React.FC = () => {
           score: propertyWithScore.score,
           zillowLink: propertyWithScore.zillowLink,
           hasRentcastData: propertyWithScore.hasRentcastData,
-                    // Send a new object for rentCastEstimates to avoid tracking issues
+          // Send a new object for rentCastEstimates to avoid tracking issues
           rentCastEstimates: {
             price: propertyWithScore.rentCastEstimates.price || 0,
             priceLow: propertyWithScore.rentCastEstimates.priceLow || 0,
@@ -387,7 +389,8 @@ const PropertiesPage: React.FC = () => {
             rent: propertyWithScore.rentCastEstimates.rent || 0,
             rentLow: propertyWithScore.rentCastEstimates.rentLow || 0,
             rentHigh: propertyWithScore.rentCastEstimates.rentHigh || 0
-          }
+          },
+          squareFootage: propertyWithScore.squareFootage
         };
         
         console.log('Updating property:', propertyToUpdate);
@@ -434,7 +437,8 @@ const PropertiesPage: React.FC = () => {
       hasRentcastData: false,
       notes: '',
       score: 0,
-      zillowLink: ''
+      zillowLink: '',
+      squareFootage: null
     });
   };
 
@@ -1262,6 +1266,17 @@ ${property.zillowLink}`;
               InputProps={{
                 startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
               }}
+            />
+            <TextField
+              fullWidth
+              label="Square Footage"
+              value={newProperty.squareFootage !== null ? newProperty.squareFootage : ''}
+              onChange={(e) => {
+                const value = e.target.value.trim() === '' ? null : parseInt(e.target.value, 10);
+                setNewProperty({ ...newProperty, squareFootage: value });
+              }}
+              margin="normal"
+              type="number"
             />
             <TextField
               fullWidth

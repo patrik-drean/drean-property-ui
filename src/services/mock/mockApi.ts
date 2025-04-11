@@ -22,7 +22,8 @@ const sampleProperties: Property[] = [
     hasRentcastData: true,
     notes: 'Good neighborhood, needs some work',
     score: 7,
-    zillowLink: 'https://www.zillow.com/homedetails/123-main-st'
+    zillowLink: 'https://www.zillow.com/homedetails/123-main-st',
+    squareFootage: 1800
   },
   {
     id: '2',
@@ -44,7 +45,8 @@ const sampleProperties: Property[] = [
     hasRentcastData: true,
     notes: 'Needs new roof and HVAC',
     score: 6,
-    zillowLink: 'https://www.zillow.com/homedetails/456-oak-ave'
+    zillowLink: 'https://www.zillow.com/homedetails/456-oak-ave',
+    squareFootage: 1400
   }
 ];
 
@@ -70,7 +72,8 @@ const archivedProperties: Property[] = [
     hasRentcastData: true,
     notes: 'Deal fell through - owner backed out',
     score: 5,
-    zillowLink: 'https://www.zillow.com/homedetails/789-pine-blvd'
+    zillowLink: 'https://www.zillow.com/homedetails/789-pine-blvd',
+    squareFootage: 1600
   }
 ];
 

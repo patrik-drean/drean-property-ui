@@ -34,7 +34,7 @@ import {
   updatePropertyLead, 
   deletePropertyLead, 
   addProperty, 
-  archivePropertyLead 
+  archivePropertyLead
 } from '../services/api';
 
 // Styled components for consistent UI elements
@@ -74,6 +74,19 @@ const DeleteIconButton = styled(IconButton)(({ theme }) => ({
   }
 }));
 
+// Add a new styled component for the converted badge
+const ConvertedBadge = styled(Box)(({ theme }) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  backgroundColor: theme.palette.success.main,
+  color: theme.palette.common.white,
+  borderRadius: '4px',
+  padding: '2px 6px',
+  fontSize: '0.75rem',
+  fontWeight: 'bold',
+  marginLeft: '8px',
+}));
+
 const PropertyLeadsPage: React.FC = () => {
   const [propertyLeads, setPropertyLeads] = useState<PropertyLead[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -97,6 +110,7 @@ const PropertyLeadsPage: React.FC = () => {
     severity: 'success' as 'success' | 'error',
   });
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
+  const [locallyConvertedLeads, setLocallyConvertedLeads] = useState<Set<string>>(new Set());
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -400,6 +414,18 @@ ${lead.zillowLink || ''}`;
 
   const handleConvertToProperty = async (lead: PropertyLead) => {
     try {
+      // Validate required fields are present
+      if (!lead.address) {
+        setSnackbar({
+          open: true,
+          message: 'Property address is required',
+          severity: 'error',
+        });
+        return;
+      }
+
+      console.log('Converting lead to property:', lead);
+
       // First create the property
       await addProperty({
         address: lead.address,
@@ -420,26 +446,89 @@ ${lead.zillowLink || ''}`;
         hasRentcastData: false,
         notes: '',
         score: 0,
-        zillowLink: lead.zillowLink
+        zillowLink: lead.zillowLink,
+        squareFootage: lead.squareFootage
       });
-
-      // Then mark the lead as converted
-      await updatePropertyLead(lead.id, {
-        ...lead,
-        convertedToProperty: true
-      });
+      
+      // Create a complete update object with all fields from the original lead
+      const updateData = {
+        address: lead.address,
+        zillowLink: lead.zillowLink || '',
+        listingPrice: lead.listingPrice,
+        sellerPhone: lead.sellerPhone || '',
+        sellerEmail: lead.sellerEmail || '',
+        lastContactDate: lead.lastContactDate,
+        // Explicitly set convertedToProperty to true
+        convertedToProperty: true,
+        // Include other fields to maintain consistency
+        archived: lead.archived,
+        tags: lead.tags || [],
+        squareFootage: lead.squareFootage
+      };
+      
+      console.log('Updating lead with:', updateData);
+      
+      // Update the lead with convertedToProperty field
+      const updatedLead = await updatePropertyLead(lead.id, updateData);
+      
+      console.log('Update response:', updatedLead);
+      
+      // Check if the convertedToProperty field was actually updated in the response
+      if (!updatedLead.convertedToProperty) {
+        console.warn('Warning: The convertedToProperty field was not set to true in the response');
+        // Log additional information that might help debug
+        console.log('Original lead:', lead);
+        console.log('Update data sent:', updateData);
+        console.log('Response received:', updatedLead);
+        
+        // Add to locally tracked conversions
+        setLocallyConvertedLeads(prev => {
+          const updated = new Set(prev);
+          updated.add(lead.id);
+          return updated;
+        });
+      }
+      
+      // Ensure the local data reflects this change
+      setPropertyLeads(prevLeads => 
+        prevLeads.map(l => l.id === lead.id ? { ...l, convertedToProperty: true } : l)
+      );
 
       setSnackbar({
         open: true,
         message: 'Successfully converted lead to property',
         severity: 'success',
       });
-      fetchPropertyLeads();
-    } catch (err) {
+      
+      // After a short delay, refresh the data
+      setTimeout(() => {
+        fetchPropertyLeads();
+      }, 500);
+    } catch (err: any) {
       console.error('Error converting lead to property:', err);
+      
+      // Extract more detailed error message if available
+      let errorMessage = 'Failed to convert lead to property';
+      if (err.response && err.response.data) {
+        if (typeof err.response.data === 'string') {
+          errorMessage += `: ${err.response.data}`;
+        } else if (err.response.data.message) {
+          errorMessage += `: ${err.response.data.message}`;
+        } else if (err.response.data.error) {
+          errorMessage += `: ${err.response.data.error}`;
+        }
+      } else if (err.message) {
+        errorMessage += `: ${err.message}`;
+      }
+
+      // Check for specific error conditions
+      if (err.response && err.response.status === 409) {
+        errorMessage = `Property with address "${lead.address}" already exists`;
+      }
+      
       setSnackbar({
         open: true,
-        message: 'Failed to convert lead to property',
+        message: errorMessage,
         severity: 'error',
       });
     }
@@ -491,6 +580,11 @@ ${lead.zillowLink || ''}`;
     setShowArchived(!showArchived);
   };
 
+  // Modify the countConvertedLeads function to include locally tracked conversions
+  const countConvertedLeads = (leads: PropertyLead[]) => {
+    return leads.filter(lead => lead.convertedToProperty || locallyConvertedLeads.has(lead.id)).length;
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -510,7 +604,26 @@ ${lead.zillowLink || ''}`;
   return (
     <>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1">Property Leads</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography variant="h4" component="h1">Property Leads</Typography>
+          {countConvertedLeads(propertyLeads) > 0 && (
+            <Tooltip title="Number of leads converted to properties">
+              <Box sx={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                ml: 2,
+                backgroundColor: 'success.light',
+                color: 'success.contrastText',
+                borderRadius: '16px',
+                px: 1.5,
+                py: 0.5,
+              }}>
+                <Icons.Transform fontSize="small" sx={{ mr: 0.5 }} />
+                {countConvertedLeads(propertyLeads)} Converted
+              </Box>
+            </Tooltip>
+          )}
+        </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <FormControlLabel
             control={
@@ -569,7 +682,14 @@ ${lead.zillowLink || ''}`;
                     />
                   </Tooltip>
                 </StyledTableCell>
-                <StyledTableCell className="header">Address</StyledTableCell>
+                <StyledTableCell className="header">
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    Address
+                    <Tooltip title="Green highlight and badge indicates leads that have been converted to properties">
+                      <Icons.Info fontSize="small" sx={{ ml: 1, opacity: 0.7 }} />
+                    </Tooltip>
+                  </Box>
+                </StyledTableCell>
                 <StyledTableCell className="header">Listing Price</StyledTableCell>
                 <StyledTableCell className="header">Seller Contact</StyledTableCell>
                 <StyledTableCell className="header">Last Contact</StyledTableCell>
@@ -597,21 +717,11 @@ ${lead.zillowLink || ''}`;
                           backgroundColor: '#eeeeee',
                         }
                       } : {}),
-                      ...(lead.convertedToProperty ? {
-                        borderLeft: '4px solid #4caf50',
-                        '& td:first-of-type': {
-                          position: 'relative',
-                          '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            top: '50%',
-                            right: '8px',
-                            transform: 'translateY(-50%)',
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            backgroundColor: '#4caf50',
-                          }
+                      ...((lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) ? {
+                        borderLeft: '6px solid #4caf50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.08)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(76, 175, 80, 0.14)',
                         }
                       } : {})
                     }}
@@ -624,24 +734,32 @@ ${lead.zillowLink || ''}`;
                       />
                     </TableCell>
                     <TableCell>
-                      {lead.zillowLink ? (
-                        <Link 
-                          href={lead.zillowLink} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          sx={{ 
-                            color: 'primary.main',
-                            textDecoration: 'none',
-                            '&:hover': {
-                              textDecoration: 'underline'
-                            }
-                          }}
-                        >
-                          {lead.address}
-                        </Link>
-                      ) : (
-                        lead.address
-                      )}
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {lead.zillowLink ? (
+                          <Link 
+                            href={lead.zillowLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            sx={{ 
+                              color: 'primary.main',
+                              textDecoration: 'none',
+                              '&:hover': {
+                                textDecoration: 'underline'
+                              }
+                            }}
+                          >
+                            {lead.address}
+                          </Link>
+                        ) : (
+                          lead.address
+                        )}
+                        {(lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) && (
+                          <ConvertedBadge>
+                            <Icons.CheckCircle fontSize="inherit" sx={{ mr: 0.5 }} />
+                            Converted
+                          </ConvertedBadge>
+                        )}
+                      </Box>
                     </TableCell>
                     <TableCell>{formatCurrency(lead.listingPrice)}</TableCell>
                     <TableCell>
@@ -704,7 +822,7 @@ ${lead.zillowLink || ''}`;
                           </Tooltip>
                         ) : (
                           <>
-                            {!lead.convertedToProperty && (
+                            {!lead.convertedToProperty && !locallyConvertedLeads.has(lead.id) && (
                               <Tooltip title="Convert to Property">
                                 <ActionIconButton 
                                   size="small" 
@@ -715,7 +833,7 @@ ${lead.zillowLink || ''}`;
                                 </ActionIconButton>
                               </Tooltip>
                             )}
-                            {lead.convertedToProperty && (
+                            {(lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) && (
                               <Tooltip title="Already Converted to Property">
                                 <Box 
                                   sx={{ 

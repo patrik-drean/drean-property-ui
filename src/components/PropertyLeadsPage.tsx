@@ -154,7 +154,66 @@ const PropertyLeadsPage: React.FC = () => {
   };
 
   const formatInputCurrency = (value: number) => {
-    return value ? value.toString() : '';
+    if (!value) return '';
+    return value.toLocaleString('en-US');
+  };
+
+  const parseZillowLink = (url: string) => {
+    try {
+      // Extract address from URL
+      const addressMatch = url.match(/\/homedetails\/([^/]+)/);
+      if (addressMatch) {
+        const address = addressMatch[1]
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        
+        // Extract price from URL - try multiple patterns
+        let price = 0;
+        
+        // Try to find price in the URL path
+        const pathPriceMatch = url.match(/\$(\d{3}(?:,\d{3})*(?:\.\d{2})?)/);
+        if (pathPriceMatch) {
+          price = handleCurrencyInput(pathPriceMatch[1]);
+        }
+        
+        // If no price in path, try to find it in the title/description part
+        if (!price) {
+          const titlePriceMatch = url.match(/title=([^&]+)/);
+          if (titlePriceMatch) {
+            const title = decodeURIComponent(titlePriceMatch[1]);
+            const priceMatch = title.match(/\$(\d{3}(?:,\d{3})*(?:\.\d{2})?)/);
+            if (priceMatch) {
+              price = handleCurrencyInput(priceMatch[1]);
+            }
+          }
+        }
+
+        return { address, price };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error parsing Zillow link:', error);
+      return null;
+    }
+  };
+
+  const handleZillowLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setFormData({ ...formData, zillowLink: url });
+    
+    // Only parse if we're not editing and the URL is a valid Zillow link
+    if (!isEditing && url.includes('zillow.com')) {
+      const parsedData = parseZillowLink(url);
+      if (parsedData) {
+        setFormData(prev => ({
+          ...prev,
+          address: parsedData.address,
+          listingPrice: parsedData.price,
+          zillowLink: url
+        }));
+      }
+    }
   };
 
   const fetchPropertyLeads = async () => {
@@ -625,17 +684,15 @@ ${lead.zillowLink || ''}`;
           )}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={showArchived}
-                onChange={handleToggleShowArchived}
-                color="primary"
-              />
-            }
-            label="Show Archived"
-            sx={{ mr: 2 }}
-          />
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleToggleShowArchived}
+            startIcon={<Icons.Archive />}
+            sx={{ mr: 2, borderRadius: 2 }}
+          >
+            {showArchived ? 'Hide Archived' : 'Archived Leads'}
+          </Button>
           {selectedLeads.length > 0 && (
             <Button
               variant="contained"
@@ -693,7 +750,7 @@ ${lead.zillowLink || ''}`;
                 <StyledTableCell className="header">Listing Price</StyledTableCell>
                 <StyledTableCell className="header">Seller Contact</StyledTableCell>
                 <StyledTableCell className="header">Last Contact</StyledTableCell>
-                <StyledTableCell className="header">Actions</StyledTableCell>
+                <StyledTableCell className="header" sx={{ width: '220px' }}>Actions</StyledTableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -808,7 +865,7 @@ ${lead.zillowLink || ''}`;
                         </Tooltip>
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ width: '220px' }}>
                       <Box sx={{ display: 'flex' }}>
                         {lead.archived ? (
                           <>
@@ -900,6 +957,15 @@ ${lead.zillowLink || ''}`;
         <DialogContent>
           <Box component="form" sx={{ mt: 2 }}>
             <TextField
+              label="Zillow Link"
+              name="zillowLink"
+              value={formData.zillowLink}
+              onChange={handleZillowLinkChange}
+              fullWidth
+              margin="normal"
+              placeholder="Paste Zillow link to auto-fill address and price"
+            />
+            <TextField
               label="Address"
               name="address"
               value={formData.address}
@@ -907,14 +973,6 @@ ${lead.zillowLink || ''}`;
               fullWidth
               margin="normal"
               required
-            />
-            <TextField
-              label="Zillow Link (optional)"
-              name="zillowLink"
-              value={formData.zillowLink}
-              onChange={handleInputChange}
-              fullWidth
-              margin="normal"
             />
             <TextField
               label="Listing Price"
@@ -930,7 +988,7 @@ ${lead.zillowLink || ''}`;
               margin="normal"
               required
               InputProps={{
-                startAdornment: <Box component="span" sx={{ mr: 1 }}>$</Box>,
+                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
               }}
             />
             <TextField

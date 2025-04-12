@@ -621,7 +621,7 @@ ${property.zillowLink}`;
             <TableHead>
               <TableRow>
                 <StyledTableCell className="header" width="14%">Address</StyledTableCell>
-                <StyledTableCell className="header" width="9%">Status</StyledTableCell>
+                <StyledTableCell className="header" width="12%">Status</StyledTableCell>
                 <StyledTableCell className="header" width="6%">Square Feet</StyledTableCell>
                 <StyledTableCell className="header" width="7%">Offer Price</StyledTableCell>
                 <StyledTableCell className="header" width="6%">Rehab Costs</StyledTableCell>

@@ -330,16 +330,21 @@ const PropertyLeadsPage: React.FC = () => {
 
   const handleUpdateLastContact = async (lead: PropertyLead) => {
     try {
-      await updatePropertyLead(lead.id, {
+      const updatedLead = await updatePropertyLead(lead.id, {
         ...lead,
         lastContactDate: new Date().toISOString(),
       });
+      
+      // Update local state instead of fetching
+      setPropertyLeads(prevLeads => 
+        prevLeads.map(l => l.id === lead.id ? updatedLead : l)
+      );
+
       setSnackbar({
         open: true,
         message: 'Contact date updated successfully',
         severity: 'success',
       });
-      fetchPropertyLeads();
     } catch (err) {
       console.error('Error updating contact date:', err);
       setSnackbar({

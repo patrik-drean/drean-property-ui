@@ -440,10 +440,10 @@ const PropertyLeadsPage: React.FC = () => {
   };
 
   const copyTemplatedMessage = async (lead: PropertyLead) => {
-    const discountedPrice = Math.round(lead.listingPrice * 0.75);
+    const discountedPrice = Math.round(lead.listingPrice * 0.8);
     const formattedPrice = formatCurrencyInK(discountedPrice);
     
-    const message = `Hi there! My name is Patrik. I really like this property and believe it has great potential. I'd like to explore an offer of ${formattedPrice}. I'm an experienced investor who is reliable and quick when it comes to closing. If this number is in the ballpark, I'd love to discuss further. Let me know what you and the seller think! Have a great day! 
+    const message = `Hi there! My name is Patrik. I really like this property and believe it has great potential. I'd like to explore an offer around ${formattedPrice}. I'm an experienced investor who is reliable and quick when it comes to closing. If this number is in the ballpark, I'd love to discuss further. Let me know what you and the seller think! Have a great day! 
 ${lead.zillowLink || ''}`;
 
     try {

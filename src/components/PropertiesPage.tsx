@@ -736,7 +736,20 @@ ${property.zillowLink}`;
                     />
                   </TableCell>
                   <TableCell>
-                    <Tooltip title={`Listing Price: ${formatCurrency(property.listingPrice)}`} arrow placement="top">
+                    <Tooltip 
+                      title={
+                        <div>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                            Listing Price: {formatCurrency(property.listingPrice)}
+                          </Typography>
+                          <Typography variant="body2">
+                            Discount: {formatPercentage(calculateDiscount(property.listingPrice, property.offerPrice))}
+                          </Typography>
+                        </div>
+                      } 
+                      arrow 
+                      placement="top"
+                    >
                       <Box component="span">
                         {formatCurrency(property.offerPrice)}
                       </Box>

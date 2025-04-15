@@ -654,11 +654,14 @@ ${property.zillowLink}`;
           <Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }} padding="none">
             <TableHead>
               <TableRow>
-                <StyledTableCell className="header" width="18%" sx={{ pl: 1 }}>
+                <StyledTableCell className="header" width="16%" sx={{ pl: 1 }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Address</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header" width="7%">
+                <StyledTableCell className="header" width="6%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Status</Typography>
+                </StyledTableCell>
+                <StyledTableCell className="header" width="5%" sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Sq Ft</Typography>
                 </StyledTableCell>
                 <StyledTableCell className="header" width="6%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Offer</Typography>
@@ -734,6 +737,9 @@ ${property.zillowLink}`;
                       status={property.status} 
                       size="small"
                     />
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'center' }}>
+                    {property.squareFootage !== null ? property.squareFootage : ''}
                   </TableCell>
                   <TableCell>
                     <Tooltip 

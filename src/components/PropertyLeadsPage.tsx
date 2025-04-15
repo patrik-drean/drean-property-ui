@@ -465,7 +465,7 @@ ${lead.zillowLink || ''}`;
             severity: 'success',
           });
         }
-      }, 500); // Wait half a second before copying phone number
+      }, 1000); // Wait a second before copying phone number
     } catch (err) {
       console.error('Failed to copy: ', err);
       setSnackbar({

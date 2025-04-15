@@ -660,37 +660,47 @@ ${property.zillowLink}`;
                 <StyledTableCell className="header" width="7%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Status</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header" width="8%">
+                <StyledTableCell className="header" width="6%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Offer</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header" width="7%">
+                <StyledTableCell className="header" width="6%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Rehab</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header" width="7%">
+                <StyledTableCell className="header" width="6%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Rent</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header" width="8%">
+                <StyledTableCell className="header" width="6%">
                   <Typography variant="body2" fontWeight="bold" noWrap>ARV</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="7%">
+                <StyledTableCell className="header metric" width="6%">
+                  <Tooltip title="Hover over values to see the estimated rent range from Rentcast">
+                    <Typography variant="body2" fontWeight="bold" noWrap>Est. Rent</Typography>
+                  </Tooltip>
+                </StyledTableCell>
+                <StyledTableCell className="header metric" width="6%">
+                  <Tooltip title="Hover over values to see the estimated price range from Rentcast">
+                    <Typography variant="body2" fontWeight="bold" noWrap>Est. Price</Typography>
+                  </Tooltip>
+                </StyledTableCell>
+                <StyledTableCell className="header metric" width="6%">
                   <Tooltip title="Monthly Rent / (Offer Price + Rehab)">
                     <Typography variant="body2" fontWeight="bold" noWrap>Rent %</Typography>
                   </Tooltip>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="7%">
+                <StyledTableCell className="header metric" width="6%">
                   <Tooltip title="(Offer Price + Rehab) / ARV">
                     <Typography variant="body2" fontWeight="bold" noWrap>ARV %</Typography>
                   </Tooltip>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="8%">
+                <StyledTableCell className="header metric" width="6%">
                   <Tooltip title="The equity you have in the property after refinance">
                     <Typography variant="body2" fontWeight="bold" noWrap>Equity</Typography>
                   </Tooltip>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="6%">
+                <StyledTableCell className="header metric" width="5%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Score</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="17%">
+                <StyledTableCell className="header metric" width="16%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Actions</Typography>
                 </StyledTableCell>
               </TableRow>
@@ -735,6 +745,30 @@ ${property.zillowLink}`;
                   <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
                   <TableCell>{formatCurrency(property.potentialRent)}</TableCell>
                   <TableCell>{formatCurrency(property.arv)}</TableCell>
+                  <TableCell className="metric">
+                    {property.hasRentcastData ? (
+                      <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.rentLow)} - ${formatCurrency(property.rentCastEstimates.rentHigh)}`}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {formatCurrency(property.rentCastEstimates.rent)}
+                          <Icons.Check color="success" sx={{ fontSize: 14, ml: 0.5 }} />
+                        </Box>
+                      </Tooltip>
+                    ) : (
+                      formatCurrency(property.rentCastEstimates.rent)
+                    )}
+                  </TableCell>
+                  <TableCell className="metric">
+                    {property.hasRentcastData ? (
+                      <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.priceLow)} - ${formatCurrency(property.rentCastEstimates.priceHigh)}`}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {formatCurrency(property.rentCastEstimates.price)}
+                          <Icons.Check color="success" sx={{ fontSize: 14, ml: 0.5 }} />
+                        </Box>
+                      </Tooltip>
+                    ) : (
+                      formatCurrency(property.rentCastEstimates.price)
+                    )}
+                  </TableCell>
                   <TableCell className="metric">
                     <Typography sx={{ 
                       color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))

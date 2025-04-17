@@ -87,6 +87,12 @@ const ConvertedBadge = styled(Box)(({ theme }) => ({
   marginLeft: '8px',
 }));
 
+// Styled component for uncontacted leads
+const NotContactedText = styled(Typography)(({ theme }) => ({
+  color: theme.palette.warning.main,
+  fontWeight: 'bold',
+}));
+
 const PropertyLeadsPage: React.FC = () => {
   const [propertyLeads, setPropertyLeads] = useState<PropertyLead[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -127,7 +133,9 @@ const PropertyLeadsPage: React.FC = () => {
   };
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Not contacted';
+    if (!dateString) {
+      return <NotContactedText>Not contacted</NotContactedText>;
+    }
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',

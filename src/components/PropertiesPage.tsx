@@ -85,15 +85,17 @@ const getStatusColor = (status: PropertyStatus): string => {
 
 // Add new helper function for score background color
 const getScoreBackgroundColor = (score: number): string => {
-  if (score >= 9) return '#4CAF50'; // Green
-  if (score >= 7) return '#FFC107'; // Amber
-  return '#F44336'; // Red
+  if (score >= 9) return '#4CAF50'; // Green for 9-10
+  if (score >= 7) return '#FFC107'; // Amber for 7-8
+  if (score >= 5) return '#FF9800'; // Orange for 5-6
+  return '#F44336'; // Red for < 5
 };
 
 // Update the getScoreColor function to ensure text contrast
 const getScoreColor = (score: number): string => {
   if (score >= 9) return '#E8F5E9'; // Light green text for green background
   if (score >= 7) return '#212121'; // Dark text for amber background
+  if (score >= 5) return '#212121'; // Dark text for orange background
   return '#FFEBEE'; // Light red text for red background
 };
 
@@ -258,47 +260,93 @@ const PropertiesPage: React.FC = () => {
     return newLoan / arv;
   };
 
+  // Calculate monthly mortgage payment based on loan amount, interest rate, and loan term
+  const calculateMonthlyMortgage = (loanAmount: number, interestRate = 0.07, loanTermYears = 30) => {
+    const monthlyRate = interestRate / 12;
+    const numberOfPayments = loanTermYears * 12;
+    
+    if (loanAmount <= 0) return 0;
+    
+    // Mortgage formula: P * (r(1+r)^n) / ((1+r)^n - 1)
+    return loanAmount * 
+      (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
+      (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+  };
+  
+  // Calculate monthly cashflow
+  const calculateCashflow = (rent: number, offerPrice: number, newLoanAmount: number) => {
+    // 12% of rent for property management and other fees
+    const managementFees = rent * 0.12;
+    
+    // 2.5% of offer price for taxes (annually), divided by 12 for monthly
+    const propertyTaxes = (offerPrice * 0.025) / 12;
+    
+    // Fixed $130 for insurance and lawn care
+    const otherExpenses = 130;
+    
+    // Monthly mortgage payment on the new loan
+    const mortgagePayment = calculateMonthlyMortgage(newLoanAmount);
+    
+    // Total expenses
+    const totalExpenses = managementFees + propertyTaxes + otherExpenses + mortgagePayment;
+    
+    // Cashflow: rent - expenses
+    return rent - totalExpenses;
+  };
+
   // Helper functions to calculate individual score components
   const calculateRentRatioScore = (rentRatio: number): number => {
-    if (rentRatio >= 0.01) return 4; // 1% or higher
-    if (rentRatio >= 0.008) return 3; // Close to 1%
-    if (rentRatio >= 0.006) return 2; // Getting there
+    if (rentRatio >= 0.01) return 3; // 1% or higher
+    if (rentRatio >= 0.008) return 2; // Close to 1%
+    if (rentRatio >= 0.006) return 1; // Getting there
     return 0;
   };
 
   const calculateARVRatioScore = (arvRatio: number): number => {
-    if (arvRatio <= 0.75) return 4; // 75% or lower is good
-    if (arvRatio <= 0.80) return 3;
-    if (arvRatio <= 0.85) return 2;
+    if (arvRatio <= 0.75) return 3; // 75% or lower is good
+    if (arvRatio <= 0.80) return 2;
+    if (arvRatio <= 0.85) return 1;
     return 0;
   };
 
   const calculateHomeEquityScore = (homeEquity: number): number => {
-    if (homeEquity >= 65000) return 2; // $65k or more equity is good
-    if (homeEquity >= 50000) return 1;
+    if (homeEquity >= 60000) return 1;
     return 0;
+  };
+
+  // New function to calculate cashflow score
+  const calculateCashflowScore = (cashflow: number): number => {
+    if (cashflow >= 200) return 3; // $200 or more monthly cashflow
+    if (cashflow >= 100) return 2; // $100-$199 monthly cashflow
+    if (cashflow >= 0) return 1; // $0-$99 monthly cashflow
+    return 0; // Negative cashflow
   };
 
   const calculateScore = (property: Omit<Property, 'id'>) => {
     let score = 0;
     
-    // Rent to price ratio (4 points)
+    // Rent to price ratio (3 points)
     const rentRatio = calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts);
     const rentRatioScore = calculateRentRatioScore(rentRatio);
     score += rentRatioScore;
 
-    // ARV ratio (4 points)
+    // ARV ratio (3 points)
     const arvRatio = calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv);
     const arvRatioScore = calculateARVRatioScore(arvRatio);
     score += arvRatioScore;
 
-    // Home Equity (2 points)
+    // Home Equity (1 point)
     const homeEquity = calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv);
     const homeEquityScore = calculateHomeEquityScore(homeEquity);
     score += homeEquityScore;
+    
+    // Cashflow (3 points)
+    const cashflow = calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv));
+    const cashflowScore = calculateCashflowScore(cashflow);
+    score += cashflowScore;
 
-    // Ensure minimum score of 1
-    return Math.max(1, score);
+    // Ensure minimum score of 1, maximum of 10
+    return Math.min(10, Math.max(1, score));
   };
 
   const handleCurrencyInput = (value: string) => {
@@ -555,6 +603,13 @@ const PropertiesPage: React.FC = () => {
     if (equity >= 45000) return '#FFC107'; // Yellow for >= $45k
     return '#F44336'; // Red for < $45k
   };
+  
+  // Color for cashflow
+  const getCashflowColor = (cashflow: number) => {
+    if (cashflow >= 200) return '#4CAF50'; // Green for >= $200
+    if (cashflow >= 0) return '#FFC107'; // Yellow for positive but < $200
+    return '#F44336'; // Red for negative
+  };
 
   // Send property data to calculator
   const handleSendToCalculator = (property: Property) => {
@@ -700,6 +755,11 @@ ${property.zillowLink}`;
                     <Typography variant="body2" fontWeight="bold" noWrap>Equity</Typography>
                   </Tooltip>
                 </StyledTableCell>
+                <StyledTableCell className="header metric" width="6%">
+                  <Tooltip title="Monthly cashflow after expenses and mortgage">
+                    <Typography variant="body2" fontWeight="bold" noWrap>Cashflow</Typography>
+                  </Tooltip>
+                </StyledTableCell>
                 <StyledTableCell className="header metric" width="5%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Score</Typography>
                 </StyledTableCell>
@@ -829,18 +889,47 @@ ${property.zillowLink}`;
                     <Tooltip 
                       title={
                         <>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Monthly Cashflow Breakdown:</Typography>
+                          <Typography variant="body2">Rent: {formatCurrency(property.potentialRent)}</Typography>
+                          <Typography variant="body2">Property Management (12%): -{formatCurrency(property.potentialRent * 0.12)}</Typography>
+                          <Typography variant="body2">Property Taxes: -{formatCurrency((property.offerPrice * 0.025) / 12)}</Typography>
+                          <Typography variant="body2">Other Expenses: -$130</Typography>
+                          <Typography variant="body2">Mortgage Payment: -{formatCurrency(calculateMonthlyMortgage(calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography>
+                        </>
+                      } 
+                      arrow 
+                      placement="top"
+                    >
+                      <Box component="span" sx={{ 
+                        color: getCashflowColor(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))
+                      }}>
+                        {formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}
+                      </Box>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell className="metric">
+                    <Tooltip 
+                      title={
+                        <>
                           <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Score Breakdown:</Typography>
                           <Typography variant="body2">
-                            Rent Ratio: {calculateRentRatioScore(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}/4 points
+                            Rent Ratio: {calculateRentRatioScore(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}/3 points
                             {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
                           </Typography>
                           <Typography variant="body2">
-                            ARV Ratio: {calculateARVRatioScore(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}/4 points
+                            ARV Ratio: {calculateARVRatioScore(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}/3 points
                             {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
                           </Typography>
                           <Typography variant="body2">
-                            Home Equity: {calculateHomeEquityScore(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}/2 points
+                            Home Equity: {calculateHomeEquityScore(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}/1 point
                             {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
+                          </Typography>
+                          <Typography variant="body2">
+                            Cashflow: {calculateCashflowScore(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}/3 points
+                            {` (${formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))})`}
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                            Total Score: {calculateScore(property)}/10 points
                           </Typography>
                         </>
                       } 
@@ -1052,6 +1141,16 @@ ${property.zillowLink}`;
                   </Typography>
                 </Box>
                 <Box>
+                  <Typography variant="caption" color="text.secondary">Monthly Cashflow</Typography>
+                  <Typography 
+                    variant="body1" 
+                    fontWeight="medium"
+                    sx={{ color: getCashflowColor(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))) }}
+                  >
+                    {formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}
+                  </Typography>
+                </Box>
+                <Box>
                   <Typography variant="caption" color="text.secondary">Score</Typography>
                   <Typography variant="body1" fontWeight="medium">
                     {calculateScore(property)}/10
@@ -1095,16 +1194,23 @@ ${property.zillowLink}`;
               <Typography variant="subtitle2" sx={{ mb: 1 }}>Score Breakdown</Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Typography variant="body2">
-                  Rent Ratio: {calculateRentRatioScore(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}/4 points
+                  Rent Ratio: {calculateRentRatioScore(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}/3 points
                   {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
                 </Typography>
                 <Typography variant="body2">
-                  ARV Ratio: {calculateARVRatioScore(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}/4 points
+                  ARV Ratio: {calculateARVRatioScore(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}/3 points
                   {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
                 </Typography>
                 <Typography variant="body2">
-                  Home Equity: {calculateHomeEquityScore(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}/2 points
+                  Home Equity: {calculateHomeEquityScore(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}/1 point
                   {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
+                </Typography>
+                <Typography variant="body2">
+                  Cashflow: {calculateCashflowScore(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}/3 points
+                  {` (${formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))})`}
+                </Typography>
+                <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                  Total Score: {calculateScore(property)}/10 points
                 </Typography>
               </Box>
             </Box>
@@ -1118,6 +1224,35 @@ ${property.zillowLink}`;
                 </Typography>
               </Box>
             )}
+
+            {/* Cashflow Breakdown */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Cashflow Breakdown</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="body2">
+                  Rent: {formatCurrency(property.potentialRent)}
+                </Typography>
+                <Typography variant="body2" color="error">
+                  Property Management (12%): -{formatCurrency(property.potentialRent * 0.12)}
+                </Typography>
+                <Typography variant="body2" color="error">
+                  Property Taxes: -{formatCurrency((property.offerPrice * 0.025) / 12)}
+                </Typography>
+                <Typography variant="body2" color="error">
+                  Other Expenses: -$130
+                </Typography>
+                <Typography variant="body2" color="error">
+                  Mortgage Payment: -{formatCurrency(calculateMonthlyMortgage(calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}
+                </Typography>
+                <Typography variant="body2" fontWeight="bold" sx={{ 
+                  color: getCashflowColor(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))),
+                  borderTop: '1px solid #eee',
+                  pt: 1
+                }}>
+                  Net Cashflow: {formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}
+                </Typography>
+              </Box>
+            </Box>
 
             {/* Additional Details */}
             <Box sx={{ mb: 3 }}>

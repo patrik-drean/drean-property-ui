@@ -8,6 +8,7 @@ import PropertiesPage from './components/PropertiesPage';
 import ArchivedPropertiesPage from './components/ArchivedPropertiesPage';
 import Calculator from './components/Calculator';
 import PropertyLeadsPage from './components/PropertyLeadsPage';
+import TodosPage from './pages/TodosPage';
 
 const router = createHashRouter(
   createRoutesFromElements(
@@ -17,6 +18,7 @@ const router = createHashRouter(
       <Route path="/archived" element={<ArchivedPropertiesPage />} />
       <Route path="/calculator" element={<Calculator />} />
       <Route path="/leads" element={<PropertyLeadsPage />} />
+      <Route path="/todos" element={<TodosPage />} />
     </Route>
   )
 );

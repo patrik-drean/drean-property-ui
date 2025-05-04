@@ -23,6 +23,7 @@ import ArchiveIcon from '@mui/icons-material/Archive';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import MenuIcon from '@mui/icons-material/Menu';
 import ListAltIcon from '@mui/icons-material/ListAlt';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
@@ -106,6 +107,17 @@ const Navigation: React.FC = () => {
             </ListItemIcon>
             <ListItemText primary="Calculator" />
           </ListItem>
+          <ListItem 
+            button 
+            component={RouterLink} 
+            to="/todos"
+            selected={isActive('/todos')}
+          >
+            <ListItemIcon>
+              <CheckCircleIcon color={isActive('/todos') ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Todos" />
+          </ListItem>
         </List>
       </Box>
     </Drawer>
@@ -183,6 +195,15 @@ const Navigation: React.FC = () => {
                   sx={getNavButtonStyle('/calculator')}
                 >
                   Calculator
+                </Button>
+
+                <Button
+                  component={RouterLink}
+                  to="/todos"
+                  startIcon={<CheckCircleIcon />}
+                  sx={getNavButtonStyle('/todos')}
+                >
+                  Todos
                 </Button>
               </Stack>
             )}

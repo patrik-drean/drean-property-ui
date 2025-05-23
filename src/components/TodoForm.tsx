@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { Todo, Priority } from '../types/todo';
-import { mockProperties } from '../services/mockData';
+import React, { useState, useEffect } from 'react';
+import { Todo, Priority, Property } from '../types/todo';
 import {
   TextField,
   Select,
@@ -14,23 +13,55 @@ import {
 
 interface TodoFormProps {
   todo?: Todo;
+  properties: Property[];
   onSubmit: (todo: Omit<Todo, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onCancel: () => void;
 }
 
-const TodoForm: React.FC<TodoFormProps> = ({ todo, onSubmit, onCancel }) => {
+// Helper function to format a date string for datetime-local input
+const formatDateForInput = (dateString: string): string => {
+  if (!dateString) return '';
+  
+  try {
+    // Convert ISO string to local datetime format YYYY-MM-DDThh:mm
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 16);
+  } catch (err) {
+    console.error('Invalid date format:', err);
+    return '';
+  }
+};
+
+const TodoForm: React.FC<TodoFormProps> = ({ todo, properties, onSubmit, onCancel }) => {
   const [title, setTitle] = useState(todo?.title || '');
   const [description, setDescription] = useState(todo?.description || '');
-  const [dueDate, setDueDate] = useState(todo?.dueDate || '');
+  const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<Priority>(todo?.priority || 'medium');
   const [propertyId, setPropertyId] = useState<string | undefined>(todo?.propertyId);
 
+  // Set initial dueDate when todo changes
+  useEffect(() => {
+    if (todo?.dueDate) {
+      setDueDate(formatDateForInput(todo.dueDate));
+    } else {
+      // Default to tomorrow at 9am
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(9, 0, 0, 0);
+      setDueDate(formatDateForInput(tomorrow.toISOString()));
+    }
+  }, [todo]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Format the date as an ISO string for the API
+    const formattedDueDate = dueDate ? new Date(dueDate).toISOString() : new Date().toISOString();
+    
     onSubmit({
       title,
       description,
-      dueDate,
+      dueDate: formattedDueDate,
       completed: todo?.completed || false,
       priority,
       propertyId,
@@ -91,7 +122,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ todo, onSubmit, onCancel }) => {
             variant="outlined"
           >
             <MenuItem value="">General Todo</MenuItem>
-            {mockProperties.map((property) => (
+            {properties.map((property) => (
               <MenuItem key={property.id} value={property.id}>
                 {property.name}
               </MenuItem>

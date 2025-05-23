@@ -609,12 +609,17 @@ ${lead.zillowLink || ''}`;
   const handleArchiveLead = async (id: string) => {
     try {
       await archivePropertyLead(id);
+      
+      // Update local state instead of fetching
+      setPropertyLeads(prevLeads => 
+        prevLeads.map(l => l.id === id ? { ...l, archived: true } : l)
+      );
+
       setSnackbar({
         open: true,
         message: 'Property lead archived successfully',
         severity: 'success',
       });
-      fetchPropertyLeads();
     } catch (err) {
       console.error('Error archiving property lead:', err);
       setSnackbar({
@@ -632,12 +637,17 @@ ${lead.zillowLink || ''}`;
         ...propertyLeads.find(lead => lead.id === id)!,
         archived: false
       });
+      
+      // Update local state instead of fetching
+      setPropertyLeads(prevLeads => 
+        prevLeads.map(l => l.id === id ? { ...l, archived: false } : l)
+      );
+
       setSnackbar({
         open: true,
         message: 'Property lead unarchived successfully',
         severity: 'success',
       });
-      fetchPropertyLeads();
     } catch (err) {
       console.error('Error unarchiving property lead:', err);
       setSnackbar({

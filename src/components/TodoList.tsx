@@ -108,7 +108,6 @@ const TodoList: React.FC<TodoListProps> = ({
             <TableCell sx={{ color: '#fff', fontWeight: 700 }}>Due Date</TableCell>
             <TableCell sx={{ color: '#fff', fontWeight: 700 }}>Priority</TableCell>
             <TableCell sx={{ color: '#fff', fontWeight: 700 }}>Property</TableCell>
-            <TableCell sx={{ color: '#fff', fontWeight: 700 }}>Status</TableCell>
             <TableCell sx={{ color: '#fff', fontWeight: 700, textAlign: 'right' }}>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -139,23 +138,6 @@ const TodoList: React.FC<TodoListProps> = ({
                 />
               </TableCell>
               <TableCell>{getPropertyName(todo.propertyId)}</TableCell>
-              <TableCell>
-                {todo.completed ? (
-                  <Chip
-                    icon={<CheckCircleIcon fontSize="small" />}
-                    label="Completed"
-                    color="success"
-                    size="small"
-                  />
-                ) : (
-                  <Chip
-                    icon={<RadioButtonUncheckedIcon fontSize="small" />}
-                    label="Pending"
-                    color="default"
-                    size="small"
-                  />
-                )}
-              </TableCell>
               <TableCell align="right">
                 <Tooltip title={todo.completed ? 'Mark as Pending' : 'Mark as Completed'}>
                   <IconButton onClick={() => onToggleComplete(todo.id)}>

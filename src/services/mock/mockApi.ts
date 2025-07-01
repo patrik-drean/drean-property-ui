@@ -180,7 +180,18 @@ export const updateProperty = async (id: string, property: Omit<Property, 'id'>)
         sampleProperties[index] = updatedProperty;
         resolve(updatedProperty);
       } else {
-        reject(new Error('Property not found'));
+        // Check if the property is in archived properties (for restoration)
+        const archivedIndex = archivedProperties.findIndex(p => p.id === id);
+        if (archivedIndex !== -1) {
+          const archivedProperty = archivedProperties[archivedIndex];
+          // Remove from archived and add to sample properties
+          archivedProperties.splice(archivedIndex, 1);
+          const restoredProperty = { ...property, id, archived: false };
+          sampleProperties.push(restoredProperty);
+          resolve(restoredProperty);
+        } else {
+          reject(new Error('Property not found'));
+        }
       }
     }, 500);
   });
@@ -243,14 +254,15 @@ export const getArchivedProperties = async (): Promise<Property[]> => {
   return getProperties(true);
 };
 
-export const restoreProperty = async (id: string, property: Property): Promise<void> => {
+export const restoreProperty = async (id: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const index = archivedProperties.findIndex(p => p.id === id);
       if (index !== -1) {
-        const property = archivedProperties[index];
+        const propertyToRestore = archivedProperties[index];
         archivedProperties.splice(index, 1);
-        sampleProperties.push(property);
+        const restoredProperty = { ...propertyToRestore, archived: false };
+        sampleProperties.push(restoredProperty);
         resolve();
       } else {
         reject(new Error('Property not found'));

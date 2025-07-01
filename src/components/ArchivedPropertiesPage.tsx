@@ -116,7 +116,7 @@ const ArchivedPropertiesPage: React.FC = () => {
 
   const handleRestore = async (property: Property) => {
     try {
-      await api.restoreProperty(property.id, property);
+      await api.restoreProperty(property.id);
       setSnackbar({
         open: true,
         message: 'Property restored successfully',

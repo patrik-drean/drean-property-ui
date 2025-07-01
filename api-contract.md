@@ -146,6 +146,15 @@
   - `id` (string, required): The property ID
 - **Response**: No content (204)
 
+### Restore Property
+- **Method**: PUT
+- **Endpoint**: `/api/Properties/{id}/restore`
+- **URL Parameters**:
+  - `id` (string, required): The property ID
+- **Response**: No content (204)
+- **Error Responses**:
+  - 404: Property with specified ID not found
+
 ### Update Property Rentcast Data
 - **Method**: PUT
 - **Endpoint**: `/api/Properties/{id}/rentcast`

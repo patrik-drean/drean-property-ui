@@ -394,7 +394,7 @@ const PropertiesPage: React.FC = () => {
     const fetchProperties = async () => {
       try {
         const data = await api.getProperties(false); // Explicitly request only non-archived properties
-        setProperties(nonArchivedProperties);
+        setProperties(data);
       } catch (error) {
         console.error('Error fetching properties:', error);
       }

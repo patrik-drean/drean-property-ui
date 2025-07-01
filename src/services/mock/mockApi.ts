@@ -47,6 +47,30 @@ const sampleProperties: Property[] = [
     score: 6,
     zillowLink: 'https://www.zillow.com/homedetails/456-oak-ave',
     squareFootage: 1400
+  },
+  {
+    id: '5',
+    address: '999 Wrong St, Mistake, USA',
+    status: 'Opportunity',
+    listingPrice: 300000,
+    offerPrice: 270000,
+    rehabCosts: 40000,
+    potentialRent: 2200,
+    arv: 350000,
+    rentCastEstimates: {
+      price: 300000,
+      priceLow: 285000,
+      priceHigh: 315000,
+      rent: 2200,
+      rentLow: 2100,
+      rentHigh: 2300
+    },
+    hasRentcastData: true,
+    notes: 'This property should be archived but is showing in main list',
+    score: 8,
+    zillowLink: 'https://www.zillow.com/homedetails/999-wrong-st',
+    squareFootage: 2000,
+    archived: true
   }
 ];
 
@@ -73,14 +97,51 @@ const archivedProperties: Property[] = [
     notes: 'Deal fell through - owner backed out',
     score: 5,
     zillowLink: 'https://www.zillow.com/homedetails/789-pine-blvd',
-    squareFootage: 1600
+    squareFootage: 1600,
+    archived: true
+  },
+  {
+    id: '4',
+    address: '321 Elm St, Nowhere, USA',
+    status: 'Rehab',
+    listingPrice: 120000,
+    offerPrice: 100000,
+    rehabCosts: 30000,
+    potentialRent: 1400,
+    arv: 180000,
+    rentCastEstimates: {
+      price: 120000,
+      priceLow: 115000,
+      priceHigh: 125000,
+      rent: 1400,
+      rentLow: 1300,
+      rentHigh: 1500
+    },
+    hasRentcastData: true,
+    notes: 'Too much work required - not worth it',
+    score: 3,
+    zillowLink: 'https://www.zillow.com/homedetails/321-elm-st',
+    squareFootage: 1200,
+    archived: true
   }
 ];
 
 // Mock API functions
-export const getProperties = async (): Promise<Property[]> => {
+export const getProperties = async (showArchived?: boolean): Promise<Property[]> => {
   return new Promise((resolve) => {
-    setTimeout(() => resolve([...sampleProperties]), 500);
+    setTimeout(() => {
+      if (showArchived === true) {
+        resolve([...archivedProperties]);
+      } else if (showArchived === false) {
+        // Filter out archived properties from sample properties
+        const nonArchivedProperties = sampleProperties.filter(property => !property.archived);
+        resolve(nonArchivedProperties);
+      } else {
+        // Default behavior: return only non-archived properties
+        const nonArchivedProperties = sampleProperties.filter(property => !property.archived);
+        resolve(nonArchivedProperties);
+      }
+    }, 500);
   });
 };
 
@@ -179,9 +240,7 @@ export const getZillowData = async (url: string): Promise<{ address: string; pri
 };
 
 export const getArchivedProperties = async (): Promise<Property[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve([...archivedProperties]), 500);
-  });
+  return getProperties(true);
 };
 
 export const restoreProperty = async (id: string, property: Property): Promise<void> => {

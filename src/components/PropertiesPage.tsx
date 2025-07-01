@@ -393,8 +393,8 @@ const PropertiesPage: React.FC = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const data = await api.getProperties();
-        setProperties(data);
+        const data = await api.getProperties(false); // Explicitly request only non-archived properties
+        setProperties(nonArchivedProperties);
       } catch (error) {
         console.error('Error fetching properties:', error);
       }

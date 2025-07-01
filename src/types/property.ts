@@ -24,6 +24,7 @@ export interface Property {
     score: number;
     zillowLink: string;
     squareFootage: number | null;
+    archived?: boolean;
 }
 
 export interface PropertyLead {

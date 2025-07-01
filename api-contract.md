@@ -1,8 +1,8 @@
 # Property Analyzer API Contract
 
 ## Environment URLs
-- **Local**: `http://localhost:5271`
-- **Production**: `https://p7mxmmgxaw.us-west-2.awsapprunner.com/`
+- **Local**: `http://localhost:8080`
+- **Production**: `https://drean-property-api-production.up.railway.app/`
 
 ## Endpoints
 
@@ -338,6 +338,8 @@
 ### Get All Todos
 - **Method**: GET
 - **Endpoint**: `/api/Todo`
+- **Query Parameters**: 
+  - `propertyId` (string, optional): Filter todos by property ID
 - **Response**: Array of Todo objects
 ```json
 [
@@ -346,7 +348,7 @@
     "title": "string",
     "description": "string",
     "dueDate": "string",
-    "isCompleted": boolean,
+    "completed": boolean,
     "priority": "string",
     "propertyId": "string" | null,
     "createdAt": "string",
@@ -367,7 +369,7 @@
   "title": "string",
   "description": "string",
   "dueDate": "string",
-  "isCompleted": boolean,
+  "completed": boolean,
   "priority": "string",
   "propertyId": "string" | null,
   "createdAt": "string",
@@ -376,7 +378,6 @@
 ```
 - **Error Responses**:
   - 404: Todo with specified ID not found
-  - 400: Invalid ID format
 
 ### Create Todo
 - **Method**: POST
@@ -387,7 +388,7 @@
   "title": "string",
   "description": "string",
   "dueDate": "string",
-  "isCompleted": boolean,
+  "completed": boolean,
   "priority": "string",
   "propertyId": "string" | null
 }
@@ -407,7 +408,7 @@
   "title": "string",
   "description": "string",
   "dueDate": "string",
-  "isCompleted": boolean,
+  "completed": boolean,
   "priority": "string",
   "propertyId": "string" | null
 }
@@ -415,7 +416,7 @@
 - **Response**: Updated Todo object
 - **Error Responses**:
   - 404: Todo with specified ID not found
-  - 400: ID mismatch between URL and request body or invalid ID format
+  - 400: ID mismatch between URL and request body
 
 ### Delete Todo
 - **Method**: DELETE
@@ -423,8 +424,6 @@
 - **URL Parameters**:
   - `id` (string, required): The todo ID
 - **Response**: No content (204)
-- **Error Responses**:
-  - 400: Invalid ID format
 
 ## Error Responses
 - **400 Bad Request**: Invalid input or validation errors
@@ -439,3 +438,8 @@
 - The `lastContactDate` field is optional and can be null
 - Property leads are stored separately from properties and can be used to track potential deals before they become actual property opportunities
 - Batch creation allows for importing multiple leads at once and provides detailed success/error information for each lead
+- **Production PostgreSQL is hosted on Railway.**
+- **Environment variables for Railway deployment:**
+  - `DATABASE_URL` (use the Railway-provided proxy URL for local dev)
+  - `RAILWAY_ENVIRONMENT=true`
+  - `ASPNETCORE_ENVIRONMENT=Production` (or `Development` for local)

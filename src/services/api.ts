@@ -11,8 +11,10 @@ const api = axios.create({
   },
 });
 
-export const getProperties = async (): Promise<Property[]> => {
-  const response = await api.get<Property[]>('/api/Properties');
+export const getProperties = async (showArchived?: boolean): Promise<Property[]> => {
+  const response = await api.get<Property[]>('/api/Properties', {
+    params: { showArchived }
+  });
   return response.data;
 };
 
@@ -46,10 +48,7 @@ export const getZillowData = async (url: string): Promise<{ address: string; pri
 };
 
 export const getArchivedProperties = async (): Promise<Property[]> => {
-  const response = await api.get<Property[]>('/api/Properties', {
-    params: { showArchived: true }
-  });
-  return response.data;
+  return getProperties(true);
 };
 
 export const restoreProperty = async (id: string, property: Property): Promise<void> => {

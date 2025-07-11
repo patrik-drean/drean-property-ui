@@ -109,6 +109,7 @@ const PropertyLeadsPage: React.FC = () => {
     sellerPhone: '',
     sellerEmail: '',
     lastContactDate: null,
+    notes: '',
   });
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -209,8 +210,10 @@ const PropertyLeadsPage: React.FC = () => {
   const handleZillowLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     setFormData({ ...formData, zillowLink: url });
-    
-    // Only parse if we're not editing and the URL is a valid Zillow link
+  };
+
+  const handleZillowLinkBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const url = e.target.value;
     if (!isEditing && url.includes('zillow.com')) {
       const parsedData = parseZillowLink(url);
       if (parsedData) {
@@ -268,6 +271,7 @@ const PropertyLeadsPage: React.FC = () => {
       sellerPhone: '',
       sellerEmail: '',
       lastContactDate: null,
+      notes: '',
     });
     setOpenDialog(true);
   };
@@ -282,6 +286,7 @@ const PropertyLeadsPage: React.FC = () => {
       sellerPhone: lead.sellerPhone,
       sellerEmail: lead.sellerEmail,
       lastContactDate: lead.lastContactDate,
+      notes: lead.notes || '',
     });
     setOpenDialog(true);
   };
@@ -516,7 +521,7 @@ ${lead.zillowLink || ''}`;
           rentHigh: 0
         },
         hasRentcastData: false,
-        notes: '',
+        notes: lead.notes || '',
         score: 0,
         zillowLink: lead.zillowLink,
         squareFootage: lead.squareFootage
@@ -530,6 +535,7 @@ ${lead.zillowLink || ''}`;
         sellerPhone: lead.sellerPhone || '',
         sellerEmail: lead.sellerEmail || '',
         lastContactDate: lead.lastContactDate,
+        notes: lead.notes || '',
         // Explicitly set convertedToProperty to true
         convertedToProperty: true,
         // Include other fields to maintain consistency
@@ -773,13 +779,14 @@ ${lead.zillowLink || ''}`;
                 <StyledTableCell className="header">Listing Price</StyledTableCell>
                 <StyledTableCell className="header">Seller Contact</StyledTableCell>
                 <StyledTableCell className="header">Last Contact</StyledTableCell>
+                <StyledTableCell className="header">Notes</StyledTableCell>
                 <StyledTableCell className="header" sx={{ width: '220px' }}>Actions</StyledTableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {propertyLeads.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={7} align="center">
                     <Typography variant="body1" sx={{ py: 2 }}>
                       No property leads found. Add your first lead.
                     </Typography>
@@ -903,6 +910,24 @@ ${lead.zillowLink || ''}`;
                         </Tooltip>
                       </Box>
                     </TableCell>
+                    <TableCell>
+                      <Box sx={{ 
+                        maxWidth: '200px', 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {lead.notes ? (
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            {lead.notes.length > 50 ? `${lead.notes.substring(0, 50)}...` : lead.notes}
+                          </Typography>
+                        ) : (
+                          <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+                            No notes
+                          </Typography>
+                        )}
+                      </Box>
+                    </TableCell>
                     <TableCell sx={{ width: '220px' }}>
                       <Box sx={{ display: 'flex' }}>
                         {lead.archived ? (
@@ -970,6 +995,7 @@ ${lead.zillowLink || ''}`;
                                 <Icons.Edit fontSize="small" />
                               </ActionIconButton>
                             </Tooltip>
+
                           </>
                         )}
                       </Box>
@@ -999,6 +1025,7 @@ ${lead.zillowLink || ''}`;
               name="zillowLink"
               value={formData.zillowLink}
               onChange={handleZillowLinkChange}
+              onBlur={handleZillowLinkBlur}
               fullWidth
               margin="normal"
               placeholder="Paste Zillow link to auto-fill address and price"
@@ -1046,6 +1073,17 @@ ${lead.zillowLink || ''}`;
               margin="normal"
               type="email"
             />
+            <TextField
+              label="Notes"
+              name="notes"
+              value={formData.notes}
+              onChange={handleInputChange}
+              fullWidth
+              margin="normal"
+              multiline
+              rows={3}
+              placeholder="Add any notes about this property lead..."
+            />
           </Box>
         </DialogContent>
         <DialogActions>
@@ -1055,6 +1093,8 @@ ${lead.zillowLink || ''}`;
           </Button>
         </DialogActions>
       </Dialog>
+
+
 
       {/* Success/Error Notification */}
       <Snackbar

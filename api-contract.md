@@ -196,9 +196,11 @@
     "archived": boolean,
     "tags": ["string"],
     "convertedToProperty": boolean,
-    "squareFootage": number | null
+    "squareFootage": number | null,
+    "notes": "string"
   }
 ]
+```
 ```
 
 ### Get Property Lead by ID
@@ -221,7 +223,8 @@
   "archived": boolean,
   "tags": ["string"],
   "convertedToProperty": boolean,
-  "squareFootage": number | null
+  "squareFootage": number | null,
+  "notes": "string"
 }
 ```
 - **Error Responses**:
@@ -239,12 +242,12 @@
   "sellerPhone": "string",
   "sellerEmail": "string",
   "tags": ["string"],
-  "squareFootage": number | null
+  "squareFootage": number | null,
+  "notes": "string"
 }
 ```
 - **Response**: Created PropertyLead object
-- **Error Responses**:
-  - 409: Property lead with this address already exists
+- **Note**: Duplicate addresses are allowed for property leads
 
 ### Create Multiple Property Leads (Batch)
 - **Method**: POST
@@ -260,10 +263,12 @@
       "sellerPhone": "string",
       "sellerEmail": "string",
       "tags": ["string"],
-      "squareFootage": number | null
+      "squareFootage": number | null,
+      "notes": "string"
     }
   ]
 }
+```
 ```
 - **Response**: BatchCreateResponse object
 ```json
@@ -283,13 +288,16 @@
       "archived": boolean,
       "tags": ["string"],
       "convertedToProperty": boolean,
-      "squareFootage": number | null
+      "squareFootage": number | null,
+      "notes": "string"
     }
   ],
   "errorCount": number,
   "errors": ["string"]
 }
 ```
+```
+- **Note**: Duplicate addresses are allowed for property leads in batch creation
 
 ### Update Property Lead
 - **Method**: PUT
@@ -308,8 +316,10 @@
   "archived": boolean,
   "tags": ["string"],
   "convertedToProperty": boolean,
-  "squareFootage": number | null
+  "squareFootage": number | null,
+  "notes": "string"
 }
+```
 ```
 - **Response**: Updated PropertyLead object
 - **Error Responses**:

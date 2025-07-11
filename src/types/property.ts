@@ -41,6 +41,7 @@ export interface PropertyLead {
     tags: string[];
     convertedToProperty: boolean;
     squareFootage: number | null;
+    notes: string;
 }
 
 export interface CreatePropertyLead {
@@ -51,6 +52,7 @@ export interface CreatePropertyLead {
     sellerEmail: string;
     tags?: string[];
     squareFootage?: number | null;
+    notes?: string;
 }
 
 export interface UpdatePropertyLead {
@@ -64,6 +66,7 @@ export interface UpdatePropertyLead {
     tags?: string[];
     convertedToProperty?: boolean;
     squareFootage?: number | null;
+    notes?: string;
 }
 
 export interface BatchCreatePropertyLeads {

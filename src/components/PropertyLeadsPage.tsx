@@ -843,34 +843,49 @@ ${lead.zillowLink || ''}`;
                     </TableCell>
                     <TableCell>{formatCurrency(lead.listingPrice)}</TableCell>
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {lead.sellerPhone ? (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Tooltip title="Copy templated message">
-                              <ActionIconButton 
-                                size="small"
-                                onClick={() => copyTemplatedMessage(lead)}
-                              >
-                                <Icons.Message fontSize="small" />
-                              </ActionIconButton>
-                            </Tooltip>
-                            <Tooltip title="Copy phone number">
-                              <Button
-                                variant="text"
-                                size="small"
-                                onClick={() => copyPhoneNumber(lead.sellerPhone)}
-                                sx={{ 
-                                  textTransform: 'none',
-                                  minWidth: 'auto',
-                                  padding: '4px 8px'
-                                }}
-                              >
-                                {lead.sellerPhone}
-                              </Button>
-                            </Tooltip>
-                          </Box>
-                        ) : (
-                          'No phone'
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Tooltip title="Copy templated message">
+                          <ActionIconButton 
+                            size="small"
+                            onClick={() => copyTemplatedMessage(lead)}
+                          >
+                            <Icons.Message fontSize="small" />
+                          </ActionIconButton>
+                        </Tooltip>
+                        {lead.sellerPhone && (
+                          <Tooltip title="Copy phone number">
+                            <Button
+                              variant="text"
+                              size="small"
+                              onClick={() => copyPhoneNumber(lead.sellerPhone)}
+                              sx={{ 
+                                textTransform: 'none',
+                                minWidth: 'auto',
+                                padding: '4px 8px'
+                              }}
+                            >
+                              {lead.sellerPhone}
+                            </Button>
+                          </Tooltip>
+                        )}
+                        {lead.sellerEmail && (
+                          <Tooltip title="Copy email address">
+                            <Button
+                              variant="text"
+                              size="small"
+                              onClick={() => copyToClipboard(lead.sellerEmail, 'Email address copied to clipboard!')}
+                              sx={{ 
+                                textTransform: 'none',
+                                minWidth: 'auto',
+                                padding: '4px 8px'
+                              }}
+                            >
+                              {lead.sellerEmail}
+                            </Button>
+                          </Tooltip>
+                        )}
+                        {!lead.sellerPhone && !lead.sellerEmail && (
+                          <Typography variant="body2" color="text.secondary">No phone</Typography>
                         )}
                       </Box>
                     </TableCell>

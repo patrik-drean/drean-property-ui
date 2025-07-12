@@ -36,6 +36,7 @@ import {
   addProperty, 
   archivePropertyLead
 } from '../services/api';
+import PropertyLeadDialog from './PropertyLeadDialog';
 
 // Styled components for consistent UI elements
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -102,7 +103,17 @@ const PropertyLeadsPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
-  const [formData, setFormData] = useState<Omit<PropertyLead, 'id' | 'createdAt' | 'updatedAt' | 'archived' | 'tags' | 'convertedToProperty' | 'squareFootage'>>({
+  // Remove formData and all input handlers from parent
+  // Add getInitialFormData helper
+  const getInitialFormData = (lead?: PropertyLead) => lead ? {
+    address: lead.address,
+    zillowLink: lead.zillowLink,
+    listingPrice: lead.listingPrice,
+    sellerPhone: lead.sellerPhone,
+    sellerEmail: lead.sellerEmail,
+    lastContactDate: lead.lastContactDate,
+    notes: lead.notes || '',
+  } : {
     address: '',
     zillowLink: '',
     listingPrice: 0,
@@ -110,7 +121,9 @@ const PropertyLeadsPage: React.FC = () => {
     sellerEmail: '',
     lastContactDate: null,
     notes: '',
-  });
+  };
+
+  const [dialogInitialFormData, setDialogInitialFormData] = useState(getInitialFormData());
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -150,9 +163,9 @@ const PropertyLeadsPage: React.FC = () => {
     if (name === 'listingPrice') {
       // Handle numeric input
       const numericValue = value === '' ? 0 : parseFloat(value);
-      setFormData({ ...formData, [name]: numericValue });
+      // setFormData({ ...formData, [name]: numericValue }); // This line is removed
     } else {
-      setFormData({ ...formData, [name]: value });
+      // setFormData({ ...formData, [name]: value }); // This line is removed
     }
   };
 
@@ -164,7 +177,8 @@ const PropertyLeadsPage: React.FC = () => {
 
   const formatInputCurrency = (value: number) => {
     if (!value) return '';
-    return value.toLocaleString('en-US');
+    const result = value.toLocaleString('en-US');
+    return result;
   };
 
   const parseZillowLink = (url: string) => {
@@ -209,7 +223,7 @@ const PropertyLeadsPage: React.FC = () => {
 
   const handleZillowLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
-    setFormData({ ...formData, zillowLink: url });
+    // setFormData({ ...formData, zillowLink: url }); // This line is removed
   };
 
   const handleZillowLinkBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -217,12 +231,12 @@ const PropertyLeadsPage: React.FC = () => {
     if (!isEditing && url.includes('zillow.com')) {
       const parsedData = parseZillowLink(url);
       if (parsedData) {
-        setFormData(prev => ({
-          ...prev,
-          address: parsedData.address,
-          listingPrice: parsedData.price,
-          zillowLink: url
-        }));
+        // setFormData(prev => ({ // This line is removed
+        //   ...prev,
+        //   address: parsedData.address,
+        //   listingPrice: parsedData.price,
+        //   zillowLink: url
+        // }));
       }
     }
   };
@@ -264,34 +278,18 @@ const PropertyLeadsPage: React.FC = () => {
   const handleAddLead = () => {
     setIsEditing(false);
     setEditingId(null);
-    setFormData({
-      address: '',
-      zillowLink: '',
-      listingPrice: 0,
-      sellerPhone: '',
-      sellerEmail: '',
-      lastContactDate: null,
-      notes: '',
-    });
+    setDialogInitialFormData(getInitialFormData());
     setOpenDialog(true);
   };
 
   const handleEditLead = (lead: PropertyLead) => {
     setIsEditing(true);
     setEditingId(lead.id);
-    setFormData({
-      address: lead.address,
-      zillowLink: lead.zillowLink,
-      listingPrice: lead.listingPrice,
-      sellerPhone: lead.sellerPhone,
-      sellerEmail: lead.sellerEmail,
-      lastContactDate: lead.lastContactDate,
-      notes: lead.notes || '',
-    });
+    setDialogInitialFormData(getInitialFormData(lead));
     setOpenDialog(true);
   };
 
-  const handleSaveLead = async () => {
+  const handleDialogSave = async (formData: any) => {
     try {
       if (isEditing && editingId) {
         await updatePropertyLead(editingId, formData);
@@ -501,8 +499,6 @@ ${lead.zillowLink || ''}`;
         return;
       }
 
-      console.log('Converting lead to property:', lead);
-
       // First create the property
       await addProperty({
         address: lead.address,
@@ -544,12 +540,8 @@ ${lead.zillowLink || ''}`;
         squareFootage: lead.squareFootage
       };
       
-      console.log('Updating lead with:', updateData);
-      
       // Update the lead with convertedToProperty field
       const updatedLead = await updatePropertyLead(lead.id, updateData);
-      
-      console.log('Update response:', updatedLead);
       
       // Check if the convertedToProperty field was actually updated in the response
       if (!updatedLead.convertedToProperty) {
@@ -1009,90 +1001,15 @@ ${lead.zillowLink || ''}`;
       </Paper>
 
       {/* Add/Edit Dialog */}
-      <Dialog 
-        open={openDialog} 
+      <PropertyLeadDialog
+        open={openDialog}
+        isEditing={isEditing}
+        initialFormData={dialogInitialFormData}
+        onSave={handleDialogSave}
         onClose={handleCloseDialog}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>
-          {isEditing ? 'Edit Property Lead' : 'Add Property Lead'}
-        </DialogTitle>
-        <DialogContent>
-          <Box component="form" sx={{ mt: 2 }}>
-            <TextField
-              label="Zillow Link"
-              name="zillowLink"
-              value={formData.zillowLink}
-              onChange={handleZillowLinkChange}
-              onBlur={handleZillowLinkBlur}
-              fullWidth
-              margin="normal"
-              placeholder="Paste Zillow link to auto-fill address and price"
-            />
-            <TextField
-              label="Address"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              fullWidth
-              margin="normal"
-              required
-            />
-            <TextField
-              label="Listing Price"
-              name="listingPrice"
-              value={formatInputCurrency(formData.listingPrice)}
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  listingPrice: handleCurrencyInput(e.target.value),
-                });
-              }}
-              fullWidth
-              margin="normal"
-              required
-              InputProps={{
-                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-              }}
-            />
-            <TextField
-              label="Seller Phone"
-              name="sellerPhone"
-              value={formData.sellerPhone}
-              onChange={handleInputChange}
-              fullWidth
-              margin="normal"
-            />
-            <TextField
-              label="Seller Email"
-              name="sellerEmail"
-              value={formData.sellerEmail}
-              onChange={handleInputChange}
-              fullWidth
-              margin="normal"
-              type="email"
-            />
-            <TextField
-              label="Notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleInputChange}
-              fullWidth
-              margin="normal"
-              multiline
-              rows={3}
-              placeholder="Add any notes about this property lead..."
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSaveLead} variant="contained" color="primary">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
+        handleCurrencyInput={handleCurrencyInput}
+        formatInputCurrency={formatInputCurrency}
+      />
 
 
 

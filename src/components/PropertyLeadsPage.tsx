@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Paper,
   Table,
@@ -103,6 +103,10 @@ const PropertyLeadsPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  // Add state for custom message dialog
+  const [openMessageDialog, setOpenMessageDialog] = useState(false);
+  const [customMessage, setCustomMessage] = useState('');
+  const messageTextareaRef = useRef<HTMLTextAreaElement>(null);
   // Remove formData and all input handlers from parent
   // Add getInitialFormData helper
   const getInitialFormData = (lead?: PropertyLead) => lead ? {
@@ -132,6 +136,16 @@ const PropertyLeadsPage: React.FC = () => {
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
   const [locallyConvertedLeads, setLocallyConvertedLeads] = useState<Set<string>>(new Set());
 
+  // Default message template
+  const defaultMessageTemplate = `Hi there! My name is Patrik. I really like this property and believe it has great potential. I'd like to explore an offer around {PRICE}. I'm an experienced investor who is reliable and quick when it comes to closing. If this number is in the ballpark, I'd love to discuss further. Let me know what you and the seller think! Have a great day! 
+{ZILLOW_LINK}`;
+
+  // Load custom message from localStorage on component mount
+  useEffect(() => {
+    const savedMessage = localStorage.getItem('customMessageTemplate');
+    setCustomMessage(savedMessage || defaultMessageTemplate);
+  }, []);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -158,16 +172,7 @@ const PropertyLeadsPage: React.FC = () => {
     });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (name === 'listingPrice') {
-      // Handle numeric input
-      const numericValue = value === '' ? 0 : parseFloat(value);
-      // setFormData({ ...formData, [name]: numericValue }); // This line is removed
-    } else {
-      // setFormData({ ...formData, [name]: value }); // This line is removed
-    }
-  };
+  // Removed handleInputChange as it's no longer needed
 
   const handleCurrencyInput = (value: string) => {
     // Remove dollar signs, commas and convert to number
@@ -221,25 +226,9 @@ const PropertyLeadsPage: React.FC = () => {
     }
   };
 
-  const handleZillowLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const url = e.target.value;
-    // setFormData({ ...formData, zillowLink: url }); // This line is removed
-  };
+  // Removed handleZillowLinkChange as it's no longer needed
 
-  const handleZillowLinkBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const url = e.target.value;
-    if (!isEditing && url.includes('zillow.com')) {
-      const parsedData = parseZillowLink(url);
-      if (parsedData) {
-        // setFormData(prev => ({ // This line is removed
-        //   ...prev,
-        //   address: parsedData.address,
-        //   listingPrice: parsedData.price,
-        //   zillowLink: url
-        // }));
-      }
-    }
-  };
+  // Removed handleZillowLinkBlur as it's no longer needed
 
   const fetchPropertyLeads = async () => {
     setLoading(true);
@@ -450,12 +439,18 @@ const PropertyLeadsPage: React.FC = () => {
     copyToClipboard(phone, 'Phone number copied to clipboard!');
   };
 
-  const copyTemplatedMessage = async (lead: PropertyLead) => {
+  // Function to replace template variables
+  const replaceTemplateVariables = (template: string, lead: PropertyLead) => {
     const discountedPrice = Math.round(lead.listingPrice * 0.8);
     const formattedPrice = formatCurrencyInK(discountedPrice);
     
-    const message = `Hi there! My name is Patrik. I really like this property and believe it has great potential. I'd like to explore an offer around ${formattedPrice}. I'm an experienced investor who is reliable and quick when it comes to closing. If this number is in the ballpark, I'd love to discuss further. Let me know what you and the seller think! Have a great day! 
-${lead.zillowLink || ''}`;
+    return template
+      .replace(/{PRICE}/g, formattedPrice)
+      .replace(/{ZILLOW_LINK}/g, lead.zillowLink || '');
+  };
+
+  const copyTemplatedMessage = async (lead: PropertyLead) => {
+    const message = replaceTemplateVariables(customMessage, lead);
 
     try {
       // First copy the message
@@ -486,6 +481,40 @@ ${lead.zillowLink || ''}`;
       });
     }
   };
+
+  // Handle opening the message override dialog
+  const handleOpenMessageDialog = () => {
+    setOpenMessageDialog(true);
+  };
+
+  // Handle closing the message override dialog
+  const handleCloseMessageDialog = () => {
+    setOpenMessageDialog(false);
+  };
+
+  // Handle saving the custom message
+  const handleSaveCustomMessage = useCallback(() => {
+    const messageValue = messageTextareaRef.current?.value || customMessage;
+    localStorage.setItem('customMessageTemplate', messageValue);
+    setCustomMessage(messageValue);
+    setOpenMessageDialog(false);
+    setSnackbar({
+      open: true,
+      message: 'Custom message template saved successfully',
+      severity: 'success',
+    });
+  }, [customMessage]);
+
+  // Handle resetting to default message
+  const handleResetToDefault = useCallback(() => {
+    setCustomMessage(defaultMessageTemplate);
+    localStorage.removeItem('customMessageTemplate');
+    setSnackbar({
+      open: true,
+      message: 'Message template reset to default',
+      severity: 'success',
+    });
+  }, []);
 
   const handleConvertToProperty = async (lead: PropertyLead) => {
     try {
@@ -705,6 +734,15 @@ ${lead.zillowLink || ''}`;
           )}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={handleOpenMessageDialog}
+            startIcon={<Icons.Message />}
+            sx={{ mr: 2, borderRadius: 2 }}
+          >
+            Override Message
+          </Button>
           <Button
             variant="outlined"
             color="primary"
@@ -1011,7 +1049,76 @@ ${lead.zillowLink || ''}`;
         formatInputCurrency={formatInputCurrency}
       />
 
-
+      {/* Message Override Dialog */}
+      <Dialog
+        open={openMessageDialog}
+        onClose={handleCloseMessageDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6">Customize Message Template</Typography>
+            <Tooltip title="Reset to default message">
+              <IconButton onClick={handleResetToDefault} color="secondary">
+                <Icons.Refresh />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Customize your message template. Use the following variables:
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Box sx={{ 
+                backgroundColor: 'primary.light', 
+                color: 'primary.contrastText', 
+                px: 1, 
+                py: 0.5, 
+                borderRadius: 1,
+                fontSize: '0.875rem'
+              }}>
+                {'{PRICE}'} - Formatted offer price (e.g., $400K)
+              </Box>
+              <Box sx={{ 
+                backgroundColor: 'secondary.light', 
+                color: 'secondary.contrastText', 
+                px: 1, 
+                py: 0.5, 
+                borderRadius: 1,
+                fontSize: '0.875rem'
+              }}>
+                {'{ZILLOW_LINK}'} - Property Zillow link
+              </Box>
+            </Box>
+          </Box>
+          <TextField
+            autoFocus
+            multiline
+            rows={8}
+            fullWidth
+            variant="outlined"
+            label="Message Template"
+            defaultValue={customMessage}
+            inputRef={messageTextareaRef}
+            placeholder="Enter your custom message template..."
+            sx={{ fontFamily: 'monospace' }}
+            inputProps={{
+              style: { fontSize: '14px' }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseMessageDialog} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleSaveCustomMessage} variant="contained" color="primary">
+            Save Template
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Success/Error Notification */}
       <Snackbar

@@ -1,5 +1,7 @@
 import axios from 'axios';
-import { Property } from '../types/todo';
+import { Property } from '../types/property';
+// If Property is needed, import from property types:
+// import { Property } from '../types/property';
 
 // Define the base URL from the environment or use a default
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://p7mxmmgxaw.us-west-2.awsapprunner.com';
@@ -33,8 +35,19 @@ interface PropertyDTO {
 const mapDTOToProperty = (dto: PropertyDTO): Property => {
   return {
     id: dto.id,
-    name: dto.address, // Using address as the property name
     address: dto.address,
+    status: dto.status as any, // You may want to cast or validate this
+    listingPrice: dto.listingPrice,
+    offerPrice: dto.offerPrice,
+    rehabCosts: dto.rehabCosts,
+    potentialRent: dto.potentialRent,
+    arv: dto.arv,
+    rentCastEstimates: dto.rentCastEstimates,
+    hasRentcastData: dto.hasRentcastData,
+    notes: dto.notes,
+    score: dto.score,
+    zillowLink: dto.zillowLink,
+    squareFootage: dto.squareFootage,
   };
 };
 

@@ -58,6 +58,7 @@ const Navigation: React.FC = () => {
     setDrawerOpen(!drawerOpen);
   };
 
+  // Remove the Todos tab from the mobile menu
   const mobileMenu = (
     <Drawer
       anchor="left"
@@ -107,17 +108,6 @@ const Navigation: React.FC = () => {
             </ListItemIcon>
             <ListItemText primary="Calculator" />
           </ListItem>
-          <ListItem 
-            button 
-            component={RouterLink} 
-            to="/todos"
-            selected={isActive('/todos')}
-          >
-            <ListItemIcon>
-              <CheckCircleIcon color={isActive('/todos') ? 'primary' : 'inherit'} />
-            </ListItemIcon>
-            <ListItemText primary="Todos" />
-          </ListItem>
         </List>
       </Box>
     </Drawer>
@@ -165,6 +155,7 @@ const Navigation: React.FC = () => {
               Property Analyzer
             </Typography>
             
+            {/* Remove the Todos tab from the desktop nav */}
             {!isMobile && (
               <Stack 
                 direction="row" 
@@ -195,15 +186,6 @@ const Navigation: React.FC = () => {
                   sx={getNavButtonStyle('/calculator')}
                 >
                   Calculator
-                </Button>
-
-                <Button
-                  component={RouterLink}
-                  to="/todos"
-                  startIcon={<CheckCircleIcon />}
-                  sx={getNavButtonStyle('/todos')}
-                >
-                  Todos
                 </Button>
               </Stack>
             )}

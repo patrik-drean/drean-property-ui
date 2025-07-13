@@ -736,7 +736,7 @@ const PropertyLeadsPage: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Button
             variant="outlined"
-            color="secondary"
+            color="primary"
             onClick={handleOpenMessageDialog}
             startIcon={<Icons.Message />}
             sx={{ mr: 2, borderRadius: 2 }}

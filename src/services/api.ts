@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Property, PropertyLead, CreatePropertyLead, UpdatePropertyLead, BatchCreatePropertyLeads, BatchCreateResponse } from '../types/property';
+import { Property, PropertyLead, CreatePropertyLead, UpdatePropertyLead, BatchCreatePropertyLeads, BatchCreateResponse, Note, CreateNote, Link, CreateLink } from '../types/property';
 
 // Use environment variables if available, otherwise use default local development URL
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
@@ -100,4 +100,44 @@ export const getPropertyLeadsWithArchivedStatus = async (showArchived?: boolean)
     params: { showArchived }
   });
   return response.data;
+};
+
+// Note API Methods
+export const getNotesByPropertyId = async (propertyId: string): Promise<Note[]> => {
+  const response = await api.get<Note[]>(`/api/Notes/property/${propertyId}`);
+  return response.data;
+};
+
+export const createNote = async (note: CreateNote): Promise<Note> => {
+  const response = await api.post<Note>('/api/Notes', note);
+  return response.data;
+};
+
+export const updateNote = async (id: string, note: CreateNote): Promise<Note> => {
+  const response = await api.put<Note>(`/api/Notes/${id}`, note);
+  return response.data;
+};
+
+export const deleteNote = async (id: string): Promise<void> => {
+  await api.delete(`/api/Notes/${id}`);
+};
+
+// Link API Methods
+export const getLinksByPropertyId = async (propertyId: string): Promise<Link[]> => {
+  const response = await api.get<Link[]>(`/api/Links/property/${propertyId}`);
+  return response.data;
+};
+
+export const createLink = async (link: CreateLink): Promise<Link> => {
+  const response = await api.post<Link>('/api/Links', link);
+  return response.data;
+};
+
+export const updateLink = async (id: string, link: CreateLink): Promise<Link> => {
+  const response = await api.put<Link>(`/api/Links/${id}`, link);
+  return response.data;
+};
+
+export const deleteLink = async (id: string): Promise<void> => {
+  await api.delete(`/api/Links/${id}`);
 }; 

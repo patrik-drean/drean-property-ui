@@ -79,3 +79,35 @@ export interface BatchCreateResponse {
     errorCount: number;
     errors: string[];
 }
+
+export interface Note {
+    id: string;
+    content: string;
+    createdBy: string;
+    propertyId: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateNote {
+    content: string;
+    createdBy: string;
+    propertyId: string;
+}
+
+export interface Link {
+    id: string;
+    url: string;
+    title: string;
+    moreDetails: string;
+    propertyId: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateLink {
+    url: string;
+    title: string;
+    moreDetails: string;
+    propertyId: string;
+}

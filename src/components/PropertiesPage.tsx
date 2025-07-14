@@ -35,6 +35,7 @@ import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
 import { api } from '../services/apiConfig';
 import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 // Styled components for consistent UI elements
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -773,22 +774,36 @@ ${property.zillowLink}`;
                 <StyledTableRow key={property.id}>
                   <TableCell sx={{ pl: 1 }}>
                     <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
-                      <a 
-                        href={property.zillowLink} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        style={{ 
-                          color: '#1976d2', 
-                          textDecoration: 'none',
-                          fontWeight: 500,
-                          display: 'block',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {property.address}
-                      </a>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <RouterLink
+                          to={`/properties/${property.id}`}
+                          style={{
+                            color: '#1976d2',
+                            textDecoration: 'none',
+                            fontWeight: 500,
+                            display: 'block',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: 180
+                          }}
+                        >
+                          {property.address}
+                        </RouterLink>
+                        {property.zillowLink && (
+                          <Tooltip title="Open Zillow" arrow>
+                            <IconButton
+                              href={property.zillowLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              size="small"
+                              sx={{ ml: 0.5 }}
+                            >
+                              <Icons.OpenInNew fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
                     </Tooltip>
                   </TableCell>
                   <TableCell>

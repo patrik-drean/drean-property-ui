@@ -444,6 +444,178 @@
   - `id` (string, required): The todo ID
 - **Response**: No content (204)
 
+## Link Endpoints
+
+### Get All Links
+- **Method**: GET
+- **Endpoint**: `/api/Links`
+- **Response**: Array of Link objects
+```json
+[
+  {
+    "id": "string",
+    "url": "string",
+    "title": "string",
+    "moreDetails": "string",
+    "propertyId": "string",
+    "createdAt": "string",
+    "updatedAt": "string"
+  }
+]
+```
+
+### Get Links by Property ID
+- **Method**: GET
+- **Endpoint**: `/api/Links/property/{propertyId}`
+- **URL Parameters**:
+  - `propertyId` (string, required): The property ID
+- **Response**: Array of Link objects for the specified property
+
+### Get Link by ID
+- **Method**: GET
+- **Endpoint**: `/api/Links/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The link ID
+- **Response**: Single Link object
+```json
+{
+  "id": "string",
+  "url": "string",
+  "title": "string",
+  "moreDetails": "string",
+  "propertyId": "string",
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+```
+- **Error Responses**:
+  - 404: Link with specified ID not found
+
+### Create Link
+- **Method**: POST
+- **Endpoint**: `/api/Links`
+- **Request Body**: Link object
+```json
+{
+  "url": "string",
+  "title": "string",
+  "moreDetails": "string",
+  "propertyId": "string"
+}
+```
+- **Response**: Created Link object with ID
+
+### Update Link
+- **Method**: PUT
+- **Endpoint**: `/api/Links/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The link ID
+- **Request Body**: Link object
+```json
+{
+  "id": "string",
+  "url": "string",
+  "title": "string",
+  "moreDetails": "string",
+  "propertyId": "string"
+}
+```
+- **Response**: Updated Link object
+- **Error Responses**:
+  - 404: Link with specified ID not found
+  - 400: ID mismatch between URL and request body
+
+### Delete Link
+- **Method**: DELETE
+- **Endpoint**: `/api/Links/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The link ID
+- **Response**: No content (204)
+
+## Note Endpoints
+
+### Get All Notes
+- **Method**: GET
+- **Endpoint**: `/api/Notes`
+- **Response**: Array of Note objects
+```json
+[
+  {
+    "id": "string",
+    "content": "string",
+    "createdBy": "string",
+    "propertyId": "string",
+    "createdAt": "string",
+    "updatedAt": "string"
+  }
+]
+```
+
+### Get Notes by Property ID
+- **Method**: GET
+- **Endpoint**: `/api/Notes/property/{propertyId}`
+- **URL Parameters**:
+  - `propertyId` (string, required): The property ID
+- **Response**: Array of Note objects for the specified property
+
+### Get Note by ID
+- **Method**: GET
+- **Endpoint**: `/api/Notes/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The note ID
+- **Response**: Single Note object
+```json
+{
+  "id": "string",
+  "content": "string",
+  "createdBy": "string",
+  "propertyId": "string",
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+```
+- **Error Responses**:
+  - 404: Note with specified ID not found
+
+### Create Note
+- **Method**: POST
+- **Endpoint**: `/api/Notes`
+- **Request Body**: Note object
+```json
+{
+  "content": "string",
+  "createdBy": "string",
+  "propertyId": "string"
+}
+```
+- **Response**: Created Note object with ID
+
+### Update Note
+- **Method**: PUT
+- **Endpoint**: `/api/Notes/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The note ID
+- **Request Body**: Note object
+```json
+{
+  "id": "string",
+  "content": "string",
+  "createdBy": "string",
+  "propertyId": "string"
+}
+```
+- **Response**: Updated Note object
+- **Error Responses**:
+  - 404: Note with specified ID not found
+  - 400: ID mismatch between URL and request body
+
+### Delete Note
+- **Method**: DELETE
+- **Endpoint**: `/api/Notes/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The note ID
+- **Response**: No content (204)
+
 ## Error Responses
 - **400 Bad Request**: Invalid input or validation errors
 - **404 Not Found**: Resource not found

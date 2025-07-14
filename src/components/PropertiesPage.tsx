@@ -776,7 +776,7 @@ ${property.zillowLink}`;
                     <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <RouterLink
-                          to={`/properties/${property.id}`}
+                          to={`/properties/${encodeURIComponent(property.address)}`}
                           style={{
                             color: '#1976d2',
                             textDecoration: 'none',

@@ -7,7 +7,7 @@ import { getProperty } from '../services/api';
 import { getNotesByPropertyId, createNote, getLinksByPropertyId, createLink } from '../services/api';
 
 const PropertyDetailsPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { address } = useParams<{ address: string }>();
   const [property, setProperty] = useState<Property | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [links, setLinks] = useState<PropertyLink[]>([]);
@@ -19,20 +19,32 @@ const PropertyDetailsPage: React.FC = () => {
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
-    if (!id) return;
+    if (!address) return;
     setLoading(true);
-    Promise.all([
-      getProperty(id),
-      getNotesByPropertyId(id),
-      getLinksByPropertyId(id)
-    ]).then(([property, notes, links]) => {
-      setProperty(property);
-      setNotes(notes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-      setLinks(links);
-    }).catch(() => {
-      setSnackbar({ open: true, message: 'Failed to load property details', severity: 'error' });
-    }).finally(() => setLoading(false));
-  }, [id]);
+    const decodedAddress = decodeURIComponent(address);
+    getProperty(decodedAddress)
+      .then((property) => {
+        setProperty(property);
+        // Fetch notes and links using property.id, handle 404 as empty
+        Promise.all([
+          getNotesByPropertyId(property.id).catch(err => {
+            if (err.response && err.response.status === 404) return [];
+            throw err;
+          }),
+          getLinksByPropertyId(property.id).catch(err => {
+            if (err.response && err.response.status === 404) return [];
+            throw err;
+          })
+        ]).then(([notes, links]) => {
+          setNotes(notes.sort((a: Note, b: Note) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+          setLinks(links);
+        });
+      })
+      .catch(() => {
+        setSnackbar({ open: true, message: 'Failed to load property details', severity: 'error' });
+      })
+      .finally(() => setLoading(false));
+  }, [address]);
 
   const handleAddNote = async () => {
     if (!property || !newNote.trim()) return;

@@ -55,6 +55,11 @@ export const restoreProperty = async (id: string): Promise<void> => {
   await api.put(`/api/Properties/${id}/restore`);
 };
 
+export const getPropertyById = async (id: string): Promise<Property> => {
+  const response = await api.get<Property>(`/api/Properties/${id}`);
+  return response.data;
+};
+
 // Property Lead API Methods
 export const getPropertyLeads = async (): Promise<PropertyLead[]> => {
   const response = await api.get<PropertyLead[]>('/api/PropertyLeads');

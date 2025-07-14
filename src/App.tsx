@@ -15,7 +15,7 @@ const router = createHashRouter(
     <Route element={<Navigation />}>
       <Route path="/" element={<Navigate to="/properties" replace />} />
       <Route path="/properties" element={<PropertiesPage />} />
-      <Route path="/properties/:id" element={<PropertyDetailsPage />} />
+      <Route path="/properties/:address" element={<PropertyDetailsPage />} />
       <Route path="/archived" element={<ArchivedPropertiesPage />} />
       <Route path="/calculator" element={<Calculator />} />
       <Route path="/leads" element={<PropertyLeadsPage />} />

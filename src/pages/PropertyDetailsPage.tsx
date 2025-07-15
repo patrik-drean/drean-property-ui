@@ -403,29 +403,46 @@ const PropertyDetailsPage: React.FC = () => {
         </Box>
       </Box>
       {/* Note Dialog */}
-      <Dialog open={noteDialogOpen} onClose={() => setNoteDialogOpen(false)}>
+      <Dialog 
+        open={noteDialogOpen} 
+        onClose={() => setNoteDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            minHeight: '400px',
+            width: '400px'
+          }
+        }}
+      >
         <DialogTitle>Add Note</DialogTitle>
-        <DialogContent>
-          <FormControl fullWidth sx={{ mt: 1, mb: 2 }}>
-            <InputLabel>Created By</InputLabel>
-            <Select
-              value={newNoteCreatedBy}
-              onChange={(e) => setNewNoteCreatedBy(e.target.value)}
-              label="Created By"
-            >
-              {createdByOptions.map(option => (
-                <MenuItem key={option} value={option}>{option}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+        <DialogContent sx={{ minHeight: '300px', display: 'flex', flexDirection: 'column' }}>
           <TextField
             label="Note"
             value={newNote}
             onChange={e => setNewNote(e.target.value)}
             fullWidth
             multiline
-            minRows={3}
+            minRows={5}
+            sx={{ mb: 2, flexGrow: 1 }}
           />
+          <FormControl fullWidth>
+            <InputLabel>Created By</InputLabel>
+            <Select
+              value={newNoteCreatedBy}
+              onChange={(e) => setNewNoteCreatedBy(e.target.value)}
+              label="Created By"
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 200
+                  }
+                }
+              }}
+            >
+              {createdByOptions.map(option => (
+                <MenuItem key={option} value={option} sx={{ minHeight: '36px' }}>{option}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setNoteDialogOpen(false)}>Cancel</Button>

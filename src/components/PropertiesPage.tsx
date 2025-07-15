@@ -748,7 +748,7 @@ ${property.zillowLink}`;
           <Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }} padding="none">
             <TableHead>
               <TableRow>
-                <StyledTableCell className="header" width="16%" sx={{ pl: 1 }}>
+                <StyledTableCell className="header" width="25%" sx={{ pl: 1 }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Address</Typography>
                 </StyledTableCell>
                 <StyledTableCell className="header" width="6%">
@@ -764,20 +764,12 @@ ${property.zillowLink}`;
                   <Typography variant="body2" fontWeight="bold" noWrap>Rehab</Typography>
                 </StyledTableCell>
                 <StyledTableCell className="header" width="6%">
-                  <Typography variant="body2" fontWeight="bold" noWrap>Rent</Typography>
+                  <Tooltip title="Hover to see Rentcast data">
+                    <Typography variant="body2" fontWeight="bold" noWrap>Rent</Typography>
+                  </Tooltip>
                 </StyledTableCell>
                 <StyledTableCell className="header" width="6%">
                   <Typography variant="body2" fontWeight="bold" noWrap>ARV</Typography>
-                </StyledTableCell>
-                <StyledTableCell className="header metric" width="6%">
-                  <Tooltip title="Hover over values to see the estimated rent range from Rentcast">
-                    <Typography variant="body2" fontWeight="bold" noWrap>Est. Rent</Typography>
-                  </Tooltip>
-                </StyledTableCell>
-                <StyledTableCell className="header metric" width="6%">
-                  <Tooltip title="Hover over values to see the estimated price range from Rentcast">
-                    <Typography variant="body2" fontWeight="bold" noWrap>Est. Price</Typography>
-                  </Tooltip>
                 </StyledTableCell>
                 <StyledTableCell className="header metric" width="6%">
                   <Tooltip title="Monthly Rent / (Offer Price + Rehab)">
@@ -813,6 +805,18 @@ ${property.zillowLink}`;
                   <TableCell sx={{ pl: 1 }}>
                     <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {property.zillowLink && (
+                          <Tooltip title="Open Zillow" arrow>
+                            <IconButton
+                              href={property.zillowLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              size="small"
+                            >
+                              <Icons.OpenInNew fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                         <RouterLink
                           to={`/properties/${encodeURIComponent(property.address)}`}
                           style={{
@@ -823,24 +827,11 @@ ${property.zillowLink}`;
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
-                            maxWidth: 180
+                            maxWidth: 280
                           }}
                         >
                           {property.address}
                         </RouterLink>
-                        {property.zillowLink && (
-                          <Tooltip title="Open Zillow" arrow>
-                            <IconButton
-                              href={property.zillowLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              size="small"
-                              sx={{ ml: 0.5 }}
-                            >
-                              <Icons.OpenInNew fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
                       </Box>
                     </Tooltip>
                   </TableCell>
@@ -875,32 +866,44 @@ ${property.zillowLink}`;
                     </Tooltip>
                   </TableCell>
                   <TableCell>{formatCurrency(property.rehabCosts)}</TableCell>
-                  <TableCell>{formatCurrency(property.potentialRent)}</TableCell>
+                  <TableCell>
+                    <Tooltip 
+                      title={
+                        property.hasRentcastData ? (
+                          <div>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                              Rentcast Rent: {formatCurrency(property.rentCastEstimates.rent)}
+                            </Typography>
+                            <Typography variant="body2">
+                              Range: {formatCurrency(property.rentCastEstimates.rentLow)} - {formatCurrency(property.rentCastEstimates.rentHigh)}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>
+                              Rentcast ARV: {formatCurrency(property.rentCastEstimates.price)}
+                            </Typography>
+                            <Typography variant="body2">
+                              Range: {formatCurrency(property.rentCastEstimates.priceLow)} - {formatCurrency(property.rentCastEstimates.priceHigh)}
+                            </Typography>
+                          </div>
+                        ) : (
+                          <div>
+                            <Typography variant="body2">
+                              No Rentcast data available
+                            </Typography>
+                          </div>
+                        )
+                      }
+                      arrow 
+                      placement="top"
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {formatCurrency(property.potentialRent)}
+                        {property.hasRentcastData && (
+                          <Icons.Check color="success" sx={{ fontSize: 14, ml: 0.5 }} />
+                        )}
+                      </Box>
+                    </Tooltip>
+                  </TableCell>
                   <TableCell>{formatCurrency(property.arv)}</TableCell>
-                  <TableCell className="metric">
-                    {property.hasRentcastData ? (
-                      <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.rentLow)} - ${formatCurrency(property.rentCastEstimates.rentHigh)}`}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {formatCurrency(property.rentCastEstimates.rent)}
-                          <Icons.Check color="success" sx={{ fontSize: 14, ml: 0.5 }} />
-                        </Box>
-                      </Tooltip>
-                    ) : (
-                      formatCurrency(property.rentCastEstimates.rent)
-                    )}
-                  </TableCell>
-                  <TableCell className="metric">
-                    {property.hasRentcastData ? (
-                      <Tooltip title={`Rentcast Data: ${formatCurrency(property.rentCastEstimates.priceLow)} - ${formatCurrency(property.rentCastEstimates.priceHigh)}`}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {formatCurrency(property.rentCastEstimates.price)}
-                          <Icons.Check color="success" sx={{ fontSize: 14, ml: 0.5 }} />
-                        </Box>
-                      </Tooltip>
-                    ) : (
-                      formatCurrency(property.rentCastEstimates.price)
-                    )}
-                  </TableCell>
                   <TableCell className="metric">
                     <Typography sx={{ 
                       color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))

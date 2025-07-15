@@ -103,15 +103,43 @@ const PropertyDetailsPage: React.FC = () => {
   };
 
   const calculateLoanAmount = (offerPrice: number, rehabCosts: number) => {
-    return (offerPrice + rehabCosts) * 0.75;
+    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
+    return (offerPrice + rehabCosts) - downPayment;
+  };
+
+  const calculateCashRemaining = () => {
+    // Fixed at $20,000
+    return 20000;
   };
 
   const calculateNewLoan = (offerPrice: number, rehabCosts: number, arv: number) => {
-    return arv * 0.75;
+    // Instead of using a fixed 75% of ARV, calculate based on fixed cash remaining
+    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
+    const loanAmount = calculateLoanAmount(offerPrice, rehabCosts);
+    return loanAmount + (downPayment - calculateCashRemaining());
   };
 
   const calculateHomeEquity = (offerPrice: number, rehabCosts: number, arv: number) => {
-    return arv - calculateNewLoan(offerPrice, rehabCosts, arv);
+    const newLoan = calculateNewLoan(offerPrice, rehabCosts, arv);
+    return arv - newLoan;
+  };
+
+  // Separate functions for refinancing calculations (original simple method)
+  const calculateRefinancingNewLoan = (offerPrice: number, rehabCosts: number, arv: number) => {
+    return arv * 0.75;
+  };
+
+  const calculateRefinancingHomeEquity = (offerPrice: number, rehabCosts: number, arv: number) => {
+    return arv - calculateRefinancingNewLoan(offerPrice, rehabCosts, arv);
+  };
+
+  const calculateRefinancingCashflow = (rent: number, offerPrice: number, arv: number) => {
+    const newLoanAmount = calculateRefinancingNewLoan(offerPrice, 0, arv); // Using 0 for rehab costs in refinancing
+    const monthlyMortgage = calculateMonthlyMortgage(newLoanAmount);
+    const propertyManagement = rent * 0.12;
+    const propertyTaxes = (offerPrice * 0.025) / 12;
+    const otherExpenses = 130;
+    return rent - propertyManagement - propertyTaxes - otherExpenses - monthlyMortgage;
   };
 
   const calculateMonthlyMortgage = (loanAmount: number, interestRate = 0.07, loanTermYears = 30) => {
@@ -286,15 +314,17 @@ const PropertyDetailsPage: React.FC = () => {
           <Box><Typography variant="caption">Sq Ft</Typography><Typography variant="h6">{property.squareFootage ? property.squareFootage.toLocaleString() : 'N/A'}</Typography></Box>
           <Box><Typography variant="caption">Rent Ratio</Typography><Typography variant="h6" sx={{ color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts)) }}>{formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}</Typography></Box>
           <Box><Typography variant="caption">ARV Ratio</Typography><Typography variant="h6" sx={{ color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
+          <Box><Typography variant="caption">Home Equity</Typography><Typography variant="h6" sx={{ color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
+          <Box><Typography variant="caption">Monthly Cashflow</Typography><Typography variant="h6" sx={{ color: getCashflowColor(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))) }}>{formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
         </Box>
         <Divider sx={{ my: 2 }} />
         <Box display="flex" gap={4} flexWrap="wrap" mb={2}>
           <Box><Typography variant="caption">Down Payment (25%)</Typography><Typography variant="h6">{formatCurrency(calculateDownPayment(property.offerPrice, property.rehabCosts))}</Typography></Box>
           <Box><Typography variant="caption">Loan Amount (75%)</Typography><Typography variant="h6">{formatCurrency(calculateLoanAmount(property.offerPrice, property.rehabCosts))}</Typography></Box>
-          <Box><Typography variant="caption">New Loan (75% of ARV)</Typography><Typography variant="h6">{formatCurrency(calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-          <Box><Typography variant="caption">Monthly Mortgage</Typography><Typography variant="h6">{formatCurrency(calculateMonthlyMortgage(calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
-          <Box><Typography variant="caption">Home Equity</Typography><Typography variant="h6" sx={{ color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-          <Box><Typography variant="caption">Monthly Cashflow</Typography><Typography variant="h6" sx={{ color: getCashflowColor(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))) }}>{formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
+          <Box><Typography variant="caption">New Loan (Refinance)</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingNewLoan(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
+          <Box><Typography variant="caption">Monthly Mortgage</Typography><Typography variant="h6">{formatCurrency(calculateMonthlyMortgage(calculateRefinancingNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
+          <Box><Typography variant="caption">Refinancing Home Equity</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
+          <Box><Typography variant="caption">Refinancing Monthly Cashflow</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingCashflow(property.potentialRent, property.offerPrice, property.arv))}</Typography></Box>
         </Box>
 
         <Card sx={{ background: '#f5f5f5', mb: 2 }}>

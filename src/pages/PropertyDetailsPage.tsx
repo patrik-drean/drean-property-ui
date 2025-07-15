@@ -5,6 +5,7 @@ import * as Icons from '@mui/icons-material';
 import { Property, Note, Link as PropertyLink, CreateNote, CreateLink } from '../types/property';
 import { getProperty } from '../services/api';
 import { getNotesByPropertyId, createNote, getLinksByPropertyId, createLink, deleteNote, deleteLink } from '../services/api';
+import PropertyDialog from '../components/PropertyDialog';
 
 const PropertyDetailsPage: React.FC = () => {
   const { address } = useParams<{ address: string }>();
@@ -19,6 +20,7 @@ const PropertyDetailsPage: React.FC = () => {
   const [newNoteCreatedBy, setNewNoteCreatedBy] = useState('Patrik');
   const [newLink, setNewLink] = useState({ url: '', title: '', moreDetails: '' });
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
 
   const createdByOptions = ['Patrik', 'Dillon', 'Other'];
 
@@ -257,6 +259,21 @@ const PropertyDetailsPage: React.FC = () => {
     }
   };
 
+  const handleSaveProperty = async (propertyData: Omit<Property, 'id'>) => {
+    if (!property) return;
+    
+    try {
+      const { updateProperty } = await import('../services/api');
+      const updatedProperty = await updateProperty(property.id, propertyData);
+      setProperty(updatedProperty);
+      setSnackbar({ open: true, message: 'Property updated successfully', severity: 'success' });
+    } catch (error) {
+      console.error('Error updating property:', error);
+      setSnackbar({ open: true, message: 'Failed to update property', severity: 'error' });
+      throw error;
+    }
+  };
+
   if (loading) return <Box p={4}><Typography>Loading...</Typography></Box>;
   if (!property) return <Box p={4}><Typography>Property not found.</Typography></Box>;
 
@@ -272,6 +289,14 @@ const PropertyDetailsPage: React.FC = () => {
           </IconButton>
           <Typography variant="h5">Property Details</Typography>
         </Box>
+        <Button
+          variant="outlined"
+          startIcon={<Icons.Edit />}
+          onClick={() => setPropertyDialogOpen(true)}
+          sx={{ borderRadius: 2 }}
+        >
+          Edit Property
+        </Button>
       </Box>
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box display="flex" alignItems="center" gap={2} mb={2}>
@@ -486,6 +511,13 @@ const PropertyDetailsPage: React.FC = () => {
           <Button onClick={handleAddLink} variant="contained">Add</Button>
         </DialogActions>
       </Dialog>
+      <PropertyDialog
+        open={propertyDialogOpen}
+        onClose={() => setPropertyDialogOpen(false)}
+        onSave={handleSaveProperty}
+        property={property}
+        isEditing={true}
+      />
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}

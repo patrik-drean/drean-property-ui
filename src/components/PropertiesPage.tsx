@@ -10,15 +10,6 @@ import {
   TableRow,
   Button,
   Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  TextField,
-  DialogActions,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Tooltip,
   IconButton,
   Box,
@@ -31,6 +22,7 @@ import {
   Snackbar,
   Alert,
   Menu,
+  MenuItem,
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
@@ -39,6 +31,7 @@ import { Property, PropertyStatus } from '../types/property';
 import { api } from '../services/apiConfig';
 import { useNavigate } from 'react-router-dom';
 import { Link as RouterLink } from 'react-router-dom';
+import PropertyDialog from './PropertyDialog';
 
 // Styled components for consistent UI elements
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -163,31 +156,8 @@ const StyledMenuItem = styled(MenuItem)<{ statuscolor: string }>(({ statuscolor 
 
 const PropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [newProperty, setNewProperty] = useState<Omit<Property, 'id'>>({
-    address: '',
-    status: 'Opportunity',
-    listingPrice: 0,
-    offerPrice: 0,
-    rehabCosts: 0,
-    potentialRent: 0,
-    arv: 0,
-    rentCastEstimates: {
-      price: 0,
-      priceLow: 0,
-      priceHigh: 0,
-      rent: 0,
-      rentLow: 0,
-      rentHigh: 0
-    },
-    hasRentcastData: false,
-    notes: '',
-    score: 0,
-    zillowLink: '',
-    squareFootage: null
-  });
+  const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -355,16 +325,7 @@ const PropertiesPage: React.FC = () => {
     return Math.min(10, Math.max(1, score));
   };
 
-  const handleCurrencyInput = (value: string) => {
-    // Remove any non-digit characters
-    const numericValue = value.replace(/[^0-9]/g, '');
-    return numericValue ? parseInt(numericValue) : 0;
-  };
 
-  const formatInputCurrency = (value: number) => {
-    if (value === 0) return '';
-    return value.toLocaleString('en-US');
-  };
 
   const getStatusOrder = (status: PropertyStatus) => {
     switch (status) {
@@ -409,34 +370,18 @@ const PropertiesPage: React.FC = () => {
   }, []);
 
   const handleEditProperty = (property: Property) => {
-    setIsEditing(true);
-    setEditingId(property.id);
-    setNewProperty({
-      address: property.address,
-      status: property.status,
-      listingPrice: property.listingPrice,
-      offerPrice: property.offerPrice,
-      rehabCosts: property.rehabCosts,
-      potentialRent: property.potentialRent,
-      arv: property.arv,
-      rentCastEstimates: property.rentCastEstimates,
-      hasRentcastData: property.hasRentcastData,
-      notes: property.notes,
-      score: property.score,
-      zillowLink: property.zillowLink,
-      squareFootage: property.squareFootage
-    });
-    setOpenDialog(true);
+    setEditingProperty(property);
+    setPropertyDialogOpen(true);
   };
 
-  const handleSaveProperty = async () => {
+  const handleSaveProperty = async (propertyData: Omit<Property, 'id'>) => {
     try {
       const propertyWithScore = {
-        ...newProperty,
-        score: calculateScore(newProperty)
+        ...propertyData,
+        score: calculateScore(propertyData)
       };
 
-      if (isEditing && editingId) {
+      if (editingProperty) {
         // Update existing property - only send the fields that can be updated
         const propertyToUpdate = {
           address: propertyWithScore.address,
@@ -463,110 +408,32 @@ const PropertiesPage: React.FC = () => {
         };
         
         console.log('Updating property:', propertyToUpdate);
-        const updatedProperty = await api.updateProperty(editingId, propertyToUpdate);
+        const updatedProperty = await api.updateProperty(editingProperty.id, propertyToUpdate);
         
         // Update local state with the returned property
         setProperties(properties.map(p => 
-          p.id === editingId ? updatedProperty : p
+          p.id === editingProperty.id ? updatedProperty : p
         ));
       } else {
         // Add new property
         const addedProperty = await api.addProperty(propertyWithScore);
         setProperties([...properties, addedProperty]);
       }
-      handleCloseDialog();
     } catch (err: any) {
       console.error('Error saving property:', err);
       if (err.response) {
         console.error('Error response:', err.response.data);
       }
+      throw err;
     }
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setIsEditing(false);
-    setEditingId(null);
-    setNewProperty({
-      address: '',
-      status: 'Opportunity',
-      listingPrice: 0,
-      offerPrice: 0,
-      rehabCosts: 0,
-      potentialRent: 0,
-      arv: 0,
-      rentCastEstimates: {
-        price: 0,
-        priceLow: 0,
-        priceHigh: 0,
-        rent: 0,
-        rentLow: 0,
-        rentHigh: 0
-      },
-      hasRentcastData: false,
-      notes: '',
-      score: 0,
-      zillowLink: '',
-      squareFootage: null
-    });
+  const handleClosePropertyDialog = () => {
+    setPropertyDialogOpen(false);
+    setEditingProperty(null);
   };
 
-  const parseZillowLink = (url: string) => {
-    try {
-      // Extract address from URL
-      const addressMatch = url.match(/\/homedetails\/([^/]+)/);
-      if (addressMatch) {
-        const address = addressMatch[1]
-          .split('-')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-        
-        // Extract price from URL - try multiple patterns
-        let price = 0;
-        
-        // Try to find price in the URL path
-        const pathPriceMatch = url.match(/\$(\d{3}(?:,\d{3})*(?:\.\d{2})?)/);
-        if (pathPriceMatch) {
-          price = handleCurrencyInput(pathPriceMatch[1]);
-        }
-        
-        // If no price in path, try to find it in the title/description part
-        if (!price) {
-          const titlePriceMatch = url.match(/title=([^&]+)/);
-          if (titlePriceMatch) {
-            const title = decodeURIComponent(titlePriceMatch[1]);
-            const priceMatch = title.match(/\$(\d{3}(?:,\d{3})*(?:\.\d{2})?)/);
-            if (priceMatch) {
-              price = handleCurrencyInput(priceMatch[1]);
-            }
-          }
-        }
 
-        return { address, price };
-      }
-      return null;
-    } catch (error) {
-      console.error('Error parsing Zillow link:', error);
-      return null;
-    }
-  };
-
-  const handleZillowLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const url = e.target.value;
-    setNewProperty({ ...newProperty, zillowLink: url });
-    
-    // Only parse if we're not editing and the URL is a valid Zillow link
-    if (!isEditing && url.includes('zillow.com')) {
-      const parsedData = parseZillowLink(url);
-      if (parsedData) {
-        setNewProperty(prev => ({
-          ...prev,
-          address: parsedData.address,
-          zillowLink: url
-        }));
-      }
-    }
-  };
 
   const handleArchive = async (id: string) => {
     try {
@@ -716,7 +583,7 @@ ${property.zillowLink}`;
           <Button
             variant="contained"
             color="primary"
-            onClick={() => setOpenDialog(true)}
+            onClick={() => setPropertyDialogOpen(true)}
             startIcon={<Icons.Add />}
             sx={{ borderRadius: 2 }}
           >
@@ -1355,154 +1222,13 @@ ${property.zillowLink}`;
         ))}
       </Box>
 
-      <Dialog 
-        open={openDialog} 
-        onClose={handleCloseDialog} 
-        maxWidth="md" 
-        fullWidth 
-        PaperProps={{ sx: { borderRadius: 2 } }}
-      >
-        <DialogTitle sx={{ fontSize: '1.25rem', fontWeight: 500, pb: 1 }}>
-          {isEditing ? 'Edit Property' : 'Add New Property'}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ p: 1 }}>
-            <TextField
-              fullWidth
-              label="Zillow Link"
-              value={newProperty.zillowLink}
-              onChange={handleZillowLinkChange}
-              margin="normal"
-              placeholder="Paste Zillow link to auto-fill address and price"
-              variant="outlined"
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Address"
-              value={newProperty.address}
-              onChange={(e) => setNewProperty({ ...newProperty, address: e.target.value })}
-              margin="normal"
-            />
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={newProperty.status}
-                onChange={(e) => setNewProperty({ ...newProperty, status: e.target.value as PropertyStatus })}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box 
-                      sx={{ 
-                        width: 16, 
-                        height: 16, 
-                        borderRadius: '50%', 
-                        backgroundColor: getStatusColor(selected as PropertyStatus),
-                      }} 
-                    />
-                    {selected}
-                  </Box>
-                )}
-              >
-                <StyledMenuItem value="Opportunity" statuscolor={getStatusColor('Opportunity')}>
-                  Opportunity
-                </StyledMenuItem>
-                <StyledMenuItem value="Soft Offer" statuscolor={getStatusColor('Soft Offer')}>
-                  Soft Offer
-                </StyledMenuItem>
-                <StyledMenuItem value="Hard Offer" statuscolor={getStatusColor('Hard Offer')}>
-                  Hard Offer
-                </StyledMenuItem>
-                <StyledMenuItem value="Rehab" statuscolor={getStatusColor('Rehab')}>
-                  Rehab
-                </StyledMenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              label="Listing Price"
-              value={formatInputCurrency(newProperty.listingPrice)}
-              onChange={(e) => setNewProperty({ ...newProperty, listingPrice: handleCurrencyInput(e.target.value) })}
-              margin="normal"
-              InputProps={{
-                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-              }}
-            />
-            <TextField
-              fullWidth
-              label="Offer Price"
-              value={formatInputCurrency(newProperty.offerPrice)}
-              onChange={(e) => setNewProperty({ ...newProperty, offerPrice: handleCurrencyInput(e.target.value) })}
-              margin="normal"
-              InputProps={{
-                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-              }}
-            />
-            <TextField
-              fullWidth
-              label="Rehab Costs"
-              value={formatInputCurrency(newProperty.rehabCosts)}
-              onChange={(e) => setNewProperty({ ...newProperty, rehabCosts: handleCurrencyInput(e.target.value) })}
-              margin="normal"
-              InputProps={{
-                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-              }}
-            />
-            <TextField
-              fullWidth
-              label="Potential Monthly Rent"
-              value={formatInputCurrency(newProperty.potentialRent)}
-              onChange={(e) => setNewProperty({ ...newProperty, potentialRent: handleCurrencyInput(e.target.value) })}
-              margin="normal"
-              InputProps={{
-                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-              }}
-            />
-            <TextField
-              fullWidth
-              label="ARV"
-              value={formatInputCurrency(newProperty.arv)}
-              onChange={(e) => setNewProperty({ ...newProperty, arv: handleCurrencyInput(e.target.value) })}
-              margin="normal"
-              InputProps={{
-                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-              }}
-            />
-            <TextField
-              fullWidth
-              label="Square Footage"
-              value={newProperty.squareFootage !== null ? newProperty.squareFootage : ''}
-              onChange={(e) => {
-                const value = e.target.value.trim() === '' ? null : parseInt(e.target.value, 10);
-                setNewProperty({ ...newProperty, squareFootage: value });
-              }}
-              margin="normal"
-              type="number"
-            />
-            <TextField
-              fullWidth
-              label="Notes"
-              multiline
-              rows={4}
-              value={newProperty.notes}
-              onChange={(e) => setNewProperty({ ...newProperty, notes: e.target.value })}
-              margin="normal"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={handleCloseDialog} color="inherit" sx={{ borderRadius: 2 }}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSaveProperty} 
-            variant="contained" 
-            color="primary"
-            sx={{ borderRadius: 2 }}
-          >
-            {isEditing ? 'Update' : 'Add'} Property
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <PropertyDialog
+        open={propertyDialogOpen}
+        onClose={handleClosePropertyDialog}
+        onSave={handleSaveProperty}
+        property={editingProperty}
+        isEditing={!!editingProperty}
+      />
 
       <Snackbar
         open={snackbarOpen}

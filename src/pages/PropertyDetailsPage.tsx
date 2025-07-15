@@ -354,7 +354,13 @@ const PropertyDetailsPage: React.FC = () => {
                         <Typography variant="body2">{note.content}</Typography>
                       </Box>
                     }
-                    secondary={<Typography variant="caption" color="text.secondary">{new Date(note.createdAt).toLocaleString()}</Typography>}
+                    secondary={<Typography variant="caption" color="text.secondary">{new Date(note.createdAt).toLocaleString('en-US', { 
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric', 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}</Typography>}
                   />
                   <IconButton
                     size="small"

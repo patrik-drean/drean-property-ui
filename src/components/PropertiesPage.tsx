@@ -30,6 +30,9 @@ import {
   useTheme,
   Snackbar,
   Alert,
+  Menu,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
@@ -186,6 +189,8 @@ const PropertiesPage: React.FC = () => {
     squareFootage: null
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -650,6 +655,39 @@ ${property.zillowLink}`;
     }
   };
 
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, property: Property) => {
+    setMenuAnchorEl(event.currentTarget);
+    setSelectedProperty(property);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+    setSelectedProperty(null);
+  };
+
+  const handleMenuAction = (action: string) => {
+    if (!selectedProperty) return;
+    
+    switch (action) {
+      case 'edit':
+        handleEditProperty(selectedProperty);
+        break;
+      case 'archive':
+        handleArchive(selectedProperty.id);
+        break;
+      case 'updateRentcast':
+        handleUpdateRentcast(selectedProperty.id);
+        break;
+      case 'calculator':
+        handleSendToCalculator(selectedProperty);
+        break;
+      case 'copyMessage':
+        handleCopyMessage(selectedProperty);
+        break;
+    }
+    handleMenuClose();
+  };
+
   return (
     <Box sx={{ 
       p: 0, 
@@ -764,7 +802,7 @@ ${property.zillowLink}`;
                 <StyledTableCell className="header metric" width="5%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Score</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="16%">
+                <StyledTableCell className="header metric" width="5%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Actions</Typography>
                 </StyledTableCell>
               </TableRow>
@@ -968,53 +1006,23 @@ ${property.zillowLink}`;
                     </Tooltip>
                   </TableCell>
                   <TableCell className="metric">
-                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'space-around' }}>
-                      <Tooltip title="Edit Property">
-                        <ActionIconButton
-                          color="primary"
-                          onClick={() => handleEditProperty(property)}
-                          size="small"
-                        >
-                          <Icons.Edit sx={{ fontSize: '1rem' }} />
-                        </ActionIconButton>
-                      </Tooltip>
-                      <Tooltip title="Archive Property">
-                        <DeleteIconButton
-                          color="secondary"
-                          onClick={() => handleArchive(property.id)}
-                          size="small"
-                        >
-                          <Icons.Archive sx={{ fontSize: '1rem' }} />
-                        </DeleteIconButton>
-                      </Tooltip>
-                      <Tooltip title="Update Rentcast Data">
-                        <ActionIconButton
-                          color="primary"
-                          onClick={() => handleUpdateRentcast(property.id)}
-                          size="small"
-                        >
-                          <Icons.Refresh sx={{ fontSize: '1rem' }} />
-                        </ActionIconButton>
-                      </Tooltip>
-                      <Tooltip title="Send to Calculator">
-                        <ActionIconButton
-                          color="primary"
-                          onClick={() => handleSendToCalculator(property)}
-                          size="small"
-                        >
-                          <Icons.Calculate sx={{ fontSize: '1rem' }} />
-                        </ActionIconButton>
-                      </Tooltip>
-                      <Tooltip title="Copy Property Message">
-                        <ActionIconButton
-                          color="primary"
-                          onClick={() => handleCopyMessage(property)}
-                          size="small"
-                        >
-                          <Icons.ContentCopy sx={{ fontSize: '1rem' }} />
-                        </ActionIconButton>
-                      </Tooltip>
-                    </Box>
+                    <Tooltip title="Actions">
+                      <IconButton
+                        onClick={(e) => handleMenuOpen(e, property)}
+                        size="small"
+                        sx={{
+                          backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                          padding: 2,
+                          width: '20px',
+                          height: '20px',
+                          '&:hover': { 
+                            backgroundColor: 'rgba(25, 118, 210, 0.2)'
+                          }
+                        }}
+                      >
+                        <Icons.MoreVert sx={{ fontSize: '0.75rem' }} />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </StyledTableRow>
               ))}
@@ -1503,6 +1511,55 @@ ${property.zillowLink}`;
           Message copied to clipboard!
         </Alert>
       </Snackbar>
+
+      {/* Actions Menu */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={handleMenuClose}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            minWidth: 180,
+          }
+        }}
+      >
+        <MenuItem onClick={() => handleMenuAction('edit')}>
+          <ListItemIcon>
+            <Icons.Edit fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Edit Property</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleMenuAction('archive')}>
+          <ListItemIcon>
+            <Icons.Archive fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Archive Property</ListItemText>
+        </MenuItem>
+        <MenuItem 
+          onClick={() => handleMenuAction('updateRentcast')}
+          disabled={selectedProperty?.hasRentcastData}
+        >
+          <ListItemIcon>
+            <Icons.Refresh fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>
+            {selectedProperty?.hasRentcastData ? 'Data Updated' : 'Update Rentcast Data'}
+          </ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleMenuAction('calculator')}>
+          <ListItemIcon>
+            <Icons.Calculate fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Send to Calculator</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleMenuAction('copyMessage')}>
+          <ListItemIcon>
+            <Icons.ContentCopy fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Copy Property Message</ListItemText>
+        </MenuItem>
+      </Menu>
     </Box>
   );
 };

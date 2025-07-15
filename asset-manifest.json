@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/drean-property-ui/static/css/main.cddf0d05.css",
-    "main.js": "/drean-property-ui/static/js/main.a5b6e6ae.js",
+    "main.js": "/drean-property-ui/static/js/main.da7f34d5.js",
     "static/js/453.7972db57.chunk.js": "/drean-property-ui/static/js/453.7972db57.chunk.js",
     "index.html": "/drean-property-ui/index.html",
     "main.cddf0d05.css.map": "/drean-property-ui/static/css/main.cddf0d05.css.map",
-    "main.a5b6e6ae.js.map": "/drean-property-ui/static/js/main.a5b6e6ae.js.map",
+    "main.da7f34d5.js.map": "/drean-property-ui/static/js/main.da7f34d5.js.map",
     "453.7972db57.chunk.js.map": "/drean-property-ui/static/js/453.7972db57.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.cddf0d05.css",
-    "static/js/main.a5b6e6ae.js"
+    "static/js/main.da7f34d5.js"
   ]
 }

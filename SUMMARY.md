@@ -16,7 +16,7 @@
   - Archive property functionality ✅
   - All required fields implemented:
     - Address with Zillow link ✅
-    - Status dropdown (Opportunity/Soft Offer/Hard Offer/Rehab) ✅
+    - Status dropdown (Opportunity/Soft Offer/Hard Offer/Rehab/Operational/Needs Tenant/Selling) ✅
     - Listing price ✅
     - Offer price ✅
     - Rehab costs ✅

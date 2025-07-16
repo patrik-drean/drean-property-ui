@@ -1,4 +1,4 @@
-export type PropertyStatus = 'Opportunity' | 'Soft Offer' | 'Hard Offer' | 'Rehab';
+export type PropertyStatus = 'Opportunity' | 'Soft Offer' | 'Hard Offer' | 'Rehab' | 'Operational' | 'Needs Tenant' | 'Selling';
 
 export interface RentCastEstimates {
     price: number;

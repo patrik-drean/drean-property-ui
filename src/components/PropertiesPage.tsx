@@ -75,6 +75,12 @@ const getStatusColor = (status: PropertyStatus): string => {
       return '#FF9800'; // Orange
     case 'Rehab':
       return '#F44336'; // Red
+    case 'Operational':
+      return '#2196F3'; // Blue
+    case 'Needs Tenant':
+      return '#9C27B0'; // Purple
+    case 'Selling':
+      return '#FF5722'; // Deep Orange
     default:
       return '#757575'; // Grey
   }
@@ -108,11 +114,11 @@ const StatusChip = styled(Chip, {
   color: 'white',
   fontWeight: 500,
   borderRadius: '16px',
-  minWidth: '90px',
+  width: '120px',
   padding: '0px',
   height: '24px',
   '& .MuiChip-label': {
-    padding: '0 10px',
+    padding: '0 12px',
   }
 }));
 
@@ -337,8 +343,14 @@ const PropertiesPage: React.FC = () => {
         return 2;
       case 'Rehab':
         return 3;
-      default:
+      case 'Selling':
         return 4;
+      case 'Needs Tenant':
+        return 5;
+      case 'Operational':
+        return 6;
+      default:
+        return 7;
     }
   };
 
@@ -616,13 +628,13 @@ ${property.zillowLink}`;
           <Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }} padding="none">
             <TableHead>
               <TableRow>
-                <StyledTableCell className="header" width="25%" sx={{ pl: 1 }}>
+                <StyledTableCell className="header" width="23%" sx={{ pl: 1 }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Address</Typography>
                 </StyledTableCell>
                 <StyledTableCell className="header" width="4%" sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Units</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header" width="6%">
+                <StyledTableCell className="header" width="7%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Status</Typography>
                 </StyledTableCell>
                 <StyledTableCell className="header" width="5%" sx={{ textAlign: 'center' }}>

@@ -80,6 +80,12 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         return '#FF9800'; // Orange
       case 'Rehab':
         return '#F44336'; // Red
+      case 'Operational':
+        return '#2196F3'; // Blue
+      case 'Needs Tenant':
+        return '#9C27B0'; // Purple
+      case 'Selling':
+        return '#FF5722'; // Deep Orange
       default:
         return '#757575'; // Grey
     }
@@ -271,6 +277,15 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
               </StyledMenuItem>
               <StyledMenuItem value="Rehab" statuscolor={getStatusColor('Rehab')}>
                 Rehab
+              </StyledMenuItem>
+              <StyledMenuItem value="Operational" statuscolor={getStatusColor('Operational')}>
+                Operational
+              </StyledMenuItem>
+              <StyledMenuItem value="Needs Tenant" statuscolor={getStatusColor('Needs Tenant')}>
+                Needs Tenant
+              </StyledMenuItem>
+              <StyledMenuItem value="Selling" statuscolor={getStatusColor('Selling')}>
+                Selling
               </StyledMenuItem>
             </Select>
           </FormControl>

@@ -74,6 +74,81 @@ const sampleProperties: Property[] = [
     squareFootage: 2000,
     units: 1,
     archived: true
+  },
+  {
+    id: '6',
+    address: '777 Maple Dr, Success, USA',
+    status: 'Operational',
+    listingPrice: 0,
+    offerPrice: 150000,
+    rehabCosts: 0,
+    potentialRent: 1600,
+    arv: 200000,
+    rentCastEstimates: {
+      price: 200000,
+      priceLow: 190000,
+      priceHigh: 210000,
+      rent: 1600,
+      rentLow: 1500,
+      rentHigh: 1700
+    },
+    hasRentcastData: true,
+    notes: 'Currently rented and generating positive cashflow',
+    score: 8,
+    zillowLink: 'https://www.zillow.com/homedetails/777-maple-dr',
+    squareFootage: 1600,
+    units: 1,
+    archived: false
+  },
+  {
+    id: '7',
+    address: '888 Cedar Ln, Vacant, USA',
+    status: 'Needs Tenant',
+    listingPrice: 0,
+    offerPrice: 140000,
+    rehabCosts: 0,
+    potentialRent: 1500,
+    arv: 190000,
+    rentCastEstimates: {
+      price: 190000,
+      priceLow: 180000,
+      priceHigh: 200000,
+      rent: 1500,
+      rentLow: 1400,
+      rentHigh: 1600
+    },
+    hasRentcastData: true,
+    notes: 'Rehab complete, ready for tenant',
+    score: 6,
+    zillowLink: 'https://www.zillow.com/homedetails/888-cedar-ln',
+    squareFootage: 1500,
+    units: 1,
+    archived: false
+  },
+  {
+    id: '8',
+    address: '999 Birch Rd, Exit, USA',
+    status: 'Selling',
+    listingPrice: 220000,
+    offerPrice: 0,
+    rehabCosts: 0,
+    potentialRent: 0,
+    arv: 220000,
+    rentCastEstimates: {
+      price: 220000,
+      priceLow: 210000,
+      priceHigh: 230000,
+      rent: 0,
+      rentLow: 0,
+      rentHigh: 0
+    },
+    hasRentcastData: true,
+    notes: 'Ready to sell - good appreciation',
+    score: 5,
+    zillowLink: 'https://www.zillow.com/homedetails/999-birch-rd',
+    squareFootage: 1700,
+    units: 1,
+    archived: false
   }
 ];
 

@@ -45,6 +45,12 @@ const PropertyDetailsPage: React.FC = () => {
         return '#FF9800'; // Orange
       case 'Rehab':
         return '#F44336'; // Red
+      case 'Operational':
+        return '#2196F3'; // Blue
+      case 'Needs Tenant':
+        return '#9C27B0'; // Purple
+      case 'Selling':
+        return '#FF5722'; // Deep Orange
       default:
         return '#757575'; // Grey
     }

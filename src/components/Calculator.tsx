@@ -197,10 +197,10 @@ const Calculator: React.FC = () => {
               <TableBody>
                 {/* Initial Investment Section */}
                 <TableRow>
-                  <StyledTableCell className="header" colSpan={{ xs: 4, sm: 8 }}>Initial Investment</StyledTableCell>
+                  <StyledTableCell className="header" colSpan={8}>Initial Investment</StyledTableCell>
                 </TableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
                     <TextField
                       label="Purchase Price"
                       fullWidth
@@ -220,10 +220,10 @@ const Calculator: React.FC = () => {
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Purchase Price</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${inputs.purchasePrice.toLocaleString()}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
                     <TextField
                       label="Immediate Repairs"
                       fullWidth
@@ -243,10 +243,10 @@ const Calculator: React.FC = () => {
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Immediate Repairs</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${inputs.immediateRepairs.toLocaleString()}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
                     <TextField
                       label="Closing Costs %"
                       type="number"
@@ -267,29 +267,29 @@ const Calculator: React.FC = () => {
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Closing Costs</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{inputs.closingCostsPercent}%</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${closingCosts.toLocaleString()}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Total Initial Investment</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                   <TableCell className="total" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${totalInitialInvestment.toLocaleString()}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Upfront Cash</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                   <TableCell className="total" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${upfrontCash.toLocaleString()}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
 
                 {/* Financing Section */}
                 <TableRow>
-                  <StyledTableCell className="header" colSpan={{ xs: 4, sm: 8 }}>Financing & Refinancing</StyledTableCell>
+                  <StyledTableCell className="header" colSpan={8}>Financing</StyledTableCell>
                 </TableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
                     <TextField
                       label="Down Payment %"
                       type="number"
@@ -310,11 +310,46 @@ const Calculator: React.FC = () => {
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Down Payment</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{inputs.downPaymentPercent}%</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${downPayment.toLocaleString()}</TableCell>
-                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>ARV</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${inputs.afterRepairValue.toLocaleString()}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                    <TextField
+                      label="Interest Rate %"
+                      type="number"
+                      fullWidth
+                      value={inputs.interestRate === 0 ? '' : inputs.interestRate}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : Number(e.target.value);
+                        handleInputChange('interestRate', value);
+                      }}
+                      InputProps={{ endAdornment: '%' }}
+                      size="small"
+                      variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1976d2'
+                      }}}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Loan Amount</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${loanAmount.toLocaleString()}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                </StyledTableRow>
+                <StyledTableRow>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Upfront Cash</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell className="total" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${upfrontCash.toLocaleString()}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                </StyledTableRow>
+
+                {/* Refinancing Section */}
+                <TableRow>
+                  <StyledTableCell className="header" colSpan={8}>Refinancing</StyledTableCell>
+                </TableRow>
+                <StyledTableRow>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
                     <TextField
                       label="After Repair Value"
                       fullWidth
@@ -331,39 +366,13 @@ const Calculator: React.FC = () => {
                       }}}
                     />
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Loan Amount</TableCell>
+                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>After Repair Value</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${loanAmount.toLocaleString()}</TableCell>
-                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>New loan</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${newLoan.toLocaleString()} ({inputs.newLoanPercent}%)</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${inputs.afterRepairValue.toLocaleString()}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
-                    <TextField
-                      label="Interest Rate"
-                      type="number"
-                      fullWidth
-                      value={inputs.interestRate === 0 ? '' : inputs.interestRate}
-                      onChange={(e) => {
-                        const value = e.target.value === '' ? 0 : Number(e.target.value);
-                        handleInputChange('interestRate', value);
-                      }}
-                      InputProps={{ endAdornment: '%' }}
-                      size="small"
-                      variant="outlined"
-                      sx={{ '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#1976d2'
-                      }}}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Interest Rate</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{inputs.interestRate}%</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>-</TableCell>
-                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Cash to pull out</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${cashToPullOut.toLocaleString()}</TableCell>
-                </StyledTableRow>
-                <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
                     <TextField
                       label="New Loan %"
                       type="number"
@@ -381,36 +390,47 @@ const Calculator: React.FC = () => {
                       }}}
                     />
                   </TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>New Loan</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{inputs.newLoanPercent}%</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${newLoan.toLocaleString()}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }}></TableCell>
-                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Cash Remaining</TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Cash to Pull Out</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${cashToPullOut.toLocaleString()}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                </StyledTableRow>
+                <StyledTableRow>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Cash Remaining in Property</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${cashRemainingInProperty.toLocaleString()}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }}></TableCell>
-                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Home Equity</TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Equity in Home</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${equityInHome.toLocaleString()}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }}></TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>ARV Ratio</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{arvRatio}%</TableCell>
                 </StyledTableRow>
 
                 {/* Cashflow Section */}
                 <TableRow>
-                  <StyledTableCell className="header" colSpan={{ xs: 4, sm: 8 }}>Cashflow</StyledTableCell>
+                  <StyledTableCell className="header" colSpan={8}>Cashflow</StyledTableCell>
                 </TableRow>
                 <TableRow>
-                  <StyledTableCell className="subheader" colSpan={{ xs: 4, sm: 8 }}>Revenue</StyledTableCell>
+                  <StyledTableCell className="subheader" colSpan={8}>Revenue</StyledTableCell>
                 </TableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
                     <TextField
                       label="Rental Income"
                       fullWidth
@@ -430,15 +450,15 @@ const Calculator: React.FC = () => {
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Rental Income</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${inputs.rentalIncome.toLocaleString()}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
 
                 {/* Expenses Section */}
                 <TableRow>
-                  <StyledTableCell className="subheader" colSpan={{ xs: 4, sm: 8 }}>Expenses</StyledTableCell>
+                  <StyledTableCell className="subheader" colSpan={8}>Expenses</StyledTableCell>
                 </TableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
                     <TextField
                       label="Property Management Fee %"
                       type="number"
@@ -459,31 +479,31 @@ const Calculator: React.FC = () => {
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Property Management Fee</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{inputs.propertyManagementFeePercent}%</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${propertyManagementFee.toLocaleString()}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Utilities</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>0%</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}$0</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>$0</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Vacancy</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>0%</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}$0</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>$0</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Maintenance</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>0%</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}$0</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>$0</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
                     <TextField
                       label="Real Estate Taxes %"
                       type="number"
@@ -503,11 +523,11 @@ const Calculator: React.FC = () => {
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Real Estate Taxes</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{inputs.taxesPercent}%</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }>${taxes.toFixed(0)}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${taxes.toFixed(0)}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
                     <TextField
                       label="Insurance"
                       fullWidth
@@ -526,18 +546,18 @@ const Calculator: React.FC = () => {
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Insurance</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }>${inputs.insurance.toLocaleString()}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${inputs.insurance.toLocaleString()}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>HOA Fees</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}$0</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>$0</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' }, py: 2 }}>
                     <TextField
                       label="Other Expenses"
                       fullWidth
@@ -556,37 +576,37 @@ const Calculator: React.FC = () => {
                   </TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Other Ongoing Expenses</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }>${inputs.otherExpenses.toLocaleString()}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${inputs.otherExpenses.toLocaleString()}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Loan Payment</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }>${loanPayment.toFixed(0)}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${loanPayment.toFixed(0)}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow>
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
                   <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>Total Expenses</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
-                  <TableCell className="total" sx={{ display: { xs: 'none', sm: 'table-cell' } }>${totalExpenses.toFixed(0)}</TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell className="total" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${totalExpenses.toFixed(0)}</TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
 
                 {/* Summary */}
                 <Divider />
                 <StyledTableRow className="summary">
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ fontWeight: 600, fontSize: '1.05rem' }}>Cash Flow</TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell colSpan={2} sx={{ fontWeight: 600, fontSize: '1.05rem' }}>Cash Flow</TableCell>
                   <StyledTableCell className={cashFlowClass} sx={{ fontSize: '1.05rem', display: { xs: 'none', sm: 'table-cell' } }}>${cashFlow.toFixed(0)}</StyledTableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
                 <StyledTableRow className="summary">
-                  <TableCell colSpan={{ xs: 2, sm: 3 }} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ fontWeight: 600 }}>Cash-on-Cash</TableCell>
-                  <StyledTableCell className={cashOnCashClass} sx={{ display: { xs: 'none', sm: 'table-cell' } }>${cashOnCash}%</StyledTableCell>
-                  <TableCell colSpan={{ xs: 2, sm: 2 }} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
+                  <TableCell colSpan={3} sx={{ borderRight: { sm: '1px solid #eee' } }}></TableCell>
+                  <TableCell colSpan={2} sx={{ fontWeight: 600 }}>Cash-on-Cash</TableCell>
+                  <StyledTableCell className={cashOnCashClass} sx={{ display: { xs: 'none', sm: 'table-cell' } }}>${cashOnCash}%</StyledTableCell>
+                  <TableCell colSpan={2} sx={{ display: { xs: 'none', sm: 'table-cell' } }}></TableCell>
                 </StyledTableRow>
               </TableBody>
             </Table>

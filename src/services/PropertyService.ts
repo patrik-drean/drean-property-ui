@@ -29,6 +29,7 @@ interface PropertyDTO {
   score: number;
   zillowLink: string;
   squareFootage: number | null;
+  units: number | null;
 }
 
 // Convert API PropertyDTO to our frontend Property type
@@ -48,6 +49,7 @@ const mapDTOToProperty = (dto: PropertyDTO): Property => {
     score: dto.score,
     zillowLink: dto.zillowLink,
     squareFootage: dto.squareFootage,
+    units: dto.units,
   };
 };
 

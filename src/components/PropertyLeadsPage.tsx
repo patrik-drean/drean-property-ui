@@ -117,6 +117,8 @@ const PropertyLeadsPage: React.FC = () => {
     sellerEmail: lead.sellerEmail,
     lastContactDate: lead.lastContactDate,
     notes: lead.notes || '',
+    squareFootage: lead.squareFootage,
+    units: lead.units,
   } : {
     address: '',
     zillowLink: '',
@@ -125,6 +127,8 @@ const PropertyLeadsPage: React.FC = () => {
     sellerEmail: '',
     lastContactDate: null,
     notes: '',
+    squareFootage: null,
+    units: null,
   };
 
   const [dialogInitialFormData, setDialogInitialFormData] = useState(getInitialFormData());
@@ -549,7 +553,8 @@ const PropertyLeadsPage: React.FC = () => {
         notes: lead.notes || '',
         score: 0,
         zillowLink: lead.zillowLink,
-        squareFootage: lead.squareFootage
+        squareFootage: lead.squareFootage,
+        units: lead.units
       });
       
       // Create a complete update object with all fields from the original lead
@@ -566,7 +571,8 @@ const PropertyLeadsPage: React.FC = () => {
         // Include other fields to maintain consistency
         archived: lead.archived,
         tags: lead.tags || [],
-        squareFootage: lead.squareFootage
+        squareFootage: lead.squareFootage,
+        units: lead.units
       };
       
       // Update the lead with convertedToProperty field
@@ -806,6 +812,7 @@ const PropertyLeadsPage: React.FC = () => {
                     </Tooltip>
                   </Box>
                 </StyledTableCell>
+                <StyledTableCell className="header">Units</StyledTableCell>
                 <StyledTableCell className="header">Listing Price</StyledTableCell>
                 <StyledTableCell className="header">Seller Contact</StyledTableCell>
                 <StyledTableCell className="header">Last Contact</StyledTableCell>
@@ -816,7 +823,7 @@ const PropertyLeadsPage: React.FC = () => {
             <TableBody>
               {propertyLeads.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={8} align="center">
                     <Typography variant="body1" sx={{ py: 2 }}>
                       No property leads found. Add your first lead.
                     </Typography>
@@ -878,6 +885,7 @@ const PropertyLeadsPage: React.FC = () => {
                         )}
                       </Box>
                     </TableCell>
+                    <TableCell>{lead.units || 'N/A'}</TableCell>
                     <TableCell>{formatCurrency(lead.listingPrice)}</TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

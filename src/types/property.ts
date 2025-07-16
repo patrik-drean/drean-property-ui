@@ -24,6 +24,7 @@ export interface Property {
     score: number;
     zillowLink: string;
     squareFootage: number | null;
+    units: number | null;
     archived?: boolean;
 }
 
@@ -41,6 +42,7 @@ export interface PropertyLead {
     tags: string[];
     convertedToProperty: boolean;
     squareFootage: number | null;
+    units: number | null;
     notes: string;
 }
 
@@ -52,6 +54,7 @@ export interface CreatePropertyLead {
     sellerEmail: string;
     tags?: string[];
     squareFootage?: number | null;
+    units?: number | null;
     notes?: string;
 }
 
@@ -66,6 +69,7 @@ export interface UpdatePropertyLead {
     tags?: string[];
     convertedToProperty?: boolean;
     squareFootage?: number | null;
+    units?: number | null;
     notes?: string;
 }
 

@@ -65,7 +65,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     notes: '',
     score: 0,
     zillowLink: '',
-    squareFootage: null
+    squareFootage: null,
+    units: null
   });
 
   // Helper function to get status color
@@ -182,7 +183,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
       notes: '',
       score: 0,
       zillowLink: '',
-      squareFootage: null
+      squareFootage: null,
+      units: null
     });
     onClose();
   };
@@ -203,7 +205,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         notes: property.notes,
         score: property.score,
         zillowLink: property.zillowLink,
-        squareFootage: property.squareFootage
+        squareFootage: property.squareFootage,
+        units: property.units
       });
     }
   }, [property, isEditing]);
@@ -331,6 +334,18 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
             }}
             margin="normal"
             type="number"
+          />
+          <TextField
+            fullWidth
+            label="Units"
+            value={newProperty.units !== null ? newProperty.units : ''}
+            onChange={(e) => {
+              const value = e.target.value.trim() === '' ? null : parseInt(e.target.value, 10);
+              setNewProperty({ ...newProperty, units: value });
+            }}
+            margin="normal"
+            type="number"
+            inputProps={{ min: 1 }}
           />
           <TextField
             fullWidth

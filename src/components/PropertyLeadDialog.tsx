@@ -111,6 +111,31 @@ const PropertyLeadDialog: React.FC<PropertyLeadDialogProps> = ({
             type="email"
           />
           <TextField
+            label="Square Footage"
+            name="squareFootage"
+            value={formData.squareFootage !== null ? formData.squareFootage : ''}
+            onChange={(e) => {
+              const value = e.target.value.trim() === '' ? null : parseInt(e.target.value, 10);
+              setFormData((prev: any) => ({ ...prev, squareFootage: value }));
+            }}
+            fullWidth
+            margin="normal"
+            type="number"
+          />
+          <TextField
+            label="Units"
+            name="units"
+            value={formData.units !== null ? formData.units : ''}
+            onChange={(e) => {
+              const value = e.target.value.trim() === '' ? null : parseInt(e.target.value, 10);
+              setFormData((prev: any) => ({ ...prev, units: value }));
+            }}
+            fullWidth
+            margin="normal"
+            type="number"
+            inputProps={{ min: 1 }}
+          />
+          <TextField
             label="Notes"
             name="notes"
             value={formData.notes}

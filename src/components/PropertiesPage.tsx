@@ -404,7 +404,8 @@ const PropertiesPage: React.FC = () => {
             rentLow: propertyWithScore.rentCastEstimates.rentLow || 0,
             rentHigh: propertyWithScore.rentCastEstimates.rentHigh || 0
           },
-          squareFootage: propertyWithScore.squareFootage
+          squareFootage: propertyWithScore.squareFootage,
+          units: propertyWithScore.units
         };
         
         console.log('Updating property:', propertyToUpdate);
@@ -618,6 +619,9 @@ ${property.zillowLink}`;
                 <StyledTableCell className="header" width="25%" sx={{ pl: 1 }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Address</Typography>
                 </StyledTableCell>
+                <StyledTableCell className="header" width="4%" sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Units</Typography>
+                </StyledTableCell>
                 <StyledTableCell className="header" width="6%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Status</Typography>
                 </StyledTableCell>
@@ -701,6 +705,9 @@ ${property.zillowLink}`;
                         </RouterLink>
                       </Box>
                     </Tooltip>
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'center' }}>
+                    {property.units || ''}
                   </TableCell>
                   <TableCell>
                     <StatusChip 
@@ -1155,6 +1162,9 @@ ${property.zillowLink}`;
               </Typography>
               <Typography variant="body2" color="textSecondary">
                 Square Feet: {property.squareFootage !== null ? property.squareFootage : 'N/A'}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Units: {property.units !== null ? property.units : 'N/A'}
               </Typography>
               <Typography variant="body2" color="textSecondary">
                 Offer Price: {formatCurrency(property.offerPrice)}

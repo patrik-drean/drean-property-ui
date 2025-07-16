@@ -38,7 +38,8 @@
     "notes": "string",
     "score": number,
     "zillowLink": "string",
-    "squareFootage": number | null
+    "squareFootage": number | null,
+    "units": number | null
   }
 ]
 ```
@@ -71,7 +72,8 @@
   "notes": "string",
   "score": number,
   "zillowLink": "string",
-  "squareFootage": number | null
+  "squareFootage": number | null,
+  "units": number | null
 }
 ```
 
@@ -100,7 +102,8 @@
   "notes": "string",
   "score": number,
   "zillowLink": "string",
-  "squareFootage": number | null
+  "squareFootage": number | null,
+  "units": number | null
 }
 ```
 - **Response**: Created Property object with ID
@@ -132,7 +135,8 @@
   "notes": "string",
   "score": number,
   "zillowLink": "string",
-  "squareFootage": number | null
+  "squareFootage": number | null,
+  "units": number | null
 }
 ```
 - **Response**: Updated Property object with same schema as request
@@ -197,6 +201,7 @@
     "tags": ["string"],
     "convertedToProperty": boolean,
     "squareFootage": number | null,
+    "units": number | null,
     "notes": "string"
   }
 ]
@@ -222,9 +227,10 @@
   "updatedAt": "string",
   "archived": boolean,
   "tags": ["string"],
-  "convertedToProperty": boolean,
-  "squareFootage": number | null,
-  "notes": "string"
+      "convertedToProperty": boolean,
+    "squareFootage": number | null,
+    "units": number | null,
+    "notes": "string"
 }
 ```
 - **Error Responses**:
@@ -243,6 +249,7 @@
   "sellerEmail": "string",
   "tags": ["string"],
   "squareFootage": number | null,
+  "units": number | null,
   "notes": "string"
 }
 ```
@@ -264,6 +271,7 @@
       "sellerEmail": "string",
       "tags": ["string"],
       "squareFootage": number | null,
+      "units": number | null,
       "notes": "string"
     }
   ]
@@ -289,6 +297,7 @@
       "tags": ["string"],
       "convertedToProperty": boolean,
       "squareFootage": number | null,
+      "units": number | null,
       "notes": "string"
     }
   ],
@@ -317,6 +326,7 @@
   "tags": ["string"],
   "convertedToProperty": boolean,
   "squareFootage": number | null,
+  "units": number | null,
   "notes": "string"
 }
 ```

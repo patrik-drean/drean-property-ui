@@ -2,18 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
-  Typography,
   TextField,
   Grid,
   Table,
   TableBody,
   TableCell,
   TableContainer,
-  TableHead,
   TableRow,
   styled,
-  Card,
-  CardContent,
   Divider,
 } from '@mui/material';
 import { useLocation } from 'react-router-dom';
@@ -52,14 +48,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
   '&.summary': {
     backgroundColor: '#f9f9f9',
-  },
-}));
-
-const StyledInputTextField = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    '&:hover fieldset': {
-      borderColor: theme.palette.primary.main,
-    },
   },
 }));
 
@@ -162,18 +150,6 @@ const Calculator: React.FC = () => {
     return parseInt(value.replace(/,/g, ''), 10) || 0;
   };
 
-  // Modified input handling functions for percentage fields
-  const formatPercentage = (num: number): string => {
-    // Return empty string if value is 0
-    if (num === 0) return '';
-    return num.toString();
-  };
-
-  const parsePercentageInput = (value: string): number => {
-    if (!value) return 0;
-    return Number(value) || 0;
-  };
-
   // Calculate derived values
   const closingCosts = inputs.purchasePrice * (inputs.closingCostsPercent / 100);
   const totalInitialInvestment = inputs.purchasePrice + inputs.immediateRepairs + closingCosts;
@@ -201,7 +177,6 @@ const Calculator: React.FC = () => {
   
   const totalExpenses = propertyManagementFee + taxes + inputs.insurance + inputs.otherExpenses + loanPayment;
   const cashFlow = inputs.rentalIncome - totalExpenses;
-  const cashFlowRatio = Math.round((inputs.rentalIncome / totalExpenses) * 100) / 100;
   const cashOnCash = Math.round((cashFlow * 12 / upfrontCash) * 10000) / 100;
 
   // Determine if cash flow is positive or negative for styling

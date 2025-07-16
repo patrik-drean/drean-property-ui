@@ -263,7 +263,6 @@ export const updateProperty = async (id: string, property: Omit<Property, 'id'>)
         // Check if the property is in archived properties (for restoration)
         const archivedIndex = archivedProperties.findIndex(p => p.id === id);
         if (archivedIndex !== -1) {
-          const archivedProperty = archivedProperties[archivedIndex];
           // Remove from archived and add to sample properties
           archivedProperties.splice(archivedIndex, 1);
           const restoredProperty = { ...property, id, archived: false };

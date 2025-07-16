@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Paper,
   Table,
   TableBody,
@@ -13,12 +12,9 @@ import {
   Tooltip,
   IconButton,
   Box,
-  Card,
-  CardContent,
   styled,
   Chip,
   ChipProps,
-  useTheme,
   Snackbar,
   Alert,
   Menu,
@@ -122,44 +118,6 @@ const StatusChip = styled(Chip, {
   }
 }));
 
-// Action button styling
-const ActionIconButton = styled(IconButton)(({ theme }) => ({
-  backgroundColor: 'rgba(25, 118, 210, 0.08)',
-  padding: 6,
-  margin: '0 3px',
-  width: '28px',
-  height: '28px',
-  '&:hover': { 
-    backgroundColor: 'rgba(25, 118, 210, 0.2)'
-  }
-}));
-
-const DeleteIconButton = styled(IconButton)(({ theme }) => ({
-  backgroundColor: 'rgba(211, 47, 47, 0.08)',
-  padding: 6,
-  margin: '0 3px',
-  width: '28px',
-  height: '28px',
-  '&:hover': { 
-    backgroundColor: 'rgba(211, 47, 47, 0.2)'
-  }
-}));
-
-// Styled MenuItem for status dropdown
-const StyledMenuItem = styled(MenuItem)<{ statuscolor: string }>(({ statuscolor }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  '&::before': {
-    content: '""',
-    display: 'block',
-    width: '16px',
-    height: '16px',
-    borderRadius: '50%',
-    backgroundColor: statuscolor,
-  },
-}));
-
 const PropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
@@ -168,7 +126,6 @@ const PropertiesPage: React.FC = () => {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const navigate = useNavigate();
-  const theme = useTheme();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -479,15 +436,10 @@ const PropertiesPage: React.FC = () => {
     return '#F44336'; // Red for > 85%
   };
 
-  const getCashRemainingColor = () => {
-    // Always return the same color since cash remaining is fixed at $20,000
-    return '#FFC107'; // Yellow for $20k
-  };
-
   const getHomeEquityColor = (equity: number) => {
-    if (equity >= 65000) return '#4CAF50'; // Green for >= $65k
-    if (equity >= 45000) return '#FFC107'; // Yellow for >= $45k
-    return '#F44336'; // Red for < $45k
+    if (equity >= 50000) return '#4CAF50'; // Green for >= 50k
+    if (equity >= 25000) return '#FFC107'; // Yellow for >= 25k
+    return '#F44336'; // Red for < 25k
   };
   
   // Color for cashflow

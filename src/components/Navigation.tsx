@@ -19,11 +19,9 @@ import {
   Divider,
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
-import ArchiveIcon from '@mui/icons-material/Archive';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import MenuIcon from '@mui/icons-material/Menu';
 import ListAltIcon from '@mui/icons-material/ListAlt';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const Navigation: React.FC = () => {
   const location = useLocation();

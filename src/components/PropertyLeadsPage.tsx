@@ -23,8 +23,6 @@ import {
   Link,
   styled,
   Checkbox,
-  Switch,
-  FormControlLabel,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { PropertyLead, CreatePropertyLead } from '../types/property';
@@ -137,7 +135,6 @@ const PropertyLeadsPage: React.FC = () => {
     message: '',
     severity: 'success' as 'success' | 'error',
   });
-  const [copiedToClipboard, setCopiedToClipboard] = useState(false);
   const [locallyConvertedLeads, setLocallyConvertedLeads] = useState<Set<string>>(new Set());
 
   // Default message template
@@ -148,7 +145,7 @@ const PropertyLeadsPage: React.FC = () => {
   useEffect(() => {
     const savedMessage = localStorage.getItem('customMessageTemplate');
     setCustomMessage(savedMessage || defaultMessageTemplate);
-  }, []);
+  }, [defaultMessageTemplate]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -190,51 +187,9 @@ const PropertyLeadsPage: React.FC = () => {
     return result;
   };
 
-  const parseZillowLink = (url: string) => {
-    try {
-      // Extract address from URL
-      const addressMatch = url.match(/\/homedetails\/([^/]+)/);
-      if (addressMatch) {
-        const address = addressMatch[1]
-          .split('-')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-        
-        // Extract price from URL - try multiple patterns
-        let price = 0;
-        
-        // Try to find price in the URL path
-        const pathPriceMatch = url.match(/\$(\d{3}(?:,\d{3})*(?:\.\d{2})?)/);
-        if (pathPriceMatch) {
-          price = handleCurrencyInput(pathPriceMatch[1]);
-        }
-        
-        // If no price in path, try to find it in the title/description part
-        if (!price) {
-          const titlePriceMatch = url.match(/title=([^&]+)/);
-          if (titlePriceMatch) {
-            const title = decodeURIComponent(titlePriceMatch[1]);
-            const priceMatch = title.match(/\$(\d{3}(?:,\d{3})*(?:\.\d{2})?)/);
-            if (priceMatch) {
-              price = handleCurrencyInput(priceMatch[1]);
-            }
-          }
-        }
 
-        return { address, price };
-      }
-      return null;
-    } catch (error) {
-      console.error('Error parsing Zillow link:', error);
-      return null;
-    }
-  };
 
-  // Removed handleZillowLinkChange as it's no longer needed
-
-  // Removed handleZillowLinkBlur as it's no longer needed
-
-  const fetchPropertyLeads = async () => {
+  const fetchPropertyLeads = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -246,11 +201,11 @@ const PropertyLeadsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showArchived]);
 
   useEffect(() => {
     fetchPropertyLeads();
-  }, [showArchived]);
+  }, [fetchPropertyLeads]);
 
   // Add sorting function for property leads - modified to handle archived status
   const sortPropertyLeads = (leads: PropertyLead[]) => {
@@ -367,15 +322,7 @@ const PropertyLeadsPage: React.FC = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Extract domain from URL for display
-  const extractDomain = (url: string) => {
-    try {
-      const domain = new URL(url).hostname.replace('www.', '');
-      return domain;
-    } catch {
-      return url;
-    }
-  };
+
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
@@ -419,16 +366,11 @@ const PropertyLeadsPage: React.FC = () => {
 
   const copyToClipboard = (text: string, successMessage: string) => {
     navigator.clipboard.writeText(text).then(() => {
-      setCopiedToClipboard(true);
       setSnackbar({
         open: true,
         message: successMessage,
         severity: 'success',
       });
-      
-      setTimeout(() => {
-        setCopiedToClipboard(false);
-      }, 2000);
     }).catch(err => {
       console.error('Failed to copy text: ', err);
       setSnackbar({
@@ -444,16 +386,16 @@ const PropertyLeadsPage: React.FC = () => {
   };
 
   // Function to replace template variables
-  const replaceTemplateVariables = (template: string, lead: PropertyLead) => {
+  const replaceTemplateVariables = useCallback((template: string, lead: PropertyLead) => {
     const discountedPrice = Math.round(lead.listingPrice * 0.8);
     const formattedPrice = formatCurrencyInK(discountedPrice);
     
     return template
       .replace(/{PRICE}/g, formattedPrice)
       .replace(/{ZILLOW_LINK}/g, lead.zillowLink || '');
-  };
+  }, []);
 
-  const copyTemplatedMessage = async (lead: PropertyLead) => {
+  const copyTemplatedMessage = useCallback(async (lead: PropertyLead) => {
     const message = replaceTemplateVariables(customMessage, lead);
 
     try {
@@ -484,7 +426,7 @@ const PropertyLeadsPage: React.FC = () => {
         severity: 'error',
       });
     }
-  };
+  }, [customMessage, replaceTemplateVariables]);
 
   // Handle opening the message override dialog
   const handleOpenMessageDialog = () => {
@@ -518,7 +460,7 @@ const PropertyLeadsPage: React.FC = () => {
       message: 'Message template reset to default',
       severity: 'success',
     });
-  }, []);
+  }, [defaultMessageTemplate]);
 
   const handleConvertToProperty = async (lead: PropertyLead) => {
     try {

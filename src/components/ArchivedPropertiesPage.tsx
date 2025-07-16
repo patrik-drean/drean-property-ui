@@ -10,7 +10,6 @@ import {
   Button,
   Typography,
   Tooltip,
-  IconButton,
   CircularProgress,
   Snackbar,
   Alert,
@@ -181,11 +180,6 @@ const ArchivedPropertiesPage: React.FC = () => {
   const calculateARVRatio = (offerPrice: number, rehabCosts: number, arv: number) => {
     if (!arv) return 0;
     return (offerPrice + rehabCosts) / arv;
-  };
-
-  const calculateDiscount = (listingPrice: number, offerPrice: number) => {
-    if (!listingPrice) return 0;
-    return (listingPrice - offerPrice) / listingPrice;
   };
 
   // Helper functions to get cell colors based on values

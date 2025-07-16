@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -21,7 +21,6 @@ import {
   InputLabel,
   Divider,
   Alert,
-  Tooltip,
   Menu,
   ListItemIcon,
 } from '@mui/material';
@@ -107,24 +106,14 @@ const TasksSection: React.FC<TasksSectionProps> = ({ property, onPropertyUpdate,
     return '#666666'; // Future - gray
   };
 
-  useEffect(() => {
-    if (isConfigured) {
-      loadSections();
-      loadCollaborators();
-      if (linkedSectionId) {
-        loadTasks();
-      }
-    }
-  }, [linkedSectionId, isConfigured]);
-
-  const loadSections = async () => {
+  const loadSections = useCallback(async () => {
     try {
       const sectionsData = await todoistApi.getSections();
       setSections(sectionsData);
     } catch (error) {
       onSnackbar('Failed to load Todoist sections', 'error');
     }
-  };
+  }, [onSnackbar]);
 
   const loadCollaborators = async () => {
     try {
@@ -135,7 +124,7 @@ const TasksSection: React.FC<TasksSectionProps> = ({ property, onPropertyUpdate,
     }
   };
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     if (!linkedSectionId) return;
     
     setLoading(true);
@@ -147,7 +136,17 @@ const TasksSection: React.FC<TasksSectionProps> = ({ property, onPropertyUpdate,
     } finally {
       setLoading(false);
     }
-  };
+  }, [linkedSectionId, onSnackbar]);
+
+  useEffect(() => {
+    if (isConfigured) {
+      loadSections();
+      loadCollaborators();
+      if (linkedSectionId) {
+        loadTasks();
+      }
+    }
+  }, [linkedSectionId, isConfigured, loadSections, loadTasks]);
 
   const handleLinkSection = async (sectionId: string) => {
     try {

@@ -24,6 +24,9 @@ interface PropertyDTO {
     rentLow: number;
     rentHigh: number;
   };
+  todoMetaData?: {
+    todoistSectionId: string | null;
+  };
   hasRentcastData: boolean;
   notes: string;
   score: number;
@@ -44,6 +47,7 @@ const mapDTOToProperty = (dto: PropertyDTO): Property => {
     potentialRent: dto.potentialRent,
     arv: dto.arv,
     rentCastEstimates: dto.rentCastEstimates,
+    todoMetaData: dto.todoMetaData || { todoistSectionId: null },
     hasRentcastData: dto.hasRentcastData,
     notes: dto.notes,
     score: dto.score,

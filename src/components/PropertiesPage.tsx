@@ -373,6 +373,7 @@ const PropertiesPage: React.FC = () => {
             rentLow: propertyWithScore.rentCastEstimates.rentLow || 0,
             rentHigh: propertyWithScore.rentCastEstimates.rentHigh || 0
           },
+          todoMetaData: propertyWithScore.todoMetaData || { todoistSectionId: null },
           squareFootage: propertyWithScore.squareFootage,
           units: propertyWithScore.units
         };

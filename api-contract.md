@@ -34,6 +34,9 @@
       "rentLow": number,
       "rentHigh": number
     },
+    "todoMetaData": {
+      "todoistSectionId": "string" | null
+    },
     "hasRentcastData": boolean,
     "notes": "string",
     "score": number,
@@ -68,6 +71,9 @@
     "rentLow": number,
     "rentHigh": number
   },
+  "todoMetaData": {
+    "todoistSectionId": "string" | null
+  },
   "hasRentcastData": boolean,
   "notes": "string",
   "score": number,
@@ -97,6 +103,9 @@
     "rent": number,
     "rentLow": number,
     "rentHigh": number
+  },
+  "todoMetaData": {
+    "todoistSectionId": "string" | null
   },
   "hasRentcastData": boolean,
   "notes": "string",
@@ -130,6 +139,9 @@
     "rent": number,
     "rentLow": number,
     "rentHigh": number
+  },
+  "todoMetaData": {
+    "todoistSectionId": "string" | null
   },
   "hasRentcastData": boolean,
   "notes": "string",
@@ -639,6 +651,10 @@
 - The `lastContactDate` field is optional and can be null
 - Property leads are stored separately from properties and can be used to track potential deals before they become actual property opportunities
 - Batch creation allows for importing multiple leads at once and provides detailed success/error information for each lead
+- **TodoMetaData Integration**: The `todoMetaData` field stores Todoist integration metadata:
+  - `todoistSectionId`: Links properties to specific sections in Todoist for task organization
+  - This field is optional and can be null if no Todoist integration is configured
+  - Used for synchronizing property-related tasks with external Todoist project management
 - **Production PostgreSQL is hosted on Railway.**
 - **Environment variables for Railway deployment:**
   - `DATABASE_URL` (use the Railway-provided proxy URL for local dev)

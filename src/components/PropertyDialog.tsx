@@ -61,6 +61,9 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
       rentLow: 0,
       rentHigh: 0
     },
+    todoMetaData: {
+      todoistSectionId: null
+    },
     hasRentcastData: false,
     notes: '',
     score: 0,
@@ -185,6 +188,9 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         rentLow: 0,
         rentHigh: 0
       },
+      todoMetaData: {
+        todoistSectionId: null
+      },
       hasRentcastData: false,
       notes: '',
       score: 0,
@@ -207,6 +213,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         potentialRent: property.potentialRent,
         arv: property.arv,
         rentCastEstimates: property.rentCastEstimates,
+        todoMetaData: property.todoMetaData || { todoistSectionId: null },
         hasRentcastData: property.hasRentcastData,
         notes: property.notes,
         score: property.score,

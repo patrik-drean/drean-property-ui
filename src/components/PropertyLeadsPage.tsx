@@ -491,6 +491,9 @@ const PropertyLeadsPage: React.FC = () => {
           rentLow: 0,
           rentHigh: 0
         },
+        todoMetaData: {
+          todoistSectionId: null
+        },
         hasRentcastData: false,
         notes: lead.notes || '',
         score: 0,

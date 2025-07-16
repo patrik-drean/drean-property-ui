@@ -6,6 +6,7 @@ import { Property, Note, Link as PropertyLink, CreateNote, CreateLink } from '..
 import { getProperty } from '../services/api';
 import { getNotesByPropertyId, createNote, getLinksByPropertyId, createLink, deleteNote, deleteLink } from '../services/api';
 import PropertyDialog from '../components/PropertyDialog';
+import TasksSection from '../components/TasksSection';
 
 const PropertyDetailsPage: React.FC = () => {
   const { address } = useParams<{ address: string }>();
@@ -280,6 +281,14 @@ const PropertyDetailsPage: React.FC = () => {
     }
   };
 
+  const handlePropertyUpdate = (updatedProperty: Property) => {
+    setProperty(updatedProperty);
+  };
+
+  const handleSnackbar = (message: string, severity: 'success' | 'error') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
   if (loading) return <Box p={4}><Typography>Loading...</Typography></Box>;
   if (!property) return <Box p={4}><Typography>Property not found.</Typography></Box>;
 
@@ -367,7 +376,14 @@ const PropertyDetailsPage: React.FC = () => {
         </Card>
       </Paper>
       <Box display="flex" gap={3} flexWrap="wrap">
-        <Box flex={2} minWidth={340}>
+        <Box flex={1} minWidth={300}>
+          <TasksSection 
+            property={property}
+            onPropertyUpdate={handlePropertyUpdate}
+            onSnackbar={handleSnackbar}
+          />
+        </Box>
+        <Box flex={1} minWidth={300}>
           <Paper sx={{ p: 2, mb: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Typography variant="subtitle1">Communication Notes</Typography>

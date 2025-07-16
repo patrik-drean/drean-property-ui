@@ -19,6 +19,9 @@ const sampleProperties: Property[] = [
       rentLow: 1700,
       rentHigh: 1900
     },
+    todoMetaData: {
+      todoistSectionId: null
+    },
     hasRentcastData: true,
     notes: 'Good neighborhood, needs some work',
     score: 7,
@@ -43,6 +46,9 @@ const sampleProperties: Property[] = [
       rentLow: 1400,
       rentHigh: 1600
     },
+    todoMetaData: {
+      todoistSectionId: null
+    },
     hasRentcastData: true,
     notes: 'Needs new roof and HVAC',
     score: 6,
@@ -66,6 +72,9 @@ const sampleProperties: Property[] = [
       rent: 2200,
       rentLow: 2100,
       rentHigh: 2300
+    },
+    todoMetaData: {
+      todoistSectionId: null
     },
     hasRentcastData: true,
     notes: 'This property should be archived but is showing in main list',
@@ -92,6 +101,9 @@ const sampleProperties: Property[] = [
       rentLow: 1500,
       rentHigh: 1700
     },
+    todoMetaData: {
+      todoistSectionId: null
+    },
     hasRentcastData: true,
     notes: 'Currently rented and generating positive cashflow',
     score: 8,
@@ -117,6 +129,9 @@ const sampleProperties: Property[] = [
       rentLow: 1400,
       rentHigh: 1600
     },
+    todoMetaData: {
+      todoistSectionId: null
+    },
     hasRentcastData: true,
     notes: 'Rehab complete, ready for tenant',
     score: 6,
@@ -141,6 +156,9 @@ const sampleProperties: Property[] = [
       rent: 0,
       rentLow: 0,
       rentHigh: 0
+    },
+    todoMetaData: {
+      todoistSectionId: null
     },
     hasRentcastData: true,
     notes: 'Ready to sell - good appreciation',
@@ -171,6 +189,9 @@ const archivedProperties: Property[] = [
       rentLow: 1500,
       rentHigh: 1700
     },
+    todoMetaData: {
+      todoistSectionId: null
+    },
     hasRentcastData: true,
     notes: 'Deal fell through - owner backed out',
     score: 5,
@@ -195,6 +216,9 @@ const archivedProperties: Property[] = [
       rent: 1400,
       rentLow: 1300,
       rentHigh: 1500
+    },
+    todoMetaData: {
+      todoistSectionId: null
     },
     hasRentcastData: true,
     notes: 'Too much work required - not worth it',

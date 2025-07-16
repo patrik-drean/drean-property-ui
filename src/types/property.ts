@@ -9,6 +9,10 @@ export interface RentCastEstimates {
     rentHigh: number;
 }
 
+export interface TodoMetaData {
+    todoistSectionId: string | null;
+}
+
 export interface Property {
     id: string;
     address: string;
@@ -19,6 +23,7 @@ export interface Property {
     potentialRent: number;
     arv: number;
     rentCastEstimates: RentCastEstimates;
+    todoMetaData?: TodoMetaData;
     hasRentcastData: boolean;
     notes: string;
     score: number;

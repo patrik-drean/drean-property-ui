@@ -692,17 +692,21 @@ const PropertyLeadsPage: React.FC = () => {
         </Box>
         <Box sx={{ 
           display: 'flex', 
-          alignItems: 'center', 
-          flexWrap: 'wrap',
-          gap: 1,
-          justifyContent: { xs: 'stretch', sm: 'flex-end' }
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: { xs: 1, sm: 1 },
+          justifyContent: { xs: 'stretch', sm: 'flex-end' },
+          width: { xs: '100%', sm: 'auto' }
         }}>
           <Button
             variant="outlined"
             color="primary"
             onClick={handleOpenMessageDialog}
             startIcon={<Icons.Message />}
-            sx={{ borderRadius: 2, flex: { xs: 1, sm: 'none' } }}
+            sx={{ 
+              borderRadius: 2, 
+              width: { xs: '100%', sm: 'auto' }
+            }}
           >
             Override Message
           </Button>
@@ -711,7 +715,10 @@ const PropertyLeadsPage: React.FC = () => {
             color="primary"
             onClick={handleToggleShowArchived}
             startIcon={<Icons.Archive />}
-            sx={{ borderRadius: 2, flex: { xs: 1, sm: 'none' } }}
+            sx={{ 
+              borderRadius: 2, 
+              width: { xs: '100%', sm: 'auto' }
+            }}
           >
             {showArchived ? 'Hide Archived' : 'Archived Leads'}
           </Button>
@@ -721,7 +728,9 @@ const PropertyLeadsPage: React.FC = () => {
               color="error"
               startIcon={<Icons.Delete />}
               onClick={handleBulkDelete}
-              sx={{ flex: { xs: 1, sm: 'none' } }}
+              sx={{ 
+                width: { xs: '100%', sm: 'auto' }
+              }}
             >
               Delete Selected ({selectedLeads.length})
             </Button>
@@ -731,7 +740,9 @@ const PropertyLeadsPage: React.FC = () => {
             color="primary"
             startIcon={<Icons.Add />}
             onClick={handleAddLead}
-            sx={{ flex: { xs: 1, sm: 'none' } }}
+            sx={{ 
+              width: { xs: '100%', sm: 'auto' }
+            }}
           >
             Add Lead
           </Button>

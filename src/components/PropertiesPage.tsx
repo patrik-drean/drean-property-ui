@@ -530,19 +530,29 @@ ${property.zillowLink}`;
     }}>
       <Box sx={{ 
         display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
         justifyContent: 'space-between', 
-        alignItems: 'center', 
+        alignItems: { xs: 'stretch', sm: 'center' }, 
         mb: 1,
-        px: 1
+        px: 1,
+        gap: { xs: 2, sm: 0 }
       }}>
         <Typography variant="h4" component="h1">Properties</Typography>
-        <Box>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 1, sm: 2 },
+          width: { xs: '100%', sm: 'auto' }
+        }}>
           <Button
             variant="outlined"
             color="primary"
             onClick={() => navigate('/archived')}
             startIcon={<Icons.Archive />}
-            sx={{ mr: 2, borderRadius: 2 }}
+            sx={{ 
+              borderRadius: 2,
+              width: { xs: '100%', sm: 'auto' }
+            }}
           >
             Archived Properties
           </Button>
@@ -551,7 +561,10 @@ ${property.zillowLink}`;
             color="primary"
             onClick={() => setPropertyDialogOpen(true)}
             startIcon={<Icons.Add />}
-            sx={{ borderRadius: 2 }}
+            sx={{ 
+              borderRadius: 2,
+              width: { xs: '100%', sm: 'auto' }
+            }}
           >
             Add Property
           </Button>

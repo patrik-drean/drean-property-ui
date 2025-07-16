@@ -34,6 +34,10 @@ jobs:
       - name: Build
         env:
           CI: false
+          REACT_APP_API_BASE_URL: ${{ vars.REACT_APP_API_BASE_URL }}
+          REACT_APP_TODOIST_API_KEY: ${{ secrets.REACT_APP_TODOIST_API_KEY }}
+          REACT_APP_TODOIST_PROJECT_ID: ${{ vars.REACT_APP_TODOIST_PROJECT_ID }}
+          REACT_APP_USE_MOCK_API: ${{ vars.REACT_APP_USE_MOCK_API }}
         run: npm run build
         
       - name: Setup Pages

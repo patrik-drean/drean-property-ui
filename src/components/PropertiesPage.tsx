@@ -1252,32 +1252,32 @@ ${property.zillowLink}`;
             lg: 'repeat(5, 1fr)', 
             xl: 'repeat(8, 1fr)' 
           },
-          gap: { xs: 0.75, sm: 1, md: 1.5 },
+          gap: { xs: 1, sm: 1.5, md: 2 },
           px: { xs: 0.5, sm: 1 }
         }}>
           {Object.entries(unitCounts).map(([status, data]) => (
             <Paper
               key={status}
-              elevation={0}
+              elevation={1}
               sx={{
-                p: { xs: 0.75, sm: 1, md: 1.5 },
-                borderRadius: 1.5,
-                border: `1px solid ${getStatusColor(status as PropertyStatus)}`,
-                backgroundColor: `${getStatusColor(status as PropertyStatus)}08`,
+                p: { xs: 1, sm: 1.5, md: 2 },
+                borderRadius: 2,
+                border: `2px solid ${getStatusColor(status as PropertyStatus)}`,
+                backgroundColor: `${getStatusColor(status as PropertyStatus)}10`,
                 textAlign: 'center',
-                minHeight: { xs: '50px', sm: '55px', md: '60px' },
+                minHeight: { xs: '60px', sm: '70px', md: '80px' },
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center'
               }}
             >
               <Typography 
-                variant="h6" 
+                variant="h4" 
                 sx={{ 
-                  fontWeight: 600,
+                  fontWeight: 'bold',
                   color: getStatusColor(status as PropertyStatus),
-                  mb: 0.25,
-                  fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' }
+                  mb: 0.5,
+                  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.125rem' }
                 }}
               >
                 {data.units}
@@ -1288,9 +1288,9 @@ ${property.zillowLink}`;
                   color: 'text.secondary',
                   textTransform: 'uppercase',
                   fontWeight: 500,
-                  letterSpacing: 0.3,
-                  fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                  lineHeight: { xs: 1.1, sm: 1.2 }
+                  letterSpacing: 0.5,
+                  fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                  lineHeight: { xs: 1.2, sm: 1.4 }
                 }}
               >
                 {status}
@@ -1299,9 +1299,9 @@ ${property.zillowLink}`;
                 variant="caption" 
                 sx={{ 
                   color: 'text.secondary',
-                  mt: 0.25,
-                  fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                  lineHeight: { xs: 1.1, sm: 1.2 }
+                  mt: 0.5,
+                  fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                  lineHeight: { xs: 1.2, sm: 1.4 }
                 }}
               >
                 {data.count} {data.count === 1 ? 'property' : 'properties'}
@@ -1311,26 +1311,26 @@ ${property.zillowLink}`;
           
           {/* Total Units Card */}
           <Paper
-            elevation={0}
+            elevation={1}
             sx={{
-              p: { xs: 0.75, sm: 1, md: 1.5 },
-              borderRadius: 1.5,
-              border: '1px solid #1b5e20',
-              backgroundColor: '#1b5e2008',
+              p: { xs: 1, sm: 1.5, md: 2 },
+              borderRadius: 2,
+              border: '2px solid #1b5e20',
+              backgroundColor: '#1b5e2010',
               textAlign: 'center',
-              minHeight: { xs: '50px', sm: '55px', md: '60px' },
+              minHeight: { xs: '60px', sm: '70px', md: '80px' },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center'
             }}
           >
             <Typography 
-              variant="h6" 
+              variant="h4" 
               sx={{ 
-                fontWeight: 600,
+                fontWeight: 'bold',
                 color: '#1b5e20',
-                mb: 0.25,
-                fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' }
+                mb: 0.5,
+                fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.125rem' }
               }}
             >
               {totalUnits}
@@ -1341,9 +1341,9 @@ ${property.zillowLink}`;
                 color: 'text.secondary',
                 textTransform: 'uppercase',
                 fontWeight: 500,
-                letterSpacing: 0.3,
-                fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                lineHeight: { xs: 1.1, sm: 1.2 }
+                letterSpacing: 0.5,
+                fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                lineHeight: { xs: 1.2, sm: 1.4 }
               }}
             >
               Total Units Held

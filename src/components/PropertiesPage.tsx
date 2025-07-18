@@ -326,6 +326,37 @@ const PropertiesPage: React.FC = () => {
     return scoreB - scoreA;
   });
 
+  // Calculate unit counts by status
+  const getUnitCountsByStatus = () => {
+    const counts: { [key in PropertyStatus]: { count: number; units: number } } = {
+      'Opportunity': { count: 0, units: 0 },
+      'Soft Offer': { count: 0, units: 0 },
+      'Hard Offer': { count: 0, units: 0 },
+      'Rehab': { count: 0, units: 0 },
+      'Selling': { count: 0, units: 0 },
+      'Needs Tenant': { count: 0, units: 0 },
+      'Operational': { count: 0, units: 0 }
+    };
+
+    properties.forEach(property => {
+      counts[property.status].count += 1;
+      counts[property.status].units += property.units || 0;
+    });
+
+    return counts;
+  };
+
+  const unitCounts = getUnitCountsByStatus();
+
+  // Calculate total units excluding Opportunity, Soft Offer, and Selling
+  const getTotalUnits = () => {
+    return Object.entries(unitCounts)
+      .filter(([status]) => status !== 'Opportunity' && status !== 'Soft Offer' && status !== 'Selling')
+      .reduce((total, [, data]) => total + data.units, 0);
+  };
+
+  const totalUnits = getTotalUnits();
+
   useEffect(() => {
     const fetchProperties = async () => {
       try {
@@ -568,6 +599,117 @@ ${property.zillowLink}`;
           >
             Add Property
           </Button>
+        </Box>
+      </Box>
+
+      {/* Metric Summary Section */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: { 
+            xs: 'repeat(2, 1fr)', 
+            sm: 'repeat(3, 1fr)', 
+            md: 'repeat(4, 1fr)', 
+            lg: 'repeat(5, 1fr)', 
+            xl: 'repeat(8, 1fr)' 
+          },
+          gap: { xs: 1, sm: 1.5, md: 2 },
+          px: { xs: 0.5, sm: 1 }
+        }}>
+          {Object.entries(unitCounts).map(([status, data]) => (
+            <Paper
+              key={status}
+              elevation={1}
+              sx={{
+                p: { xs: 1, sm: 1.5, md: 2 },
+                borderRadius: 2,
+                border: `2px solid ${getStatusColor(status as PropertyStatus)}`,
+                backgroundColor: `${getStatusColor(status as PropertyStatus)}10`,
+                textAlign: 'center',
+                minHeight: { xs: '60px', sm: '70px', md: '80px' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
+              }}
+            >
+              <Typography 
+                variant="h4" 
+                sx={{ 
+                  fontWeight: 'bold',
+                  color: getStatusColor(status as PropertyStatus),
+                  mb: 0.5,
+                  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.125rem' }
+                }}
+              >
+                {data.units}
+              </Typography>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  color: 'text.secondary',
+                  textTransform: 'uppercase',
+                  fontWeight: 500,
+                  letterSpacing: 0.5,
+                  fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                  lineHeight: { xs: 1.2, sm: 1.4 }
+                }}
+              >
+                {status}
+              </Typography>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  color: 'text.secondary',
+                  mt: 0.5,
+                  fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                  lineHeight: { xs: 1.2, sm: 1.4 }
+                }}
+              >
+                {data.count} {data.count === 1 ? 'property' : 'properties'}
+              </Typography>
+            </Paper>
+          ))}
+          
+          {/* Total Units Card */}
+          <Paper
+            elevation={1}
+            sx={{
+              p: { xs: 1, sm: 1.5, md: 2 },
+              borderRadius: 2,
+              border: '2px solid #1b5e20',
+              backgroundColor: '#1b5e2010',
+              textAlign: 'center',
+              minHeight: { xs: '60px', sm: '70px', md: '80px' },
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center'
+            }}
+          >
+            <Typography 
+              variant="h4" 
+              sx={{ 
+                fontWeight: 'bold',
+                color: '#1b5e20',
+                mb: 0.5,
+                fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.125rem' }
+              }}
+            >
+              {totalUnits}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+                fontWeight: 500,
+                letterSpacing: 0.5,
+                fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                lineHeight: { xs: 1.2, sm: 1.4 }
+              }}
+            >
+              Total Units Held
+            </Typography>
+          </Paper>
         </Box>
       </Box>
 

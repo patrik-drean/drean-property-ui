@@ -215,11 +215,30 @@ const PropertyLeadsPage: React.FC = () => {
         return a.archived ? 1 : -1; // Non-archived leads first
       }
       
-      // Then sort by last contact date
-      if (!a.lastContactDate && !b.lastContactDate) return 0;
-      if (!a.lastContactDate) return -1;
-      if (!b.lastContactDate) return 1;
-      return new Date(b.lastContactDate).getTime() - new Date(a.lastContactDate).getTime();
+      // Then sort by last contact date (not contacted leads first, then most recent)
+      if (!a.lastContactDate && !b.lastContactDate) {
+        // Both have no contact date, continue to next criteria
+      } else if (!a.lastContactDate) {
+        return -1; // a has no contact date, put it first
+      } else if (!b.lastContactDate) {
+        return 1; // b has no contact date, put it first
+      } else {
+        // Both have contact dates, sort by most recent first
+        const dateComparison = new Date(b.lastContactDate).getTime() - new Date(a.lastContactDate).getTime();
+        if (dateComparison !== 0) {
+          return dateComparison;
+        }
+      }
+      
+      // Then sort by number of units descending (null/undefined units go to the end)
+      const aUnits = a.units || 0;
+      const bUnits = b.units || 0;
+      if (aUnits !== bUnits) {
+        return bUnits - aUnits; // Descending order
+      }
+      
+      // Finally sort alphabetically by address ascending
+      return a.address.localeCompare(b.address);
     });
   };
 
@@ -856,7 +875,7 @@ const PropertyLeadsPage: React.FC = () => {
                           )}
                         </Box>
                       </TableCell>
-                      <TableCell>{lead.units || 'N/A'}</TableCell>
+                      <TableCell>{lead.units || ''}</TableCell>
                       <TableCell>{formatCurrency(lead.listingPrice)}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1148,7 +1167,7 @@ const PropertyLeadsPage: React.FC = () => {
                 <Box>
                   <Typography variant="caption" color="text.secondary">Units</Typography>
                   <Typography variant="body1" fontWeight="medium">
-                    {lead.units || 'N/A'}
+                    {lead.units || ''}
                   </Typography>
                 </Box>
                 <Box>

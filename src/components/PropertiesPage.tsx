@@ -602,117 +602,6 @@ ${property.zillowLink}`;
         </Box>
       </Box>
 
-      {/* Metric Summary Section */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { 
-            xs: 'repeat(2, 1fr)', 
-            sm: 'repeat(3, 1fr)', 
-            md: 'repeat(4, 1fr)', 
-            lg: 'repeat(5, 1fr)', 
-            xl: 'repeat(8, 1fr)' 
-          },
-          gap: { xs: 1, sm: 1.5, md: 2 },
-          px: { xs: 0.5, sm: 1 }
-        }}>
-          {Object.entries(unitCounts).map(([status, data]) => (
-            <Paper
-              key={status}
-              elevation={1}
-              sx={{
-                p: { xs: 1, sm: 1.5, md: 2 },
-                borderRadius: 2,
-                border: `2px solid ${getStatusColor(status as PropertyStatus)}`,
-                backgroundColor: `${getStatusColor(status as PropertyStatus)}10`,
-                textAlign: 'center',
-                minHeight: { xs: '60px', sm: '70px', md: '80px' },
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center'
-              }}
-            >
-              <Typography 
-                variant="h4" 
-                sx={{ 
-                  fontWeight: 'bold',
-                  color: getStatusColor(status as PropertyStatus),
-                  mb: 0.5,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.125rem' }
-                }}
-              >
-                {data.units}
-              </Typography>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                  fontWeight: 500,
-                  letterSpacing: 0.5,
-                  fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                  lineHeight: { xs: 1.2, sm: 1.4 }
-                }}
-              >
-                {status}
-              </Typography>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: 'text.secondary',
-                  mt: 0.5,
-                  fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                  lineHeight: { xs: 1.2, sm: 1.4 }
-                }}
-              >
-                {data.count} {data.count === 1 ? 'property' : 'properties'}
-              </Typography>
-            </Paper>
-          ))}
-          
-          {/* Total Units Card */}
-          <Paper
-            elevation={1}
-            sx={{
-              p: { xs: 1, sm: 1.5, md: 2 },
-              borderRadius: 2,
-              border: '2px solid #1b5e20',
-              backgroundColor: '#1b5e2010',
-              textAlign: 'center',
-              minHeight: { xs: '60px', sm: '70px', md: '80px' },
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center'
-            }}
-          >
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                fontWeight: 'bold',
-                color: '#1b5e20',
-                mb: 0.5,
-                fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.125rem' }
-              }}
-            >
-              {totalUnits}
-            </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-                fontWeight: 500,
-                letterSpacing: 0.5,
-                fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                lineHeight: { xs: 1.2, sm: 1.4 }
-              }}
-            >
-              Total Units Held
-            </Typography>
-          </Paper>
-        </Box>
-      </Box>
-
       {/* Desktop view - Table */}
       <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>
         <TableContainer 
@@ -1350,6 +1239,117 @@ ${property.zillowLink}`;
             </Box>
           </Paper>
         ))}
+      </Box>
+
+      {/* Metric Summary Section */}
+      <Box sx={{ mt: 3, mb: 2 }}>
+        <Box sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: { 
+            xs: 'repeat(2, 1fr)', 
+            sm: 'repeat(3, 1fr)', 
+            md: 'repeat(4, 1fr)', 
+            lg: 'repeat(5, 1fr)', 
+            xl: 'repeat(8, 1fr)' 
+          },
+          gap: { xs: 0.75, sm: 1, md: 1.5 },
+          px: { xs: 0.5, sm: 1 }
+        }}>
+          {Object.entries(unitCounts).map(([status, data]) => (
+            <Paper
+              key={status}
+              elevation={0}
+              sx={{
+                p: { xs: 0.75, sm: 1, md: 1.5 },
+                borderRadius: 1.5,
+                border: `1px solid ${getStatusColor(status as PropertyStatus)}`,
+                backgroundColor: `${getStatusColor(status as PropertyStatus)}08`,
+                textAlign: 'center',
+                minHeight: { xs: '50px', sm: '55px', md: '60px' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
+              }}
+            >
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  fontWeight: 600,
+                  color: getStatusColor(status as PropertyStatus),
+                  mb: 0.25,
+                  fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' }
+                }}
+              >
+                {data.units}
+              </Typography>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  color: 'text.secondary',
+                  textTransform: 'uppercase',
+                  fontWeight: 500,
+                  letterSpacing: 0.3,
+                  fontSize: { xs: '0.55rem', sm: '0.65rem' },
+                  lineHeight: { xs: 1.1, sm: 1.2 }
+                }}
+              >
+                {status}
+              </Typography>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  color: 'text.secondary',
+                  mt: 0.25,
+                  fontSize: { xs: '0.55rem', sm: '0.65rem' },
+                  lineHeight: { xs: 1.1, sm: 1.2 }
+                }}
+              >
+                {data.count} {data.count === 1 ? 'property' : 'properties'}
+              </Typography>
+            </Paper>
+          ))}
+          
+          {/* Total Units Card */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 0.75, sm: 1, md: 1.5 },
+              borderRadius: 1.5,
+              border: '1px solid #1b5e20',
+              backgroundColor: '#1b5e2008',
+              textAlign: 'center',
+              minHeight: { xs: '50px', sm: '55px', md: '60px' },
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center'
+            }}
+          >
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 600,
+                color: '#1b5e20',
+                mb: 0.25,
+                fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' }
+              }}
+            >
+              {totalUnits}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+                fontWeight: 500,
+                letterSpacing: 0.3,
+                fontSize: { xs: '0.55rem', sm: '0.65rem' },
+                lineHeight: { xs: 1.1, sm: 1.2 }
+              }}
+            >
+              Total Units Held
+            </Typography>
+          </Paper>
+        </Box>
       </Box>
 
       <PropertyDialog

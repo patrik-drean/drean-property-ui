@@ -345,70 +345,122 @@ const PropertyDetailsPage: React.FC = () => {
           Edit Property
         </Button>
       </Box>
-      <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
-        <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} gap={2} mb={2}>
-          <MuiLink href={property.zillowLink} target="_blank" rel="noopener noreferrer" variant="h6" sx={{ fontWeight: 600, color: 'primary.main', textDecoration: 'none', wordBreak: 'break-word' }}>{property.address}</MuiLink>
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Chip 
-              label={property.status} 
-              size="small" 
-              sx={{ 
-                backgroundColor: getStatusColor(property.status),
-                color: 'white',
-                fontWeight: 500,
-                borderRadius: '16px',
-                minWidth: '90px',
-                height: '24px',
-                '& .MuiChip-label': {
-                  padding: '0 10px',
-                }
-              }}
-            />
-            <Box sx={{ 
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: getScoreBackgroundColor(property.score),
-              color: getScoreColor(property.score),
-              p: '2px 6px',
-              borderRadius: 2,
-              fontWeight: 'bold',
-              minWidth: '60px',
-              height: '24px'
-            }}>
-              {property.score}/10
+      <Box display="flex" flexDirection={{ xs: 'column', lg: 'row' }} gap={3} sx={{ mb: 3 }}>
+        {/* Property Details - takes up 2/3 of the space */}
+        <Box flex={2}>
+          <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} gap={2} mb={2}>
+              <MuiLink href={property.zillowLink} target="_blank" rel="noopener noreferrer" variant="h6" sx={{ fontWeight: 600, color: 'primary.main', textDecoration: 'none', wordBreak: 'break-word' }}>{property.address}</MuiLink>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Chip 
+                  label={property.status} 
+                  size="small" 
+                  sx={{ 
+                    backgroundColor: getStatusColor(property.status),
+                    color: 'white',
+                    fontWeight: 500,
+                    borderRadius: '16px',
+                    minWidth: '90px',
+                    height: '24px',
+                    '& .MuiChip-label': {
+                      padding: '0 10px',
+                    }
+                  }}
+                />
+                <Box sx={{ 
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: getScoreBackgroundColor(property.score),
+                  color: getScoreColor(property.score),
+                  p: '2px 6px',
+                  borderRadius: 2,
+                  fontWeight: 'bold',
+                  minWidth: '60px',
+                  height: '24px'
+                }}>
+                  {property.score}/10
+                </Box>
+              </Box>
             </Box>
-          </Box>
-        </Box>
-        <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(5, 1fr)' }} gap={{ xs: 2, sm: 4 }} mb={2}>
-          <Box><Typography variant="caption">Offer Price</Typography><Typography variant="h6">${property.offerPrice.toLocaleString()}</Typography></Box>
-          <Box><Typography variant="caption">Rehab Cost</Typography><Typography variant="h6">${property.rehabCosts.toLocaleString()}</Typography></Box>
-          <Box><Typography variant="caption">Monthly Rent</Typography><Typography variant="h6">${property.potentialRent.toLocaleString()}</Typography></Box>
-          <Box><Typography variant="caption">ARV</Typography><Typography variant="h6">${property.arv.toLocaleString()}</Typography></Box>
-          <Box><Typography variant="caption">Sq Ft</Typography><Typography variant="h6">{property.squareFootage ? property.squareFootage.toLocaleString() : 'N/A'}</Typography></Box>
-          <Box><Typography variant="caption">Units</Typography><Typography variant="h6">{property.units ? property.units : 'N/A'}</Typography></Box>
-          <Box><Typography variant="caption">Rent Ratio</Typography><Typography variant="h6" sx={{ color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts)) }}>{formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}</Typography></Box>
-          <Box><Typography variant="caption">ARV Ratio</Typography><Typography variant="h6" sx={{ color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-          <Box><Typography variant="caption">Home Equity</Typography><Typography variant="h6" sx={{ color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-          <Box><Typography variant="caption">Monthly Cashflow</Typography><Typography variant="h6" sx={{ color: getCashflowColor(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))) }}>{formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
-        </Box>
-        <Divider sx={{ my: 2 }} />
-        <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(6, 1fr)' }} gap={{ xs: 2, sm: 4 }} mb={2}>
-          <Box><Typography variant="caption">Down Payment (25%)</Typography><Typography variant="h6">{formatCurrency(calculateDownPayment(property.offerPrice, property.rehabCosts))}</Typography></Box>
-          <Box><Typography variant="caption">Loan Amount (75%)</Typography><Typography variant="h6">{formatCurrency(calculateLoanAmount(property.offerPrice, property.rehabCosts))}</Typography></Box>
-          <Box><Typography variant="caption">New Loan (Refinance)</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingNewLoan(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-          <Box><Typography variant="caption">Monthly Mortgage</Typography><Typography variant="h6">{formatCurrency(calculateMonthlyMortgage(calculateRefinancingNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
-          <Box><Typography variant="caption">Refinancing Home Equity</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-          <Box><Typography variant="caption">Refinancing Monthly Cashflow</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingCashflow(property.potentialRent, property.offerPrice, property.arv))}</Typography></Box>
+            <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(5, 1fr)' }} gap={{ xs: 2, sm: 4 }} mb={2}>
+              <Box><Typography variant="caption">Offer Price</Typography><Typography variant="h6">${property.offerPrice.toLocaleString()}</Typography></Box>
+              <Box><Typography variant="caption">Rehab Cost</Typography><Typography variant="h6">${property.rehabCosts.toLocaleString()}</Typography></Box>
+              <Box><Typography variant="caption">Monthly Rent</Typography><Typography variant="h6">${property.potentialRent.toLocaleString()}</Typography></Box>
+              <Box><Typography variant="caption">ARV</Typography><Typography variant="h6">${property.arv.toLocaleString()}</Typography></Box>
+              <Box><Typography variant="caption">Sq Ft</Typography><Typography variant="h6">{property.squareFootage ? property.squareFootage.toLocaleString() : 'N/A'}</Typography></Box>
+              <Box><Typography variant="caption">Units</Typography><Typography variant="h6">{property.units ? property.units : 'N/A'}</Typography></Box>
+              <Box><Typography variant="caption">Rent Ratio</Typography><Typography variant="h6" sx={{ color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts)) }}>{formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}</Typography></Box>
+              <Box><Typography variant="caption">ARV Ratio</Typography><Typography variant="h6" sx={{ color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
+              <Box><Typography variant="caption">Home Equity</Typography><Typography variant="h6" sx={{ color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
+              <Box><Typography variant="caption">Monthly Cashflow</Typography><Typography variant="h6" sx={{ color: getCashflowColor(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))) }}>{formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
+            </Box>
+            <Divider sx={{ my: 2 }} />
+            <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(6, 1fr)' }} gap={{ xs: 2, sm: 4 }} mb={2}>
+              <Box><Typography variant="caption">Down Payment (25%)</Typography><Typography variant="h6">{formatCurrency(calculateDownPayment(property.offerPrice, property.rehabCosts))}</Typography></Box>
+              <Box><Typography variant="caption">Loan Amount (75%)</Typography><Typography variant="h6">{formatCurrency(calculateLoanAmount(property.offerPrice, property.rehabCosts))}</Typography></Box>
+              <Box><Typography variant="caption">New Loan (Refinance)</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingNewLoan(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
+              <Box><Typography variant="caption">Monthly Mortgage</Typography><Typography variant="h6">{formatCurrency(calculateMonthlyMortgage(calculateRefinancingNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
+              <Box><Typography variant="caption">Refinancing Home Equity</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
+              <Box><Typography variant="caption">Refinancing Monthly Cashflow</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingCashflow(property.potentialRent, property.offerPrice, property.arv))}</Typography></Box>
+            </Box>
+
+            <Card sx={{ background: '#f5f5f5' }}>
+              <CardContent>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>Description</Typography>
+                <Typography variant="body2">{property.notes || 'No notes.'}</Typography>
+              </CardContent>
+            </Card>
+          </Paper>
         </Box>
 
-        <Card sx={{ background: '#f5f5f5', mb: 2 }}>
-          <CardContent>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>Description</Typography>
-            <Typography variant="body2">{property.notes || 'No notes.'}</Typography>
-          </CardContent>
-        </Card>
-      </Paper>
+        {/* Team Section - takes up 1/3 of the space */}
+        <Box flex={1}>
+          <Paper sx={{ p: 2, height: '100%' }}>
+            <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} mb={1} gap={1}>
+              <Typography variant="subtitle1">Team</Typography>
+              <Button size="small" variant="outlined" onClick={() => setContactDialogOpen(true)} sx={{ alignSelf: { xs: 'stretch', sm: 'flex-end' } }}>Link Contacts</Button>
+            </Box>
+            <Divider sx={{ mb: 1 }} />
+            <List>
+              {contacts.map(contact => (
+                <ListItem key={contact.id} alignItems="flex-start" sx={{ mb: 1 }}>
+                  <ListItemText
+                    primary={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Chip
+                          label={contact.type}
+                          size="small"
+                          sx={{
+                            backgroundColor: getTypeColor(contact.type),
+                            color: 'white',
+                            fontSize: '0.7rem',
+                            height: '20px',
+                          }}
+                        />
+                        <Typography variant="body2" fontWeight={500}>
+                          {contact.name}
+                        </Typography>
+                      </Box>
+                    }
+                    secondary={
+                      <Box>
+                        <Typography variant="caption" display="block">
+                          {contact.email}
+                        </Typography>
+                        <Typography variant="caption" display="block">
+                          {contact.phone}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              ))}
+              {contacts.length === 0 && <Typography variant="body2" color="text.secondary">No contacts linked.</Typography>}
+            </List>
+          </Paper>
+        </Box>
+      </Box>
       <Box display="flex" flexDirection={{ xs: 'column', lg: 'row' }} gap={3}>
         <Box flex={1} minWidth={{ xs: 'auto', lg: 300 }}>
           <TasksSection 
@@ -458,51 +510,7 @@ const PropertyDetailsPage: React.FC = () => {
             </List>
           </Paper>
         </Box>
-        <Box flex={1} minWidth={{ xs: 'auto', lg: 280 }}>
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} mb={1} gap={1}>
-              <Typography variant="subtitle1">Contacts</Typography>
-              <Button size="small" variant="outlined" onClick={() => setContactDialogOpen(true)} sx={{ alignSelf: { xs: 'stretch', sm: 'flex-end' } }}>Link Contacts</Button>
-            </Box>
-            <Divider sx={{ mb: 1 }} />
-            <List>
-              {contacts.map(contact => (
-                <ListItem key={contact.id} alignItems="flex-start" sx={{ mb: 1 }}>
-                  <ListItemText
-                    primary={
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Chip
-                          label={contact.type}
-                          size="small"
-                          sx={{
-                            backgroundColor: getTypeColor(contact.type),
-                            color: 'white',
-                            fontSize: '0.7rem',
-                            height: '20px',
-                          }}
-                        />
-                        <Typography variant="body2" fontWeight={500}>
-                          {contact.name}
-                        </Typography>
-                      </Box>
-                    }
-                    secondary={
-                      <Box>
-                        <Typography variant="caption" display="block">
-                          {contact.email}
-                        </Typography>
-                        <Typography variant="caption" display="block">
-                          {contact.phone}
-                        </Typography>
-                      </Box>
-                    }
-                  />
-                </ListItem>
-              ))}
-              {contacts.length === 0 && <Typography variant="body2" color="text.secondary">No contacts linked.</Typography>}
-            </List>
-          </Paper>
-        </Box>
+
         <Box flex={1} minWidth={{ xs: 'auto', lg: 280 }}>
           <Paper sx={{ p: 2, mb: 3 }}>
             <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} mb={1} gap={1}>

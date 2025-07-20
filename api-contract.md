@@ -638,6 +638,124 @@
   - `id` (string, required): The note ID
 - **Response**: No content (204)
 
+## Contact Endpoints
+
+### Get All Contacts
+- **Method**: GET
+- **Endpoint**: `/api/Contacts`
+- **Response**: Array of Contact objects
+```json
+[
+  {
+    "id": "string",
+    "name": "string",
+    "email": "string",
+    "phone": "string",
+    "type": "string",
+    "location": "string",
+    "notes": "string",
+    "tags": ["string"],
+    "createdAt": "string",
+    "updatedAt": "string",
+    "relatedPropertyIds": ["string"]
+  }
+]
+```
+
+### Get Contacts by Property ID
+- **Method**: GET
+- **Endpoint**: `/api/Contacts/property/{propertyId}`
+- **URL Parameters**:
+  - `propertyId` (string, required): The property ID
+- **Response**: Array of Contact objects for the specified property
+
+### Get Contact by ID
+- **Method**: GET
+- **Endpoint**: `/api/Contacts/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The contact ID
+- **Response**: Single Contact object
+```json
+{
+  "id": "string",
+  "name": "string",
+  "email": "string",
+  "phone": "string",
+  "type": "string",
+  "location": "string",
+  "notes": "string",
+  "tags": ["string"],
+  "createdAt": "string",
+  "updatedAt": "string",
+  "relatedPropertyIds": ["string"]
+}
+```
+- **Error Responses**:
+  - 404: Contact with specified ID not found
+
+### Create Contact
+- **Method**: POST
+- **Endpoint**: `/api/Contacts`
+- **Request Body**: Contact object
+```json
+{
+  "name": "string",
+  "email": "string",
+  "phone": "string",
+  "type": "string",
+  "location": "string",
+  "notes": "string",
+  "tags": ["string"]
+}
+```
+- **Response**: Created Contact object with ID
+
+### Update Contact
+- **Method**: PUT
+- **Endpoint**: `/api/Contacts/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The contact ID
+- **Request Body**: Contact object
+```json
+{
+  "id": "string",
+  "name": "string",
+  "email": "string",
+  "phone": "string",
+  "type": "string",
+  "location": "string",
+  "notes": "string",
+  "tags": ["string"]
+}
+```
+- **Response**: Updated Contact object
+- **Error Responses**:
+  - 404: Contact with specified ID not found
+  - 400: ID mismatch between URL and request body
+
+### Delete Contact
+- **Method**: DELETE
+- **Endpoint**: `/api/Contacts/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The contact ID
+- **Response**: No content (204)
+
+### Add Contact to Property
+- **Method**: POST
+- **Endpoint**: `/api/Contacts/{contactId}/properties/{propertyId}`
+- **URL Parameters**:
+  - `contactId` (string, required): The contact ID
+  - `propertyId` (string, required): The property ID
+- **Response**: No content (204)
+
+### Remove Contact from Property
+- **Method**: DELETE
+- **Endpoint**: `/api/Contacts/{contactId}/properties/{propertyId}`
+- **URL Parameters**:
+  - `contactId` (string, required): The contact ID
+  - `propertyId` (string, required): The property ID
+- **Response**: No content (204)
+
 ## Error Responses
 - **400 Bad Request**: Invalid input or validation errors
 - **404 Not Found**: Resource not found

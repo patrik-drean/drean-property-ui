@@ -22,6 +22,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import MenuIcon from '@mui/icons-material/Menu';
 import ListAltIcon from '@mui/icons-material/ListAlt';
+import PeopleIcon from '@mui/icons-material/People';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
@@ -94,6 +95,17 @@ const Navigation: React.FC = () => {
               <ListAltIcon color={isActive('/leads') ? 'primary' : 'inherit'} />
             </ListItemIcon>
             <ListItemText primary="Leads" />
+          </ListItem>
+          <ListItem 
+            button 
+            component={RouterLink} 
+            to="/team"
+            selected={isActive('/team')}
+          >
+            <ListItemIcon>
+              <PeopleIcon color={isActive('/team') ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Team" />
           </ListItem>
           <ListItem 
             button 
@@ -175,6 +187,15 @@ const Navigation: React.FC = () => {
                   sx={getNavButtonStyle('/leads')}
                 >
                   Leads
+                </Button>
+                
+                <Button
+                  component={RouterLink}
+                  to="/team"
+                  startIcon={<PeopleIcon />}
+                  sx={getNavButtonStyle('/team')}
+                >
+                  Team
                 </Button>
                 
                 <Button

@@ -120,3 +120,38 @@ export interface CreateLink {
     moreDetails: string;
     propertyId: string;
 }
+
+export interface Contact {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    type: string;
+    location: string;
+    notes: string;
+    tags: string[];
+    createdAt: string;
+    updatedAt: string;
+    relatedPropertyIds: string[];
+}
+
+export interface CreateContact {
+    name: string;
+    email: string;
+    phone: string;
+    type: string;
+    location: string;
+    notes: string;
+    tags: string[];
+}
+
+export interface UpdateContact {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    type: string;
+    location: string;
+    notes: string;
+    tags: string[];
+}

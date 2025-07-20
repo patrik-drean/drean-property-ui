@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Property, PropertyLead, CreatePropertyLead, UpdatePropertyLead, BatchCreatePropertyLeads, BatchCreateResponse, Note, CreateNote, Link, CreateLink } from '../types/property';
+import { Property, PropertyLead, CreatePropertyLead, UpdatePropertyLead, BatchCreatePropertyLeads, BatchCreateResponse, Note, CreateNote, Link, CreateLink, Contact, CreateContact, UpdateContact } from '../types/property';
 
 // Use environment variables if available, otherwise use default local development URL
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
@@ -145,4 +145,42 @@ export const updateLink = async (id: string, link: CreateLink): Promise<Link> =>
 
 export const deleteLink = async (id: string): Promise<void> => {
   await api.delete(`/api/Links/${id}`);
+};
+
+// Contact API Methods
+export const getContacts = async (): Promise<Contact[]> => {
+  const response = await api.get<Contact[]>('/api/Contacts');
+  return response.data;
+};
+
+export const getContact = async (id: string): Promise<Contact> => {
+  const response = await api.get<Contact>(`/api/Contacts/${id}`);
+  return response.data;
+};
+
+export const getContactsByPropertyId = async (propertyId: string): Promise<Contact[]> => {
+  const response = await api.get<Contact[]>(`/api/Contacts/property/${propertyId}`);
+  return response.data;
+};
+
+export const createContact = async (contact: CreateContact): Promise<Contact> => {
+  const response = await api.post<Contact>('/api/Contacts', contact);
+  return response.data;
+};
+
+export const updateContact = async (id: string, contact: UpdateContact): Promise<Contact> => {
+  const response = await api.put<Contact>(`/api/Contacts/${id}`, contact);
+  return response.data;
+};
+
+export const deleteContact = async (id: string): Promise<void> => {
+  await api.delete(`/api/Contacts/${id}`);
+};
+
+export const addContactToProperty = async (contactId: string, propertyId: string): Promise<void> => {
+  await api.post(`/api/Contacts/${contactId}/properties/${propertyId}`);
+};
+
+export const removeContactFromProperty = async (contactId: string, propertyId: string): Promise<void> => {
+  await api.delete(`/api/Contacts/${contactId}/properties/${propertyId}`);
 }; 

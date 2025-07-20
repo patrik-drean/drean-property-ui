@@ -2,11 +2,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Paper, Button, Chip, Card, CardContent, TextField, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, IconButton, Tooltip, Link as MuiLink, Divider, Snackbar, Alert, Avatar, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import * as Icons from '@mui/icons-material';
-import { Property, Note, Link as PropertyLink, CreateNote, CreateLink } from '../types/property';
+import { Property, Note, Link as PropertyLink, CreateNote, CreateLink, Contact } from '../types/property';
 import { getProperty } from '../services/api';
-import { getNotesByPropertyId, createNote, getLinksByPropertyId, createLink, deleteNote, deleteLink } from '../services/api';
+import { getNotesByPropertyId, createNote, getLinksByPropertyId, createLink, deleteNote, deleteLink, getContactsByPropertyId } from '../services/api';
 import PropertyDialog from '../components/PropertyDialog';
 import TasksSection from '../components/TasksSection';
+import ContactDialog from '../components/ContactDialog';
 
 const PropertyDetailsPage: React.FC = () => {
   const { address } = useParams<{ address: string }>();
@@ -22,6 +23,8 @@ const PropertyDetailsPage: React.FC = () => {
   const [newLink, setNewLink] = useState({ url: '', title: '', moreDetails: '' });
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
 
   const createdByOptions = ['Patrik', 'Dillon', 'Other'];
 
@@ -94,6 +97,20 @@ const PropertyDetailsPage: React.FC = () => {
     if (score >= 7) return '#212121'; // Dark text for amber background
     if (score >= 5) return '#212121'; // Dark text for orange background
     return '#FFEBEE'; // Light red text for red background
+  };
+
+  const getTypeColor = (type: string): string => {
+    switch (type) {
+      case 'Agent': return '#1976d2';
+      case 'Property Manager': return '#009688';
+      case 'Lender': return '#388e3c';
+      case 'Contractor': return '#f57c00';
+      case 'Insurance': return '#d32f2f';
+      case 'Partner': return '#7b1fa2';
+      case 'Legal': return '#303f9f';
+      case 'Other': return '#757575';
+      default: return '#757575';
+    }
   };
 
   const calculateRentRatio = (rent: number, offerPrice: number, rehabCosts: number) => {
@@ -189,7 +206,7 @@ const PropertyDetailsPage: React.FC = () => {
     getProperty(decodedAddress)
       .then((property) => {
         setProperty(property);
-        // Fetch notes and links using property.id, handle 404 as empty
+        // Fetch notes, links, and contacts using property.id, handle 404 as empty
         Promise.all([
           getNotesByPropertyId(property.id).catch(err => {
             if (err.response && err.response.status === 404) return [];
@@ -198,10 +215,15 @@ const PropertyDetailsPage: React.FC = () => {
           getLinksByPropertyId(property.id).catch(err => {
             if (err.response && err.response.status === 404) return [];
             throw err;
+          }),
+          getContactsByPropertyId(property.id).catch(err => {
+            if (err.response && err.response.status === 404) return [];
+            throw err;
           })
-        ]).then(([notes, links]) => {
+        ]).then(([notes, links, contacts]) => {
           setNotes(notes.sort((a: Note, b: Note) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
           setLinks(links);
+          setContacts(contacts);
         });
       })
       .catch(() => {
@@ -288,6 +310,16 @@ const PropertyDetailsPage: React.FC = () => {
   const handleSnackbar = useCallback((message: string, severity: 'success' | 'error') => {
     setSnackbar({ open: true, message, severity });
   }, []);
+
+  const handleContactsUpdate = useCallback(async () => {
+    if (!property) return;
+    try {
+      const contactsData = await getContactsByPropertyId(property.id);
+      setContacts(contactsData);
+    } catch (error) {
+      console.error('Error updating contacts:', error);
+    }
+  }, [property]);
 
   if (loading) return <Box p={4}><Typography>Loading...</Typography></Box>;
   if (!property) return <Box p={4}><Typography>Property not found.</Typography></Box>;
@@ -429,6 +461,51 @@ const PropertyDetailsPage: React.FC = () => {
         <Box flex={1} minWidth={{ xs: 'auto', lg: 280 }}>
           <Paper sx={{ p: 2, mb: 3 }}>
             <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} mb={1} gap={1}>
+              <Typography variant="subtitle1">Contacts</Typography>
+              <Button size="small" variant="outlined" onClick={() => setContactDialogOpen(true)} sx={{ alignSelf: { xs: 'stretch', sm: 'flex-end' } }}>Link Contacts</Button>
+            </Box>
+            <Divider sx={{ mb: 1 }} />
+            <List>
+              {contacts.map(contact => (
+                <ListItem key={contact.id} alignItems="flex-start" sx={{ mb: 1 }}>
+                  <ListItemText
+                    primary={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Chip
+                          label={contact.type}
+                          size="small"
+                          sx={{
+                            backgroundColor: getTypeColor(contact.type),
+                            color: 'white',
+                            fontSize: '0.7rem',
+                            height: '20px',
+                          }}
+                        />
+                        <Typography variant="body2" fontWeight={500}>
+                          {contact.name}
+                        </Typography>
+                      </Box>
+                    }
+                    secondary={
+                      <Box>
+                        <Typography variant="caption" display="block">
+                          {contact.email}
+                        </Typography>
+                        <Typography variant="caption" display="block">
+                          {contact.phone}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              ))}
+              {contacts.length === 0 && <Typography variant="body2" color="text.secondary">No contacts linked.</Typography>}
+            </List>
+          </Paper>
+        </Box>
+        <Box flex={1} minWidth={{ xs: 'auto', lg: 280 }}>
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} mb={1} gap={1}>
               <Typography variant="subtitle1">Links</Typography>
               <Button size="small" variant="outlined" onClick={() => setLinkDialogOpen(true)} sx={{ alignSelf: { xs: 'stretch', sm: 'flex-end' } }}>Add Link</Button>
             </Box>
@@ -543,6 +620,13 @@ const PropertyDetailsPage: React.FC = () => {
         onSave={handleSaveProperty}
         property={property}
         isEditing={true}
+      />
+      <ContactDialog
+        open={contactDialogOpen}
+        onClose={() => setContactDialogOpen(false)}
+        propertyId={property.id}
+        propertyContacts={contacts}
+        onContactsUpdate={handleContactsUpdate}
       />
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>

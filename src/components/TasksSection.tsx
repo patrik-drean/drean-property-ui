@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import {
   Box,
   Typography,
@@ -36,7 +36,7 @@ interface TasksSectionProps {
   onSnackbar: (message: string, severity: 'success' | 'error') => void;
 }
 
-const TasksSection: React.FC<TasksSectionProps> = ({ property, onPropertyUpdate, onSnackbar }) => {
+const TasksSection: React.FC<TasksSectionProps> = memo(({ property, onPropertyUpdate, onSnackbar }) => {
   const [tasks, setTasks] = useState<TodoistTask[]>([]);
   const [sections, setSections] = useState<TodoistSection[]>([]);
   const [collaborators, setCollaborators] = useState<TodoistCollaborator[]>([]);
@@ -78,31 +78,65 @@ const TasksSection: React.FC<TasksSectionProps> = ({ property, onPropertyUpdate,
     }
   };
 
+  // Helper function to get current date in Mountain Time
+  const getCurrentDateInMountainTime = () => {
+    const now = new Date();
+    const mountainTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Denver"}));
+    return mountainTime;
+  };
+
+  // Helper function to parse date in Mountain Time
+  const parseDateInMountainTime = (dateString: string) => {
+    // If the date string includes timezone info, use it; otherwise assume Mountain Time
+    const date = new Date(dateString);
+    if (dateString.includes('T') && dateString.includes('Z')) {
+      // ISO string with timezone, convert to Mountain Time
+      return new Date(date.toLocaleString("en-US", {timeZone: "America/Denver"}));
+    } else {
+      // Date only string, assume Mountain Time
+      const mountainDate = new Date(dateString + 'T00:00:00');
+      return new Date(mountainDate.toLocaleString("en-US", {timeZone: "America/Denver"}));
+    }
+  };
+
   const formatDueDate = (due: TodoistTask['due']) => {
     if (!due) return null;
-    const date = new Date(due.date);
-    const today = new Date();
+    
+    const date = parseDateInMountainTime(due.date);
+    const today = getCurrentDateInMountainTime();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    if (date.toDateString() === today.toDateString()) {
+    // Reset time to start of day for comparison
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const tomorrowOnly = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
+    
+    if (dateOnly.getTime() === todayOnly.getTime()) {
       return 'Today';
-    } else if (date.toDateString() === tomorrow.toDateString()) {
+    } else if (dateOnly.getTime() === tomorrowOnly.getTime()) {
       return 'Tomorrow';
     } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        timeZone: 'America/Denver'
+      });
     }
   };
 
   const getDueDateColor = (due: TodoistTask['due']) => {
     if (!due) return '#666666';
-    const date = new Date(due.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
     
-    if (date < today) return '#d1453b'; // Overdue - red
-    if (date.getTime() === today.getTime()) return '#eb8909'; // Today - orange
+    const date = parseDateInMountainTime(due.date);
+    const today = getCurrentDateInMountainTime();
+    
+    // Reset time to start of day for comparison
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    if (dateOnly < todayOnly) return '#d1453b'; // Overdue - red
+    if (dateOnly.getTime() === todayOnly.getTime()) return '#eb8909'; // Today - orange
     return '#666666'; // Future - gray
   };
 
@@ -514,6 +548,6 @@ const TasksSection: React.FC<TasksSectionProps> = ({ property, onPropertyUpdate,
       </Menu>
     </Paper>
   );
-};
+});
 
 export default TasksSection; 

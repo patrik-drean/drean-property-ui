@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Paper, Button, Chip, Card, CardContent, TextField, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, IconButton, Tooltip, Link as MuiLink, Divider, Snackbar, Alert, Avatar, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import * as Icons from '@mui/icons-material';
@@ -281,13 +281,13 @@ const PropertyDetailsPage: React.FC = () => {
     }
   };
 
-  const handlePropertyUpdate = (updatedProperty: Property) => {
+  const handlePropertyUpdate = useCallback((updatedProperty: Property) => {
     setProperty(updatedProperty);
-  };
+  }, []);
 
-  const handleSnackbar = (message: string, severity: 'success' | 'error') => {
+  const handleSnackbar = useCallback((message: string, severity: 'success' | 'error') => {
     setSnackbar({ open: true, message, severity });
-  };
+  }, []);
 
   if (loading) return <Box p={4}><Typography>Loading...</Typography></Box>;
   if (!property) return <Box p={4}><Typography>Property not found.</Typography></Box>;
@@ -409,7 +409,8 @@ const PropertyDetailsPage: React.FC = () => {
                       month: 'short', 
                       day: 'numeric', 
                       hour: '2-digit', 
-                      minute: '2-digit' 
+                      minute: '2-digit',
+                      timeZone: 'America/Denver'
                     })}</Typography>}
                   />
                   <IconButton

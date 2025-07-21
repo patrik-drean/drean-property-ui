@@ -21,10 +21,15 @@ import {
   CardContent,
   Grid,
   Link as MuiLink,
+  List,
+  ListItem,
+  ListItemText,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Contact, CreateContact, Property } from '../types/property';
-import { getContacts, createContact, updateContact, deleteContact, getProperties } from '../services/api';
+import { getContacts, createContact, updateContact, deleteContact, getProperties, addContactToProperty, removeContactFromProperty } from '../services/api';
 
 const TeamPage: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -32,6 +37,8 @@ const TeamPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [propertyLinkDialogOpen, setPropertyLinkDialogOpen] = useState(false);
+  const [selectedContactForProperty, setSelectedContactForProperty] = useState<Contact | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   
   // Form state
@@ -70,7 +77,7 @@ const TeamPage: React.FC = () => {
 
   const fetchProperties = async () => {
     try {
-      const data = await getProperties();
+      const data = await getProperties(false); // Only get non-archived properties
       setProperties(data);
     } catch (error) {
       console.error('Error fetching properties:', error);
@@ -151,6 +158,38 @@ const TeamPage: React.FC = () => {
         console.error('Error deleting contact:', error);
         setSnackbar({ open: true, message: 'Error deleting contact', severity: 'error' });
       }
+    }
+  };
+
+  const handleOpenPropertyLinkDialog = (contact: Contact) => {
+    setSelectedContactForProperty(contact);
+    setPropertyLinkDialogOpen(true);
+  };
+
+  const handleClosePropertyLinkDialog = () => {
+    setPropertyLinkDialogOpen(false);
+    setSelectedContactForProperty(null);
+  };
+
+  const handleLinkToProperty = async (contactId: string, propertyId: string) => {
+    try {
+      await addContactToProperty(contactId, propertyId);
+      setSnackbar({ open: true, message: 'Contact linked to property successfully', severity: 'success' });
+      fetchContacts(); // Refresh to get updated relatedPropertyIds
+    } catch (error) {
+      console.error('Error linking contact to property:', error);
+      setSnackbar({ open: true, message: 'Error linking contact to property', severity: 'error' });
+    }
+  };
+
+  const handleUnlinkFromProperty = async (contactId: string, propertyId: string) => {
+    try {
+      await removeContactFromProperty(contactId, propertyId);
+      setSnackbar({ open: true, message: 'Contact unlinked from property successfully', severity: 'success' });
+      fetchContacts(); // Refresh to get updated relatedPropertyIds
+    } catch (error) {
+      console.error('Error unlinking contact from property:', error);
+      setSnackbar({ open: true, message: 'Error unlinking contact from property', severity: 'error' });
     }
   };
 
@@ -254,22 +293,30 @@ const TeamPage: React.FC = () => {
                       <Typography variant="h6" fontWeight="500" sx={{ wordBreak: 'break-word' }}>
                         {contact.name}
                       </Typography>
-                      <Box>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenDialog(contact)}
-                          sx={{ mr: 0.5 }}
-                        >
-                          <Icons.Edit fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteContact(contact.id)}
-                          color="error"
-                        >
-                          <Icons.Delete fontSize="small" />
-                        </IconButton>
-                      </Box>
+                                             <Box>
+                         <IconButton
+                           size="small"
+                           onClick={() => handleOpenPropertyLinkDialog(contact)}
+                           sx={{ mr: 0.5 }}
+                           title="Link to Property"
+                         >
+                           <Icons.Link fontSize="small" />
+                         </IconButton>
+                         <IconButton
+                           size="small"
+                           onClick={() => handleOpenDialog(contact)}
+                           sx={{ mr: 0.5 }}
+                         >
+                           <Icons.Edit fontSize="small" />
+                         </IconButton>
+                         <IconButton
+                           size="small"
+                           onClick={() => handleDeleteContact(contact.id)}
+                           color="error"
+                         >
+                           <Icons.Delete fontSize="small" />
+                         </IconButton>
+                       </Box>
                     </Box>
                     
                     <Chip
@@ -520,6 +567,98 @@ const TeamPage: React.FC = () => {
           >
             {editingContact ? 'Update' : 'Add'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Property Link Dialog */}
+      <Dialog
+        open={propertyLinkDialogOpen}
+        onClose={handleClosePropertyLinkDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Link {selectedContactForProperty?.name} to Properties
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Select properties to link this contact to. Properties already linked are checked.
+          </Typography>
+          
+          <List>
+            {properties.map(property => {
+              const isLinked = selectedContactForProperty?.relatedPropertyIds.includes(property.id) || false;
+              
+              return (
+                <ListItem
+                  key={property.id}
+                  sx={{
+                    border: isLinked ? '1px solid #e0e0e0' : 'none',
+                    borderRadius: 1,
+                    mb: 0.5,
+                    backgroundColor: isLinked ? '#f5f5f5' : 'transparent',
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={isLinked}
+                        onChange={() => {
+                          if (isLinked) {
+                            handleUnlinkFromProperty(selectedContactForProperty!.id, property.id);
+                          } else {
+                            handleLinkToProperty(selectedContactForProperty!.id, property.id);
+                          }
+                        }}
+                        size="small"
+                      />
+                    }
+                    label=""
+                    sx={{ mr: 0 }}
+                  />
+                  
+                  <ListItemText
+                    primary={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="body2" fontWeight={isLinked ? 500 : 400}>
+                          {property.address}
+                        </Typography>
+                        {isLinked && (
+                          <Chip
+                            label="Linked"
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontSize: '0.6rem', height: '16px' }}
+                          />
+                        )}
+                      </Box>
+                    }
+                    secondary={
+                      <Box>
+                        <Typography variant="caption" display="block">
+                          Status: {property.status}
+                        </Typography>
+                        <Typography variant="caption" display="block">
+                          Offer Price: ${property.offerPrice.toLocaleString()}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              );
+            })}
+          </List>
+          
+          {properties.length === 0 && (
+            <Box textAlign="center" py={4}>
+              <Typography variant="body2" color="text.secondary">
+                No properties found. Add properties first.
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePropertyLinkDialog}>Close</Button>
         </DialogActions>
       </Dialog>
 

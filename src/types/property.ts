@@ -126,6 +126,8 @@ export interface Contact {
     name: string;
     email: string;
     phone: string;
+    company: string;
+    secondaryPhone: string;
     type: string;
     location: string;
     notes: string;
@@ -139,6 +141,8 @@ export interface CreateContact {
     name: string;
     email: string;
     phone: string;
+    company: string;
+    secondaryPhone: string;
     type: string;
     location: string;
     notes: string;
@@ -150,6 +154,8 @@ export interface UpdateContact {
     name: string;
     email: string;
     phone: string;
+    company: string;
+    secondaryPhone: string;
     type: string;
     location: string;
     notes: string;

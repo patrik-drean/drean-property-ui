@@ -443,16 +443,26 @@ const PropertyDetailsPage: React.FC = () => {
                         </Typography>
                       </Box>
                     }
-                    secondary={
-                      <Box>
-                        <Typography variant="caption" display="block">
-                          {contact.email}
-                        </Typography>
-                        <Typography variant="caption" display="block">
-                          {contact.phone}
-                        </Typography>
-                      </Box>
-                    }
+                                         secondary={
+                       <Box>
+                         {contact.company && (
+                           <Typography variant="caption" display="block">
+                             {contact.company}
+                           </Typography>
+                         )}
+                         <Typography variant="caption" display="block">
+                           {contact.email}
+                         </Typography>
+                         <Typography variant="caption" display="block">
+                           {contact.phone}
+                         </Typography>
+                         {contact.secondaryPhone && (
+                           <Typography variant="caption" display="block">
+                             {contact.secondaryPhone}
+                           </Typography>
+                         )}
+                       </Box>
+                     }
                   />
                 </ListItem>
               ))}

@@ -20,13 +20,15 @@ import {
   Card,
   CardContent,
   Grid,
+  Link as MuiLink,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
-import { Contact, CreateContact } from '../types/property';
-import { getContacts, createContact, updateContact, deleteContact } from '../services/api';
+import { Contact, CreateContact, Property } from '../types/property';
+import { getContacts, createContact, updateContact, deleteContact, getProperties } from '../services/api';
 
 const TeamPage: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
@@ -37,6 +39,8 @@ const TeamPage: React.FC = () => {
     name: '',
     email: '',
     phone: '',
+    company: '',
+    secondaryPhone: '',
     type: '',
     location: '',
     notes: '',
@@ -48,6 +52,7 @@ const TeamPage: React.FC = () => {
 
   useEffect(() => {
     fetchContacts();
+    fetchProperties();
   }, []);
 
   const fetchContacts = async () => {
@@ -63,6 +68,15 @@ const TeamPage: React.FC = () => {
     }
   };
 
+  const fetchProperties = async () => {
+    try {
+      const data = await getProperties();
+      setProperties(data);
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+    }
+  };
+
   const handleOpenDialog = (contact?: Contact) => {
     if (contact) {
       setEditingContact(contact);
@@ -70,6 +84,8 @@ const TeamPage: React.FC = () => {
         name: contact.name,
         email: contact.email,
         phone: contact.phone,
+        company: contact.company,
+        secondaryPhone: contact.secondaryPhone,
         type: contact.type,
         location: contact.location,
         notes: contact.notes,
@@ -81,6 +97,8 @@ const TeamPage: React.FC = () => {
         name: '',
         email: '',
         phone: '',
+        company: '',
+        secondaryPhone: '',
         type: '',
         location: '',
         notes: '',
@@ -97,6 +115,8 @@ const TeamPage: React.FC = () => {
       name: '',
       email: '',
       phone: '',
+      company: '',
+      secondaryPhone: '',
       type: '',
       location: '',
       notes: '',
@@ -160,6 +180,10 @@ const TeamPage: React.FC = () => {
       case 'Other': return '#757575';
       default: return '#757575';
     }
+  };
+
+  const getPropertyById = (propertyId: string): Property | undefined => {
+    return properties.find(property => property.id === propertyId);
   };
 
   // Group contacts by location, then sort by type and name
@@ -259,33 +283,57 @@ const TeamPage: React.FC = () => {
                       }}
                     />
                     
-                    <Box mb={1}>
-                      <Box display="flex" alignItems="center" mb={0.5}>
-                        <Icons.Email fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                        <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
-                          {contact.email}
-                        </Typography>
-                        <IconButton
-                          size="small"
-                          onClick={() => copyToClipboard(contact.email, 'Email')}
-                        >
-                          <Icons.ContentCopy fontSize="small" />
-                        </IconButton>
-                      </Box>
-                      
-                      <Box display="flex" alignItems="center" mb={0.5}>
-                        <Icons.Phone fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                        <Typography variant="body2" sx={{ flex: 1 }}>
-                          {contact.phone}
-                        </Typography>
-                        <IconButton
-                          size="small"
-                          onClick={() => copyToClipboard(contact.phone, 'Phone')}
-                        >
-                          <Icons.ContentCopy fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    </Box>
+                                         <Box mb={1}>
+                       {contact.company && (
+                         <Box display="flex" alignItems="center" mb={0.5}>
+                           <Icons.Business fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                           <Typography variant="body2" sx={{ flex: 1 }}>
+                             {contact.company}
+                           </Typography>
+                         </Box>
+                       )}
+                       
+                       <Box display="flex" alignItems="center" mb={0.5}>
+                         <Icons.Email fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                         <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
+                           {contact.email}
+                         </Typography>
+                         <IconButton
+                           size="small"
+                           onClick={() => copyToClipboard(contact.email, 'Email')}
+                         >
+                           <Icons.ContentCopy fontSize="small" />
+                         </IconButton>
+                       </Box>
+                       
+                       <Box display="flex" alignItems="center" mb={0.5}>
+                         <Icons.Phone fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                         <Typography variant="body2" sx={{ flex: 1 }}>
+                           {contact.phone}
+                         </Typography>
+                         <IconButton
+                           size="small"
+                           onClick={() => copyToClipboard(contact.phone, 'Phone')}
+                         >
+                           <Icons.ContentCopy fontSize="small" />
+                         </IconButton>
+                       </Box>
+                       
+                       {contact.secondaryPhone && (
+                         <Box display="flex" alignItems="center" mb={0.5}>
+                           <Icons.Phone fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                           <Typography variant="body2" sx={{ flex: 1 }}>
+                             {contact.secondaryPhone}
+                           </Typography>
+                           <IconButton
+                             size="small"
+                             onClick={() => copyToClipboard(contact.secondaryPhone, 'Secondary Phone')}
+                           >
+                             <Icons.ContentCopy fontSize="small" />
+                           </IconButton>
+                         </Box>
+                       )}
+                     </Box>
                     
                     {contact.notes && (
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -307,13 +355,42 @@ const TeamPage: React.FC = () => {
                       </Box>
                     )}
                     
-                    {contact.relatedPropertyIds.length > 0 && (
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          Properties: {contact.relatedPropertyIds.length}
-                        </Typography>
-                      </Box>
-                    )}
+                                         {contact.relatedPropertyIds.length > 0 && (
+                       <Box>
+                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                           Properties ({contact.relatedPropertyIds.length}):
+                         </Typography>
+                         <Box display="flex" flexDirection="column" gap={0.5}>
+                           {contact.relatedPropertyIds.map(propertyId => {
+                             const property = getPropertyById(propertyId);
+                             return property ? (
+                               <MuiLink
+                                 key={propertyId}
+                                 href={`#/properties/${encodeURIComponent(property.address)}`}
+                                 sx={{
+                                   fontSize: '0.7rem',
+                                   color: 'primary.main',
+                                   textDecoration: 'none',
+                                   '&:hover': {
+                                     textDecoration: 'underline',
+                                   },
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: 0.5,
+                                 }}
+                               >
+                                 <Icons.Home fontSize="small" />
+                                 {property.address}
+                               </MuiLink>
+                             ) : (
+                               <Typography key={propertyId} variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                                 Property ID: {propertyId}
+                               </Typography>
+                             );
+                           })}
+                         </Box>
+                       </Box>
+                     )}
                   </CardContent>
                 </Card>
               </Grid>
@@ -366,6 +443,22 @@ const TeamPage: React.FC = () => {
             label="Phone"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            fullWidth
+            margin="normal"
+          />
+          
+          <TextField
+            label="Company"
+            value={formData.company}
+            onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+            fullWidth
+            margin="normal"
+          />
+          
+          <TextField
+            label="Secondary Phone"
+            value={formData.secondaryPhone}
+            onChange={(e) => setFormData({ ...formData, secondaryPhone: e.target.value })}
             fullWidth
             margin="normal"
           />

@@ -14,6 +14,10 @@ import {
   Divider,
   Checkbox,
   FormControlLabel,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { Contact } from '../types/property';
 import { getContacts, addContactToProperty, removeContactFromProperty } from '../services/api';
@@ -36,14 +40,23 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
+  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [locationFilter, setLocationFilter] = useState<string>('');
 
   const typeOptions = ['Agent', 'Property Manager', 'Lender', 'Contractor', 'Insurance', 'Partner', 'Legal', 'Other'];
+  const locationOptions = ['San Antonio, TX', 'Cleveland, OH', 'Other'];
 
   useEffect(() => {
     if (open) {
       fetchContacts();
       // Initialize selected contacts with current property contacts
       setSelectedContacts(new Set(propertyContacts.map(contact => contact.id)));
+      
+      // Load filters from localStorage
+      const savedTypeFilter = localStorage.getItem('contactTypeFilter') || '';
+      const savedLocationFilter = localStorage.getItem('contactLocationFilter') || '';
+      setTypeFilter(savedTypeFilter);
+      setLocationFilter(savedLocationFilter);
     }
   }, [open, propertyContacts]);
 
@@ -67,6 +80,16 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
       newSelected.add(contactId);
     }
     setSelectedContacts(newSelected);
+  };
+
+  const handleTypeFilterChange = (value: string) => {
+    setTypeFilter(value);
+    localStorage.setItem('contactTypeFilter', value);
+  };
+
+  const handleLocationFilterChange = (value: string) => {
+    setLocationFilter(value);
+    localStorage.setItem('contactLocationFilter', value);
   };
 
   const handleSave = async () => {
@@ -117,8 +140,15 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
     }
   };
 
+  // Filter contacts based on type and location filters
+  const filteredContacts = allContacts.filter(contact => {
+    const matchesType = !typeFilter || contact.type === typeFilter;
+    const matchesLocation = !locationFilter || contact.location === locationFilter;
+    return matchesType && matchesLocation;
+  });
+
   // Group contacts by type
-  const groupedContacts = allContacts.reduce((acc, contact) => {
+  const groupedContacts = filteredContacts.reduce((acc, contact) => {
     if (!acc[contact.type]) {
       acc[contact.type] = [];
     }
@@ -154,6 +184,37 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Select contacts to link to this property. Contacts already linked are checked.
             </Typography>
+            
+            {/* Filters */}
+            <Box display="flex" gap={2} sx={{ mb: 3 }}>
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>Filter by Type</InputLabel>
+                <Select
+                  value={typeFilter}
+                  onChange={(e) => handleTypeFilterChange(e.target.value)}
+                  label="Filter by Type"
+                >
+                  <MenuItem value="">All Types</MenuItem>
+                  {typeOptions.map(option => (
+                    <MenuItem key={option} value={option}>{option}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>Filter by Location</InputLabel>
+                <Select
+                  value={locationFilter}
+                  onChange={(e) => handleLocationFilterChange(e.target.value)}
+                  label="Filter by Location"
+                >
+                  <MenuItem value="">All Locations</MenuItem>
+                  {locationOptions.map(option => (
+                    <MenuItem key={option} value={option}>{option}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
             
             {sortedTypes.map(type => (
               <Box key={type} sx={{ mb: 3 }}>
@@ -216,21 +277,31 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
                               )}
                             </Box>
                           }
-                          secondary={
-                            <Box>
-                              <Typography variant="caption" display="block">
-                                {contact.email}
-                              </Typography>
-                              <Typography variant="caption" display="block">
-                                {contact.phone}
-                              </Typography>
-                              {contact.location && (
-                                <Typography variant="caption" display="block">
-                                  {contact.location}
-                                </Typography>
-                              )}
-                            </Box>
-                          }
+                                                     secondary={
+                             <Box>
+                               {contact.company && (
+                                 <Typography variant="caption" display="block">
+                                   {contact.company}
+                                 </Typography>
+                               )}
+                               <Typography variant="caption" display="block">
+                                 {contact.email}
+                               </Typography>
+                               <Typography variant="caption" display="block">
+                                 {contact.phone}
+                               </Typography>
+                               {contact.secondaryPhone && (
+                                 <Typography variant="caption" display="block">
+                                   {contact.secondaryPhone}
+                                 </Typography>
+                               )}
+                               {contact.location && (
+                                 <Typography variant="caption" display="block">
+                                   {contact.location}
+                                 </Typography>
+                               )}
+                             </Box>
+                           }
                         />
                       </ListItem>
                     );
@@ -242,6 +313,14 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
                 )}
               </Box>
             ))}
+            
+            {filteredContacts.length === 0 && allContacts.length > 0 && (
+              <Box textAlign="center" py={4}>
+                <Typography variant="body2" color="text.secondary">
+                  No contacts match the selected filters. Try adjusting your filter criteria.
+                </Typography>
+              </Box>
+            )}
             
             {allContacts.length === 0 && (
               <Box textAlign="center" py={4}>

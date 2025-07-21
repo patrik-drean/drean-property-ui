@@ -360,7 +360,6 @@ const TeamPage: React.FC = () => {
             fullWidth
             margin="normal"
             type="email"
-            required
           />
           
           <TextField
@@ -369,7 +368,6 @@ const TeamPage: React.FC = () => {
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             fullWidth
             margin="normal"
-            required
           />
           
           <FormControl fullWidth margin="normal" required>
@@ -425,7 +423,7 @@ const TeamPage: React.FC = () => {
           <Button 
             onClick={handleSaveContact} 
             variant="contained"
-            disabled={!formData.name || !formData.email || !formData.phone || !formData.type || !formData.location}
+            disabled={!formData.name || !formData.type || !formData.location}
           >
             {editingContact ? 'Update' : 'Add'}
           </Button>

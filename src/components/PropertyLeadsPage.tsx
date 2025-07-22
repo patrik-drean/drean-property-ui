@@ -136,6 +136,7 @@ const PropertyLeadsPage: React.FC = () => {
     severity: 'success' as 'success' | 'error',
   });
   const [locallyConvertedLeads, setLocallyConvertedLeads] = useState<Set<string>>(new Set());
+  const [expandedLeads, setExpandedLeads] = useState<Set<string>>(new Set());
 
   // Default message template
   const defaultMessageTemplate = `Hi there! My name is Patrik. I really like this property and believe it has great potential. I'd like to explore an offer around {PRICE}. I'm an experienced investor who is reliable and quick when it comes to closing. If this number is in the ballpark, I'd love to discuss further. Let me know what you and the seller think! Have a great day! 
@@ -659,6 +660,18 @@ const PropertyLeadsPage: React.FC = () => {
     setShowArchived(!showArchived);
   };
 
+  const handleToggleExpanded = (leadId: string) => {
+    setExpandedLeads(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(leadId)) {
+        newSet.delete(leadId);
+      } else {
+        newSet.add(leadId);
+      }
+      return newSet;
+    });
+  };
+
   // Modify the countConvertedLeads function to include locally tracked conversions
   const countConvertedLeads = (leads: PropertyLead[]) => {
     return leads.filter(lead => lead.convertedToProperty || locallyConvertedLeads.has(lead.id)).length;
@@ -1038,7 +1051,7 @@ const PropertyLeadsPage: React.FC = () => {
       </Box>
 
       {/* Mobile & Tablet view - Cards */}
-      <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'column', gap: 1 }}>
         {propertyLeads.length === 0 ? (
           <Paper sx={{ p: 3, borderRadius: 2, textAlign: 'center' }}>
             <Typography variant="body1" sx={{ py: 2 }}>
@@ -1046,222 +1059,330 @@ const PropertyLeadsPage: React.FC = () => {
             </Typography>
           </Paper>
         ) : (
-          sortPropertyLeads(propertyLeads).map((lead) => (
-            <Paper 
-              key={lead.id}
-              elevation={2}
-              sx={{ 
-                borderRadius: 2, 
-                overflow: 'hidden',
-                p: 2,
-                ...(lead.archived ? {
-                  opacity: 0.6,
-                  backgroundColor: '#f5f5f5',
-                } : {}),
-                ...((lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) ? {
-                  borderLeft: '6px solid #4caf50',
-                  backgroundColor: 'rgba(76, 175, 80, 0.08)',
-                } : {})
-              }}
-            >
-              {/* Card Header with Conversion Status */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Checkbox
-                    color="primary"
-                    checked={selectedLeads.includes(lead.id)}
-                    onChange={() => handleSelectLead(lead.id)}
-                    size="small"
-                  />
-                  {(lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) && (
-                    <ConvertedBadge>
-                      <Icons.CheckCircle fontSize="inherit" sx={{ mr: 0.5 }} />
-                      Converted
-                    </ConvertedBadge>
-                  )}
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  {lead.archived ? (
-                    <>
-                      <Tooltip title="Unarchive Lead">
-                        <ActionIconButton 
-                          size="small"
-                          onClick={() => handleUnarchiveLead(lead.id)}
-                        >
-                          <Icons.Unarchive fontSize="small" />
-                        </ActionIconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Lead">
-                        <DeleteIconButton 
-                          size="small"
-                          onClick={() => handleDeleteLead(lead.id)}
-                        >
-                          <Icons.Delete fontSize="small" />
-                        </DeleteIconButton>
-                      </Tooltip>
-                    </>
-                  ) : (
-                    <>
-                      {!lead.convertedToProperty && !locallyConvertedLeads.has(lead.id) && (
-                        <Tooltip title="Convert to Property">
-                          <ActionIconButton 
-                            size="small"
-                            onClick={() => handleConvertToProperty(lead)}
-                          >
-                            <Icons.Transform fontSize="small" />
-                          </ActionIconButton>
-                        </Tooltip>
-                      )}
-                      <Tooltip title="Archive Lead">
-                        <ActionIconButton 
-                          size="small"
-                          onClick={() => handleArchiveLead(lead.id)}
-                        >
-                          <Icons.Archive fontSize="small" />
-                        </ActionIconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit Lead">
-                        <ActionIconButton 
-                          size="small"
-                          onClick={() => handleEditLead(lead)}
-                        >
-                          <Icons.Edit fontSize="small" />
-                        </ActionIconButton>
-                      </Tooltip>
-                    </>
-                  )}
-                </Box>
-              </Box>
-
-              {/* Address with Zillow link */}
-              <Typography 
-                variant="h6" 
-                gutterBottom
-                component="a"
-                href={lead.zillowLink}
-                target="_blank" 
-                rel="noopener noreferrer"
-                sx={{
-                  color: '#1976d2', 
-                  textDecoration: 'none',
-                  display: 'block',
-                  mb: 2
+          sortPropertyLeads(propertyLeads).map((lead) => {
+            const isExpanded = expandedLeads.has(lead.id);
+            return (
+              <Paper 
+                key={lead.id}
+                elevation={2}
+                sx={{ 
+                  borderRadius: 2, 
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    elevation: 4,
+                    transform: 'translateY(-1px)'
+                  },
+                  ...(lead.archived ? {
+                    opacity: 0.6,
+                    backgroundColor: '#f5f5f5',
+                  } : {}),
+                  ...((lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) ? {
+                    borderLeft: '6px solid #4caf50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.08)',
+                  } : {})
                 }}
+                onClick={() => handleToggleExpanded(lead.id)}
               >
-                {lead.address}
-              </Typography>
-
-              {/* Primary Details */}
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' },
-                gap: 2,
-                mb: 3
-              }}>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">Listing Price</Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {formatCurrency(lead.listingPrice)}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">Units</Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {lead.units || ''}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">Last Contact</Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {formatDate(lead.lastContactDate)}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Seller Contact Information */}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>Seller Contact</Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {lead.sellerPhone && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Icons.Phone fontSize="small" color="action" />
-                      <Button
-                        variant="text"
+                {/* Condensed Header - Always Visible */}
+                <Box sx={{ p: 2, pb: isExpanded ? 1 : 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 0 }}>
+                      <Checkbox
+                        color="primary"
+                        checked={selectedLeads.includes(lead.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleSelectLead(lead.id);
+                        }}
                         size="small"
-                        onClick={() => copyPhoneNumber(lead.sellerPhone)}
+                      />
+                      <Typography 
+                        variant="body1" 
+                        fontWeight="medium"
                         sx={{ 
-                          textTransform: 'none',
-                          minWidth: 'auto',
-                          padding: '4px 8px',
-                          justifyContent: 'flex-start'
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          flex: 1
                         }}
                       >
-                        {lead.sellerPhone}
-                      </Button>
+                        {lead.address}
+                      </Typography>
+                      {(lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) && (
+                        <ConvertedBadge>
+                          <Icons.CheckCircle fontSize="inherit" sx={{ mr: 0.5 }} />
+                          Converted
+                        </ConvertedBadge>
+                      )}
                     </Box>
-                  )}
-                  {lead.sellerEmail && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Icons.Email fontSize="small" color="action" />
-                      <Button
-                        variant="text"
+                      <IconButton
                         size="small"
-                        onClick={() => copyToClipboard(lead.sellerEmail, 'Email address copied to clipboard!')}
                         sx={{ 
-                          textTransform: 'none',
-                          minWidth: 'auto',
-                          padding: '4px 8px',
-                          justifyContent: 'flex-start'
+                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s ease-in-out'
                         }}
                       >
-                        {lead.sellerEmail}
+                        <Icons.KeyboardArrowDown />
+                      </IconButton>
+                    </Box>
+                  </Box>
+
+                  {/* Quick Metrics Row */}
+                  <Box sx={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: 1,
+                    fontSize: '0.75rem'
+                  }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">Price</Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {formatCurrency(lead.listingPrice)}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">Units</Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {lead.units || ''}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">Last Contact</Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {formatDate(lead.lastContactDate)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Expanded Content */}
+                {isExpanded && (
+                  <Box sx={{ 
+                    borderTop: '1px solid #e0e0e0',
+                    p: 2,
+                    pt: 1
+                  }}>
+                    {/* Address with Zillow link */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography 
+                        variant="h6" 
+                        component="a"
+                        href={lead.zillowLink}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        sx={{
+                          color: '#1976d2', 
+                          textDecoration: 'none',
+                          display: 'block'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {lead.address}
+                      </Typography>
+                    </Box>
+
+                    {/* Primary Details */}
+                    <Box sx={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' },
+                      gap: 2,
+                      mb: 3
+                    }}>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Listing Price</Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          {formatCurrency(lead.listingPrice)}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Units</Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          {lead.units || ''}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Last Contact</Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          {formatDate(lead.lastContactDate)}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Seller Contact Information */}
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>Seller Contact</Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {lead.sellerPhone && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Icons.Phone fontSize="small" color="action" />
+                            <Button
+                              variant="text"
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyPhoneNumber(lead.sellerPhone);
+                              }}
+                              sx={{ 
+                                textTransform: 'none',
+                                minWidth: 'auto',
+                                padding: '4px 8px',
+                                justifyContent: 'flex-start'
+                              }}
+                            >
+                              {lead.sellerPhone}
+                            </Button>
+                          </Box>
+                        )}
+                        {lead.sellerEmail && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Icons.Email fontSize="small" color="action" />
+                            <Button
+                              variant="text"
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyToClipboard(lead.sellerEmail, 'Email address copied to clipboard!');
+                              }}
+                              sx={{ 
+                                textTransform: 'none',
+                                minWidth: 'auto',
+                                padding: '4px 8px',
+                                justifyContent: 'flex-start'
+                              }}
+                            >
+                              {lead.sellerEmail}
+                            </Button>
+                          </Box>
+                        )}
+                        {!lead.sellerPhone && !lead.sellerEmail && (
+                          <Typography variant="body2" color="text.secondary">No contact information</Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    {/* Notes */}
+                    {lead.notes && (
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>Notes</Typography>
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                          {lead.notes.length > 100 ? `${lead.notes.substring(0, 100)}...` : lead.notes}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* Action Buttons */}
+                    <Box sx={{ 
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                      gap: 1,
+                      mt: 2
+                    }}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Icons.Message />}
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyTemplatedMessage(lead);
+                        }}
+                        fullWidth
+                      >
+                        Copy Message
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Icons.CheckCircle />}
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUpdateLastContact(lead);
+                        }}
+                        fullWidth
+                      >
+                        Mark Contacted
                       </Button>
                     </Box>
-                  )}
-                  {!lead.sellerPhone && !lead.sellerEmail && (
-                    <Typography variant="body2" color="text.secondary">No contact information</Typography>
-                  )}
-                </Box>
-              </Box>
 
-              {/* Notes */}
-              {lead.notes && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Notes</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    {lead.notes.length > 100 ? `${lead.notes.substring(0, 100)}...` : lead.notes}
-                  </Typography>
-                </Box>
-              )}
-
-              {/* Action Buttons */}
-              <Box sx={{ 
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                gap: 1,
-                mt: 2
-              }}>
-                <Button
-                  variant="outlined"
-                  startIcon={<Icons.Message />}
-                  size="small"
-                  onClick={() => copyTemplatedMessage(lead)}
-                  fullWidth
-                >
-                  Copy Message
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<Icons.CheckCircle />}
-                  size="small"
-                  onClick={() => handleUpdateLastContact(lead)}
-                  fullWidth
-                >
-                  Mark Contacted
-                </Button>
-              </Box>
-            </Paper>
-          ))
+                    {/* Action Icons */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      gap: 1, 
+                      mt: 2,
+                      justifyContent: 'center'
+                    }}>
+                      {lead.archived ? (
+                        <>
+                          <Tooltip title="Unarchive Lead">
+                            <ActionIconButton 
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUnarchiveLead(lead.id);
+                              }}
+                            >
+                              <Icons.Unarchive fontSize="small" />
+                            </ActionIconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Lead">
+                            <DeleteIconButton 
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteLead(lead.id);
+                              }}
+                            >
+                              <Icons.Delete fontSize="small" />
+                            </DeleteIconButton>
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <>
+                          {!lead.convertedToProperty && !locallyConvertedLeads.has(lead.id) && (
+                            <Tooltip title="Convert to Property">
+                              <ActionIconButton 
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleConvertToProperty(lead);
+                                }}
+                              >
+                                <Icons.Transform fontSize="small" />
+                              </ActionIconButton>
+                            </Tooltip>
+                          )}
+                          <Tooltip title="Archive Lead">
+                            <ActionIconButton 
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleArchiveLead(lead.id);
+                              }}
+                            >
+                              <Icons.Archive fontSize="small" />
+                            </ActionIconButton>
+                          </Tooltip>
+                          <Tooltip title="Edit Lead">
+                            <ActionIconButton 
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditLead(lead);
+                              }}
+                            >
+                              <Icons.Edit fontSize="small" />
+                            </ActionIconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                    </Box>
+                  </Box>
+                )}
+              </Paper>
+            );
+          })
         )}
       </Box>
 

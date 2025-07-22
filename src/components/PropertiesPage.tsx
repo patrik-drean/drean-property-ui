@@ -522,7 +522,7 @@ ${property.zillowLink}`;
                 <StyledTableCell className="header" width="4%" sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Units</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header" width="7%">
+                <StyledTableCell className="header" width="9%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Status</Typography>
                 </StyledTableCell>
                 <StyledTableCell className="header" width="5%" sx={{ textAlign: 'center' }}>
@@ -562,10 +562,10 @@ ${property.zillowLink}`;
                     <Typography variant="body2" fontWeight="bold" noWrap>Cashflow</Typography>
                   </Tooltip>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="8%" sx={{ textAlign: 'center' }}>
+                <StyledTableCell className="header metric" width="7%" sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Hold Score</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="8%" sx={{ textAlign: 'center' }}>
+                <StyledTableCell className="header metric" width="7%" sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Flip Score</Typography>
                 </StyledTableCell>
                 <StyledTableCell className="header metric" width="5%" sx={{ textAlign: 'center' }}>

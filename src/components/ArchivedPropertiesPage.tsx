@@ -21,6 +21,12 @@ import {
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
 import { api } from '../services/apiConfig';
+import {
+  calculateRentRatio,
+  calculateARVRatio,
+  calculateHoldScore,
+  calculateFlipScore,
+} from '../utils/scoreCalculator';
 
 // Helper function to get status color
 const getStatusColor = (status: PropertyStatus): string => {
@@ -171,16 +177,7 @@ const ArchivedPropertiesPage: React.FC = () => {
     }).format(value);
   };
 
-  const calculateRentRatio = (rent: number, offerPrice: number, rehabCosts: number) => {
-    const totalInvestment = offerPrice + rehabCosts;
-    if (!totalInvestment) return 0;
-    return rent / totalInvestment;
-  };
 
-  const calculateARVRatio = (offerPrice: number, rehabCosts: number, arv: number) => {
-    if (!arv) return 0;
-    return (offerPrice + rehabCosts) / arv;
-  };
 
   // Helper functions to get cell colors based on values
   const getRentRatioColor = (ratio: number) => {
@@ -259,7 +256,8 @@ const ArchivedPropertiesPage: React.FC = () => {
                         <span>ARV Ratio</span>
                       </Tooltip>
                     </StyledTableCell>
-                    <StyledTableCell className="header metric">Score</StyledTableCell>
+                    <StyledTableCell className="header metric">Hold Score</StyledTableCell>
+                    <StyledTableCell className="header metric">Flip Score</StyledTableCell>
                     <StyledTableCell className="header">Actions</StyledTableCell>
                   </TableRow>
                 </TableHead>
@@ -310,9 +308,16 @@ const ArchivedPropertiesPage: React.FC = () => {
                       </TableCell>
                       <TableCell className="metric">
                         <Typography sx={{ 
-                          color: getScoreColor(property.score)
+                          color: getScoreColor(calculateHoldScore(property))
                         }}>
-                          {property.score}/10
+                          {calculateHoldScore(property)}/10
+                        </Typography>
+                      </TableCell>
+                      <TableCell className="metric">
+                        <Typography sx={{ 
+                          color: getScoreColor(calculateFlipScore(property))
+                        }}>
+                          {calculateFlipScore(property)}/10
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -344,30 +349,50 @@ const ArchivedPropertiesPage: React.FC = () => {
                   p: 2
                 }}
               >
-                {/* Card Header with Status and Score */}
+                {/* Card Header with Status and Scores */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <StatusChip 
                     status={property.status}
                     label={property.status}
                     size="small"
                   />
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    backgroundColor: theme.palette.primary.light,
-                    color: '#fff',
-                    p: 0.5,
-                    px: 1,
-                    borderRadius: 1
-                  }}>
-                    <Typography sx={{ 
-                      color: getScoreColor(property.score),
-                      fontWeight: 'bold',
-                      mr: 0.5
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      backgroundColor: theme.palette.primary.light,
+                      color: '#fff',
+                      p: 0.5,
+                      px: 1,
+                      borderRadius: 1
                     }}>
-                      {property.score}/10
-                    </Typography>
-                    <Typography variant="body2">Score</Typography>
+                      <Typography sx={{ 
+                        color: getScoreColor(calculateHoldScore(property)),
+                        fontWeight: 'bold',
+                        mr: 0.5
+                      }}>
+                        {calculateHoldScore(property)}/10
+                      </Typography>
+                      <Typography variant="body2">Hold</Typography>
+                    </Box>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      backgroundColor: theme.palette.primary.light,
+                      color: '#fff',
+                      p: 0.5,
+                      px: 1,
+                      borderRadius: 1
+                    }}>
+                      <Typography sx={{ 
+                        color: getScoreColor(calculateFlipScore(property)),
+                        fontWeight: 'bold',
+                        mr: 0.5
+                      }}>
+                        {calculateFlipScore(property)}/10
+                      </Typography>
+                      <Typography variant="body2">Flip</Typography>
+                    </Box>
                   </Box>
                 </Box>
 

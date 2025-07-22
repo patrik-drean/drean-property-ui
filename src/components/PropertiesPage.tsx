@@ -28,6 +28,23 @@ import { api } from '../services/apiConfig';
 import { useNavigate } from 'react-router-dom';
 import { Link as RouterLink } from 'react-router-dom';
 import PropertyDialog from './PropertyDialog';
+import {
+  calculateRentRatio,
+  calculateARVRatio,
+  calculateDownPayment,
+  calculateLoanAmount,
+  calculateCashRemaining,
+  calculateNewLoan,
+  calculateCashToPullOut,
+  calculateHomeEquity,
+  calculateNewLoanPercent,
+  calculateMonthlyMortgage,
+  calculateCashflow,
+  calculateHoldScore,
+  calculateFlipScore,
+  getHoldScoreBreakdown,
+  getFlipScoreBreakdown,
+} from '../utils/scoreCalculator';
 
 // Styled components for consistent UI elements
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -144,148 +161,9 @@ const PropertiesPage: React.FC = () => {
     }).format(value);
   };
 
-  const calculateRentRatio = (rent: number, offerPrice: number, rehabCosts: number) => {
-    const totalInvestment = offerPrice + rehabCosts;
-    if (!totalInvestment) return 0;
-    return rent / totalInvestment;
-  };
-
-  const calculateARVRatio = (offerPrice: number, rehabCosts: number, arv: number) => {
-    if (!arv) return 0;
-    return (offerPrice + rehabCosts) / arv;
-  };
-
   const calculateDiscount = (listingPrice: number, offerPrice: number) => {
     if (!listingPrice) return 0;
     return (listingPrice - offerPrice) / listingPrice;
-  };
-
-  // Helper functions for the newly calculated fields
-  const calculateDownPayment = (offerPrice: number, rehabCosts: number) => {
-    return (offerPrice + rehabCosts) * 0.25;
-  };
-
-  const calculateLoanAmount = (offerPrice: number, rehabCosts: number) => {
-    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
-    return (offerPrice + rehabCosts) - downPayment;
-  };
-
-  const calculateCashRemaining = () => {
-    // Fixed at $20,000
-    return 20000;
-  };
-
-  const calculateNewLoan = (offerPrice: number, rehabCosts: number, arv: number) => {
-    // Instead of using a fixed 75% of ARV, calculate based on fixed cash remaining
-    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
-    const loanAmount = calculateLoanAmount(offerPrice, rehabCosts);
-    return loanAmount + (downPayment - calculateCashRemaining());
-  };
-
-  const calculateCashToPullOut = (offerPrice: number, rehabCosts: number, arv: number) => {
-    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
-    // Cash to pull out is downPayment minus fixed cash remaining
-    return downPayment - calculateCashRemaining();
-  };
-
-  const calculateHomeEquity = (offerPrice: number, rehabCosts: number, arv: number) => {
-    const newLoan = calculateNewLoan(offerPrice, rehabCosts, arv);
-    return arv - newLoan;
-  };
-
-  const calculateNewLoanPercent = (offerPrice: number, rehabCosts: number, arv: number) => {
-    if (!arv) return 0;
-    const newLoan = calculateNewLoan(offerPrice, rehabCosts, arv);
-    return newLoan / arv;
-  };
-
-  // Calculate monthly mortgage payment based on loan amount, interest rate, and loan term
-  const calculateMonthlyMortgage = (loanAmount: number, interestRate = 0.07, loanTermYears = 30) => {
-    const monthlyRate = interestRate / 12;
-    const numberOfPayments = loanTermYears * 12;
-    
-    if (loanAmount <= 0) return 0;
-    
-    // Mortgage formula: P * (r(1+r)^n) / ((1+r)^n - 1)
-    return loanAmount * 
-      (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
-      (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
-  };
-  
-  // Calculate monthly cashflow
-  const calculateCashflow = (rent: number, offerPrice: number, newLoanAmount: number) => {
-    // 12% of rent for property management and other fees
-    const managementFees = rent * 0.12;
-    
-    // 2.5% of offer price for taxes (annually), divided by 12 for monthly
-    const propertyTaxes = (offerPrice * 0.025) / 12;
-    
-    // Fixed $130 for insurance and lawn care
-    const otherExpenses = 130;
-    
-    // Monthly mortgage payment on the new loan
-    const mortgagePayment = calculateMonthlyMortgage(newLoanAmount);
-    
-    // Total expenses
-    const totalExpenses = managementFees + propertyTaxes + otherExpenses + mortgagePayment;
-    
-    // Cashflow: rent - expenses
-    return rent - totalExpenses;
-  };
-
-  // Helper functions to calculate individual score components
-  const calculateRentRatioScore = (rentRatio: number): number => {
-    if (rentRatio >= 0.01) return 3; // 1% or higher
-    if (rentRatio >= 0.008) return 2; // Close to 1%
-    if (rentRatio >= 0.006) return 1; // Getting there
-    return 0;
-  };
-
-  const calculateARVRatioScore = (arvRatio: number): number => {
-    if (arvRatio <= 0.75) return 3; // 75% or lower is good
-    if (arvRatio <= 0.80) return 2;
-    if (arvRatio <= 0.85) return 1;
-    return 0;
-  };
-
-  const calculateHomeEquityScore = (homeEquity: number): number => {
-    if (homeEquity >= 60000) return 1;
-    return 0;
-  };
-
-  // New function to calculate cashflow score
-  const calculateCashflowScore = (cashflow: number): number => {
-    if (cashflow >= 200) return 3; // $200 or more monthly cashflow
-    if (cashflow >= 100) return 2; // $100-$199 monthly cashflow
-    if (cashflow >= 0) return 1; // $0-$99 monthly cashflow
-    return 0; // Negative cashflow
-  };
-
-  const calculateScore = (property: Omit<Property, 'id'>) => {
-    let score = 0;
-    
-    // Rent to price ratio (3 points)
-    const rentRatio = calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts);
-    const rentRatioScore = calculateRentRatioScore(rentRatio);
-    score += rentRatioScore;
-
-    // ARV ratio (3 points)
-    const arvRatio = calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv);
-    const arvRatioScore = calculateARVRatioScore(arvRatio);
-    score += arvRatioScore;
-
-    // Home Equity (1 point)
-    const homeEquity = calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv);
-    const homeEquityScore = calculateHomeEquityScore(homeEquity);
-    score += homeEquityScore;
-    
-    // Cashflow (3 points)
-    const cashflow = calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv));
-    const cashflowScore = calculateCashflowScore(cashflow);
-    score += cashflowScore;
-
-    // Ensure minimum score of 1, maximum of 10
-    return Math.min(10, Math.max(1, score));
   };
 
 
@@ -320,9 +198,9 @@ const PropertiesPage: React.FC = () => {
       return orderA - orderB;
     }
     
-    // Then sort by calculated score in descending order
-    const scoreA = calculateScore(a);
-    const scoreB = calculateScore(b);
+    // Then sort by Hold Score in descending order
+    const scoreA = calculateHoldScore(a);
+    const scoreB = calculateHoldScore(b);
     return scoreB - scoreA;
   });
 
@@ -378,7 +256,7 @@ const PropertiesPage: React.FC = () => {
     try {
       const propertyWithScore = {
         ...propertyData,
-        score: calculateScore(propertyData)
+        score: calculateHoldScore(propertyData) // Use Hold Score as the primary score
       };
 
       if (editingProperty) {
@@ -651,30 +529,33 @@ ${property.zillowLink}`;
                 <StyledTableCell className="header" width="6%">
                   <Typography variant="body2" fontWeight="bold" noWrap>ARV</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="6%">
+                <StyledTableCell className="header metric" width="6%" sx={{ textAlign: 'center' }}>
                   <Tooltip title="Monthly Rent / (Offer Price + Rehab)">
                     <Typography variant="body2" fontWeight="bold" noWrap>Rent %</Typography>
                   </Tooltip>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="6%">
+                <StyledTableCell className="header metric" width="6%" sx={{ textAlign: 'center' }}>
                   <Tooltip title="(Offer Price + Rehab) / ARV">
                     <Typography variant="body2" fontWeight="bold" noWrap>ARV %</Typography>
                   </Tooltip>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="6%">
+                <StyledTableCell className="header metric" width="6%" sx={{ textAlign: 'center' }}>
                   <Tooltip title="The equity you have in the property after refinance">
                     <Typography variant="body2" fontWeight="bold" noWrap>Equity</Typography>
                   </Tooltip>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="6%">
+                <StyledTableCell className="header metric" width="6%" sx={{ textAlign: 'center' }}>
                   <Tooltip title="Monthly cashflow after expenses and mortgage">
                     <Typography variant="body2" fontWeight="bold" noWrap>Cashflow</Typography>
                   </Tooltip>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="5%">
-                  <Typography variant="body2" fontWeight="bold" noWrap>Score</Typography>
+                <StyledTableCell className="header metric" width="8%" sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Hold Score</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header metric" width="5%">
+                <StyledTableCell className="header metric" width="8%" sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Flip Score</Typography>
+                </StyledTableCell>
+                <StyledTableCell className="header metric" width="5%" sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Actions</Typography>
                 </StyledTableCell>
               </TableRow>
@@ -787,21 +668,21 @@ ${property.zillowLink}`;
                     </Tooltip>
                   </TableCell>
                   <TableCell>{formatCurrency(property.arv)}</TableCell>
-                  <TableCell className="metric">
+                  <TableCell className="metric" sx={{ textAlign: 'center' }}>
                     <Typography sx={{ 
                       color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))
                     }}>
                       {formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}
                     </Typography>
                   </TableCell>
-                  <TableCell className="metric">
+                  <TableCell className="metric" sx={{ textAlign: 'center' }}>
                     <Typography sx={{ 
                       color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))
                     }}>
                       {formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}
                     </Typography>
                   </TableCell>
-                  <TableCell className="metric">
+                  <TableCell className="metric" sx={{ textAlign: 'center' }}>
                     <Tooltip 
                       title={
                         <>
@@ -824,7 +705,7 @@ ${property.zillowLink}`;
                       </Box>
                     </Tooltip>
                   </TableCell>
-                  <TableCell className="metric">
+                  <TableCell className="metric" sx={{ textAlign: 'center' }}>
                     <Tooltip 
                       title={
                         <>
@@ -846,30 +727,35 @@ ${property.zillowLink}`;
                       </Box>
                     </Tooltip>
                   </TableCell>
-                  <TableCell className="metric">
+                  <TableCell className="metric" sx={{ textAlign: 'center' }}>
                     <Tooltip 
                       title={
                         <>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Score Breakdown:</Typography>
-                          <Typography variant="body2">
-                            Rent Ratio: {calculateRentRatioScore(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}/3 points
-                            {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
-                          </Typography>
-                          <Typography variant="body2">
-                            ARV Ratio: {calculateARVRatioScore(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}/3 points
-                            {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
-                          </Typography>
-                          <Typography variant="body2">
-                            Home Equity: {calculateHomeEquityScore(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}/1 point
-                            {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
-                          </Typography>
-                          <Typography variant="body2">
-                            Cashflow: {calculateCashflowScore(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}/3 points
-                            {` (${formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))})`}
-                          </Typography>
-                          <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
-                            Total Score: {calculateScore(property)}/10 points
-                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Hold Score Breakdown:</Typography>
+                          {(() => {
+                            const breakdown = getHoldScoreBreakdown(property);
+                            const cashflow = calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv));
+                            const cashflowPerUnit = cashflow / (property.units || 1);
+                            return (
+                              <>
+                                <Typography variant="body2">
+                                  Cashflow: {breakdown.cashflowScore}/5 points
+                                  {` (${formatCurrency(cashflowPerUnit)}/unit)`}
+                                </Typography>
+                                <Typography variant="body2">
+                                  ARV Ratio: {breakdown.arvRatioScore}/3 points
+                                  {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Rent Ratio: {breakdown.rentRatioScore}/2 points
+                                  {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
+                                </Typography>
+                                <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                                  Total Hold Score: {breakdown.totalScore}/10 points
+                                </Typography>
+                              </>
+                            );
+                          })()}
                         </>
                       } 
                       arrow 
@@ -879,19 +765,63 @@ ${property.zillowLink}`;
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        backgroundColor: getScoreBackgroundColor(calculateScore(property)),
-                        color: getScoreColor(calculateScore(property)),
+                        backgroundColor: getScoreBackgroundColor(calculateHoldScore(property)),
+                        color: getScoreColor(calculateHoldScore(property)),
                         p: '2px 6px',
                         borderRadius: 2,
                         fontWeight: 'bold',
                         width: '40px',
                         height: '24px'
                       }}>
-                        {calculateScore(property)}/10
+                        {calculateHoldScore(property)}/10
                       </Box>
                     </Tooltip>
                   </TableCell>
-                  <TableCell className="metric">
+                  <TableCell className="metric" sx={{ textAlign: 'center' }}>
+                    <Tooltip 
+                      title={
+                        <>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Flip Score Breakdown:</Typography>
+                          {(() => {
+                            const breakdown = getFlipScoreBreakdown(property);
+                            return (
+                              <>
+                                <Typography variant="body2">
+                                  ARV Ratio: {breakdown.arvRatioScore}/8 points
+                                  {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Home Equity: {breakdown.equityScore}/2 points
+                                  {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
+                                </Typography>
+                                <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                                  Total Flip Score: {breakdown.totalScore}/10 points
+                                </Typography>
+                              </>
+                            );
+                          })()}
+                        </>
+                      } 
+                      arrow 
+                      placement="top"
+                    >
+                      <Box sx={{ 
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: getScoreBackgroundColor(calculateFlipScore(property)),
+                        color: getScoreColor(calculateFlipScore(property)),
+                        p: '2px 6px',
+                        borderRadius: 2,
+                        fontWeight: 'bold',
+                        width: '40px',
+                        height: '24px'
+                      }}>
+                        {calculateFlipScore(property)}/10
+                      </Box>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell className="metric" sx={{ textAlign: 'center' }}>
                     <Tooltip title="Actions">
                       <IconButton
                         onClick={(e) => handleMenuOpen(e, property)}
@@ -929,30 +859,50 @@ ${property.zillowLink}`;
               p: 2
             }}
           >
-            {/* Card Header with Status and Score */}
+            {/* Card Header with Status and Scores */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <StatusChip 
                 label={property.status} 
                 status={property.status} 
                 size="small"
               />
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                backgroundColor: getScoreBackgroundColor(calculateScore(property)),
-                color: getScoreColor(calculateScore(property)),
-                p: 0.75,
-                px: 1.5,
-                borderRadius: 1,
-                fontWeight: 'medium'
-              }}>
-                <Typography sx={{ 
-                  fontWeight: 'bold',
-                  mr: 0.5
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  backgroundColor: getScoreBackgroundColor(calculateHoldScore(property)),
+                  color: getScoreColor(calculateHoldScore(property)),
+                  p: 0.75,
+                  px: 1.5,
+                  borderRadius: 1,
+                  fontWeight: 'medium'
                 }}>
-                  {calculateScore(property)}/10
-                </Typography>
-                <Typography variant="body2">Score</Typography>
+                  <Typography sx={{ 
+                    fontWeight: 'bold',
+                    mr: 0.5
+                  }}>
+                    {calculateHoldScore(property)}/10
+                  </Typography>
+                  <Typography variant="body2">Hold</Typography>
+                </Box>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  backgroundColor: getScoreBackgroundColor(calculateFlipScore(property)),
+                  color: getScoreColor(calculateFlipScore(property)),
+                  p: 0.75,
+                  px: 1.5,
+                  borderRadius: 1,
+                  fontWeight: 'medium'
+                }}>
+                  <Typography sx={{ 
+                    fontWeight: 'bold',
+                    mr: 0.5
+                  }}>
+                    {calculateFlipScore(property)}/10
+                  </Typography>
+                  <Typography variant="body2">Flip</Typography>
+                </Box>
               </Box>
             </Box>
 
@@ -1060,9 +1010,15 @@ ${property.zillowLink}`;
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography variant="caption" color="text.secondary">Score</Typography>
+                  <Typography variant="caption" color="text.secondary">Hold Score</Typography>
                   <Typography variant="body1" fontWeight="medium">
-                    {calculateScore(property)}/10
+                    {calculateHoldScore(property)}/10
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Flip Score</Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {calculateFlipScore(property)}/10
                   </Typography>
                 </Box>
                 <Box>
@@ -1098,29 +1054,59 @@ ${property.zillowLink}`;
               </Box>
             </Box>
 
-            {/* Score Breakdown */}
+            {/* Hold Score Breakdown */}
             <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>Score Breakdown</Typography>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Hold Score Breakdown</Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="body2">
-                  Rent Ratio: {calculateRentRatioScore(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}/3 points
-                  {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
-                </Typography>
-                <Typography variant="body2">
-                  ARV Ratio: {calculateARVRatioScore(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}/3 points
-                  {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
-                </Typography>
-                <Typography variant="body2">
-                  Home Equity: {calculateHomeEquityScore(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}/1 point
-                  {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
-                </Typography>
-                <Typography variant="body2">
-                  Cashflow: {calculateCashflowScore(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}/3 points
-                  {` (${formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))})`}
-                </Typography>
-                <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
-                  Total Score: {calculateScore(property)}/10 points
-                </Typography>
+                {(() => {
+                  const breakdown = getHoldScoreBreakdown(property);
+                  const cashflow = calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv));
+                  const cashflowPerUnit = cashflow / (property.units || 1);
+                  return (
+                    <>
+                      <Typography variant="body2">
+                        Cashflow: {breakdown.cashflowScore}/5 points
+                        {` (${formatCurrency(cashflowPerUnit)}/unit)`}
+                      </Typography>
+                      <Typography variant="body2">
+                        ARV Ratio: {breakdown.arvRatioScore}/3 points
+                        {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
+                      </Typography>
+                      <Typography variant="body2">
+                        Rent Ratio: {breakdown.rentRatioScore}/2 points
+                        {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
+                      </Typography>
+                      <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                        Total Hold Score: {breakdown.totalScore}/10 points
+                      </Typography>
+                    </>
+                  );
+                })()}
+              </Box>
+            </Box>
+
+            {/* Flip Score Breakdown */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Flip Score Breakdown</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {(() => {
+                  const breakdown = getFlipScoreBreakdown(property);
+                  return (
+                    <>
+                      <Typography variant="body2">
+                        ARV Ratio: {breakdown.arvRatioScore}/8 points
+                        {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
+                      </Typography>
+                      <Typography variant="body2">
+                        Home Equity: {breakdown.equityScore}/2 points
+                        {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
+                      </Typography>
+                      <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                        Total Flip Score: {breakdown.totalScore}/10 points
+                      </Typography>
+                    </>
+                  );
+                })()}
               </Box>
             </Box>
 

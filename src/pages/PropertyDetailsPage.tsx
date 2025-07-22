@@ -8,6 +8,23 @@ import { getNotesByPropertyId, createNote, getLinksByPropertyId, createLink, del
 import PropertyDialog from '../components/PropertyDialog';
 import TasksSection from '../components/TasksSection';
 import ContactDialog from '../components/ContactDialog';
+import {
+  calculateRentRatio,
+  calculateARVRatio,
+  calculateDownPayment,
+  calculateLoanAmount,
+  calculateNewLoan,
+  calculateHomeEquity,
+  calculateRefinancingNewLoan,
+  calculateRefinancingHomeEquity,
+  calculateRefinancingCashflow,
+  calculateMonthlyMortgage,
+  calculateCashflow,
+  calculateHoldScore,
+  calculateFlipScore,
+  getHoldScoreBreakdown,
+  getFlipScoreBreakdown,
+} from '../utils/scoreCalculator';
 
 const PropertyDetailsPage: React.FC = () => {
   const { address } = useParams<{ address: string }>();
@@ -113,74 +130,7 @@ const PropertyDetailsPage: React.FC = () => {
     }
   };
 
-  const calculateRentRatio = (rent: number, offerPrice: number, rehabCosts: number) => {
-    const totalInvestment = offerPrice + rehabCosts;
-    if (!totalInvestment) return 0;
-    return rent / totalInvestment;
-  };
 
-  const calculateARVRatio = (offerPrice: number, rehabCosts: number, arv: number) => {
-    if (!arv) return 0;
-    return (offerPrice + rehabCosts) / arv;
-  };
-
-  const calculateDownPayment = (offerPrice: number, rehabCosts: number) => {
-    return (offerPrice + rehabCosts) * 0.25;
-  };
-
-  const calculateLoanAmount = (offerPrice: number, rehabCosts: number) => {
-    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
-    return (offerPrice + rehabCosts) - downPayment;
-  };
-
-  const calculateCashRemaining = () => {
-    // Fixed at $20,000
-    return 20000;
-  };
-
-  const calculateNewLoan = (offerPrice: number, rehabCosts: number, arv: number) => {
-    // Instead of using a fixed 75% of ARV, calculate based on fixed cash remaining
-    const downPayment = calculateDownPayment(offerPrice, rehabCosts);
-    const loanAmount = calculateLoanAmount(offerPrice, rehabCosts);
-    return loanAmount + (downPayment - calculateCashRemaining());
-  };
-
-  const calculateHomeEquity = (offerPrice: number, rehabCosts: number, arv: number) => {
-    const newLoan = calculateNewLoan(offerPrice, rehabCosts, arv);
-    return arv - newLoan;
-  };
-
-  // Separate functions for refinancing calculations (original simple method)
-  const calculateRefinancingNewLoan = (offerPrice: number, rehabCosts: number, arv: number) => {
-    return arv * 0.75;
-  };
-
-  const calculateRefinancingHomeEquity = (offerPrice: number, rehabCosts: number, arv: number) => {
-    return arv - calculateRefinancingNewLoan(offerPrice, rehabCosts, arv);
-  };
-
-  const calculateRefinancingCashflow = (rent: number, offerPrice: number, arv: number) => {
-    const newLoanAmount = calculateRefinancingNewLoan(offerPrice, 0, arv); // Using 0 for rehab costs in refinancing
-    const monthlyMortgage = calculateMonthlyMortgage(newLoanAmount);
-    const propertyManagement = rent * 0.12;
-    const propertyTaxes = (offerPrice * 0.025) / 12;
-    const otherExpenses = 130;
-    return rent - propertyManagement - propertyTaxes - otherExpenses - monthlyMortgage;
-  };
-
-  const calculateMonthlyMortgage = (loanAmount: number, interestRate = 0.07, loanTermYears = 30) => {
-    const monthlyRate = interestRate / 12;
-    const numberOfPayments = loanTermYears * 12;
-    return loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
-  };
-
-  const calculateCashflow = (rent: number, offerPrice: number, newLoanAmount: number) => {
-    const monthlyMortgage = calculateMonthlyMortgage(newLoanAmount);
-    const propertyManagement = rent * 0.12;
-    const propertyTaxes = (offerPrice * 0.025) / 12;
-    const otherExpenses = 130;
-    return rent - propertyManagement - propertyTaxes - otherExpenses - monthlyMortgage;
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -371,15 +321,29 @@ const PropertyDetailsPage: React.FC = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: getScoreBackgroundColor(property.score),
-                  color: getScoreColor(property.score),
+                  backgroundColor: getScoreBackgroundColor(calculateHoldScore(property)),
+                  color: getScoreColor(calculateHoldScore(property)),
                   p: '2px 6px',
                   borderRadius: 2,
                   fontWeight: 'bold',
                   minWidth: '60px',
                   height: '24px'
                 }}>
-                  {property.score}/10
+                  Hold: {calculateHoldScore(property)}/10
+                </Box>
+                <Box sx={{ 
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: getScoreBackgroundColor(calculateFlipScore(property)),
+                  color: getScoreColor(calculateFlipScore(property)),
+                  p: '2px 6px',
+                  borderRadius: 2,
+                  fontWeight: 'bold',
+                  minWidth: '60px',
+                  height: '24px'
+                }}>
+                  Flip: {calculateFlipScore(property)}/10
                 </Box>
               </Box>
             </Box>
@@ -405,12 +369,79 @@ const PropertyDetailsPage: React.FC = () => {
               <Box><Typography variant="caption">Refinancing Monthly Cashflow</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingCashflow(property.potentialRent, property.offerPrice, property.arv))}</Typography></Box>
             </Box>
 
-            <Card sx={{ background: '#f5f5f5' }}>
+            <Card sx={{ background: '#f5f5f5', mb: 2 }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>Description</Typography>
                 <Typography variant="body2">{property.notes || 'No notes.'}</Typography>
               </CardContent>
             </Card>
+
+            {/* Score Breakdowns */}
+            <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={2}>
+              {/* Hold Score Breakdown */}
+              <Card sx={{ background: '#f8f9fa' }}>
+                <CardContent>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>Hold Score Breakdown</Typography>
+                  {(() => {
+                    const breakdown = getHoldScoreBreakdown(property);
+                    const cashflow = calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv));
+                    const cashflowPerUnit = cashflow / (property.units || 1);
+                    return (
+                      <Box>
+                        <Typography variant="body2" sx={{ mb: 0.5 }}>
+                          Cashflow: {breakdown.cashflowScore}/5 points
+                          {` (${formatCurrency(cashflowPerUnit)}/unit)`}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 0.5 }}>
+                          ARV Ratio: {breakdown.arvRatioScore}/3 points
+                          {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Rent Ratio: {breakdown.rentRatioScore}/2 points
+                          {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
+                        </Typography>
+                        <Typography variant="body2" fontWeight="bold" sx={{ 
+                          color: getScoreBackgroundColor(breakdown.totalScore),
+                          borderTop: '1px solid #dee2e6',
+                          pt: 1
+                        }}>
+                          Total Hold Score: {breakdown.totalScore}/10 points
+                        </Typography>
+                      </Box>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              {/* Flip Score Breakdown */}
+              <Card sx={{ background: '#f8f9fa' }}>
+                <CardContent>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>Flip Score Breakdown</Typography>
+                  {(() => {
+                    const breakdown = getFlipScoreBreakdown(property);
+                    return (
+                      <Box>
+                        <Typography variant="body2" sx={{ mb: 0.5 }}>
+                          ARV Ratio: {breakdown.arvRatioScore}/8 points
+                          {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Home Equity: {breakdown.equityScore}/2 points
+                          {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
+                        </Typography>
+                        <Typography variant="body2" fontWeight="bold" sx={{ 
+                          color: getScoreBackgroundColor(breakdown.totalScore),
+                          borderTop: '1px solid #dee2e6',
+                          pt: 1
+                        }}>
+                          Total Flip Score: {breakdown.totalScore}/10 points
+                        </Typography>
+                      </Box>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            </Box>
           </Paper>
         </Box>
 

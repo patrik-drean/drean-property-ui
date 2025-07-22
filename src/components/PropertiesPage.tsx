@@ -752,12 +752,8 @@ ${property.zillowLink}`;
                             return (
                               <>
                                 <Typography variant="body2">
-                                  Cashflow: {breakdown.cashflowScore}/5 points
+                                  Cashflow: {breakdown.cashflowScore}/8 points
                                   {` (${formatCurrency(cashflowPerUnit)}/unit)`}
-                                </Typography>
-                                <Typography variant="body2">
-                                  ARV Ratio: {breakdown.arvRatioScore}/3 points
-                                  {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
                                 </Typography>
                                 <Typography variant="body2">
                                   Rent Ratio: {breakdown.rentRatioScore}/2 points
@@ -1153,18 +1149,14 @@ ${property.zillowLink}`;
                         const cashflowPerUnit = cashflow / (property.units || 1);
                         return (
                           <>
-                            <Typography variant="body2">
-                              Cashflow: {breakdown.cashflowScore}/5 points
-                              {` (${formatCurrency(cashflowPerUnit)}/unit)`}
-                            </Typography>
-                            <Typography variant="body2">
-                              ARV Ratio: {breakdown.arvRatioScore}/3 points
-                              {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
-                            </Typography>
-                            <Typography variant="body2">
-                              Rent Ratio: {breakdown.rentRatioScore}/2 points
-                              {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
-                            </Typography>
+                                                  <Typography variant="body2">
+                        Cashflow: {breakdown.cashflowScore}/8 points
+                        {` (${formatCurrency(cashflowPerUnit)}/unit)`}
+                      </Typography>
+                      <Typography variant="body2">
+                        Rent Ratio: {breakdown.rentRatioScore}/2 points
+                        {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
+                      </Typography>
                             <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
                               Total Hold Score: {breakdown.totalScore}/10 points
                             </Typography>

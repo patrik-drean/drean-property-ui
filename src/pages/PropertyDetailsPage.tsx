@@ -389,12 +389,8 @@ const PropertyDetailsPage: React.FC = () => {
                     return (
                       <Box>
                         <Typography variant="body2" sx={{ mb: 0.5 }}>
-                          Cashflow: {breakdown.cashflowScore}/5 points
+                          Cashflow: {breakdown.cashflowScore}/8 points
                           {` (${formatCurrency(cashflowPerUnit)}/unit)`}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 0.5 }}>
-                          ARV Ratio: {breakdown.arvRatioScore}/3 points
-                          {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
                         </Typography>
                         <Typography variant="body2" sx={{ mb: 1 }}>
                           Rent Ratio: {breakdown.rentRatioScore}/2 points

@@ -103,19 +103,20 @@ export const calculateRefinancingCashflow = (rent: number, offerPrice: number, a
 // Hold Score calculation functions
 export const calculateHoldCashflowScore = (cashflow: number, units: number = 1): number => {
   const cashflowPerUnit = cashflow / units;
-  if (cashflowPerUnit >= 200) return 5; // $200 or more per unit
-  if (cashflowPerUnit >= 175) return 4; // $175-$199 per unit
-  if (cashflowPerUnit >= 150) return 3; // $150-$199 per unit
-  if (cashflowPerUnit >= 100) return 2; // $100-$149 per unit
-  if (cashflowPerUnit >= 0) return 1;   // $0-$99 per unit
+  if (cashflowPerUnit >= 200) return 8; // $200 or more per unit
+  if (cashflowPerUnit >= 175) return 7; // $175-$199 per unit
+  if (cashflowPerUnit >= 150) return 6; // $150-$174 per unit
+  if (cashflowPerUnit >= 125) return 5; // $125-$149 per unit
+  if (cashflowPerUnit >= 100) return 4; // $100-$124 per unit
+  if (cashflowPerUnit >= 75) return 3;  // $75-$99 per unit
+  if (cashflowPerUnit >= 50) return 2;  // $50-$74 per unit
+  if (cashflowPerUnit >= 0) return 1;   // $0-$49 per unit
   return 0; // Negative cashflow
 };
 
 export const calculateHoldARVRatioScore = (arvRatio: number): number => {
-  if (arvRatio <= 0.75) return 3; // 75% or lower is good
-  if (arvRatio <= 0.80) return 2; // 76-80%
-  if (arvRatio <= 0.85) return 1; // 81-85%
-  return 0; // > 85%
+  // This function is now deprecated for Hold Score but kept for backward compatibility
+  return 0;
 };
 
 export const calculateHoldRentRatioScore = (rentRatio: number): number => {
@@ -145,7 +146,6 @@ export const calculateFlipEquityScore = (homeEquity: number): number => {
 // Main score calculation functions
 export const calculateHoldScore = (property: Omit<Property, 'id'>): number => {
   const rentRatio = calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts);
-  const arvRatio = calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv);
   const cashflow = calculateCashflow(
     property.potentialRent, 
     property.offerPrice, 
@@ -153,10 +153,9 @@ export const calculateHoldScore = (property: Omit<Property, 'id'>): number => {
   );
 
   const cashflowScore = calculateHoldCashflowScore(cashflow, property.units || 1);
-  const arvRatioScore = calculateHoldARVRatioScore(arvRatio);
   const rentRatioScore = calculateHoldRentRatioScore(rentRatio);
 
-  const totalScore = cashflowScore + arvRatioScore + rentRatioScore;
+  const totalScore = cashflowScore + rentRatioScore;
   
   // Ensure minimum score of 1, maximum of 10
   return Math.min(10, Math.max(1, totalScore));
@@ -214,7 +213,6 @@ export const calculateLegacyScore = (property: Omit<Property, 'id'>): number => 
 // Score breakdown interfaces
 export interface HoldScoreBreakdown {
   cashflowScore: number;
-  arvRatioScore: number;
   rentRatioScore: number;
   totalScore: number;
 }
@@ -228,7 +226,6 @@ export interface FlipScoreBreakdown {
 // Functions to get detailed score breakdowns
 export const getHoldScoreBreakdown = (property: Omit<Property, 'id'>): HoldScoreBreakdown => {
   const rentRatio = calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts);
-  const arvRatio = calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv);
   const cashflow = calculateCashflow(
     property.potentialRent, 
     property.offerPrice, 
@@ -236,12 +233,10 @@ export const getHoldScoreBreakdown = (property: Omit<Property, 'id'>): HoldScore
   );
 
   const cashflowScore = calculateHoldCashflowScore(cashflow, property.units || 1);
-  const arvRatioScore = calculateHoldARVRatioScore(arvRatio);
   const rentRatioScore = calculateHoldRentRatioScore(rentRatio);
 
   return {
     cashflowScore,
-    arvRatioScore,
     rentRatioScore,
     totalScore: calculateHoldScore(property)
   };

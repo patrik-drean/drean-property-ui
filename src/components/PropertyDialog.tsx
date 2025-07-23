@@ -12,8 +12,15 @@ import {
   InputLabel,
   Box,
   styled,
+  Typography,
+  Chip,
+  Tooltip,
 } from '@mui/material';
 import { Property, PropertyStatus } from '../types/property';
+import { 
+  calculatePerfectRentForHoldScore, 
+  calculatePerfectARVForFlipScore 
+} from '../utils/scoreCalculator';
 
 // Styled MenuItem for status dropdown
 const StyledMenuItem = styled(MenuItem)<{ statuscolor: string }>(({ statuscolor }) => ({
@@ -103,6 +110,40 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   const formatInputCurrency = (value: number) => {
     if (value === 0) return '';
     return value.toLocaleString('en-US');
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  // Calculate perfect values for recommendations
+  const getPerfectRentRecommendation = () => {
+    if (newProperty.offerPrice > 0 || newProperty.rehabCosts > 0) {
+      const perfectRent = calculatePerfectRentForHoldScore(
+        newProperty.offerPrice, 
+        newProperty.rehabCosts, 
+        newProperty.arv || 0, 
+        newProperty.units || 1
+      );
+      return perfectRent;
+    }
+    return null;
+  };
+
+  const getPerfectARVRecommendation = () => {
+    if (newProperty.offerPrice > 0 || newProperty.rehabCosts > 0) {
+      const perfectARV = calculatePerfectARVForFlipScore(
+        newProperty.offerPrice, 
+        newProperty.rehabCosts
+      );
+      return perfectARV;
+    }
+    return null;
   };
 
   const parseZillowLink = (url: string) => {
@@ -326,26 +367,108 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
               startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
             }}
           />
-          <TextField
-            fullWidth
-            label="Potential Monthly Rent"
-            value={formatInputCurrency(newProperty.potentialRent)}
-            onChange={(e) => setNewProperty({ ...newProperty, potentialRent: handleCurrencyInput(e.target.value) })}
-            margin="normal"
-            InputProps={{
-              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-            }}
-          />
-          <TextField
-            fullWidth
-            label="ARV"
-            value={formatInputCurrency(newProperty.arv)}
-            onChange={(e) => setNewProperty({ ...newProperty, arv: handleCurrencyInput(e.target.value) })}
-            margin="normal"
-            InputProps={{
-              startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-            }}
-          />
+          <Tooltip
+            title={
+              getPerfectRentRecommendation() ? (
+                <Box sx={{ p: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Perfect Hold Score (10/10): {formatCurrency(getPerfectRentRecommendation()!)}/month
+                  </Typography>
+                  <Typography variant="body2">
+                    This rent amount will achieve:
+                  </Typography>
+                  <Typography variant="body2" component="ul" sx={{ mt: 0.5, pl: 2 }}>
+                    <li>$200+ cashflow per unit (8/8 points)</li>
+                    <li>1%+ rent ratio (2/2 points)</li>
+                  </Typography>
+                </Box>
+              ) : (
+                "Enter offer price and rehab costs to see perfect rent recommendation"
+              )
+            }
+            arrow
+            placement="top-start"
+          >
+            <TextField
+              fullWidth
+              label="Potential Monthly Rent"
+              value={formatInputCurrency(newProperty.potentialRent)}
+              onChange={(e) => setNewProperty({ ...newProperty, potentialRent: handleCurrencyInput(e.target.value) })}
+              margin="normal"
+              InputProps={{
+                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+              }}
+              helperText={
+                getPerfectRentRecommendation() ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip 
+                      label="Perfect Hold Score (10/10)" 
+                      size="small" 
+                      color="success" 
+                      variant="outlined"
+                      sx={{ fontSize: '0.7rem', height: '20px' }}
+                    />
+                    <Typography variant="caption" color="success.main" fontWeight="medium">
+                      {formatCurrency(getPerfectRentRecommendation()!)}/month
+                    </Typography>
+                  </Box>
+                ) : (
+                  "Enter offer price and rehab costs to see perfect rent recommendation"
+                )
+              }
+            />
+          </Tooltip>
+          <Tooltip
+            title={
+              getPerfectARVRecommendation() ? (
+                <Box sx={{ p: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Perfect Flip Score (10/10): {formatCurrency(getPerfectARVRecommendation()!)}
+                  </Typography>
+                  <Typography variant="body2">
+                    This ARV amount will achieve:
+                  </Typography>
+                  <Typography variant="body2" component="ul" sx={{ mt: 0.5, pl: 2 }}>
+                    <li>≤65% ARV ratio (8/8 points)</li>
+                    <li>$75k+ home equity (2/2 points)</li>
+                  </Typography>
+                </Box>
+              ) : (
+                "Enter offer price and rehab costs to see perfect ARV recommendation"
+              )
+            }
+            arrow
+            placement="top-start"
+          >
+            <TextField
+              fullWidth
+              label="ARV"
+              value={formatInputCurrency(newProperty.arv)}
+              onChange={(e) => setNewProperty({ ...newProperty, arv: handleCurrencyInput(e.target.value) })}
+              margin="normal"
+              InputProps={{
+                startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+              }}
+              helperText={
+                getPerfectARVRecommendation() ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip 
+                      label="Perfect Flip Score (10/10)" 
+                      size="small" 
+                      color="warning" 
+                      variant="outlined"
+                      sx={{ fontSize: '0.7rem', height: '20px' }}
+                    />
+                    <Typography variant="caption" color="warning.main" fontWeight="medium">
+                      {formatCurrency(getPerfectARVRecommendation()!)}
+                    </Typography>
+                  </Box>
+                ) : (
+                  "Enter offer price and rehab costs to see perfect ARV recommendation"
+                )
+              }
+            />
+          </Tooltip>
           <TextField
             fullWidth
             label="Square Footage"

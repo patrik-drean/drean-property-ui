@@ -1,4 +1,4 @@
-import { Property } from '../types/property';
+import { Property, PropertyStatus } from '../types/property';
 
 // Base calculation functions
 export const calculateRentRatio = (rent: number, offerPrice: number, rehabCosts: number) => {
@@ -254,4 +254,111 @@ export const getFlipScoreBreakdown = (property: Omit<Property, 'id'>): FlipScore
     equityScore,
     totalScore: calculateFlipScore(property)
   };
+};
+
+// Functions to calculate perfect values for achieving perfect scores
+export const calculatePerfectRentForHoldScore = (offerPrice: number, rehabCosts: number, arv: number, units: number = 1): number => {
+  // For perfect Hold score (10/10), we need:
+  // 1. Cashflow score of 8/8 (cashflow per unit >= $200)
+  // 2. Rent ratio score of 2/2 (rent ratio >= 1%)
+  
+  // First, let's calculate the minimum rent needed for perfect cashflow score
+  // We need cashflow per unit >= $200, so total cashflow >= $200 * units
+  const targetCashflowPerUnit = 200;
+  const targetTotalCashflow = targetCashflowPerUnit * units;
+  
+  // Calculate the new loan amount
+  const newLoanAmount = calculateNewLoan(offerPrice, rehabCosts, arv);
+  
+  // Calculate monthly mortgage payment
+  const monthlyMortgage = calculateMonthlyMortgage(newLoanAmount);
+  
+  // Calculate other monthly expenses
+  const propertyTaxes = (offerPrice * 0.025) / 12;
+  const otherExpenses = 130;
+  
+  // For perfect cashflow: rent - managementFees - propertyTaxes - otherExpenses - mortgage = targetTotalCashflow
+  // Where managementFees = rent * 0.12
+  // So: rent - (rent * 0.12) - propertyTaxes - otherExpenses - mortgage = targetTotalCashflow
+  // Simplified: rent * (1 - 0.12) - propertyTaxes - otherExpenses - mortgage = targetTotalCashflow
+  // rent * 0.88 = targetTotalCashflow + propertyTaxes + otherExpenses + mortgage
+  const rentForPerfectCashflow = (targetTotalCashflow + propertyTaxes + otherExpenses + monthlyMortgage) / 0.88;
+  
+  // Now calculate the minimum rent needed for perfect rent ratio (1% or higher)
+  const totalInvestment = offerPrice + rehabCosts;
+  const rentForPerfectRatio = totalInvestment * 0.01;
+  
+  // Return the higher of the two values to ensure both conditions are met
+  return Math.ceil(Math.max(rentForPerfectCashflow, rentForPerfectRatio));
+};
+
+export const calculatePerfectARVForFlipScore = (offerPrice: number, rehabCosts: number): number => {
+  // For perfect Flip score (10/10), we need:
+  // 1. ARV ratio score of 8/8 (ARV ratio <= 65%)
+  // 2. Home equity score of 2/2 (home equity >= $75k)
+  
+  // For perfect ARV ratio: (offerPrice + rehabCosts) / arv <= 0.65
+  // So: arv >= (offerPrice + rehabCosts) / 0.65
+  const totalInvestment = offerPrice + rehabCosts;
+  const arvForPerfectRatio = totalInvestment / 0.65;
+  
+  // For perfect home equity: arv - newLoan >= $75k
+  // Where newLoan = loanAmount + (downPayment - cashRemaining)
+  // loanAmount = totalInvestment - downPayment
+  // downPayment = totalInvestment * 0.25
+  // cashRemaining = $20k
+  const downPayment = totalInvestment * 0.25;
+  const loanAmount = totalInvestment - downPayment;
+  const newLoan = loanAmount + (downPayment - 20000);
+  
+  // So: arv - newLoan >= $75k
+  // arv >= newLoan + $75k
+  const arvForPerfectEquity = newLoan + 75000;
+  
+  // Return the higher of the two values to ensure both conditions are met
+  return Math.ceil(Math.max(arvForPerfectRatio, arvForPerfectEquity));
+};
+
+// Test function to verify calculations (can be removed in production)
+export const testPerfectValueCalculations = () => {
+  const offerPrice = 200000;
+  const rehabCosts = 30000;
+  const arv = 300000;
+  const units = 1;
+  
+  const perfectRent = calculatePerfectRentForHoldScore(offerPrice, rehabCosts, arv, units);
+  const perfectARV = calculatePerfectARVForFlipScore(offerPrice, rehabCosts);
+  
+  console.log('Test Results:');
+  console.log(`Offer Price: $${offerPrice.toLocaleString()}`);
+  console.log(`Rehab Costs: $${rehabCosts.toLocaleString()}`);
+  console.log(`Perfect Rent for Hold Score: $${perfectRent.toLocaleString()}/month`);
+  console.log(`Perfect ARV for Flip Score: $${perfectARV.toLocaleString()}`);
+  
+  // Verify the calculations work
+  const testProperty = {
+    address: 'Test Property',
+    status: 'Opportunity' as PropertyStatus,
+    listingPrice: 0,
+    offerPrice,
+    rehabCosts,
+    potentialRent: perfectRent,
+    arv: perfectARV,
+    rentCastEstimates: { price: 0, priceLow: 0, priceHigh: 0, rent: 0, rentLow: 0, rentHigh: 0 },
+    todoMetaData: { todoistSectionId: null },
+    hasRentcastData: false,
+    notes: '',
+    score: 0,
+    zillowLink: '',
+    squareFootage: null,
+    units
+  };
+  
+  const holdScore = calculateHoldScore(testProperty);
+  const flipScore = calculateFlipScore(testProperty);
+  
+  console.log(`Hold Score with perfect rent: ${holdScore}/10`);
+  console.log(`Flip Score with perfect ARV: ${flipScore}/10`);
+  
+  return { perfectRent, perfectARV, holdScore, flipScore };
 }; 

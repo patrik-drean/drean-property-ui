@@ -44,6 +44,8 @@ import {
   calculateFlipScore,
   getHoldScoreBreakdown,
   getFlipScoreBreakdown,
+  calculatePerfectRentForHoldScore,
+  calculatePerfectARVForFlipScore,
 } from '../utils/scoreCalculator';
 
 // Styled components for consistent UI elements
@@ -749,6 +751,7 @@ ${property.zillowLink}`;
                             const breakdown = getHoldScoreBreakdown(property);
                             const cashflow = calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv));
                             const cashflowPerUnit = cashflow / (property.units || 1);
+                            const perfectRent = calculatePerfectRentForHoldScore(property.offerPrice, property.rehabCosts, property.arv, property.units || 1);
                             return (
                               <>
                                 <Typography variant="body2">
@@ -761,6 +764,19 @@ ${property.zillowLink}`;
                                 </Typography>
                                 <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
                                   Total Hold Score: {breakdown.totalScore}/10 points
+                                </Typography>
+                                <Typography variant="body2" sx={{ 
+                                  mt: 1, 
+                                  pt: 1, 
+                                  borderTop: '1px solid #eee', 
+                                  color: '#2e7d32', 
+                                  fontWeight: 'bold',
+                                  backgroundColor: '#e8f5e9',
+                                  p: 0.5,
+                                  borderRadius: 1,
+                                  textAlign: 'center'
+                                }}>
+                                  Perfect Rent for 10/10: {formatCurrency(perfectRent)}/month
                                 </Typography>
                               </>
                             );
@@ -793,6 +809,7 @@ ${property.zillowLink}`;
                           <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Flip Score Breakdown:</Typography>
                           {(() => {
                             const breakdown = getFlipScoreBreakdown(property);
+                            const perfectARV = calculatePerfectARVForFlipScore(property.offerPrice, property.rehabCosts);
                             return (
                               <>
                                 <Typography variant="body2">
@@ -805,6 +822,19 @@ ${property.zillowLink}`;
                                 </Typography>
                                 <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
                                   Total Flip Score: {breakdown.totalScore}/10 points
+                                </Typography>
+                                <Typography variant="body2" sx={{ 
+                                  mt: 1, 
+                                  pt: 1, 
+                                  borderTop: '1px solid #eee', 
+                                  color: '#e65100', 
+                                  fontWeight: 'bold',
+                                  backgroundColor: '#fff3e0',
+                                  p: 0.5,
+                                  borderRadius: 1,
+                                  textAlign: 'center'
+                                }}>
+                                  Perfect ARV for 10/10: {formatCurrency(perfectARV)}
                                 </Typography>
                               </>
                             );

@@ -24,6 +24,8 @@ import {
   calculateFlipScore,
   getHoldScoreBreakdown,
   getFlipScoreBreakdown,
+  calculatePerfectRentForHoldScore,
+  calculatePerfectARVForFlipScore,
 } from '../utils/scoreCalculator';
 
 const PropertyDetailsPage: React.FC = () => {
@@ -317,34 +319,122 @@ const PropertyDetailsPage: React.FC = () => {
                     }
                   }}
                 />
-                <Box sx={{ 
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: getScoreBackgroundColor(calculateHoldScore(property)),
-                  color: getScoreColor(calculateHoldScore(property)),
-                  p: '2px 6px',
-                  borderRadius: 2,
-                  fontWeight: 'bold',
-                  minWidth: '60px',
-                  height: '24px'
-                }}>
-                  Hold: {calculateHoldScore(property)}/10
-                </Box>
-                <Box sx={{ 
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: getScoreBackgroundColor(calculateFlipScore(property)),
-                  color: getScoreColor(calculateFlipScore(property)),
-                  p: '2px 6px',
-                  borderRadius: 2,
-                  fontWeight: 'bold',
-                  minWidth: '60px',
-                  height: '24px'
-                }}>
-                  Flip: {calculateFlipScore(property)}/10
-                </Box>
+                <Tooltip 
+                  title={
+                    <>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Hold Score Breakdown:</Typography>
+                      {(() => {
+                        const breakdown = getHoldScoreBreakdown(property);
+                        const cashflow = calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv));
+                        const cashflowPerUnit = cashflow / (property.units || 1);
+                        const perfectRent = calculatePerfectRentForHoldScore(property.offerPrice, property.rehabCosts, property.arv, property.units || 1);
+                        return (
+                          <>
+                            <Typography variant="body2">
+                              Cashflow: {breakdown.cashflowScore}/8 points
+                              {` (${formatCurrency(cashflowPerUnit)}/unit)`}
+                            </Typography>
+                            <Typography variant="body2">
+                              Rent Ratio: {breakdown.rentRatioScore}/2 points
+                              {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
+                            </Typography>
+                            <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                              Total Hold Score: {breakdown.totalScore}/10 points
+                            </Typography>
+                            <Typography variant="body2" sx={{ 
+                              mt: 1, 
+                              pt: 1, 
+                              borderTop: '1px solid #eee', 
+                              color: '#2e7d32', 
+                              fontWeight: 'bold',
+                              backgroundColor: '#e8f5e9',
+                              p: 0.5,
+                              borderRadius: 1,
+                              textAlign: 'center'
+                            }}>
+                              Perfect Rent for 10/10: {formatCurrency(perfectRent)}/month
+                            </Typography>
+                          </>
+                        );
+                      })()}
+                    </>
+                  } 
+                  arrow 
+                  placement="top"
+                >
+                  <Box sx={{ 
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: getScoreBackgroundColor(calculateHoldScore(property)),
+                    color: getScoreColor(calculateHoldScore(property)),
+                    p: '2px 6px',
+                    borderRadius: 2,
+                    fontWeight: 'bold',
+                    minWidth: '60px',
+                    height: '24px',
+                    cursor: 'help'
+                  }}>
+                    Hold: {calculateHoldScore(property)}/10
+                  </Box>
+                </Tooltip>
+                <Tooltip 
+                  title={
+                    <>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Flip Score Breakdown:</Typography>
+                      {(() => {
+                        const breakdown = getFlipScoreBreakdown(property);
+                        const perfectARV = calculatePerfectARVForFlipScore(property.offerPrice, property.rehabCosts);
+                        return (
+                          <>
+                            <Typography variant="body2">
+                              ARV Ratio: {breakdown.arvRatioScore}/8 points
+                              {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
+                            </Typography>
+                            <Typography variant="body2">
+                              Home Equity: {breakdown.equityScore}/2 points
+                              {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
+                            </Typography>
+                            <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                              Total Flip Score: {breakdown.totalScore}/10 points
+                            </Typography>
+                            <Typography variant="body2" sx={{ 
+                              mt: 1, 
+                              pt: 1, 
+                              borderTop: '1px solid #eee', 
+                              color: '#e65100', 
+                              fontWeight: 'bold',
+                              backgroundColor: '#fff3e0',
+                              p: 0.5,
+                              borderRadius: 1,
+                              textAlign: 'center'
+                            }}>
+                              Perfect ARV for 10/10: {formatCurrency(perfectARV)}
+                            </Typography>
+                          </>
+                        );
+                      })()}
+                    </>
+                  } 
+                  arrow 
+                  placement="top"
+                >
+                  <Box sx={{ 
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: getScoreBackgroundColor(calculateFlipScore(property)),
+                    color: getScoreColor(calculateFlipScore(property)),
+                    p: '2px 6px',
+                    borderRadius: 2,
+                    fontWeight: 'bold',
+                    minWidth: '60px',
+                    height: '24px',
+                    cursor: 'help'
+                  }}>
+                    Flip: {calculateFlipScore(property)}/10
+                  </Box>
+                </Tooltip>
               </Box>
             </Box>
             <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(5, 1fr)' }} gap={{ xs: 2, sm: 4 }} mb={2}>
@@ -376,68 +466,7 @@ const PropertyDetailsPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Score Breakdowns */}
-            <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={2}>
-              {/* Hold Score Breakdown */}
-              <Card sx={{ background: '#f8f9fa' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>Hold Score Breakdown</Typography>
-                  {(() => {
-                    const breakdown = getHoldScoreBreakdown(property);
-                    const cashflow = calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv));
-                    const cashflowPerUnit = cashflow / (property.units || 1);
-                    return (
-                      <Box>
-                        <Typography variant="body2" sx={{ mb: 0.5 }}>
-                          Cashflow: {breakdown.cashflowScore}/8 points
-                          {` (${formatCurrency(cashflowPerUnit)}/unit)`}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          Rent Ratio: {breakdown.rentRatioScore}/2 points
-                          {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold" sx={{ 
-                          color: getScoreBackgroundColor(breakdown.totalScore),
-                          borderTop: '1px solid #dee2e6',
-                          pt: 1
-                        }}>
-                          Total Hold Score: {breakdown.totalScore}/10 points
-                        </Typography>
-                      </Box>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
 
-              {/* Flip Score Breakdown */}
-              <Card sx={{ background: '#f8f9fa' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>Flip Score Breakdown</Typography>
-                  {(() => {
-                    const breakdown = getFlipScoreBreakdown(property);
-                    return (
-                      <Box>
-                        <Typography variant="body2" sx={{ mb: 0.5 }}>
-                          ARV Ratio: {breakdown.arvRatioScore}/8 points
-                          {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          Home Equity: {breakdown.equityScore}/2 points
-                          {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold" sx={{ 
-                          color: getScoreBackgroundColor(breakdown.totalScore),
-                          borderTop: '1px solid #dee2e6',
-                          pt: 1
-                        }}>
-                          Total Flip Score: {breakdown.totalScore}/10 points
-                        </Typography>
-                      </Box>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-            </Box>
           </Paper>
         </Box>
 

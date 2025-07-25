@@ -26,10 +26,75 @@ import {
   ListItemText,
   FormControlLabel,
   Checkbox,
+  styled,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
-import { Contact, CreateContact, Property } from '../types/property';
+import { Contact, CreateContact, Property, PropertyStatus } from '../types/property';
 import { getContacts, createContact, updateContact, deleteContact, getProperties, addContactToProperty, removeContactFromProperty } from '../services/api';
+
+// Status chip component (same as PropertiesPage)
+interface StatusChipProps {
+  status: PropertyStatus;
+}
+
+const StatusChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== 'status',
+})<StatusChipProps>(({ status }) => ({
+  backgroundColor: getStatusColor(status),
+  color: 'white',
+  fontWeight: 500,
+  borderRadius: '16px',
+  width: '120px',
+  padding: '0px',
+  height: '24px',
+  '& .MuiChip-label': {
+    padding: '0 12px',
+  }
+}));
+
+// Helper function to get status color (same as PropertiesPage)
+const getStatusColor = (status: PropertyStatus): string => {
+  switch (status) {
+    case 'Opportunity':
+      return '#4CAF50'; // Green
+    case 'Soft Offer':
+      return '#FFC107'; // Amber
+    case 'Hard Offer':
+      return '#FF9800'; // Orange
+    case 'Rehab':
+      return '#F44336'; // Red
+    case 'Operational':
+      return '#2196F3'; // Blue
+    case 'Needs Tenant':
+      return '#9C27B0'; // Purple
+    case 'Selling':
+      return '#FF5722'; // Deep Orange
+    default:
+      return '#757575'; // Grey
+  }
+};
+
+// Helper function to get status order (same as PropertiesPage)
+const getStatusOrder = (status: PropertyStatus) => {
+  switch (status) {
+    case 'Opportunity':
+      return 0;
+    case 'Soft Offer':
+      return 1;
+    case 'Hard Offer':
+      return 2;
+    case 'Rehab':
+      return 3;
+    case 'Selling':
+      return 4;
+    case 'Needs Tenant':
+      return 5;
+    case 'Operational':
+      return 6;
+    default:
+      return 7;
+  }
+};
 
 const TeamPage: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -39,6 +104,7 @@ const TeamPage: React.FC = () => {
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [propertyLinkDialogOpen, setPropertyLinkDialogOpen] = useState(false);
   const [selectedContactForProperty, setSelectedContactForProperty] = useState<Contact | null>(null);
+  const [linkedPropertyIds, setLinkedPropertyIds] = useState<Set<string>>(new Set());
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   
   // Form state
@@ -163,33 +229,47 @@ const TeamPage: React.FC = () => {
 
   const handleOpenPropertyLinkDialog = (contact: Contact) => {
     setSelectedContactForProperty(contact);
+    setLinkedPropertyIds(new Set(contact.relatedPropertyIds));
     setPropertyLinkDialogOpen(true);
   };
 
   const handleClosePropertyLinkDialog = () => {
     setPropertyLinkDialogOpen(false);
     setSelectedContactForProperty(null);
+    setLinkedPropertyIds(new Set());
   };
 
-  const handleLinkToProperty = async (contactId: string, propertyId: string) => {
-    try {
-      await addContactToProperty(contactId, propertyId);
-      setSnackbar({ open: true, message: 'Contact linked to property successfully', severity: 'success' });
-      fetchContacts(); // Refresh to get updated relatedPropertyIds
-    } catch (error) {
-      console.error('Error linking contact to property:', error);
-      setSnackbar({ open: true, message: 'Error linking contact to property', severity: 'error' });
-    }
-  };
+  const handleTogglePropertyLink = async (propertyId: string) => {
+    if (!selectedContactForProperty) return;
 
-  const handleUnlinkFromProperty = async (contactId: string, propertyId: string) => {
+    const newLinkedPropertyIds = new Set(linkedPropertyIds);
+    const isCurrentlyLinked = newLinkedPropertyIds.has(propertyId);
+
     try {
-      await removeContactFromProperty(contactId, propertyId);
-      setSnackbar({ open: true, message: 'Contact unlinked from property successfully', severity: 'success' });
-      fetchContacts(); // Refresh to get updated relatedPropertyIds
+      if (isCurrentlyLinked) {
+        await removeContactFromProperty(selectedContactForProperty.id, propertyId);
+        newLinkedPropertyIds.delete(propertyId);
+        setSnackbar({ open: true, message: 'Contact unlinked from property successfully', severity: 'success' });
+      } else {
+        await addContactToProperty(selectedContactForProperty.id, propertyId);
+        newLinkedPropertyIds.add(propertyId);
+        setSnackbar({ open: true, message: 'Contact linked to property successfully', severity: 'success' });
+      }
+      
+      // Update local state immediately
+      setLinkedPropertyIds(newLinkedPropertyIds);
+      
+      // Update the contact in the contacts list
+      setContacts(prevContacts => 
+        prevContacts.map(contact => 
+          contact.id === selectedContactForProperty.id 
+            ? { ...contact, relatedPropertyIds: Array.from(newLinkedPropertyIds) }
+            : contact
+        )
+      );
     } catch (error) {
-      console.error('Error unlinking contact from property:', error);
-      setSnackbar({ open: true, message: 'Error unlinking contact from property', severity: 'error' });
+      console.error('Error toggling property link:', error);
+      setSnackbar({ open: true, message: 'Error updating property link', severity: 'error' });
     }
   };
 
@@ -224,6 +304,20 @@ const TeamPage: React.FC = () => {
   const getPropertyById = (propertyId: string): Property | undefined => {
     return properties.find(property => property.id === propertyId);
   };
+
+  // Sort properties by status (same as PropertiesPage)
+  const sortedProperties = [...properties].sort((a, b) => {
+    const orderA = getStatusOrder(a.status);
+    const orderB = getStatusOrder(b.status);
+    
+    // First sort by status
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    
+    // Then sort by address
+    return a.address.localeCompare(b.address);
+  });
 
   // Group contacts by location, then sort by type and name
   const groupedContacts = contacts.reduce((acc, contact) => {
@@ -586,8 +680,8 @@ const TeamPage: React.FC = () => {
           </Typography>
           
           <List>
-            {properties.map(property => {
-              const isLinked = selectedContactForProperty?.relatedPropertyIds.includes(property.id) || false;
+            {sortedProperties.map(property => {
+              const isLinked = linkedPropertyIds.has(property.id);
               
               return (
                 <ListItem
@@ -603,13 +697,7 @@ const TeamPage: React.FC = () => {
                     control={
                       <Checkbox
                         checked={isLinked}
-                        onChange={() => {
-                          if (isLinked) {
-                            handleUnlinkFromProperty(selectedContactForProperty!.id, property.id);
-                          } else {
-                            handleLinkToProperty(selectedContactForProperty!.id, property.id);
-                          }
-                        }}
+                        onChange={() => handleTogglePropertyLink(property.id)}
                         size="small"
                       />
                     }
@@ -634,11 +722,9 @@ const TeamPage: React.FC = () => {
                       </Box>
                     }
                     secondary={
-                      <Box>
-                        <Typography variant="caption" display="block">
-                          Status: {property.status}
-                        </Typography>
-                        <Typography variant="caption" display="block">
+                      <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                        <StatusChip status={property.status} label={property.status} />
+                        <Typography variant="caption" color="text.secondary">
                           Offer Price: ${property.offerPrice.toLocaleString()}
                         </Typography>
                       </Box>
@@ -649,7 +735,7 @@ const TeamPage: React.FC = () => {
             })}
           </List>
           
-          {properties.length === 0 && (
+          {sortedProperties.length === 0 && (
             <Box textAlign="center" py={4}>
               <Typography variant="body2" color="text.secondary">
                 No properties found. Add properties first.

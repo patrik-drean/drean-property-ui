@@ -23,6 +23,7 @@ import {
   Link,
   styled,
   Checkbox,
+  Chip,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { PropertyLead, CreatePropertyLead } from '../types/property';
@@ -141,6 +142,13 @@ const PropertyLeadsPage: React.FC = () => {
   // Default message template
   const defaultMessageTemplate = `Hi there! My name is Patrik. I really like this property and believe it has great potential. I'd like to explore an offer around {PRICE}. I'm an experienced investor who is reliable and quick when it comes to closing. If this number is in the ballpark, I'd love to discuss further. Let me know what you and the seller think! Have a great day! 
 {ZILLOW_LINK}`;
+
+  // Helper function to extract street address (without city and state)
+  const extractStreetAddress = (fullAddress: string): string => {
+    // Split by comma and take the first part (street address)
+    const parts = fullAddress.split(',');
+    return parts[0]?.trim() || fullAddress;
+  };
 
   // Load custom message from localStorage on component mount
   useEffect(() => {
@@ -409,10 +417,12 @@ const PropertyLeadsPage: React.FC = () => {
   const replaceTemplateVariables = useCallback((template: string, lead: PropertyLead) => {
     const discountedPrice = Math.round(lead.listingPrice * 0.8);
     const formattedPrice = formatCurrencyInK(discountedPrice);
+    const streetAddress = extractStreetAddress(lead.address);
     
     return template
       .replace(/{PRICE}/g, formattedPrice)
-      .replace(/{ZILLOW_LINK}/g, lead.zillowLink || '');
+      .replace(/{ZILLOW_LINK}/g, lead.zillowLink || '')
+      .replace(/{ADDRESS}/g, streetAddress);
   }, []);
 
   const copyTemplatedMessage = useCallback(async (lead: PropertyLead) => {
@@ -1401,68 +1411,148 @@ const PropertyLeadsPage: React.FC = () => {
       <Dialog
         open={openMessageDialog}
         onClose={handleCloseMessageDialog}
-        maxWidth="md"
+        maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            minHeight: '500px'
+          }
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ pb: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h6">Customize Message Template</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>Customize Message Template</Typography>
             <Tooltip title="Reset to default message">
-              <IconButton onClick={handleResetToDefault} color="secondary">
-                <Icons.Refresh />
+              <IconButton 
+                onClick={handleResetToDefault} 
+                size="small"
+                sx={{ 
+                  color: 'text.secondary',
+                  '&:hover': { color: 'primary.main' }
+                }}
+              >
+                <Icons.Refresh fontSize="small" />
               </IconButton>
             </Tooltip>
           </Box>
         </DialogTitle>
-        <DialogContent>
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Customize your message template. Use the following variables:
+        <DialogContent sx={{ pt: 0 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Customize your message template. Use the following variables:
+          </Typography>
+          
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+              Available variables:
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <Box sx={{ 
-                backgroundColor: 'primary.light', 
-                color: 'primary.contrastText', 
-                px: 1, 
-                py: 0.5, 
-                borderRadius: 1,
-                fontSize: '0.875rem'
-              }}>
-                {'{PRICE}'} - Formatted offer price (e.g., $400K)
-              </Box>
-              <Box sx={{ 
-                backgroundColor: 'secondary.light', 
-                color: 'secondary.contrastText', 
-                px: 1, 
-                py: 0.5, 
-                borderRadius: 1,
-                fontSize: '0.875rem'
-              }}>
-                {'{ZILLOW_LINK}'} - Property Zillow link
-              </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              <Chip
+                label="{PRICE}"
+                size="small"
+                variant="outlined"
+                onClick={() => {
+                  const textarea = messageTextareaRef.current;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const text = textarea.value;
+                    const before = text.substring(0, start);
+                    const after = text.substring(end);
+                    const newText = before + '{PRICE}' + after;
+                    textarea.value = newText;
+                    textarea.focus();
+                    textarea.setSelectionRange(start + 7, start + 7);
+                  }
+                }}
+                sx={{ cursor: 'pointer', fontSize: '0.75rem' }}
+              />
+              <Chip
+                label="{ZILLOW_LINK}"
+                size="small"
+                variant="outlined"
+                onClick={() => {
+                  const textarea = messageTextareaRef.current;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const text = textarea.value;
+                    const before = text.substring(0, start);
+                    const after = text.substring(end);
+                    const newText = before + '{ZILLOW_LINK}' + after;
+                    textarea.value = newText;
+                    textarea.focus();
+                    textarea.setSelectionRange(start + 13, start + 13);
+                  }
+                }}
+                sx={{ cursor: 'pointer', fontSize: '0.75rem' }}
+              />
+              <Chip
+                label="{ADDRESS}"
+                size="small"
+                variant="outlined"
+                onClick={() => {
+                  const textarea = messageTextareaRef.current;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const text = textarea.value;
+                    const before = text.substring(0, start);
+                    const after = text.substring(end);
+                    const newText = before + '{ADDRESS}' + after;
+                    textarea.value = newText;
+                    textarea.focus();
+                    textarea.setSelectionRange(start + 9, start + 9);
+                  }
+                }}
+                sx={{ cursor: 'pointer', fontSize: '0.75rem' }}
+              />
             </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              Click any variable to insert it at the cursor position
+            </Typography>
           </Box>
+          
           <TextField
             autoFocus
             multiline
-            rows={8}
+            rows={10}
             fullWidth
             variant="outlined"
             label="Message Template"
             defaultValue={customMessage}
             inputRef={messageTextareaRef}
             placeholder="Enter your custom message template..."
-            sx={{ fontFamily: 'monospace' }}
+            sx={{ 
+              fontFamily: 'monospace',
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 1.5
+              }
+            }}
             inputProps={{
-              style: { fontSize: '14px' }
+              style: { fontSize: '14px', lineHeight: '1.5' }
             }}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseMessageDialog} color="inherit">
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button 
+            onClick={handleCloseMessageDialog} 
+            sx={{ 
+              color: 'text.secondary',
+              '&:hover': { backgroundColor: 'action.hover' }
+            }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSaveCustomMessage} variant="contained" color="primary">
+          <Button 
+            onClick={handleSaveCustomMessage} 
+            variant="contained" 
+            sx={{ 
+              borderRadius: 1.5,
+              px: 3,
+              py: 1
+            }}
+          >
             Save Template
           </Button>
         </DialogActions>

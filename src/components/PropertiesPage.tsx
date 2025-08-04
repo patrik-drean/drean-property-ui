@@ -220,8 +220,32 @@ const PropertiesPage: React.FC = () => {
     };
 
     properties.forEach(property => {
-      counts[property.status].count += 1;
-      counts[property.status].units += property.units || 0;
+      // For most statuses, use the property-level status
+      if (property.status !== 'Needs Tenant' && property.status !== 'Operational') {
+        counts[property.status].count += 1;
+        counts[property.status].units += property.units || 0;
+      } else {
+        // For "Needs Tenant" and "Operational" properties, count based on actual unit statuses
+        if (property.propertyUnits && property.propertyUnits.length > 0) {
+          // Count units by their individual statuses
+          property.propertyUnits.forEach(unit => {
+            if (unit.status === 'Vacant') {
+              counts['Needs Tenant'].units += 1;
+            } else if (unit.status === 'Operational') {
+              counts['Operational'].units += 1;
+            } else if (unit.status === 'Behind On Rent') {
+              counts['Needs Tenant'].units += 1;
+            }
+          });
+          
+          // Count the property itself (for property count)
+          counts[property.status].count += 1;
+        } else {
+          // Fallback to property-level status if no unit data
+          counts[property.status].count += 1;
+          counts[property.status].units += property.units || 0;
+        }
+      }
     });
 
     return counts;
@@ -466,7 +490,6 @@ ${property.zillowLink}`;
         px: 1,
         gap: { xs: 2, sm: 0 }
       }}>
-        <Typography variant="h4" component="h1">Properties</Typography>
         <Box sx={{ 
           display: 'flex', 
           flexDirection: { xs: 'column', sm: 'row' },
@@ -581,7 +604,9 @@ ${property.zillowLink}`;
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedProperties.map((property) => (
+              {sortedProperties
+                .filter(property => !['Operational', 'Selling', 'Needs Tenant'].includes(property.status))
+                .map((property) => (
                 <StyledTableRow key={property.id}>
                   <TableCell sx={{ pl: 1 }}>
                     <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
@@ -1361,8 +1386,151 @@ ${property.zillowLink}`;
         })}
       </Box>
 
+      {/* Operational Properties Table */}
+      <Box sx={{ mt: 4, mb: 3 }}>
+        <TableContainer 
+          component={Paper} 
+          elevation={0} 
+          sx={{ 
+            borderRadius: 2, 
+            mb: 2,
+            overflow: 'visible',
+            width: '100%',
+            border: '1px solid #e0e0e0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            '& .MuiTable-root': {
+              borderCollapse: 'collapse',
+            },
+            '& .MuiTableRow-root:last-child .MuiTableCell-root': {
+              borderBottom: 'none'
+            }
+          }}
+        >
+          <Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }} padding="none">
+            <TableHead>
+              <TableRow>
+                <StyledTableCell className="header" width="30%" sx={{ pl: 1 }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Address</Typography>
+                </StyledTableCell>
+                <StyledTableCell className="header" width="8%" sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Units</Typography>
+                </StyledTableCell>
+                <StyledTableCell className="header" width="12%">
+                  <Typography variant="body2" fontWeight="bold" noWrap>Status</Typography>
+                </StyledTableCell>
+                <StyledTableCell className="header" width="15%">
+                  <Typography variant="body2" fontWeight="bold" noWrap>Expenses</Typography>
+                </StyledTableCell>
+                <StyledTableCell className="header" width="15%">
+                  <Typography variant="body2" fontWeight="bold" noWrap>Rent</Typography>
+                </StyledTableCell>
+                <StyledTableCell className="header" width="15%">
+                  <Typography variant="body2" fontWeight="bold" noWrap>Cashflow</Typography>
+                </StyledTableCell>
+                <StyledTableCell className="header" width="5%" sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Actions</Typography>
+                </StyledTableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {sortedProperties
+                .filter(property => ['Operational', 'Selling', 'Needs Tenant'].includes(property.status))
+                .map((property) => {
+                                     // Calculate total expenses
+                   const totalExpenses = property.monthlyExpenses?.total || 0;
+                   // Use actual rent
+                   const rent = property.actualRent || 0;
+                   // Calculate cashflow
+                   const cashflow = rent - totalExpenses;
+                  
+                  return (
+                    <StyledTableRow key={property.id}>
+                      <TableCell sx={{ pl: 1 }}>
+                        <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {property.zillowLink && (
+                              <Tooltip title="Open Zillow" arrow>
+                                <IconButton
+                                  href={property.zillowLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  size="small"
+                                >
+                                  <Icons.OpenInNew fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            <RouterLink
+                              to={`/properties/${encodeURIComponent(property.address)}`}
+                              style={{
+                                color: '#1976d2',
+                                textDecoration: 'none',
+                                fontWeight: 500,
+                                display: 'block',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                maxWidth: 280
+                              }}
+                            >
+                              {property.address}
+                            </RouterLink>
+                          </Box>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center' }}>
+                        {property.units || ''}
+                      </TableCell>
+                      <TableCell>
+                        <StatusChip 
+                          label={property.status} 
+                          status={property.status} 
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {formatCurrency(totalExpenses)}
+                      </TableCell>
+                      <TableCell>
+                        {formatCurrency(rent)}
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ 
+                          color: getCashflowColor(cashflow),
+                          fontWeight: 500
+                        }}>
+                          {formatCurrency(cashflow)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center' }}>
+                        <Tooltip title="Actions">
+                          <IconButton
+                            onClick={(e) => handleMenuOpen(e, property)}
+                            size="small"
+                            sx={{
+                              backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                              padding: 2,
+                              width: '20px',
+                              height: '20px',
+                              '&:hover': { 
+                                backgroundColor: 'rgba(25, 118, 210, 0.2)'
+                              }
+                            }}
+                          >
+                            <Icons.MoreVert sx={{ fontSize: '0.75rem' }} />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </StyledTableRow>
+                  );
+                })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+
       {/* Metric Summary Section */}
-      <Box sx={{ mt: 3, mb: 2 }}>
+      <Box sx={{ mt: 6, mb: 2 }}>
         <Box sx={{ 
           display: 'grid', 
           gridTemplateColumns: { 

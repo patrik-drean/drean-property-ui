@@ -354,7 +354,6 @@ const PropertyDetailsPage: React.FC = () => {
               <Box><Typography variant="caption">Units</Typography><Typography variant="h6">{property.units !== undefined && property.units !== null ? property.units : 'N/A'}</Typography></Box>
               <Box><Typography variant="caption">Offer Price</Typography><Typography variant="h6">${property.offerPrice.toLocaleString()}</Typography></Box>
               <Box><Typography variant="caption">Rehab Cost</Typography><Typography variant="h6">${property.rehabCosts.toLocaleString()}</Typography></Box>
-              <Box><Typography variant="caption">Current House Value</Typography><Typography variant="h6">{property.currentHouseValue !== undefined && property.currentHouseValue !== null ? formatCurrency(property.currentHouseValue) : 'N/A'}</Typography></Box>
               <Box><Typography variant="caption">Potential Rent</Typography><Typography variant="h6">${property.potentialRent.toLocaleString()}</Typography></Box>
               <Box><Typography variant="caption">ARV</Typography><Typography variant="h6">${property.arv.toLocaleString()}</Typography></Box>
               <Box><Typography variant="caption">Rent Ratio</Typography><Typography variant="h6" sx={{ color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts)) }}>{formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}</Typography></Box>
@@ -641,6 +640,14 @@ const PropertyDetailsPage: React.FC = () => {
                 <Box><Typography variant="caption">Down Payment</Typography><Typography variant="h6">{property.capitalCosts?.downPayment !== undefined && property.capitalCosts?.downPayment !== null ? formatCurrency(property.capitalCosts.downPayment) : 'N/A'}</Typography></Box>
                 <Box><Typography variant="caption">Other</Typography><Typography variant="h6">{property.capitalCosts?.other !== undefined && property.capitalCosts?.other !== null ? formatCurrency(property.capitalCosts.other) : 'N/A'}</Typography></Box>
                 <Box><Typography variant="caption">Total Capital Costs</Typography><Typography variant="h6" sx={{ color: 'primary.main' }}>{property.capitalCosts?.total !== undefined && property.capitalCosts?.total !== null ? formatCurrency(property.capitalCosts.total) : 'N/A'}</Typography></Box>
+              </Box>
+            </Box>
+            
+            {/* Property Value */}
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Property Value</Typography>
+              <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }} gap={{ xs: 2, sm: 3 }}>
+                <Box><Typography variant="caption">Current House Value</Typography><Typography variant="h6">{property.currentHouseValue !== undefined && property.currentHouseValue !== null ? formatCurrency(property.currentHouseValue) : 'N/A'}</Typography></Box>
               </Box>
             </Box>
           </AccordionDetails>

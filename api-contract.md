@@ -42,7 +42,46 @@
     "score": number,
     "zillowLink": "string",
     "squareFootage": number | null,
-    "units": number | null
+    "units": number | null,
+    "actualRent": number,
+    "currentHouseValue": number,
+    "propertyUnits": [
+      {
+        "id": "string",
+        "propertyId": "string",
+        "status": "string",
+        "rent": number,
+        "notes": "string",
+        "createdAt": "string",
+        "updatedAt": "string"
+      }
+    ],
+    "monthlyExpenses": {
+      "id": "string",
+      "propertyId": "string",
+      "mortgage": number,
+      "taxes": number,
+      "insurance": number,
+      "propertyManagement": number,
+      "utilities": number,
+      "vacancy": number,
+      "capEx": number,
+      "other": number,
+      "total": number,
+      "createdAt": "string",
+      "updatedAt": "string"
+    } | null,
+    "capitalCosts": {
+      "id": "string",
+      "propertyId": "string",
+      "closingCosts": number,
+      "upfrontRepairs": number,
+      "downPayment": number,
+      "other": number,
+      "total": number,
+      "createdAt": "string",
+      "updatedAt": "string"
+    } | null
   }
 ]
 ```
@@ -79,7 +118,46 @@
   "score": number,
   "zillowLink": "string",
   "squareFootage": number | null,
-  "units": number | null
+  "units": number | null,
+  "actualRent": number,
+  "currentHouseValue": number,
+  "propertyUnits": [
+    {
+      "id": "string",
+      "propertyId": "string",
+      "status": "string",
+      "rent": number,
+      "notes": "string",
+      "createdAt": "string",
+      "updatedAt": "string"
+    }
+  ],
+  "monthlyExpenses": {
+    "id": "string",
+    "propertyId": "string",
+    "mortgage": number,
+    "taxes": number,
+    "insurance": number,
+    "propertyManagement": number,
+    "utilities": number,
+    "vacancy": number,
+    "capEx": number,
+    "other": number,
+    "total": number,
+    "createdAt": "string",
+    "updatedAt": "string"
+  } | null,
+  "capitalCosts": {
+    "id": "string",
+    "propertyId": "string",
+    "closingCosts": number,
+    "upfrontRepairs": number,
+    "downPayment": number,
+    "other": number,
+    "total": number,
+    "createdAt": "string",
+    "updatedAt": "string"
+  } | null
 }
 ```
 
@@ -112,7 +190,38 @@
   "score": number,
   "zillowLink": "string",
   "squareFootage": number | null,
-  "units": number | null
+  "units": number | null,
+  "actualRent": number,
+  "currentHouseValue": number,
+  "propertyUnits": [
+    {
+      "id": "string",
+      "propertyId": "string",
+      "status": "string",
+      "rent": number,
+      "notes": "string"
+    }
+  ],
+  "monthlyExpenses": {
+    "id": "string",
+    "propertyId": "string",
+    "mortgage": number,
+    "taxes": number,
+    "insurance": number,
+    "propertyManagement": number,
+    "utilities": number,
+    "vacancy": number,
+    "capEx": number,
+    "other": number
+  } | null,
+  "capitalCosts": {
+    "id": "string",
+    "propertyId": "string",
+    "closingCosts": number,
+    "upfrontRepairs": number,
+    "downPayment": number,
+    "other": number
+  } | null
 }
 ```
 - **Response**: Created Property object with ID
@@ -148,7 +257,38 @@
   "score": number,
   "zillowLink": "string",
   "squareFootage": number | null,
-  "units": number | null
+  "units": number | null,
+  "actualRent": number,
+  "currentHouseValue": number,
+  "propertyUnits": [
+    {
+      "id": "string",
+      "propertyId": "string",
+      "status": "string",
+      "rent": number,
+      "notes": "string"
+    }
+  ],
+  "monthlyExpenses": {
+    "id": "string",
+    "propertyId": "string",
+    "mortgage": number,
+    "taxes": number,
+    "insurance": number,
+    "propertyManagement": number,
+    "utilities": number,
+    "vacancy": number,
+    "capEx": number,
+    "other": number
+  } | null,
+  "capitalCosts": {
+    "id": "string",
+    "propertyId": "string",
+    "closingCosts": number,
+    "upfrontRepairs": number,
+    "downPayment": number,
+    "other": number
+  } | null
 }
 ```
 - **Response**: Updated Property object with same schema as request
@@ -651,8 +791,10 @@
     "name": "string",
     "email": "string",
     "phone": "string",
+    "secondaryPhone": "string" | null,
     "type": "string",
     "location": "string",
+    "company": "string" | null,
     "notes": "string",
     "tags": ["string"],
     "createdAt": "string",
@@ -681,8 +823,10 @@
   "name": "string",
   "email": "string",
   "phone": "string",
+  "secondaryPhone": "string" | null,
   "type": "string",
   "location": "string",
+  "company": "string" | null,
   "notes": "string",
   "tags": ["string"],
   "createdAt": "string",
@@ -702,8 +846,10 @@
   "name": "string",
   "email": "string",
   "phone": "string",
+  "secondaryPhone": "string" | null,
   "type": "string",
   "location": "string",
+  "company": "string" | null,
   "notes": "string",
   "tags": ["string"]
 }
@@ -722,8 +868,10 @@
   "name": "string",
   "email": "string",
   "phone": "string",
+  "secondaryPhone": "string" | null,
   "type": "string",
   "location": "string",
+  "company": "string" | null,
   "notes": "string",
   "tags": ["string"]
 }
@@ -778,3 +926,39 @@
   - `DATABASE_URL` (use the Railway-provided proxy URL for local dev)
   - `RAILWAY_ENVIRONMENT=true`
   - `ASPNETCORE_ENVIRONMENT=Production` (or `Development` for local)
+
+## New Property Fields (Added 2024)
+
+### Property Units
+- **`propertyUnits`**: Array of Unit objects representing individual rental units within a property
+- **Unit Status Values**: 
+  - `"Vacant"`: Unit is currently unoccupied
+  - `"Behind On Rent"`: Tenant is behind on rent payments
+  - `"Operational"`: Unit is occupied and generating rent
+- **Architecture**: Units are designed to be potentially separable into their own entity in the future
+
+### Monthly Expenses
+- **`monthlyExpenses`**: Object containing all monthly expense categories
+- **Fields**: All numeric values representing monthly costs
+  - `mortgage`: Monthly mortgage payment
+  - `taxes`: Monthly property taxes
+  - `insurance`: Monthly insurance premium
+  - `propertyManagement`: Monthly property management fees
+  - `utilities`: Monthly utility costs
+  - `vacancy`: Monthly vacancy allowance
+  - `capEx`: Monthly capital expenditure allowance
+  - `other`: Other monthly expenses
+  - `total`: Calculated total of all monthly expenses
+
+### Capital Costs
+- **`capitalCosts`**: Object containing all upfront capital costs
+- **Fields**: All numeric values representing one-time costs
+  - `closingCosts`: Property closing costs
+  - `upfrontRepairs`: Initial repair costs
+  - `downPayment`: Down payment amount
+  - `other`: Other capital costs
+  - `total`: Calculated total of all capital costs
+
+### Additional Property Fields
+- **`actualRent`**: Sum of all unit rent values (calculated field)
+- **`currentHouseValue`**: Current market value of the property

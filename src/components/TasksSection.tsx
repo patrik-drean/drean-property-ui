@@ -355,60 +355,88 @@ const TasksSection: React.FC<TasksSectionProps> = memo(({ property, onPropertyUp
             <Typography variant="body2" color="text.secondary">No tasks in this section.</Typography>
           ) : (
             tasks.map(task => (
-              <ListItem key={task.id} sx={{ px: 0, py: 1 }}>
-                <ListItemIcon sx={{ minWidth: 32 }}>
+              <ListItem key={task.id} sx={{ px: 0, py: 1, minHeight: 48, alignItems: 'flex-start' }}>
+                <ListItemIcon sx={{ minWidth: 36, mt: 0.5, mr: 1 }}>
                   <Checkbox
                     checked={task.is_completed}
                     onChange={() => handleCompleteTask(task)}
                     size="small"
+                    sx={{
+                      color: task.priority > 1 ? getPriorityColor(task.priority) : 'rgba(0, 0, 0, 0.54)',
+                      '&.Mui-checked': {
+                        color: task.priority > 1 ? getPriorityColor(task.priority) : 'primary.main',
+                      },
+                      '&:hover': {
+                        backgroundColor: task.priority > 1 ? `${getPriorityColor(task.priority)}10` : 'rgba(0, 0, 0, 0.04)',
+                      },
+                      '& .MuiSvgIcon-root': {
+                        fontSize: '1.25rem',
+                      }
+                    }}
                   />
                 </ListItemIcon>
                 <ListItemText
                   primary={
-                    <Box display="flex" alignItems="center" gap={1}>
+                    <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                       <Typography 
                         variant="body2" 
                         sx={{ 
                           textDecoration: task.is_completed ? 'line-through' : 'none',
-                          color: task.is_completed ? 'text.secondary' : 'text.primary'
+                          color: task.is_completed ? 'text.secondary' : (task.priority > 1 ? getPriorityColor(task.priority) : 'text.primary'),
+                          flex: 1,
+                          minWidth: 0,
+                          lineHeight: 1.5
                         }}
                       >
                         {task.content}
                       </Typography>
-                      {task.priority > 1 && (
-                        <Chip
-                          label={getPriorityLabel(task.priority)}
-                          size="small"
+                      <Box display="flex" gap={0.5} flexShrink={0}>
+                        {task.due && (
+                          <Chip
+                            label={formatDueDate(task.due)}
+                            size="small"
+                            sx={{
+                              color: getDueDateColor(task.due),
+                              backgroundColor: 'transparent',
+                              border: `1px solid ${getDueDateColor(task.due)}`,
+                              height: 16,
+                              fontSize: '0.7rem',
+                              '& .MuiChip-label': { px: 0.5 }
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Box>
+                  }
+                  secondary={
+                    <Box sx={{ minHeight: task.description ? 'auto' : 16 }}>
+                      {task.description && (
+                        <Typography 
+                          variant="caption" 
+                          color="text.secondary"
                           sx={{
-                            backgroundColor: getPriorityColor(task.priority),
-                            color: 'white',
-                            height: 16,
-                            fontSize: '0.7rem',
-                            '& .MuiChip-label': { px: 0.5 }
+                            wordBreak: 'break-all',
+                            overflowWrap: 'break-word',
+                            display: 'block',
+                            mt: 0.5,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '100%'
                           }}
-                        />
-                      )}
-                      {task.due && (
-                        <Chip
-                          label={formatDueDate(task.due)}
-                          size="small"
-                          sx={{
-                            color: getDueDateColor(task.due),
-                            backgroundColor: 'transparent',
-                            border: `1px solid ${getDueDateColor(task.due)}`,
-                            height: 16,
-                            fontSize: '0.7rem',
-                            '& .MuiChip-label': { px: 0.5 }
-                          }}
-                        />
+                          title={task.description}
+                        >
+                          {task.description}
+                        </Typography>
                       )}
                     </Box>
                   }
-                  secondary={task.description && (
-                    <Typography variant="caption" color="text.secondary">
-                      {task.description}
-                    </Typography>
-                  )}
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: task.description ? 'flex-start' : 'center',
+                    minHeight: 48
+                  }}
                 />
                 <IconButton
                   size="small"
@@ -416,6 +444,7 @@ const TasksSection: React.FC<TasksSectionProps> = memo(({ property, onPropertyUp
                     setSelectedTask(task);
                     setTaskMenuAnchor(e.currentTarget);
                   }}
+                  sx={{ mt: 0.5 }}
                 >
                   <Icons.MoreVert fontSize="small" />
                 </IconButton>

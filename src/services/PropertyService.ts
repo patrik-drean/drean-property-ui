@@ -33,6 +33,43 @@ interface PropertyDTO {
   zillowLink: string;
   squareFootage: number | null;
   units: number | null;
+  actualRent: number;
+  currentHouseValue: number;
+  propertyUnits: {
+    id: string;
+    propertyId: string;
+    status: string;
+    rent: number;
+    notes: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  monthlyExpenses: {
+    id: string;
+    propertyId: string;
+    mortgage: number;
+    taxes: number;
+    insurance: number;
+    propertyManagement: number;
+    utilities: number;
+    vacancy: number;
+    capEx: number;
+    other: number;
+    total: number;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
+  capitalCosts: {
+    id: string;
+    propertyId: string;
+    closingCosts: number;
+    upfrontRepairs: number;
+    downPayment: number;
+    other: number;
+    total: number;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
 }
 
 // Convert API PropertyDTO to our frontend Property type
@@ -54,6 +91,11 @@ const mapDTOToProperty = (dto: PropertyDTO): Property => {
     zillowLink: dto.zillowLink,
     squareFootage: dto.squareFootage,
     units: dto.units,
+    actualRent: dto.actualRent,
+    currentHouseValue: dto.currentHouseValue,
+    propertyUnits: dto.propertyUnits,
+    monthlyExpenses: dto.monthlyExpenses,
+    capitalCosts: dto.capitalCosts,
   };
 };
 

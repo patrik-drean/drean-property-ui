@@ -27,7 +27,12 @@ const sampleProperties: Property[] = [
     score: 7,
     zillowLink: 'https://www.zillow.com/homedetails/123-main-st',
     squareFootage: 1800,
-    units: 1
+    units: 1,
+    actualRent: 0,
+    currentHouseValue: 0,
+    propertyUnits: [],
+    monthlyExpenses: null,
+    capitalCosts: null
   },
   {
     id: '2',
@@ -54,7 +59,12 @@ const sampleProperties: Property[] = [
     score: 6,
     zillowLink: 'https://www.zillow.com/homedetails/456-oak-ave',
     squareFootage: 1400,
-    units: 1
+    units: 1,
+    actualRent: 0,
+    currentHouseValue: 0,
+    propertyUnits: [],
+    monthlyExpenses: null,
+    capitalCosts: null
   },
   {
     id: '5',
@@ -82,6 +92,11 @@ const sampleProperties: Property[] = [
     zillowLink: 'https://www.zillow.com/homedetails/999-wrong-st',
     squareFootage: 2000,
     units: 1,
+    actualRent: 0,
+    currentHouseValue: 0,
+    propertyUnits: [],
+    monthlyExpenses: null,
+    capitalCosts: null,
     archived: true
   },
   {
@@ -110,6 +125,11 @@ const sampleProperties: Property[] = [
     zillowLink: 'https://www.zillow.com/homedetails/777-maple-dr',
     squareFootage: 1600,
     units: 1,
+    actualRent: 0,
+    currentHouseValue: 0,
+    propertyUnits: [],
+    monthlyExpenses: null,
+    capitalCosts: null,
     archived: false
   },
   {
@@ -138,6 +158,11 @@ const sampleProperties: Property[] = [
     zillowLink: 'https://www.zillow.com/homedetails/888-cedar-ln',
     squareFootage: 1500,
     units: 1,
+    actualRent: 0,
+    currentHouseValue: 0,
+    propertyUnits: [],
+    monthlyExpenses: null,
+    capitalCosts: null,
     archived: false
   },
   {
@@ -166,6 +191,11 @@ const sampleProperties: Property[] = [
     zillowLink: 'https://www.zillow.com/homedetails/999-birch-rd',
     squareFootage: 1700,
     units: 1,
+    actualRent: 0,
+    currentHouseValue: 0,
+    propertyUnits: [],
+    monthlyExpenses: null,
+    capitalCosts: null,
     archived: false
   }
 ];
@@ -198,6 +228,11 @@ const archivedProperties: Property[] = [
     zillowLink: 'https://www.zillow.com/homedetails/789-pine-blvd',
     squareFootage: 1600,
     units: 1,
+    actualRent: 0,
+    currentHouseValue: 0,
+    propertyUnits: [],
+    monthlyExpenses: null,
+    capitalCosts: null,
     archived: true
   },
   {
@@ -226,6 +261,11 @@ const archivedProperties: Property[] = [
     zillowLink: 'https://www.zillow.com/homedetails/321-elm-st',
     squareFootage: 1200,
     units: 1,
+    actualRent: 0,
+    currentHouseValue: 0,
+    propertyUnits: [],
+    monthlyExpenses: null,
+    capitalCosts: null,
     archived: true
   }
 ];

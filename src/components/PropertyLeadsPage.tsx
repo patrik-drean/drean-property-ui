@@ -529,7 +529,12 @@ const PropertyLeadsPage: React.FC = () => {
         score: 0,
         zillowLink: lead.zillowLink,
         squareFootage: lead.squareFootage,
-        units: lead.units
+        units: lead.units,
+        actualRent: 0,
+        currentHouseValue: 0,
+        propertyUnits: [],
+        monthlyExpenses: null,
+        capitalCosts: null
       });
       
       // Create a complete update object with all fields from the original lead

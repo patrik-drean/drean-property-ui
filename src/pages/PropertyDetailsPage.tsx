@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, Paper, Button, Chip, Card, CardContent, TextField, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, IconButton, Tooltip, Link as MuiLink, Divider, Snackbar, Alert, Avatar, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, Card, TextField, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, IconButton, Tooltip, Link as MuiLink, Divider, Snackbar, Alert, Avatar, Select, MenuItem, FormControl, InputLabel, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, Note, Link as PropertyLink, CreateNote, CreateLink, Contact } from '../types/property';
 import { getProperty } from '../services/api';
@@ -11,14 +11,8 @@ import ContactDialog from '../components/ContactDialog';
 import {
   calculateRentRatio,
   calculateARVRatio,
-  calculateDownPayment,
-  calculateLoanAmount,
   calculateNewLoan,
   calculateHomeEquity,
-  calculateRefinancingNewLoan,
-  calculateRefinancingHomeEquity,
-  calculateRefinancingCashflow,
-  calculateMonthlyMortgage,
   calculateCashflow,
   calculateHoldScore,
   calculateFlipScore,
@@ -44,6 +38,7 @@ const PropertyDetailsPage: React.FC = () => {
   const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
   const createdByOptions = ['Patrik', 'Dillon', 'Other'];
 
@@ -273,6 +268,14 @@ const PropertyDetailsPage: React.FC = () => {
     }
   }, [property]);
 
+  const handleAccordionChange = (section: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+    setExpandedSections(prev => 
+      isExpanded 
+        ? [...prev, section]
+        : prev.filter(s => s !== section)
+    );
+  };
+
   if (loading) return <Box p={4}><Typography>Loading...</Typography></Box>;
   if (!property) return <Box p={4}><Typography>Property not found.</Typography></Box>;
 
@@ -299,8 +302,16 @@ const PropertyDetailsPage: React.FC = () => {
       </Box>
       {/* Property Details - takes up full width */}
       <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
-        <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} gap={2} mb={2}>
-          <MuiLink href={property.zillowLink} target="_blank" rel="noopener noreferrer" variant="h6" sx={{ fontWeight: 600, color: 'primary.main', textDecoration: 'none', wordBreak: 'break-word' }}>{property.address}</MuiLink>
+        {/* Header with Address and Description */}
+        <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} gap={2} mb={3}>
+          <Box flex={1}>
+            <MuiLink href={property.zillowLink} target="_blank" rel="noopener noreferrer" variant="h6" sx={{ fontWeight: 600, color: 'primary.main', textDecoration: 'none', wordBreak: 'break-word' }}>{property.address}</MuiLink>
+            {property.notes && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {property.notes}
+              </Typography>
+            )}
+          </Box>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Chip 
               label={property.status} 
@@ -317,152 +328,268 @@ const PropertyDetailsPage: React.FC = () => {
                 }
               }}
             />
-            <Tooltip 
-              title={
-                <>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Hold Score Breakdown:</Typography>
-                  {(() => {
-                    const breakdown = getHoldScoreBreakdown(property);
-                    const cashflow = calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv));
-                    const cashflowPerUnit = cashflow / (property.units || 1);
-                    const perfectRent = calculatePerfectRentForHoldScore(property.offerPrice, property.rehabCosts, property.arv, property.units || 1);
-                    return (
-                      <>
-                        <Typography variant="body2">
-                          Cashflow: {breakdown.cashflowScore}/8 points
-                          {` (${formatCurrency(cashflowPerUnit)}/unit)`}
-                        </Typography>
-                        <Typography variant="body2">
-                          Rent Ratio: {breakdown.rentRatioScore}/2 points
-                          {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
-                          Total Hold Score: {breakdown.totalScore}/10 points
-                        </Typography>
-                        <Typography variant="body2" sx={{ 
-                          mt: 1, 
-                          pt: 1, 
-                          borderTop: '1px solid #eee', 
-                          color: '#2e7d32', 
-                          fontWeight: 'bold',
-                          backgroundColor: '#e8f5e9',
-                          p: 0.5,
-                          borderRadius: 1,
-                          textAlign: 'center'
-                        }}>
-                          Perfect Rent for 10/10: {formatCurrency(perfectRent)}/month
-                        </Typography>
-                      </>
-                    );
-                  })()}
-                </>
-              } 
-              arrow 
-              placement="top"
-            >
-              <Box sx={{ 
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: getScoreBackgroundColor(calculateHoldScore(property)),
-                color: getScoreColor(calculateHoldScore(property)),
-                p: '2px 6px',
-                borderRadius: 2,
-                fontWeight: 'bold',
-                minWidth: '60px',
-                height: '24px',
-                cursor: 'help'
-              }}>
-                Hold: {calculateHoldScore(property)}/10
-              </Box>
-            </Tooltip>
-            <Tooltip 
-              title={
-                <>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Flip Score Breakdown:</Typography>
-                  {(() => {
-                    const breakdown = getFlipScoreBreakdown(property);
-                    const perfectARV = calculatePerfectARVForFlipScore(property.offerPrice, property.rehabCosts);
-                    return (
-                      <>
-                        <Typography variant="body2">
-                          ARV Ratio: {breakdown.arvRatioScore}/8 points
-                          {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
-                        </Typography>
-                        <Typography variant="body2">
-                          Home Equity: {breakdown.equityScore}/2 points
-                          {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
-                          Total Flip Score: {breakdown.totalScore}/10 points
-                        </Typography>
-                        <Typography variant="body2" sx={{ 
-                          mt: 1, 
-                          pt: 1, 
-                          borderTop: '1px solid #eee', 
-                          color: '#e65100', 
-                          fontWeight: 'bold',
-                          backgroundColor: '#fff3e0',
-                          p: 0.5,
-                          borderRadius: 1,
-                          textAlign: 'center'
-                        }}>
-                          Perfect ARV for 10/10: {formatCurrency(perfectARV)}
-                        </Typography>
-                      </>
-                    );
-                  })()}
-                </>
-              } 
-              arrow 
-              placement="top"
-            >
-              <Box sx={{ 
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: getScoreBackgroundColor(calculateFlipScore(property)),
-                color: getScoreColor(calculateFlipScore(property)),
-                p: '2px 6px',
-                borderRadius: 2,
-                fontWeight: 'bold',
-                minWidth: '60px',
-                height: '24px',
-                cursor: 'help'
-              }}>
-                Flip: {calculateFlipScore(property)}/10
-              </Box>
-            </Tooltip>
           </Box>
         </Box>
-        <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(5, 1fr)' }} gap={{ xs: 2, sm: 4 }} mb={2}>
-          <Box><Typography variant="caption">Offer Price</Typography><Typography variant="h6">${property.offerPrice.toLocaleString()}</Typography></Box>
-          <Box><Typography variant="caption">Rehab Cost</Typography><Typography variant="h6">${property.rehabCosts.toLocaleString()}</Typography></Box>
-          <Box><Typography variant="caption">Monthly Rent</Typography><Typography variant="h6">${property.potentialRent.toLocaleString()}</Typography></Box>
-          <Box><Typography variant="caption">ARV</Typography><Typography variant="h6">${property.arv.toLocaleString()}</Typography></Box>
-          <Box><Typography variant="caption">Sq Ft</Typography><Typography variant="h6">{property.squareFootage ? property.squareFootage.toLocaleString() : 'N/A'}</Typography></Box>
-          <Box><Typography variant="caption">Units</Typography><Typography variant="h6">{property.units ? property.units : 'N/A'}</Typography></Box>
-          <Box><Typography variant="caption">Rent Ratio</Typography><Typography variant="h6" sx={{ color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts)) }}>{formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}</Typography></Box>
-          <Box><Typography variant="caption">ARV Ratio</Typography><Typography variant="h6" sx={{ color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-          <Box><Typography variant="caption">Home Equity</Typography><Typography variant="h6" sx={{ color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-          <Box><Typography variant="caption">Monthly Cashflow</Typography><Typography variant="h6" sx={{ color: getCashflowColor(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))) }}>{formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
-        </Box>
-        <Divider sx={{ my: 2 }} />
-        <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(6, 1fr)' }} gap={{ xs: 2, sm: 4 }} mb={2}>
-          <Box><Typography variant="caption">Down Payment (25%)</Typography><Typography variant="h6">{formatCurrency(calculateDownPayment(property.offerPrice, property.rehabCosts))}</Typography></Box>
-          <Box><Typography variant="caption">Loan Amount (75%)</Typography><Typography variant="h6">{formatCurrency(calculateLoanAmount(property.offerPrice, property.rehabCosts))}</Typography></Box>
-          <Box><Typography variant="caption">New Loan (Refinance)</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingNewLoan(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-          <Box><Typography variant="caption">Monthly Mortgage</Typography><Typography variant="h6">{formatCurrency(calculateMonthlyMortgage(calculateRefinancingNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
-          <Box><Typography variant="caption">Refinancing Home Equity</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-          <Box><Typography variant="caption">Refinancing Monthly Cashflow</Typography><Typography variant="h6">{formatCurrency(calculateRefinancingCashflow(property.potentialRent, property.offerPrice, property.arv))}</Typography></Box>
-        </Box>
 
-        <Card sx={{ background: '#f5f5f5', mb: 2 }}>
-          <CardContent>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>Description</Typography>
-            <Typography variant="body2">{property.notes || 'No notes.'}</Typography>
-          </CardContent>
-        </Card>
+        {/* Investment Details Section */}
+        <Accordion 
+          expanded={expandedSections.includes('opportunity')} 
+          onChange={handleAccordionChange('opportunity')}
+          sx={{ mb: 2, '&:before': { display: 'none' } }}
+        >
+          <AccordionSummary 
+            expandIcon={<Icons.ExpandMore />}
+            sx={{ 
+              backgroundColor: '#e3f2fd', 
+              borderRadius: 1
+            }}
+          >
+            <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600 }}>
+              Investment Details
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ pt: 2 }}>
+            <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(6, 1fr)' }} gap={{ xs: 2, sm: 3 }} mb={2}>
+              <Box><Typography variant="caption">Sq Ft</Typography><Typography variant="h6">{property.squareFootage ? property.squareFootage.toLocaleString() : 'N/A'}</Typography></Box>
+              <Box><Typography variant="caption">Units</Typography><Typography variant="h6">{property.units ? property.units : 'N/A'}</Typography></Box>
+              <Box><Typography variant="caption">Offer Price</Typography><Typography variant="h6">${property.offerPrice.toLocaleString()}</Typography></Box>
+              <Box><Typography variant="caption">Rehab Cost</Typography><Typography variant="h6">${property.rehabCosts.toLocaleString()}</Typography></Box>
+              <Box><Typography variant="caption">Potential Rent</Typography><Typography variant="h6">${property.potentialRent.toLocaleString()}</Typography></Box>
+              <Box><Typography variant="caption">ARV</Typography><Typography variant="h6">${property.arv.toLocaleString()}</Typography></Box>
+              <Box><Typography variant="caption">Rent Ratio</Typography><Typography variant="h6" sx={{ color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts)) }}>{formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}</Typography></Box>
+              <Box><Typography variant="caption">ARV Ratio</Typography><Typography variant="h6" sx={{ color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
+              <Box><Typography variant="caption">Equity</Typography><Typography variant="h6" sx={{ color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
+              <Box><Typography variant="caption">Monthly Cashflow</Typography><Typography variant="h6" sx={{ color: getCashflowColor(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))) }}>{formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
+            </Box>
+            
+            {/* Scores Section */}
+            <Box sx={{ mt: 3, p: 2, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'primary.main' }}>Investment Scores</Typography>
+              <Box display="flex" gap={2} flexWrap="wrap">
+                <Tooltip 
+                  title={
+                    <>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Hold Score Breakdown:</Typography>
+                      {(() => {
+                        const breakdown = getHoldScoreBreakdown(property);
+                        const cashflow = calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv));
+                        const cashflowPerUnit = cashflow / (property.units || 1);
+                        const perfectRent = calculatePerfectRentForHoldScore(property.offerPrice, property.rehabCosts, property.arv, property.units || 1);
+                        return (
+                          <>
+                            <Typography variant="body2">
+                              Cashflow: {breakdown.cashflowScore}/8 points
+                              {` (${formatCurrency(cashflowPerUnit)}/unit)`}
+                            </Typography>
+                            <Typography variant="body2">
+                              Rent Ratio: {breakdown.rentRatioScore}/2 points
+                              {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
+                            </Typography>
+                            <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                              Total Hold Score: {breakdown.totalScore}/10 points
+                            </Typography>
+                            <Typography variant="body2" sx={{ 
+                              mt: 1, 
+                              pt: 1, 
+                              borderTop: '1px solid #eee', 
+                              color: '#2e7d32', 
+                              fontWeight: 'bold',
+                              backgroundColor: '#e8f5e9',
+                              p: 0.5,
+                              borderRadius: 1,
+                              textAlign: 'center'
+                            }}>
+                              Perfect Rent for 10/10: {formatCurrency(perfectRent)}/month
+                            </Typography>
+                          </>
+                        );
+                      })()}
+                    </>
+                  } 
+                  arrow 
+                  placement="top"
+                >
+                  <Box sx={{ 
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: getScoreBackgroundColor(calculateHoldScore(property)),
+                    color: getScoreColor(calculateHoldScore(property)),
+                    p: '8px 16px',
+                    borderRadius: 2,
+                    fontWeight: 'bold',
+                    minWidth: '80px',
+                    height: '32px',
+                    cursor: 'help',
+                    boxShadow: 1
+                  }}>
+                    Hold: {calculateHoldScore(property)}/10
+                  </Box>
+                </Tooltip>
+                <Tooltip 
+                  title={
+                    <>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Flip Score Breakdown:</Typography>
+                      {(() => {
+                        const breakdown = getFlipScoreBreakdown(property);
+                        const perfectARV = calculatePerfectARVForFlipScore(property.offerPrice, property.rehabCosts);
+                        return (
+                          <>
+                            <Typography variant="body2">
+                              ARV Ratio: {breakdown.arvRatioScore}/8 points
+                              {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
+                            </Typography>
+                            <Typography variant="body2">
+                              Home Equity: {breakdown.equityScore}/2 points
+                              {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
+                            </Typography>
+                            <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                              Total Flip Score: {breakdown.totalScore}/10 points
+                            </Typography>
+                            <Typography variant="body2" sx={{ 
+                              mt: 1, 
+                              pt: 1, 
+                              borderTop: '1px solid #eee', 
+                              color: '#e65100', 
+                              fontWeight: 'bold',
+                              backgroundColor: '#fff3e0',
+                              p: 0.5,
+                              borderRadius: 1,
+                              textAlign: 'center'
+                            }}>
+                              Perfect ARV for 10/10: {formatCurrency(perfectARV)}
+                            </Typography>
+                          </>
+                        );
+                      })()}
+                    </>
+                  } 
+                  arrow 
+                  placement="top"
+                >
+                  <Box sx={{ 
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: getScoreBackgroundColor(calculateFlipScore(property)),
+                    color: getScoreColor(calculateFlipScore(property)),
+                    p: '8px 16px',
+                    borderRadius: 2,
+                    fontWeight: 'bold',
+                    minWidth: '80px',
+                    height: '32px',
+                    cursor: 'help',
+                    boxShadow: 1
+                  }}>
+                    Flip: {calculateFlipScore(property)}/10
+                  </Box>
+                </Tooltip>
+              </Box>
+            </Box>
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Operational Details Section */}
+        <Accordion 
+          expanded={expandedSections.includes('operational')} 
+          onChange={handleAccordionChange('operational')}
+          sx={{ mb: 2, '&:before': { display: 'none' } }}
+        >
+          <AccordionSummary 
+            expandIcon={<Icons.ExpandMore />}
+            sx={{ 
+              backgroundColor: '#e3f2fd', 
+              borderRadius: 1
+            }}
+          >
+            <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600 }}>
+              Operational Details
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ pt: 2 }}>
+            {/* Monthly P&L */}
+            <Box mb={3}>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>Monthly P&L</Typography>
+              <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(6, 1fr)' }} gap={{ xs: 2, sm: 3 }}>
+                <Box><Typography variant="caption">Mortgage</Typography><Typography variant="h6">{property.monthlyExpenses?.mortgage ? formatCurrency(property.monthlyExpenses.mortgage) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Taxes</Typography><Typography variant="h6">{property.monthlyExpenses?.taxes ? formatCurrency(property.monthlyExpenses.taxes) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Insurance</Typography><Typography variant="h6">{property.monthlyExpenses?.insurance ? formatCurrency(property.monthlyExpenses.insurance) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Property Management</Typography><Typography variant="h6">{property.monthlyExpenses?.propertyManagement ? formatCurrency(property.monthlyExpenses.propertyManagement) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Utilities</Typography><Typography variant="h6">{property.monthlyExpenses?.utilities ? formatCurrency(property.monthlyExpenses.utilities) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Vacancy</Typography><Typography variant="h6">{property.monthlyExpenses?.vacancy ? formatCurrency(property.monthlyExpenses.vacancy) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">CapEx</Typography><Typography variant="h6">{property.monthlyExpenses?.capEx ? formatCurrency(property.monthlyExpenses.capEx) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Other</Typography><Typography variant="h6">{property.monthlyExpenses?.other ? formatCurrency(property.monthlyExpenses.other) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Total Expenses</Typography><Typography variant="h6" sx={{ color: 'error.main' }}>{property.monthlyExpenses?.total ? formatCurrency(property.monthlyExpenses.total) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Actual Rent</Typography><Typography variant="h6" sx={{ color: 'success.main' }}>{property.actualRent ? formatCurrency(property.actualRent) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Cashflow</Typography><Typography variant="h6" sx={{ color: getCashflowColor((property.actualRent || 0) - (property.monthlyExpenses?.total || 0)) }}>{formatCurrency((property.actualRent || 0) - (property.monthlyExpenses?.total || 0))}</Typography></Box>
+              </Box>
+            </Box>
+
+            {/* Units */}
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>Units ({property.units || 0})</Typography>
+              {property.propertyUnits && property.propertyUnits.length > 0 ? (
+                <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }} gap={2}>
+                  {property.propertyUnits.map((unit, index) => (
+                    <Card key={unit.id || index} sx={{ p: 2, border: '1px solid #e0e0e0' }}>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                        <Typography variant="subtitle2" fontWeight={600}>Unit {index + 1}</Typography>
+                        <Chip 
+                          label={unit.status} 
+                          size="small" 
+                          sx={{ 
+                            backgroundColor: unit.status === 'Operational' ? '#4caf50' : 
+                                           unit.status === 'Vacant' ? '#ff9800' : '#f44336',
+                            color: 'white',
+                            fontSize: '0.7rem'
+                          }}
+                        />
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ mb: 0.5 }}>
+                          <strong>Rent:</strong> {formatCurrency(unit.rent)}
+                        </Typography>
+                        {unit.notes && (
+                          <Typography variant="caption" color="text.secondary">
+                            {unit.notes}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Card>
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">No unit details available.</Typography>
+              )}
+            </Box>
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Asset Details Section */}
+        <Accordion 
+          expanded={expandedSections.includes('asset')} 
+          onChange={handleAccordionChange('asset')}
+          sx={{ mb: 2, '&:before': { display: 'none' } }}
+        >
+          <AccordionSummary 
+            expandIcon={<Icons.ExpandMore />}
+            sx={{ 
+              backgroundColor: '#e3f2fd', 
+              borderRadius: 1
+            }}
+          >
+            <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600 }}>
+              Asset Details
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ pt: 2 }}>
+            <Card sx={{ background: '#f8f9fa', p: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                Asset details section - TBD
+              </Typography>
+            </Card>
+          </AccordionDetails>
+        </Accordion>
       </Paper>
       <Box display="flex" flexDirection={{ xs: 'column', lg: 'row' }} gap={3}>
         <Box flex={1} minWidth={{ xs: 'auto', lg: 300 }}>

@@ -13,6 +13,44 @@ export interface TodoMetaData {
     todoistSectionId: string | null;
 }
 
+export interface PropertyUnit {
+    id: string;
+    propertyId: string;
+    status: string;
+    rent: number;
+    notes: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface MonthlyExpenses {
+    id: string;
+    propertyId: string;
+    mortgage: number;
+    taxes: number;
+    insurance: number;
+    propertyManagement: number;
+    utilities: number;
+    vacancy: number;
+    capEx: number;
+    other: number;
+    total: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CapitalCosts {
+    id: string;
+    propertyId: string;
+    closingCosts: number;
+    upfrontRepairs: number;
+    downPayment: number;
+    other: number;
+    total: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface Property {
     id: string;
     address: string;
@@ -30,6 +68,11 @@ export interface Property {
     zillowLink: string;
     squareFootage: number | null;
     units: number | null;
+    actualRent: number;
+    currentHouseValue: number;
+    propertyUnits: PropertyUnit[];
+    monthlyExpenses: MonthlyExpenses | null;
+    capitalCosts: CapitalCosts | null;
     archived?: boolean;
 }
 

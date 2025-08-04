@@ -351,7 +351,12 @@ export const testPerfectValueCalculations = () => {
     score: 0,
     zillowLink: '',
     squareFootage: null,
-    units
+    units,
+    actualRent: 0,
+    currentHouseValue: 0,
+    propertyUnits: [],
+    monthlyExpenses: null,
+    capitalCosts: null
   };
   
   const holdScore = calculateHoldScore(testProperty);

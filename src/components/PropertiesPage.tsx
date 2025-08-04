@@ -287,7 +287,12 @@ const PropertiesPage: React.FC = () => {
           },
           todoMetaData: propertyWithScore.todoMetaData || { todoistSectionId: null },
           squareFootage: propertyWithScore.squareFootage,
-          units: propertyWithScore.units
+          units: propertyWithScore.units,
+          actualRent: propertyWithScore.actualRent,
+          currentHouseValue: propertyWithScore.currentHouseValue,
+          propertyUnits: propertyWithScore.propertyUnits,
+          monthlyExpenses: propertyWithScore.monthlyExpenses,
+          capitalCosts: propertyWithScore.capitalCosts
         };
         
         console.log('Updating property:', propertyToUpdate);

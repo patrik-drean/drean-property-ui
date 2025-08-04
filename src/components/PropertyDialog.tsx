@@ -76,7 +76,12 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     score: 0,
     zillowLink: '',
     squareFootage: null,
-    units: null
+    units: null,
+    actualRent: 0,
+    currentHouseValue: 0,
+    propertyUnits: [],
+    monthlyExpenses: null,
+    capitalCosts: null
   });
 
   // Helper function to get status color
@@ -237,7 +242,12 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
       score: 0,
       zillowLink: '',
       squareFootage: null,
-      units: null
+      units: null,
+      actualRent: 0,
+      currentHouseValue: 0,
+      propertyUnits: [],
+      monthlyExpenses: null,
+      capitalCosts: null
     });
     onClose();
   };
@@ -260,7 +270,12 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         score: property.score,
         zillowLink: property.zillowLink,
         squareFootage: property.squareFootage,
-        units: property.units
+        units: property.units,
+        actualRent: property.actualRent,
+        currentHouseValue: property.currentHouseValue,
+        propertyUnits: property.propertyUnits,
+        monthlyExpenses: property.monthlyExpenses,
+        capitalCosts: property.capitalCosts
       });
     }
   }, [property, isEditing]);

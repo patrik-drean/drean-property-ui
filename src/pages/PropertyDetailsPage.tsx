@@ -350,10 +350,11 @@ const PropertyDetailsPage: React.FC = () => {
           </AccordionSummary>
           <AccordionDetails sx={{ pt: 2 }}>
             <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(6, 1fr)' }} gap={{ xs: 2, sm: 3 }} mb={2}>
-              <Box><Typography variant="caption">Sq Ft</Typography><Typography variant="h6">{property.squareFootage ? property.squareFootage.toLocaleString() : 'N/A'}</Typography></Box>
-              <Box><Typography variant="caption">Units</Typography><Typography variant="h6">{property.units ? property.units : 'N/A'}</Typography></Box>
+              <Box><Typography variant="caption">Sq Ft</Typography><Typography variant="h6">{property.squareFootage !== undefined && property.squareFootage !== null ? property.squareFootage.toLocaleString() : 'N/A'}</Typography></Box>
+              <Box><Typography variant="caption">Units</Typography><Typography variant="h6">{property.units !== undefined && property.units !== null ? property.units : 'N/A'}</Typography></Box>
               <Box><Typography variant="caption">Offer Price</Typography><Typography variant="h6">${property.offerPrice.toLocaleString()}</Typography></Box>
               <Box><Typography variant="caption">Rehab Cost</Typography><Typography variant="h6">${property.rehabCosts.toLocaleString()}</Typography></Box>
+              <Box><Typography variant="caption">Current House Value</Typography><Typography variant="h6">{property.currentHouseValue !== undefined && property.currentHouseValue !== null ? formatCurrency(property.currentHouseValue) : 'N/A'}</Typography></Box>
               <Box><Typography variant="caption">Potential Rent</Typography><Typography variant="h6">${property.potentialRent.toLocaleString()}</Typography></Box>
               <Box><Typography variant="caption">ARV</Typography><Typography variant="h6">${property.arv.toLocaleString()}</Typography></Box>
               <Box><Typography variant="caption">Rent Ratio</Typography><Typography variant="h6" sx={{ color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts)) }}>{formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}</Typography></Box>
@@ -510,18 +511,66 @@ const PropertyDetailsPage: React.FC = () => {
             {/* Monthly P&L */}
             <Box mb={3}>
               <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>Monthly P&L</Typography>
-              <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(6, 1fr)' }} gap={{ xs: 2, sm: 3 }}>
-                <Box><Typography variant="caption">Mortgage</Typography><Typography variant="h6">{property.monthlyExpenses?.mortgage ? formatCurrency(property.monthlyExpenses.mortgage) : 'N/A'}</Typography></Box>
-                <Box><Typography variant="caption">Taxes</Typography><Typography variant="h6">{property.monthlyExpenses?.taxes ? formatCurrency(property.monthlyExpenses.taxes) : 'N/A'}</Typography></Box>
-                <Box><Typography variant="caption">Insurance</Typography><Typography variant="h6">{property.monthlyExpenses?.insurance ? formatCurrency(property.monthlyExpenses.insurance) : 'N/A'}</Typography></Box>
-                <Box><Typography variant="caption">Property Management</Typography><Typography variant="h6">{property.monthlyExpenses?.propertyManagement ? formatCurrency(property.monthlyExpenses.propertyManagement) : 'N/A'}</Typography></Box>
-                <Box><Typography variant="caption">Utilities</Typography><Typography variant="h6">{property.monthlyExpenses?.utilities ? formatCurrency(property.monthlyExpenses.utilities) : 'N/A'}</Typography></Box>
-                <Box><Typography variant="caption">Vacancy</Typography><Typography variant="h6">{property.monthlyExpenses?.vacancy ? formatCurrency(property.monthlyExpenses.vacancy) : 'N/A'}</Typography></Box>
-                <Box><Typography variant="caption">CapEx</Typography><Typography variant="h6">{property.monthlyExpenses?.capEx ? formatCurrency(property.monthlyExpenses.capEx) : 'N/A'}</Typography></Box>
-                <Box><Typography variant="caption">Other</Typography><Typography variant="h6">{property.monthlyExpenses?.other ? formatCurrency(property.monthlyExpenses.other) : 'N/A'}</Typography></Box>
-                <Box><Typography variant="caption">Total Expenses</Typography><Typography variant="h6" sx={{ color: 'error.main' }}>{property.monthlyExpenses?.total ? formatCurrency(property.monthlyExpenses.total) : 'N/A'}</Typography></Box>
-                <Box><Typography variant="caption">Actual Rent</Typography><Typography variant="h6" sx={{ color: 'success.main' }}>{property.actualRent ? formatCurrency(property.actualRent) : 'N/A'}</Typography></Box>
-                <Box><Typography variant="caption">Cashflow</Typography><Typography variant="h6" sx={{ color: getCashflowColor((property.actualRent || 0) - (property.monthlyExpenses?.total || 0)) }}>{formatCurrency((property.actualRent || 0) - (property.monthlyExpenses?.total || 0))}</Typography></Box>
+              <Box display="flex" gap={4}>
+                {/* Expenses - Stacked on the left */}
+                <Box flex={1}>
+                  <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: 'error.main' }}>Expenses</Typography>
+                  <Box display="flex" flexDirection="column" gap={1}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2">Mortgage</Typography>
+                      <Typography variant="body2" fontWeight={500}>{property.monthlyExpenses?.mortgage !== undefined && property.monthlyExpenses?.mortgage !== null ? formatCurrency(property.monthlyExpenses.mortgage) : 'N/A'}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2">Taxes</Typography>
+                      <Typography variant="body2" fontWeight={500}>{property.monthlyExpenses?.taxes !== undefined && property.monthlyExpenses?.taxes !== null ? formatCurrency(property.monthlyExpenses.taxes) : 'N/A'}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2">Insurance</Typography>
+                      <Typography variant="body2" fontWeight={500}>{property.monthlyExpenses?.insurance !== undefined && property.monthlyExpenses?.insurance !== null ? formatCurrency(property.monthlyExpenses.insurance) : 'N/A'}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2">Property Management</Typography>
+                      <Typography variant="body2" fontWeight={500}>{property.monthlyExpenses?.propertyManagement !== undefined && property.monthlyExpenses?.propertyManagement !== null ? formatCurrency(property.monthlyExpenses.propertyManagement) : 'N/A'}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2">Utilities</Typography>
+                      <Typography variant="body2" fontWeight={500}>{property.monthlyExpenses?.utilities !== undefined && property.monthlyExpenses?.utilities !== null ? formatCurrency(property.monthlyExpenses.utilities) : 'N/A'}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2">Vacancy</Typography>
+                      <Typography variant="body2" fontWeight={500}>{property.monthlyExpenses?.vacancy !== undefined && property.monthlyExpenses?.vacancy !== null ? formatCurrency(property.monthlyExpenses.vacancy) : 'N/A'}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2">CapEx</Typography>
+                      <Typography variant="body2" fontWeight={500}>{property.monthlyExpenses?.capEx !== undefined && property.monthlyExpenses?.capEx !== null ? formatCurrency(property.monthlyExpenses.capEx) : 'N/A'}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2">Other</Typography>
+                      <Typography variant="body2" fontWeight={500}>{property.monthlyExpenses?.other !== undefined && property.monthlyExpenses?.other !== null ? formatCurrency(property.monthlyExpenses.other) : 'N/A'}</Typography>
+                    </Box>
+                    <Divider sx={{ my: 1 }} />
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body1" fontWeight={600}>Total Expenses</Typography>
+                      <Typography variant="body1" fontWeight={600} sx={{ color: 'error.main' }}>{property.monthlyExpenses?.total !== undefined && property.monthlyExpenses?.total !== null ? formatCurrency(property.monthlyExpenses.total) : 'N/A'}</Typography>
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Rent & Cashflow - On the right */}
+                <Box flex={1}>
+                  <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: 'success.main' }}>Income & Cashflow</Typography>
+                  <Box display="flex" flexDirection="column" gap={1}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2">Actual Rent</Typography>
+                      <Typography variant="body2" fontWeight={500} sx={{ color: 'success.main' }}>{property.actualRent !== undefined && property.actualRent !== null ? formatCurrency(property.actualRent) : 'N/A'}</Typography>
+                    </Box>
+                    <Divider sx={{ my: 1 }} />
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body1" fontWeight={600}>Monthly Cashflow</Typography>
+                      <Typography variant="body1" fontWeight={600} sx={{ color: getCashflowColor((property.actualRent || 0) - (property.monthlyExpenses?.total || 0)) }}>{formatCurrency((property.actualRent || 0) - (property.monthlyExpenses?.total || 0))}</Typography>
+                    </Box>
+                  </Box>
+                </Box>
               </Box>
             </Box>
 
@@ -583,11 +632,17 @@ const PropertyDetailsPage: React.FC = () => {
             </Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ pt: 2 }}>
-            <Card sx={{ background: '#f8f9fa', p: 2 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                Asset details section - TBD
-              </Typography>
-            </Card>
+            {/* Capital Costs */}
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Capital Costs</Typography>
+              <Box display="grid" gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }} gap={{ xs: 2, sm: 3 }}>
+                <Box><Typography variant="caption">Closing Costs</Typography><Typography variant="h6">{property.capitalCosts?.closingCosts !== undefined && property.capitalCosts?.closingCosts !== null ? formatCurrency(property.capitalCosts.closingCosts) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Upfront Repairs</Typography><Typography variant="h6">{property.capitalCosts?.upfrontRepairs !== undefined && property.capitalCosts?.upfrontRepairs !== null ? formatCurrency(property.capitalCosts.upfrontRepairs) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Down Payment</Typography><Typography variant="h6">{property.capitalCosts?.downPayment !== undefined && property.capitalCosts?.downPayment !== null ? formatCurrency(property.capitalCosts.downPayment) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Other</Typography><Typography variant="h6">{property.capitalCosts?.other !== undefined && property.capitalCosts?.other !== null ? formatCurrency(property.capitalCosts.other) : 'N/A'}</Typography></Box>
+                <Box><Typography variant="caption">Total Capital Costs</Typography><Typography variant="h6" sx={{ color: 'primary.main' }}>{property.capitalCosts?.total !== undefined && property.capitalCosts?.total !== null ? formatCurrency(property.capitalCosts.total) : 'N/A'}</Typography></Box>
+              </Box>
+            </Box>
           </AccordionDetails>
         </Accordion>
       </Paper>

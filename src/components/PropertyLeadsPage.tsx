@@ -316,17 +316,19 @@ const PropertyLeadsPage: React.FC = () => {
   };
 
   const handleUpdateLastContact = async (lead: PropertyLead) => {
+    const newContactDate = new Date().toISOString();
+    
+    // Optimistically update the UI immediately
+    setPropertyLeads(prevLeads => 
+      prevLeads.map(l => l.id === lead.id ? { ...l, lastContactDate: newContactDate } : l)
+    );
+
     try {
       const updatedLead = await updatePropertyLead(lead.id, {
         ...lead,
-        lastContactDate: new Date().toISOString(),
+        lastContactDate: newContactDate,
       });
       
-      // Update local state instead of fetching
-      setPropertyLeads(prevLeads => 
-        prevLeads.map(l => l.id === lead.id ? updatedLead : l)
-      );
-
       setSnackbar({
         open: true,
         message: 'Contact date updated successfully',
@@ -334,6 +336,12 @@ const PropertyLeadsPage: React.FC = () => {
       });
     } catch (err) {
       console.error('Error updating contact date:', err);
+      
+      // Revert the optimistic update on error
+      setPropertyLeads(prevLeads => 
+        prevLeads.map(l => l.id === lead.id ? { ...l, lastContactDate: lead.lastContactDate } : l)
+      );
+      
       setSnackbar({
         open: true,
         message: 'Failed to update contact date',
@@ -620,14 +628,14 @@ const PropertyLeadsPage: React.FC = () => {
   };
 
   const handleArchiveLead = async (id: string) => {
+    // Optimistically update the UI immediately
+    setPropertyLeads(prevLeads => 
+      prevLeads.map(l => l.id === id ? { ...l, archived: true } : l)
+    );
+
     try {
       await archivePropertyLead(id);
       
-      // Update local state instead of fetching
-      setPropertyLeads(prevLeads => 
-        prevLeads.map(l => l.id === id ? { ...l, archived: true } : l)
-      );
-
       setSnackbar({
         open: true,
         message: 'Property lead archived successfully',
@@ -635,6 +643,12 @@ const PropertyLeadsPage: React.FC = () => {
       });
     } catch (err) {
       console.error('Error archiving property lead:', err);
+      
+      // Revert the optimistic update on error
+      setPropertyLeads(prevLeads => 
+        prevLeads.map(l => l.id === id ? { ...l, archived: false } : l)
+      );
+      
       setSnackbar({
         open: true,
         message: 'Failed to archive property lead',
@@ -644,6 +658,11 @@ const PropertyLeadsPage: React.FC = () => {
   };
 
   const handleUnarchiveLead = async (id: string) => {
+    // Optimistically update the UI immediately
+    setPropertyLeads(prevLeads => 
+      prevLeads.map(l => l.id === id ? { ...l, archived: false } : l)
+    );
+
     try {
       // Unarchive by updating the lead with archived set to false
       await updatePropertyLead(id, { 
@@ -651,11 +670,6 @@ const PropertyLeadsPage: React.FC = () => {
         archived: false
       });
       
-      // Update local state instead of fetching
-      setPropertyLeads(prevLeads => 
-        prevLeads.map(l => l.id === id ? { ...l, archived: false } : l)
-      );
-
       setSnackbar({
         open: true,
         message: 'Property lead unarchived successfully',
@@ -663,6 +677,12 @@ const PropertyLeadsPage: React.FC = () => {
       });
     } catch (err) {
       console.error('Error unarchiving property lead:', err);
+      
+      // Revert the optimistic update on error
+      setPropertyLeads(prevLeads => 
+        prevLeads.map(l => l.id === id ? { ...l, archived: true } : l)
+      );
+      
       setSnackbar({
         open: true,
         message: 'Failed to unarchive property lead',

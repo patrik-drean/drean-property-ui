@@ -490,6 +490,18 @@ ${property.zillowLink}`;
         px: 1,
         gap: { xs: 2, sm: 0 }
       }}>
+      </Box>
+
+      {/* Investment Opportunities */}
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'stretch', sm: 'center' }, 
+        mb: 2,
+        gap: { xs: 1, sm: 0 }
+      }}>
+        <Typography variant="h5" sx={{ fontWeight: 600 }}>Investment Opportunities</Typography>
         <Box sx={{ 
           display: 'flex', 
           flexDirection: { xs: 'column', sm: 'row' },
@@ -522,7 +534,7 @@ ${property.zillowLink}`;
           </Button>
         </Box>
       </Box>
-
+      
       {/* Desktop view - Table */}
       <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>
         <TableContainer 
@@ -918,7 +930,9 @@ ${property.zillowLink}`;
 
       {/* Mobile & Tablet view - Cards */}
       <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'column', gap: 1 }}>
-        {sortedProperties.map((property) => {
+        {sortedProperties
+          .filter(property => !['Operational', 'Selling', 'Needs Tenant'].includes(property.status))
+          .map((property) => {
           const isExpanded = expandedProperties.has(property.id);
           return (
             <Paper 
@@ -1386,8 +1400,11 @@ ${property.zillowLink}`;
         })}
       </Box>
 
-      {/* Operational Properties Table */}
-      <Box sx={{ mt: 4, mb: 3 }}>
+      {/* Properties Held */}
+      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>Properties Held</Typography>
+      
+      {/* Desktop view - Operational Properties Table */}
+      <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>
         <TableContainer 
           component={Paper} 
           elevation={0} 
@@ -1527,6 +1544,209 @@ ${property.zillowLink}`;
             </TableBody>
           </Table>
         </TableContainer>
+      </Box>
+
+      {/* Mobile & Tablet view - Operational Properties Cards */}
+      <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'column', gap: 1 }}>
+        {sortedProperties
+          .filter(property => ['Operational', 'Selling', 'Needs Tenant'].includes(property.status))
+          .map((property) => {
+            const isExpanded = expandedProperties.has(property.id);
+            // Calculate total expenses
+            const totalExpenses = property.monthlyExpenses?.total || 0;
+            // Use actual rent
+            const rent = property.actualRent || 0;
+            // Calculate cashflow
+            const cashflow = rent - totalExpenses;
+            
+            return (
+              <Paper 
+                key={property.id}
+                elevation={2}
+                sx={{ 
+                  borderRadius: 2, 
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    elevation: 4,
+                    transform: 'translateY(-1px)'
+                  }
+                }}
+                onClick={() => handleToggleExpanded(property.id)}
+              >
+                {/* Condensed Header - Always Visible */}
+                <Box sx={{ p: 2, pb: isExpanded ? 1 : 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 0 }}>
+                      <StatusChip 
+                        label={property.status} 
+                        status={property.status} 
+                        size="small"
+                      />
+                      <Typography 
+                        variant="body1" 
+                        fontWeight="medium"
+                        sx={{ 
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          flex: 1
+                        }}
+                      >
+                        {property.address}
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      sx={{ 
+                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease-in-out'
+                      }}
+                    >
+                      <Icons.KeyboardArrowDown />
+                    </IconButton>
+                  </Box>
+
+                  {/* Quick Metrics Row */}
+                  <Box sx={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: 1,
+                    fontSize: '0.75rem'
+                  }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">Units</Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {property.units || 0}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">Rent</Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {formatCurrency(rent)}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">Cashflow</Typography>
+                      <Typography 
+                        variant="body2" 
+                        fontWeight="medium"
+                        sx={{ color: getCashflowColor(cashflow) }}
+                      >
+                        {formatCurrency(cashflow)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Expanded Content */}
+                {isExpanded && (
+                  <Box sx={{ 
+                    borderTop: '1px solid #e0e0e0',
+                    p: 2,
+                    pt: 1
+                  }}>
+                    {/* Address with Zillow link */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography 
+                        variant="h6" 
+                        component="a"
+                        href={property.zillowLink}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        sx={{
+                          color: '#1976d2', 
+                          textDecoration: 'none',
+                          display: 'block'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {property.address}
+                      </Typography>
+                    </Box>
+
+                    {/* Financial Details */}
+                    <Box sx={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(2, 1fr)' },
+                      gap: 2,
+                      mb: 3
+                    }}>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Units</Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          {property.units || 0}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Status</Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          {property.status}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Expenses</Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          {formatCurrency(totalExpenses)}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Rent</Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          {formatCurrency(rent)}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Cashflow</Typography>
+                        <Typography 
+                          variant="body1" 
+                          fontWeight="medium"
+                          sx={{ color: getCashflowColor(cashflow) }}
+                        >
+                          {formatCurrency(cashflow)}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Actions */}
+                    <Box sx={{ 
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                      gap: 1,
+                      mt: 2
+                    }}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Icons.Edit />}
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditProperty(property);
+                        }}
+                        fullWidth
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        startIcon={<Icons.Archive />}
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleArchive(property.id);
+                        }}
+                        fullWidth
+                      >
+                        Archive
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+              </Paper>
+            );
+          })}
       </Box>
 
       {/* Metric Summary Section */}

@@ -601,27 +601,28 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
                   }}
                 />
-                                 <TextField
-                   fullWidth
-                   label="Current House Value"
-                   value={formatInputCurrency(newProperty.currentHouseValue)}
-                   onChange={(e) => setNewProperty({ ...newProperty, currentHouseValue: handleCurrencyInput(e.target.value) })}
-                   margin="normal"
-                   InputProps={{
-                     startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
-                   }}
-                 />
-                 <TextField
-                   fullWidth
-                   label="Square Footage"
-                   value={newProperty.squareFootage !== null ? newProperty.squareFootage : ''}
-                   onChange={(e) => {
-                     const value = e.target.value.trim() === '' ? null : parseInt(e.target.value, 10);
-                     setNewProperty({ ...newProperty, squareFootage: value });
-                   }}
-                   margin="normal"
-                   type="number"
-                 />
+                <TextField
+                  fullWidth
+                  label="Square Footage"
+                  value={newProperty.squareFootage !== null ? newProperty.squareFootage : ''}
+                  onChange={(e) => {
+                    const value = e.target.value.trim() === '' ? null : parseInt(e.target.value, 10);
+                    setNewProperty({ ...newProperty, squareFootage: value });
+                  }}
+                  margin="normal"
+                  type="number"
+                />
+                <TextField
+                  fullWidth
+                  label="Units"
+                  value={newProperty.units !== null ? newProperty.units : ''}
+                  onChange={(e) => {
+                    const value = e.target.value.trim() === '' ? null : parseInt(e.target.value, 10);
+                    setNewProperty({ ...newProperty, units: value });
+                  }}
+                  margin="normal"
+                  type="number"
+                />
               </Box>
               
               <Tooltip
@@ -944,6 +945,22 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
             </AccordionSummary>
             <AccordionDetails sx={{ pt: 2 }}>
               <Box>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Property Value</Typography>
+                <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2, 1fr)' }} gap={2}>
+                  <TextField
+                    fullWidth
+                    label="Current House Value"
+                    value={formatInputCurrency(newProperty.currentHouseValue)}
+                    onChange={(e) => setNewProperty({ ...newProperty, currentHouseValue: handleCurrencyInput(e.target.value) })}
+                    margin="normal"
+                    InputProps={{
+                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                    }}
+                  />
+                </Box>
+              </Box>
+              
+              <Box sx={{ mt: 3 }}>
                 <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Capital Costs</Typography>
                 <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2, 1fr)' }} gap={2}>
                   <TextField

@@ -558,16 +558,49 @@ const PropertyDetailsPage: React.FC = () => {
                 {/* Rent & Cashflow - On the right */}
                 <Box flex={1}>
                   <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: 'success.main' }}>Income & Cashflow</Typography>
-                  <Box display="flex" flexDirection="column" gap={1}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Typography variant="body2">Actual Rent</Typography>
-                      <Typography variant="body2" fontWeight={500} sx={{ color: 'success.main' }}>{property.actualRent !== undefined && property.actualRent !== null ? formatCurrency(property.actualRent) : 'N/A'}</Typography>
-                    </Box>
-                    <Divider sx={{ my: 1 }} />
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Typography variant="body1" fontWeight={600}>Monthly Cashflow</Typography>
-                      <Typography variant="body1" fontWeight={600} sx={{ color: getCashflowColor((property.actualRent || 0) - (property.monthlyExpenses?.total || 0)) }}>{formatCurrency((property.actualRent || 0) - (property.monthlyExpenses?.total || 0))}</Typography>
-                    </Box>
+                  <Box display="flex" flexDirection="column" gap={2}>
+                    {(() => {
+                      const vacantUnits = property.propertyUnits?.filter(unit => unit.status === 'Vacant') || [];
+                      const potentialCashflow = (property.potentialRent || 0) - (property.monthlyExpenses?.total || 0);
+                      
+                      return (
+                        <>
+                          {/* Current Performance */}
+                          <Box>
+                            {vacantUnits.length > 0 && (
+                              <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 500 }}>Current</Typography>
+                            )}
+                            <Box display="flex" flexDirection="column" gap={1} sx={{ mt: vacantUnits.length > 0 ? 0.5 : 0 }}>
+                              <Box display="flex" justifyContent="space-between" alignItems="center">
+                                <Typography variant="body2">Rent</Typography>
+                                <Typography variant="body2" fontWeight={500} sx={{ color: 'success.main' }}>{property.actualRent !== undefined && property.actualRent !== null ? formatCurrency(property.actualRent) : 'N/A'}</Typography>
+                              </Box>
+                              <Box display="flex" justifyContent="space-between" alignItems="center">
+                                <Typography variant="body1" fontWeight={600}>Cashflow</Typography>
+                                <Typography variant="body1" fontWeight={600} sx={{ color: getCashflowColor((property.actualRent || 0) - (property.monthlyExpenses?.total || 0)) }}>{formatCurrency((property.actualRent || 0) - (property.monthlyExpenses?.total || 0))}</Typography>
+                              </Box>
+                            </Box>
+                          </Box>
+
+                          {/* Potential Performance */}
+                          {vacantUnits.length > 0 && (
+                            <Box sx={{ pt: 1, borderTop: '1px solid #e0e0e0' }}>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 500 }}>Potential</Typography>
+                              <Box display="flex" flexDirection="column" gap={1} sx={{ mt: 0.5 }}>
+                                <Box display="flex" justifyContent="space-between" alignItems="center">
+                                  <Typography variant="body2">Rent</Typography>
+                                  <Typography variant="body2" fontWeight={500} sx={{ color: 'success.main' }}>{formatCurrency(property.potentialRent || 0)}</Typography>
+                                </Box>
+                                <Box display="flex" justifyContent="space-between" alignItems="center">
+                                  <Typography variant="body1" fontWeight={600}>Cashflow</Typography>
+                                  <Typography variant="body1" fontWeight={600} sx={{ color: getCashflowColor(potentialCashflow) }}>{formatCurrency(potentialCashflow)}</Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+                          )}
+                        </>
+                      );
+                    })()}
                   </Box>
                 </Box>
               </Box>

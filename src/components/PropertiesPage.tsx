@@ -1509,15 +1509,71 @@ ${property.zillowLink}`;
                         {formatCurrency(totalExpenses)}
                       </TableCell>
                       <TableCell>
-                        {formatCurrency(rent)}
+                        {(() => {
+                          const vacantUnits = property.propertyUnits?.filter(unit => unit.status === 'Vacant') || [];
+                          const potentialRent = property.potentialRent || 0;
+                          
+                          return vacantUnits.length > 0 ? (
+                            <Tooltip 
+                              title={
+                                <div>
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                    Potential Rent: {formatCurrency(potentialRent)}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: 'white', fontSize: '0.75rem' }}>
+                                    {vacantUnits.length} vacant unit{vacantUnits.length > 1 ? 's' : ''}
+                                  </Typography>
+                                </div>
+                              } 
+                              arrow 
+                              placement="top"
+                            >
+                              <Box component="span">
+                                {formatCurrency(rent)}
+                              </Box>
+                            </Tooltip>
+                          ) : (
+                            formatCurrency(rent)
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
-                        <Typography sx={{ 
-                          color: getCashflowColor(cashflow),
-                          fontWeight: 500
-                        }}>
-                          {formatCurrency(cashflow)}
-                        </Typography>
+                        {(() => {
+                          const vacantUnits = property.propertyUnits?.filter(unit => unit.status === 'Vacant') || [];
+                          const potentialRent = property.potentialRent || 0;
+                          const potentialCashflow = potentialRent - totalExpenses;
+                          
+                          return vacantUnits.length > 0 ? (
+                            <Tooltip 
+                              title={
+                                <div>
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                    Potential Cashflow: {formatCurrency(potentialCashflow)}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: 'white', fontSize: '0.75rem' }}>
+                                    {vacantUnits.length} vacant unit{vacantUnits.length > 1 ? 's' : ''}
+                                  </Typography>
+                                </div>
+                              } 
+                              arrow 
+                              placement="top"
+                            >
+                              <Typography sx={{ 
+                                color: getCashflowColor(cashflow),
+                                fontWeight: 500
+                              }}>
+                                {formatCurrency(cashflow)}
+                              </Typography>
+                            </Tooltip>
+                          ) : (
+                            <Typography sx={{ 
+                              color: getCashflowColor(cashflow),
+                              fontWeight: 500
+                            }}>
+                              {formatCurrency(cashflow)}
+                            </Typography>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
                         <Tooltip title="Actions">
@@ -1623,19 +1679,82 @@ ${property.zillowLink}`;
                     </Box>
                     <Box>
                       <Typography variant="caption" color="text.secondary" display="block">Rent</Typography>
-                      <Typography variant="body2" fontWeight="medium">
-                        {formatCurrency(rent)}
-                      </Typography>
+                      {(() => {
+                        const vacantUnits = property.propertyUnits?.filter(unit => unit.status === 'Vacant') || [];
+                        const potentialRent = property.potentialRent || 0;
+                        
+                        return vacantUnits.length > 0 ? (
+                          <Tooltip 
+                            title={
+                              <div>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                  Current Rent: {formatCurrency(rent)}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: 'success.main' }}>
+                                  Potential Rent: {formatCurrency(potentialRent)}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
+                                  {vacantUnits.length} vacant unit{vacantUnits.length > 1 ? 's' : ''}
+                                </Typography>
+                              </div>
+                            } 
+                            arrow 
+                            placement="top"
+                          >
+                            <Typography variant="body2" fontWeight="medium">
+                              {formatCurrency(rent)}
+                            </Typography>
+                          </Tooltip>
+                        ) : (
+                          <Typography variant="body2" fontWeight="medium">
+                            {formatCurrency(rent)}
+                          </Typography>
+                        );
+                      })()}
                     </Box>
                     <Box>
                       <Typography variant="caption" color="text.secondary" display="block">Cashflow</Typography>
-                      <Typography 
-                        variant="body2" 
-                        fontWeight="medium"
-                        sx={{ color: getCashflowColor(cashflow) }}
-                      >
-                        {formatCurrency(cashflow)}
-                      </Typography>
+                      {(() => {
+                        const vacantUnits = property.propertyUnits?.filter(unit => unit.status === 'Vacant') || [];
+                        const potentialRent = property.potentialRent || 0;
+                        const potentialCashflow = potentialRent - totalExpenses;
+                        
+                        return vacantUnits.length > 0 ? (
+                          <Tooltip 
+                            title={
+                              <div>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                  Current Cashflow: {formatCurrency(cashflow)}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: getCashflowColor(potentialCashflow) }}>
+                                  Potential Cashflow: {formatCurrency(potentialCashflow)}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
+                                  {vacantUnits.length} vacant unit{vacantUnits.length > 1 ? 's' : ''}
+                                </Typography>
+                              </div>
+                            } 
+                            arrow 
+                            placement="top"
+                          >
+                            <Typography 
+                              variant="body2" 
+                              fontWeight="medium"
+                              sx={{ color: getCashflowColor(cashflow) }}
+                            >
+                              {formatCurrency(cashflow)}
+                            </Typography>
+                          </Tooltip>
+                        ) : (
+                          <Typography 
+                            variant="body2" 
+                            fontWeight="medium"
+                            sx={{ color: getCashflowColor(cashflow) }}
+                          >
+                            {formatCurrency(cashflow)}
+                          </Typography>
+                        );
+                      })()}
                     </Box>
                   </Box>
                 </Box>
@@ -1693,19 +1812,76 @@ ${property.zillowLink}`;
                       </Box>
                       <Box>
                         <Typography variant="caption" color="text.secondary">Rent</Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {formatCurrency(rent)}
-                        </Typography>
+                        {(() => {
+                          const vacantUnits = property.propertyUnits?.filter(unit => unit.status === 'Vacant') || [];
+                          const potentialRent = property.potentialRent || 0;
+                          
+                          return vacantUnits.length > 0 ? (
+                            <Tooltip 
+                              title={
+                                <div>
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                    Potential Rent: {formatCurrency(potentialRent)}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: 'white', fontSize: '0.75rem' }}>
+                                    {vacantUnits.length} vacant unit{vacantUnits.length > 1 ? 's' : ''}
+                                  </Typography>
+                                </div>
+                              } 
+                              arrow 
+                              placement="top"
+                            >
+                              <Typography variant="body1" fontWeight="medium">
+                                {formatCurrency(rent)}
+                              </Typography>
+                            </Tooltip>
+                          ) : (
+                            <Typography variant="body1" fontWeight="medium">
+                              {formatCurrency(rent)}
+                            </Typography>
+                          );
+                        })()}
                       </Box>
                       <Box>
                         <Typography variant="caption" color="text.secondary">Cashflow</Typography>
-                        <Typography 
-                          variant="body1" 
-                          fontWeight="medium"
-                          sx={{ color: getCashflowColor(cashflow) }}
-                        >
-                          {formatCurrency(cashflow)}
-                        </Typography>
+                        {(() => {
+                          const vacantUnits = property.propertyUnits?.filter(unit => unit.status === 'Vacant') || [];
+                          const potentialRent = property.potentialRent || 0;
+                          const potentialCashflow = potentialRent - totalExpenses;
+                          
+                          return vacantUnits.length > 0 ? (
+                            <Tooltip 
+                              title={
+                                <div>
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                    Potential Cashflow: {formatCurrency(potentialCashflow)}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: 'white', fontSize: '0.75rem' }}>
+                                    {vacantUnits.length} vacant unit{vacantUnits.length > 1 ? 's' : ''}
+                                  </Typography>
+                                </div>
+                              } 
+                              arrow 
+                              placement="top"
+                            >
+                              <Typography 
+                                variant="body1" 
+                                fontWeight="medium"
+                                sx={{ color: getCashflowColor(cashflow) }}
+                              >
+                                {formatCurrency(cashflow)}
+                              </Typography>
+                            </Tooltip>
+                          ) : (
+                            <Typography 
+                              variant="body1" 
+                              fontWeight="medium"
+                              sx={{ color: getCashflowColor(cashflow) }}
+                            >
+                              {formatCurrency(cashflow)}
+                            </Typography>
+                          );
+                        })()}
                       </Box>
                     </Box>
 

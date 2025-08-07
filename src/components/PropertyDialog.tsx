@@ -62,7 +62,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   const getInitialExpandedSections = (status: PropertyStatus) => {
     const operationalStatuses = ['Selling', 'Needs Tenant', 'Operational'];
     if (operationalStatuses.includes(status)) {
-      return ['operational', 'asset'];
+      return ['operational'];
     } else {
       return ['investment'];
     }

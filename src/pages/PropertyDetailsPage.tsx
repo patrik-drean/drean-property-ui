@@ -40,6 +40,16 @@ const PropertyDetailsPage: React.FC = () => {
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
+  // Determine which sections should be expanded based on status
+  const getInitialExpandedSections = (status: string) => {
+    const operationalStatuses = ['Selling', 'Needs Tenant', 'Operational'];
+    if (operationalStatuses.includes(status)) {
+      return ['operational'];
+    } else {
+      return ['opportunity'];
+    }
+  };
+
   const createdByOptions = ['Patrik', 'Dillon', 'Other'];
 
   const getInitials = (name: string) => {
@@ -153,6 +163,8 @@ const PropertyDetailsPage: React.FC = () => {
     getProperty(decodedAddress)
       .then((property) => {
         setProperty(property);
+        // Set initial expanded sections based on property status
+        setExpandedSections(getInitialExpandedSections(property.status));
         // Fetch notes, links, and contacts using property.id, handle 404 as empty
         Promise.all([
           getNotesByPropertyId(property.id).catch(err => {
@@ -252,6 +264,8 @@ const PropertyDetailsPage: React.FC = () => {
 
   const handlePropertyUpdate = useCallback((updatedProperty: Property) => {
     setProperty(updatedProperty);
+    // Update expanded sections when property status changes
+    setExpandedSections(getInitialExpandedSections(updatedProperty.status));
   }, []);
 
   const handleSnackbar = useCallback((message: string, severity: 'success' | 'error') => {

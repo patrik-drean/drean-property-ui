@@ -617,7 +617,7 @@ ${property.zillowLink}`;
             </TableHead>
             <TableBody>
               {sortedProperties
-                .filter(property => !['Operational', 'Selling', 'Needs Tenant'].includes(property.status))
+                .filter(property => !['Operational', 'Selling', 'Needs Tenant', 'Rehab'].includes(property.status))
                 .map((property) => (
                 <StyledTableRow key={property.id}>
                   <TableCell sx={{ pl: 1 }}>
@@ -931,7 +931,7 @@ ${property.zillowLink}`;
       {/* Mobile & Tablet view - Cards */}
       <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'column', gap: 1 }}>
         {sortedProperties
-          .filter(property => !['Operational', 'Selling', 'Needs Tenant'].includes(property.status))
+          .filter(property => !['Operational', 'Selling', 'Needs Tenant', 'Rehab'].includes(property.status))
           .map((property) => {
           const isExpanded = expandedProperties.has(property.id);
           return (
@@ -1451,7 +1451,7 @@ ${property.zillowLink}`;
             </TableHead>
             <TableBody>
               {sortedProperties
-                .filter(property => ['Operational', 'Selling', 'Needs Tenant'].includes(property.status))
+                .filter(property => ['Operational', 'Selling', 'Needs Tenant', 'Rehab'].includes(property.status))
                 .map((property) => {
                                      // Calculate total expenses
                    const totalExpenses = property.monthlyExpenses?.total || 0;
@@ -1605,7 +1605,7 @@ ${property.zillowLink}`;
       {/* Mobile & Tablet view - Operational Properties Cards */}
       <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'column', gap: 1 }}>
         {sortedProperties
-          .filter(property => ['Operational', 'Selling', 'Needs Tenant'].includes(property.status))
+          .filter(property => ['Operational', 'Selling', 'Needs Tenant', 'Rehab'].includes(property.status))
           .map((property) => {
             const isExpanded = expandedProperties.has(property.id);
             // Calculate total expenses

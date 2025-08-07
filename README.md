@@ -1,4 +1,4 @@
-# Property Analyzer
+# Havensight AI
 
 A full-stack application for analyzing and managing real estate investment properties.
 

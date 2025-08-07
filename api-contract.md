@@ -1,4 +1,4 @@
-# Property Analyzer API Contract
+# Havensight AI API Contract
 
 ## Environment URLs
 - **Local**: `http://localhost:8080`

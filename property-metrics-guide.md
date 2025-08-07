@@ -8,7 +8,7 @@
 
 ### Color-Coded Metrics
 
-The Property Analyzer uses color-coding to quickly highlight the quality of key metrics.
+The Havensight AI uses color-coding to quickly highlight the quality of key metrics.
 
 #### Rent Ratio
 The monthly rent divided by the total investment (Offer Price + Rehab Costs)

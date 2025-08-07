@@ -1,4 +1,4 @@
-# Property Analyzer Implementation Summary
+# Havensight AI Implementation Summary
 
 ## Original Requirements vs Implementation
 
@@ -79,7 +79,7 @@ Implemented scoring algorithm based on:
 ## Setup Instructions
 
 Detailed setup instructions are provided in:
-- Frontend: `/property-analyzer-client/README.md`
+- Frontend: `/havensight-ai-client/README.md`
 - Backend: `/PropertyAnalyzer.Api/README.md`
 
 ## Future Enhancements

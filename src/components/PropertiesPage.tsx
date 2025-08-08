@@ -207,6 +207,8 @@ const PropertiesPage: React.FC = () => {
     return scoreB - scoreA;
   });
 
+
+
   // Calculate unit counts by status
   const getUnitCountsByStatus = () => {
     const counts: { [key in PropertyStatus]: { count: number; units: number } } = {
@@ -266,7 +268,17 @@ const PropertiesPage: React.FC = () => {
     const fetchProperties = async () => {
       try {
         const data = await api.getProperties(false); // Explicitly request only non-archived properties
-        setProperties(data);
+        console.log('Fetched properties:', data);
+        console.log('Property addresses:', data.map(p => p.address));
+        console.log('Property IDs:', data.map(p => p.id));
+        
+        // Deduplicate properties by ID to handle backend duplicates
+        const uniqueProperties = data.filter((property, index, self) => 
+          index === self.findIndex(p => p.id === property.id)
+        );
+        
+        console.log('Unique properties after deduplication:', uniqueProperties.length);
+        setProperties(uniqueProperties);
       } catch (error) {
         console.error('Error fetching properties:', error);
       }
@@ -474,6 +486,8 @@ ${property.zillowLink}`;
     });
   };
 
+
+  
   return (
     <Box sx={{ 
       p: 0, 

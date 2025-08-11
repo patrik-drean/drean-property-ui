@@ -8,6 +8,7 @@ import { getNotesByPropertyId, createNote, getLinksByPropertyId, createLink, del
 import PropertyDialog from '../components/PropertyDialog';
 import TasksSection from '../components/TasksSection';
 import ContactDialog from '../components/ContactDialog';
+import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from '../components/shared/PropertyTooltips';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -78,7 +79,7 @@ const PropertyDetailsPage: React.FC = () => {
       case 'Needs Tenant':
         return '#9C27B0'; // Purple
       case 'Selling':
-        return '#FF5722'; // Deep Orange
+        return '#E91E63'; // Pink
       default:
         return '#757575'; // Grey
     }
@@ -372,8 +373,42 @@ const PropertyDetailsPage: React.FC = () => {
               <Box><Typography variant="caption">ARV</Typography><Typography variant="h6">${property.arv.toLocaleString()}</Typography></Box>
               <Box><Typography variant="caption">Rent Ratio</Typography><Typography variant="h6" sx={{ color: getRentRatioColor(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts)) }}>{formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))}</Typography></Box>
               <Box><Typography variant="caption">ARV Ratio</Typography><Typography variant="h6" sx={{ color: getARVRatioColor(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-              <Box><Typography variant="caption">Equity</Typography><Typography variant="h6" sx={{ color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv)) }}>{formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}</Typography></Box>
-              <Box><Typography variant="caption">Monthly Cashflow</Typography><Typography variant="h6" sx={{ color: getCashflowColor(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))) }}>{formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography></Box>
+              <Box>
+                <Typography variant="caption">Equity</Typography>
+                <Tooltip 
+                  title={
+                    <FinancingDetailsTooltip 
+                      property={property} 
+                      formatCurrency={formatCurrency} 
+                      formatPercentage={formatPercentage} 
+                    />
+                  } 
+                  arrow 
+                  placement="top"
+                >
+                  <Typography variant="h6" sx={{ color: getHomeEquityColor(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv)), cursor: 'help' }}>
+                    {formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))}
+                  </Typography>
+                </Tooltip>
+              </Box>
+              <Box>
+                <Typography variant="caption">Monthly Cashflow</Typography>
+                <Tooltip 
+                  title={
+                    <CashflowBreakdownTooltip 
+                      property={property} 
+                      formatCurrency={formatCurrency} 
+                      formatPercentage={formatPercentage} 
+                    />
+                  } 
+                  arrow 
+                  placement="top"
+                >
+                  <Typography variant="h6" sx={{ color: getCashflowColor(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))), cursor: 'help' }}>
+                    {formatCurrency(calculateCashflow(property.potentialRent, property.offerPrice, calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}
+                  </Typography>
+                </Tooltip>
+              </Box>
             </Box>
             
             {/* Scores Section */}

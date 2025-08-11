@@ -28,6 +28,7 @@ import { api } from '../services/apiConfig';
 import { useNavigate } from 'react-router-dom';
 import { Link as RouterLink } from 'react-router-dom';
 import PropertyDialog from './PropertyDialog';
+import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from './shared/PropertyTooltips';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -756,15 +757,11 @@ ${property.zillowLink}`;
                   <TableCell className="metric" sx={{ textAlign: 'center' }}>
                     <Tooltip 
                       title={
-                        <>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Financing Details:</Typography>
-                          <Typography variant="body2">Down Payment: {formatCurrency(calculateDownPayment(property.offerPrice, property.rehabCosts))}</Typography>
-                          <Typography variant="body2">Loan Amount: {formatCurrency(calculateLoanAmount(property.offerPrice, property.rehabCosts))}</Typography>
-                          <Typography variant="body2">New Loan: {formatCurrency(calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
-                          <Typography variant="body2">New Loan %: {formatPercentage(calculateNewLoanPercent(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
-                          <Typography variant="body2">Cash to Pull Out: {formatCurrency(calculateCashToPullOut(property.offerPrice, property.rehabCosts, property.arv))}</Typography>
-                          <Typography variant="body2">Cash Remaining: {formatCurrency(calculateCashRemaining())}</Typography>
-                        </>
+                        <FinancingDetailsTooltip 
+                          property={property} 
+                          formatCurrency={formatCurrency} 
+                          formatPercentage={formatPercentage} 
+                        />
                       } 
                       arrow 
                       placement="top"
@@ -779,14 +776,11 @@ ${property.zillowLink}`;
                   <TableCell className="metric" sx={{ textAlign: 'center' }}>
                     <Tooltip 
                       title={
-                        <>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>Monthly Cashflow Breakdown:</Typography>
-                          <Typography variant="body2">Rent: {formatCurrency(property.potentialRent)}</Typography>
-                          <Typography variant="body2">Property Management (12%): -{formatCurrency(property.potentialRent * 0.12)}</Typography>
-                          <Typography variant="body2">Property Taxes: -{formatCurrency((property.offerPrice * 0.025) / 12)}</Typography>
-                          <Typography variant="body2">Other Expenses: -$130</Typography>
-                          <Typography variant="body2">Mortgage Payment: -{formatCurrency(calculateMonthlyMortgage(calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)))}</Typography>
-                        </>
+                        <CashflowBreakdownTooltip 
+                          property={property} 
+                          formatCurrency={formatCurrency} 
+                          formatPercentage={formatPercentage} 
+                        />
                       } 
                       arrow 
                       placement="top"

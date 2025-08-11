@@ -95,7 +95,7 @@ const getStatusColor = (status: PropertyStatus): string => {
     case 'Needs Tenant':
       return '#9C27B0'; // Purple
     case 'Selling':
-      return '#FF5722'; // Deep Orange
+      return '#E91E63'; // Pink
     default:
       return '#757575'; // Grey
   }
@@ -179,9 +179,9 @@ const PropertiesPage: React.FC = () => {
         return 1;
       case 'Hard Offer':
         return 2;
-      case 'Rehab':
-        return 3;
       case 'Selling':
+        return 3;
+      case 'Rehab':
         return 4;
       case 'Needs Tenant':
         return 5;
@@ -215,8 +215,8 @@ const PropertiesPage: React.FC = () => {
       'Opportunity': { count: 0, units: 0 },
       'Soft Offer': { count: 0, units: 0 },
       'Hard Offer': { count: 0, units: 0 },
-      'Rehab': { count: 0, units: 0 },
       'Selling': { count: 0, units: 0 },
+      'Rehab': { count: 0, units: 0 },
       'Needs Tenant': { count: 0, units: 0 },
       'Operational': { count: 0, units: 0 }
     };

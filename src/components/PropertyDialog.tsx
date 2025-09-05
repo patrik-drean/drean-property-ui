@@ -158,22 +158,33 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   };
 
   const updateUnitStatus = (index: number, newStatus: string, statusChangeDate: string) => {
-    setNewProperty(prev => ({
-      ...prev,
-      propertyUnits: prev.propertyUnits.map((unit, i) => {
-        if (i === index) {
-          const newStatusHistory = [...unit.statusHistory];
-          // Add new status entry to history
-          newStatusHistory.push({ status: newStatus, dateStart: statusChangeDate });
-          return { 
-            ...unit, 
-            status: newStatus, 
-            statusHistory: newStatusHistory 
-          };
-        }
-        return unit;
-      })
-    }));
+    // Only proceed if we have a valid date
+    if (!statusChangeDate) {
+      return;
+    }
+    
+    try {
+      const isoDate = new Date(statusChangeDate + 'T00:00:00.000Z').toISOString();
+      
+      setNewProperty(prev => ({
+        ...prev,
+        propertyUnits: prev.propertyUnits.map((unit, i) => {
+          if (i === index) {
+            const newStatusHistory = [...unit.statusHistory];
+            // Add new status entry to history
+            newStatusHistory.push({ status: newStatus, dateStart: isoDate });
+            return { 
+              ...unit, 
+              status: newStatus, 
+              statusHistory: newStatusHistory 
+            };
+          }
+          return unit;
+        })
+      }));
+    } catch (error) {
+      console.error('Invalid date format in updateUnitStatus:', statusChangeDate, error);
+    }
   };
 
   const removeUnit = (index: number) => {
@@ -978,10 +989,54 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                         type="date"
                         value={unitStatusChangeDates[index] || getTodayDateString()}
                         onChange={(e) => {
+                          const newDate = e.target.value;
+                          
+                          // Only proceed if we have a valid date
+                          if (!newDate) {
+                            return;
+                          }
+                          
                           setUnitStatusChangeDates(prev => ({
                             ...prev,
-                            [index]: e.target.value
+                            [index]: newDate
                           }));
+                          
+                          // Also update the status history with the new date
+                          const currentStatus = unit.status;
+                          
+                          try {
+                            const isoDate = new Date(newDate + 'T00:00:00.000Z').toISOString();
+                            
+                            setNewProperty(prev => ({
+                              ...prev,
+                              propertyUnits: prev.propertyUnits.map((u, i) => {
+                                if (i === index) {
+                                  const newStatusHistory = [...u.statusHistory];
+                                  
+                                  // Update the last status entry with the new date, or add a new one if none exists
+                                  if (newStatusHistory.length > 0) {
+                                    newStatusHistory[newStatusHistory.length - 1] = {
+                                      status: currentStatus,
+                                      dateStart: isoDate
+                                    };
+                                  } else {
+                                    newStatusHistory.push({
+                                      status: currentStatus,
+                                      dateStart: isoDate
+                                    });
+                                  }
+                                  
+                                  return {
+                                    ...u,
+                                    statusHistory: newStatusHistory
+                                  };
+                                }
+                                return u;
+                              })
+                            }));
+                          } catch (error) {
+                            console.error('Invalid date format:', newDate, error);
+                          }
                         }}
                         InputLabelProps={{
                           shrink: true,

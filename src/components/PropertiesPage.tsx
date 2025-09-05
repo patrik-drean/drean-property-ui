@@ -222,11 +222,21 @@ const PropertiesPage: React.FC = () => {
       'Operational': { count: 0, units: 0 }
     };
 
+    // Add defensive check for properties array
+    if (!properties || !Array.isArray(properties)) {
+      console.warn('Properties array is not properly initialized');
+      return counts;
+    }
+
     properties.forEach(property => {
       // For most statuses, use the property-level status
       if (property.status !== 'Needs Tenant' && property.status !== 'Operational') {
-        counts[property.status].count += 1;
-        counts[property.status].units += property.units || 0;
+        // Add defensive check to ensure the status exists in counts
+        const status = property.status as PropertyStatus;
+        if (counts[status]) {
+          counts[status].count += 1;
+          counts[status].units += property.units || 0;
+        }
       } else {
         // For "Needs Tenant" and "Operational" properties, count based on actual unit statuses
         if (property.propertyUnits && property.propertyUnits.length > 0) {
@@ -242,11 +252,17 @@ const PropertiesPage: React.FC = () => {
           });
           
           // Count the property itself (for property count)
-          counts[property.status].count += 1;
+          const status = property.status as PropertyStatus;
+          if (counts[status]) {
+            counts[status].count += 1;
+          }
         } else {
           // Fallback to property-level status if no unit data
-          counts[property.status].count += 1;
-          counts[property.status].units += property.units || 0;
+          const status = property.status as PropertyStatus;
+          if (counts[status]) {
+            counts[status].count += 1;
+            counts[status].units += property.units || 0;
+          }
         }
       }
     });
@@ -255,6 +271,11 @@ const PropertiesPage: React.FC = () => {
   };
 
   const unitCounts = getUnitCountsByStatus();
+  
+  // Add defensive check to ensure unitCounts is properly initialized
+  if (!unitCounts || typeof unitCounts !== 'object') {
+    console.error('unitCounts is not properly initialized');
+  }
 
   // Calculate total units excluding Opportunity, Soft Offer, and Selling
   const getTotalUnits = () => {
@@ -332,7 +353,6 @@ const PropertiesPage: React.FC = () => {
           capitalCosts: propertyWithScore.capitalCosts
         };
         
-        console.log('Updating property:', propertyToUpdate);
         const updatedProperty = await api.updateProperty(editingProperty.id, propertyToUpdate);
         
         // Update local state with the returned property
@@ -1947,7 +1967,13 @@ ${property.zillowLink}`;
           gap: { xs: 1, sm: 1.5, md: 2 },
           px: { xs: 0.5, sm: 1 }
         }}>
-          {Object.entries(unitCounts).map(([status, data]) => (
+          {Object.entries(unitCounts).map(([status, data]) => {
+            // Add defensive check to ensure data exists
+            if (!data) {
+              console.warn(`No data found for status: ${status}`);
+              return null;
+            }
+            return (
             <Paper
               key={status}
               elevation={1}
@@ -1999,7 +2025,8 @@ ${property.zillowLink}`;
                 {data.count} {data.count === 1 ? 'property' : 'properties'}
               </Typography>
             </Paper>
-          ))}
+            );
+          })}
           
           {/* Total Units Card */}
           <Paper

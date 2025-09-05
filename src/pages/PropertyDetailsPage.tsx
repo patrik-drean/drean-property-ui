@@ -55,14 +55,19 @@ const PropertyDetailsPage: React.FC = () => {
 
   // Helper function to calculate days since last status change
   const getDaysSinceStatusChange = (unit: any) => {
-    if (!unit.statusHistory || unit.statusHistory.length === 0) {
-      return null;
+    let referenceDate: Date;
+    
+    if (unit.statusHistory && unit.statusHistory.length > 0) {
+      // Use the last status change date
+      const lastStatusChange = unit.statusHistory[unit.statusHistory.length - 1];
+      referenceDate = new Date(lastStatusChange.dateStart);
+    } else {
+      // Fallback to unit creation date for units without status history
+      referenceDate = new Date(unit.createdAt || unit.updatedAt);
     }
     
-    const lastStatusChange = unit.statusHistory[unit.statusHistory.length - 1];
-    const lastChangeDate = new Date(lastStatusChange.dateStart);
     const today = new Date();
-    const diffTime = Math.abs(today.getTime() - lastChangeDate.getTime());
+    const diffTime = referenceDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     return diffDays;
@@ -696,9 +701,21 @@ const PropertyDetailsPage: React.FC = () => {
                         </Typography>
                         {(() => {
                           const daysSinceChange = getDaysSinceStatusChange(unit);
-                          return daysSinceChange !== null && (
+                          const hasStatusHistory = unit.statusHistory && unit.statusHistory.length > 0;
+                          const label = hasStatusHistory ? 'Status Duration:' : 'Days in Status:';
+                          
+                          let displayText;
+                          if (daysSinceChange > 0) {
+                            displayText = `in ${daysSinceChange} day${daysSinceChange !== 1 ? 's' : ''}`;
+                          } else if (daysSinceChange < 0) {
+                            displayText = `${Math.abs(daysSinceChange)} day${Math.abs(daysSinceChange) !== 1 ? 's' : ''} ago`;
+                          } else {
+                            displayText = 'today';
+                          }
+                          
+                          return (
                             <Typography variant="body2" sx={{ mb: 0.5 }}>
-                              <strong>Status Duration:</strong> {daysSinceChange} day{daysSinceChange !== 1 ? 's' : ''}
+                              <strong>{label}</strong> {displayText}
                             </Typography>
                           );
                         })()}

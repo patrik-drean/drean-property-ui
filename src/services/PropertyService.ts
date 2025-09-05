@@ -43,6 +43,10 @@ interface PropertyDTO {
     notes: string;
     createdAt: string;
     updatedAt: string;
+    statusHistory?: {
+      status: string;
+      dateStart: string;
+    }[];
   }[];
   monthlyExpenses: {
     id: string;
@@ -93,7 +97,13 @@ const mapDTOToProperty = (dto: PropertyDTO): Property => {
     units: dto.units,
     actualRent: dto.actualRent,
     currentHouseValue: dto.currentHouseValue,
-    propertyUnits: dto.propertyUnits,
+    propertyUnits: dto.propertyUnits.map(unit => ({
+      ...unit,
+      statusHistory: unit.statusHistory || [{
+        status: unit.status,
+        dateStart: unit.createdAt || unit.updatedAt || new Date().toISOString()
+      }]
+    })),
     monthlyExpenses: dto.monthlyExpenses,
     capitalCosts: dto.capitalCosts,
   };

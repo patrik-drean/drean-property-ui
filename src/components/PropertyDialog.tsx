@@ -69,6 +69,12 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   };
 
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [unitStatusChangeDates, setUnitStatusChangeDates] = useState<{ [key: number]: string }>({});
+
+  // Helper function to get today's date in YYYY-MM-DD format
+  const getTodayDateString = () => {
+    return new Date().toISOString().split('T')[0];
+  };
 
   const handleAccordionChange = (section: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpandedSections(prev => 
@@ -114,6 +120,10 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   };
 
   const addUnit = () => {
+    const now = new Date().toISOString();
+    const todayDateString = getTodayDateString();
+    const newUnitIndex = newProperty.propertyUnits.length;
+    
     setNewProperty(prev => ({
       ...prev,
       propertyUnits: [
@@ -124,10 +134,17 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
           status: 'Vacant',
           rent: 0,
           notes: '',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          createdAt: now,
+          updatedAt: now,
+          statusHistory: [{ status: 'Vacant', dateStart: now }]
         }
       ]
+    }));
+    
+    // Initialize status change date for the new unit
+    setUnitStatusChangeDates(prev => ({
+      ...prev,
+      [newUnitIndex]: todayDateString
     }));
   };
 
@@ -140,11 +157,47 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     }));
   };
 
+  const updateUnitStatus = (index: number, newStatus: string, statusChangeDate: string) => {
+    setNewProperty(prev => ({
+      ...prev,
+      propertyUnits: prev.propertyUnits.map((unit, i) => {
+        if (i === index) {
+          const newStatusHistory = [...unit.statusHistory];
+          // Add new status entry to history
+          newStatusHistory.push({ status: newStatus, dateStart: statusChangeDate });
+          return { 
+            ...unit, 
+            status: newStatus, 
+            statusHistory: newStatusHistory 
+          };
+        }
+        return unit;
+      })
+    }));
+  };
+
   const removeUnit = (index: number) => {
     setNewProperty(prev => ({
       ...prev,
       propertyUnits: prev.propertyUnits.filter((_, i) => i !== index)
     }));
+    
+    // Clean up status change date state
+    setUnitStatusChangeDates(prev => {
+      const newDates = { ...prev };
+      delete newDates[index];
+      // Shift indices for units after the removed one
+      const shiftedDates: { [key: number]: string } = {};
+      Object.keys(newDates).forEach(key => {
+        const numKey = parseInt(key);
+        if (numKey > index) {
+          shiftedDates[numKey - 1] = newDates[numKey];
+        } else {
+          shiftedDates[numKey] = newDates[numKey];
+        }
+      });
+      return shiftedDates;
+    });
   };
 
   const updateActualRent = () => {
@@ -455,6 +508,21 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
           updatedAt: new Date().toISOString()
         }
       });
+      
+      // Initialize status change dates for existing units
+      const initialStatusChangeDates: { [key: number]: string } = {};
+      property.propertyUnits.forEach((unit, index) => {
+        if (unit.statusHistory && unit.statusHistory.length > 0) {
+          // Use the date from the last status change
+          const lastStatusChange = unit.statusHistory[unit.statusHistory.length - 1];
+          initialStatusChangeDates[index] = lastStatusChange.dateStart.split('T')[0];
+        } else {
+          // Default to today if no status history
+          initialStatusChangeDates[index] = getTodayDateString();
+        }
+      });
+      setUnitStatusChangeDates(initialStatusChangeDates);
+      
       setExpandedSections(getInitialExpandedSections(property.status));
     }
   }, [property, isEditing]);
@@ -879,7 +947,11 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                         <InputLabel>Status</InputLabel>
                         <Select
                           value={unit.status}
-                          onChange={(e) => updateUnit(index, 'status', e.target.value)}
+                          onChange={(e) => {
+                            const newStatus = e.target.value;
+                            const statusChangeDate = unitStatusChangeDates[index] || getTodayDateString();
+                            updateUnitStatus(index, newStatus, statusChangeDate);
+                          }}
                           label="Status"
                         >
                           <MenuItem value="Vacant">Vacant</MenuItem>
@@ -895,6 +967,24 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                         onChange={(e) => updateUnit(index, 'rent', handleCurrencyInput(e.target.value))}
                         InputProps={{
                           startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                        }}
+                      />
+                    </Box>
+                    
+                    <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2, 1fr)' }} gap={2} sx={{ mt: 2 }}>
+                      <TextField
+                        fullWidth
+                        label="Status Change Date"
+                        type="date"
+                        value={unitStatusChangeDates[index] || getTodayDateString()}
+                        onChange={(e) => {
+                          setUnitStatusChangeDates(prev => ({
+                            ...prev,
+                            [index]: e.target.value
+                          }));
+                        }}
+                        InputLabelProps={{
+                          shrink: true,
                         }}
                       />
                     </Box>

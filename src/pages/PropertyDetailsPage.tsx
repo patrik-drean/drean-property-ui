@@ -53,6 +53,21 @@ const PropertyDetailsPage: React.FC = () => {
 
   const createdByOptions = ['Patrik', 'Dillon', 'Other'];
 
+  // Helper function to calculate days since last status change
+  const getDaysSinceStatusChange = (unit: any) => {
+    if (!unit.statusHistory || unit.statusHistory.length === 0) {
+      return null;
+    }
+    
+    const lastStatusChange = unit.statusHistory[unit.statusHistory.length - 1];
+    const lastChangeDate = new Date(lastStatusChange.dateStart);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - lastChangeDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
@@ -679,6 +694,14 @@ const PropertyDetailsPage: React.FC = () => {
                         <Typography variant="body2" sx={{ mb: 0.5 }}>
                           <strong>Rent:</strong> {formatCurrency(unit.rent)}
                         </Typography>
+                        {(() => {
+                          const daysSinceChange = getDaysSinceStatusChange(unit);
+                          return daysSinceChange !== null && (
+                            <Typography variant="body2" sx={{ mb: 0.5 }}>
+                              <strong>Status Duration:</strong> {daysSinceChange} day{daysSinceChange !== 1 ? 's' : ''}
+                            </Typography>
+                          );
+                        })()}
                         {unit.notes && (
                           <Typography variant="caption" color="text.secondary">
                             {unit.notes}

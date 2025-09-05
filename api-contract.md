@@ -1,4 +1,4 @@
-# Havensight AI API Contract
+# Property Analyzer API Contract
 
 ## Environment URLs
 - **Local**: `http://localhost:8080`
@@ -53,7 +53,13 @@
         "rent": number,
         "notes": "string",
         "createdAt": "string",
-        "updatedAt": "string"
+p ix        "updatedAt": "string",
+        "statusHistory": [
+          {
+            "status": "string",
+            "dateStart": "string"
+          }
+        ]
       }
     ],
     "monthlyExpenses": {
@@ -129,7 +135,13 @@
       "rent": number,
       "notes": "string",
       "createdAt": "string",
-      "updatedAt": "string"
+      "updatedAt": "string",
+      "statusHistory": [
+        {
+          "status": "string",
+          "dateStart": "string"
+        }
+      ]
     }
   ],
   "monthlyExpenses": {
@@ -199,7 +211,13 @@
       "propertyId": "string",
       "status": "string",
       "rent": number,
-      "notes": "string"
+      "notes": "string",
+      "statusHistory": [
+        {
+          "status": "string",
+          "dateStart": "string"
+        }
+      ]
     }
   ],
   "monthlyExpenses": {
@@ -266,7 +284,13 @@
       "propertyId": "string",
       "status": "string",
       "rent": number,
-      "notes": "string"
+      "notes": "string",
+      "statusHistory": [
+        {
+          "status": "string",
+          "dateStart": "string"
+        }
+      ]
     }
   ],
   "monthlyExpenses": {
@@ -962,3 +986,15 @@
 ### Additional Property Fields
 - **`actualRent`**: Sum of all unit rent values (calculated field)
 - **`currentHouseValue`**: Current market value of the property
+
+### Unit Status History Tracking
+- **`statusHistory`**: Array of StatusHistory objects tracking unit status changes over time
+- **StatusHistory Object**:
+  - `status`: The status value at the time of the change
+  - `dateStart`: ISO 8601 timestamp when the unit entered this status
+- **Purpose**: Allows frontend to calculate how many days a unit has been in its current status
+- **Frontend Responsibility**: The frontend is responsible for providing the complete status history array when updating units
+- **Usage Pattern**: 
+  - When creating a new unit, include initial status history: `[{"status": "Vacant", "dateStart": "2025-01-15T10:30:00Z"}]`
+  - When changing status, append new entry: `[{"status": "Vacant", "dateStart": "2025-01-15T10:30:00Z"}, {"status": "Operational", "dateStart": "2025-01-20T14:45:00Z"}]`
+- **Benefits**: Frontend controls timing, handles offline scenarios, and provides better user experience

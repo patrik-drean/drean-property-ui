@@ -13,6 +13,11 @@ export interface TodoMetaData {
     todoistSectionId: string | null;
 }
 
+export interface StatusHistory {
+    status: string;
+    dateStart: string;
+}
+
 export interface PropertyUnit {
     id: string;
     propertyId: string;
@@ -21,6 +26,7 @@ export interface PropertyUnit {
     notes: string;
     createdAt: string;
     updatedAt: string;
+    statusHistory: StatusHistory[];
 }
 
 export interface MonthlyExpenses {

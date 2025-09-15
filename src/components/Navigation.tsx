@@ -70,7 +70,7 @@ const Navigation: React.FC = () => {
         onClick={toggleDrawer}
       >
         <Box sx={{ p: 2 }}>
-          <Typography variant="h6" fontWeight="bold">Havensight AI</Typography>
+          <Typography variant="h6" fontWeight="bold">PropGuide AI</Typography>
         </Box>
         <Divider />
         <List>
@@ -162,7 +162,7 @@ const Navigation: React.FC = () => {
                 fontSize: { xs: '1.2rem', sm: '1.5rem' }
               }}
             >
-              Havensight AI
+              PropGuide AI
             </Typography>
             
             {/* Remove the Todos tab from the desktop nav */}

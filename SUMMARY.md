@@ -1,4 +1,4 @@
-# Havensight AI Implementation Summary
+# PropGuide AI Implementation Summary
 
 ## Original Requirements vs Implementation
 
@@ -79,7 +79,7 @@ Implemented scoring algorithm based on:
 ## Setup Instructions
 
 Detailed setup instructions are provided in:
-- Frontend: `/havensight-ai-client/README.md`
+- Frontend: `/propguide-ai-client/README.md`
 - Backend: `/PropertyAnalyzer.Api/README.md`
 
 ## Future Enhancements

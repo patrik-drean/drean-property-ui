@@ -1,6 +1,6 @@
 # Deployment Instructions
 
-This document provides instructions for deploying the Havensight AI UI to various hosting platforms.
+This document provides instructions for deploying the PropGuide AI UI to various hosting platforms.
 
 ## GitHub Pages Deployment
 

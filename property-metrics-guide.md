@@ -8,7 +8,7 @@
 
 ### Color-Coded Metrics
 
-The Havensight AI uses color-coding to quickly highlight the quality of key metrics.
+The PropGuide AI uses color-coding to quickly highlight the quality of key metrics.
 
 #### Rent Ratio
 The monthly rent divided by the total investment (Offer Price + Rehab Costs)

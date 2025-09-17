@@ -90,6 +90,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     />
   );
 
+  // Helper functions for card styling
+  const getCardBackgroundColor = () => {
+    // Always use white background for clean look
+    return theme.palette.background.paper;
+  };
+
+  const getCardBorderColor = () => {
+    // Use the actual status color for the border
+    return getStatusColor(property.status);
+  };
+
   // Compact variant for smaller spaces
   if (variant === 'compact') {
     return (
@@ -98,6 +109,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           mb: 1,
           borderRadius: 1,
           boxShadow: theme.shadows[1],
+          backgroundColor: getCardBackgroundColor(),
+          borderLeft: `3px solid ${getCardBorderColor()}`,
           '&:hover': {
             boxShadow: theme.shadows[2],
             transform: 'translateY(-1px)',
@@ -223,16 +236,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   }
 
   // Default variant - full featured card
-  const getCardBackgroundColor = () => {
-    switch (variant) {
-      case 'opportunity':
-        return theme.palette.primary.light + '08'; // Very light green tint
-      case 'portfolio':
-        return theme.palette.secondary.light + '08'; // Very light gold tint
-      default:
-        return theme.palette.background.paper;
-    }
-  };
 
   return (
     <Card
@@ -243,6 +246,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         mx: 'auto',
         maxWidth: '100%',
         backgroundColor: getCardBackgroundColor(),
+        borderLeft: `4px solid ${getCardBorderColor()}`,
         '&:hover': {
           boxShadow: theme.shadows[4],
           transform: 'translateY(-2px)',
@@ -467,7 +471,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             onClick={() => setDetailsExpanded(!detailsExpanded)}
           >
             <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
-              Property Details {property.notes && '& Notes'}
+              Details
             </Typography>
             <IconButton size="small" sx={{ p: 0.5 }}>
               {detailsExpanded ? <Icons.ExpandLess /> : <Icons.ExpandMore />}

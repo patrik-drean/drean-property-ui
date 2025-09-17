@@ -138,6 +138,7 @@ const Navigation: React.FC = () => {
           width: '100%',
           left: 0,
           right: 0,
+          borderRadius: 0,
         }}
       >
         <Container maxWidth={false} sx={{ px: { xs: 1, sm: 3 } }}>

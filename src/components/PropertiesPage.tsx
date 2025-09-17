@@ -22,6 +22,7 @@ import {
   ListItemIcon,
   ListItemText,
   useTheme,
+  Fab,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
@@ -496,76 +497,119 @@ ${property.zillowLink}`;
       }}>
       </Box>
 
+      {/* Desktop Add Property Button - Floating Top Right */}
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => setPropertyDialogOpen(true)}
+        startIcon={<Icons.Add />}
+        sx={{ 
+          borderRadius: 2,
+          position: 'fixed',
+          top: 80, // Below navbar
+          right: 24,
+          zIndex: 1000,
+          display: { xs: 'none', md: 'flex' },
+          boxShadow: theme.shadows[4]
+        }}
+      >
+        Add Property
+      </Button>
+
       {/* Investment Opportunities */}
+      <Typography 
+        variant="h5" 
+        sx={{ 
+          fontWeight: 600,
+          position: 'sticky',
+          top: 0,
+          backgroundColor: theme.palette.background.default,
+          zIndex: 1,
+          py: 1,
+          mb: 2,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          display: { xs: 'none', sm: 'block' }
+        }}
+      >
+        Opportunities
+      </Typography>
+      
+      {/* Opportunities Status Summary Cards */}
       <Box sx={{ 
         display: 'flex', 
         flexDirection: { xs: 'column', sm: 'row' },
-        justifyContent: 'space-between', 
-        alignItems: { xs: 'stretch', sm: 'center' }, 
-        mb: 2,
-        gap: { xs: 1, sm: 0 }
+        gap: 2,
+        mb: 3,
+        px: { xs: 1, sm: 0 }
       }}>
-        <Typography 
-          variant="h5" 
-          sx={{ 
-            fontWeight: 600,
-            position: 'sticky',
-            top: 0,
-            backgroundColor: theme.palette.background.default,
-            zIndex: 1,
-            py: 1,
-            mb: 2,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          Opportunities
-        </Typography>
-        
-        {/* Mobile Card View */}
-        <PropertyCardGrid
-          properties={sortedProperties}
-          onEdit={handleEditProperty}
-          onViewDetails={(property) => navigate(`/property/${property.id}`)}
-          formatCurrency={formatCurrency}
-          formatPercentage={formatPercentage}
-          getRentRatioColor={getRentRatioColor}
-          getARVRatioColor={getARVRatioColor}
-          filterFunction={(property) => !['Operational', 'Selling', 'Needs Tenant', 'Rehab'].includes(property.status)}
-          emptyMessage="No investment opportunities found"
-          variant="opportunity"
-        />
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: { xs: 1, sm: 2 },
-          width: { xs: '100%', sm: 'auto' }
-        }}>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={() => navigate('/archived')}
-            startIcon={<Icons.Archive />}
-            sx={{ 
-              borderRadius: 2,
-              width: { xs: '100%', sm: 'auto' }
-            }}
-          >
-            Archived Properties
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setPropertyDialogOpen(true)}
-            startIcon={<Icons.Add />}
-            sx={{ 
-              borderRadius: 2,
-              width: { xs: '100%', sm: 'auto' }
-            }}
-          >
-            Add Property
-          </Button>
-        </Box>
+        {['Opportunity', 'Soft Offer', 'Hard Offer'].map((status) => {
+          const statusProperties = sortedProperties.filter(p => p.status === status);
+          const statusColor = getStatusColor(status as any);
+          
+          return (
+            <Box 
+              key={status}
+              sx={{ 
+                flex: 1,
+                p: 2,
+                borderRadius: 2,
+                backgroundColor: statusColor,
+                color: 'white',
+                minHeight: '80px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                textAlign: 'center'
+              }}
+            >
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                {status}
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                {statusProperties.length}
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                {statusProperties.length === 1 ? 'property' : 'properties'}
+              </Typography>
+            </Box>
+          );
+        })}
       </Box>
+      
+      {/* Mobile Card View */}
+      <PropertyCardGrid
+        properties={sortedProperties}
+        onEdit={handleEditProperty}
+        onViewDetails={(property) => navigate(`/property/${property.id}`)}
+        formatCurrency={formatCurrency}
+        formatPercentage={formatPercentage}
+        getRentRatioColor={getRentRatioColor}
+        getARVRatioColor={getARVRatioColor}
+        filterFunction={(property) => !['Operational', 'Selling', 'Needs Tenant', 'Rehab'].includes(property.status)}
+        emptyMessage="No investment opportunities found"
+        variant="opportunity"
+      />
+
+      {/* Mobile FAB */}
+      <Fab
+        color="primary"
+        aria-label="add property"
+        onClick={() => setPropertyDialogOpen(true)}
+        sx={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          display: { xs: 'flex', md: 'none' },
+          zIndex: 1000,
+          backgroundColor: theme.palette.primary.main,
+          '&:hover': {
+            backgroundColor: theme.palette.primary.dark,
+          }
+        }}
+      >
+        <Icons.Add />
+      </Fab>
       
       {/* Desktop view - Table */}
       <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>
@@ -967,10 +1011,54 @@ ${property.zillowLink}`;
           py: 1,
           mb: 2,
           borderBottom: `1px solid ${theme.palette.divider}`,
+          display: { xs: 'none', sm: 'block' }
         }}
       >
         Portfolio
                     </Typography>
+      
+      {/* Portfolio Status Summary Cards */}
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: 2,
+        mb: 3,
+        px: { xs: 1, sm: 0 }
+      }}>
+        {['Rehab', 'Needs Tenant', 'Operational', 'Selling'].map((status) => {
+          const statusProperties = sortedProperties.filter(p => p.status === status);
+          const statusColor = getStatusColor(status as any);
+          
+          return (
+            <Box 
+              key={status}
+              sx={{ 
+                flex: 1,
+                p: 2,
+                borderRadius: 2,
+                backgroundColor: statusColor,
+                color: 'white',
+                minHeight: '80px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                textAlign: 'center'
+              }}
+            >
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                {status}
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                {statusProperties.length}
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                {statusProperties.length === 1 ? 'property' : 'properties'}
+              </Typography>
+            </Box>
+          );
+        })}
+      </Box>
       
       {/* Mobile Card View for Properties Held */}
       <PropertyCardGrid
@@ -985,6 +1073,24 @@ ${property.zillowLink}`;
         emptyMessage="No properties held"
         variant="portfolio"
       />
+      
+      {/* Mobile Archived Button */}
+      <Box sx={{ 
+        display: { xs: 'flex', md: 'none' },
+        justifyContent: 'center',
+        mt: 4,
+        mb: 8 // Extra margin to account for FAB
+      }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => navigate('/archived')}
+          startIcon={<Icons.Archive />}
+          sx={{ borderRadius: 2 }}
+        >
+          Archived Properties
+        </Button>
+      </Box>
       
       {/* Desktop view - Operational Properties Table */}
       <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>
@@ -1185,122 +1291,22 @@ ${property.zillowLink}`;
         </TableContainer>
       </Box>
 
-      {/* Metric Summary Section */}
-      <Box sx={{ mt: 6, mb: 2 }}>
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { 
-            xs: 'repeat(2, 1fr)', 
-            sm: 'repeat(3, 1fr)', 
-            md: 'repeat(4, 1fr)', 
-            lg: 'repeat(5, 1fr)', 
-            xl: 'repeat(8, 1fr)' 
-          },
-          gap: { xs: 1, sm: 1.5, md: 2 },
-          px: { xs: 0.5, sm: 1 }
-        }}>
-          {Object.entries(unitCounts).map(([status, data]) => {
-            // Add defensive check to ensure data exists
-            if (!data) {
-              console.warn(`No data found for status: ${status}`);
-              return null;
-            }
-            return (
-            <Paper
-              key={status}
-              elevation={1}
-              sx={{
-                p: { xs: 1, sm: 1.5, md: 2 },
-                borderRadius: 2,
-                border: `2px solid ${getStatusColor(status as PropertyStatus)}`,
-                backgroundColor: `${getStatusColor(status as PropertyStatus)}10`,
-                textAlign: 'center',
-                minHeight: { xs: '60px', sm: '70px', md: '80px' },
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center'
-              }}
-            >
-              <Typography 
-                variant="h4" 
-                sx={{ 
-                  fontWeight: 'bold',
-                  color: getStatusColor(status as PropertyStatus),
-                  mb: 0.5,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.125rem' }
-                }}
-              >
-                {data.units}
-              </Typography>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: 'text.secondary',
-                  textTransform: 'uppercase',
-                  fontWeight: 500,
-                  letterSpacing: 0.5,
-                  fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                  lineHeight: { xs: 1.2, sm: 1.4 }
-                }}
-              >
-                {status}
-              </Typography>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: 'text.secondary',
-                  mt: 0.5,
-                  fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                  lineHeight: { xs: 1.2, sm: 1.4 }
-                }}
-              >
-                {data.count} {data.count === 1 ? 'property' : 'properties'}
-              </Typography>
-            </Paper>
-            );
-          })}
-          
-          {/* Total Units Card */}
-          <Paper
-            elevation={1}
-            sx={{
-              p: { xs: 1, sm: 1.5, md: 2 },
-              borderRadius: 2,
-              border: '2px solid #1b5e20',
-              backgroundColor: '#1b5e2010',
-              textAlign: 'center',
-              minHeight: { xs: '60px', sm: '70px', md: '80px' },
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center'
-            }}
-          >
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                fontWeight: 'bold',
-                color: '#1b5e20',
-                mb: 0.5,
-                fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.125rem' }
-              }}
-            >
-              {totalUnits}
-            </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-                fontWeight: 500,
-                letterSpacing: 0.5,
-                fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                lineHeight: { xs: 1.2, sm: 1.4 }
-              }}
-            >
-              Total Units Held
-            </Typography>
-          </Paper>
-        </Box>
+      {/* Desktop Archived Button - Bottom */}
+      <Box sx={{ 
+        display: { xs: 'none', md: 'flex' },
+        justifyContent: 'center',
+        mt: 4,
+        mb: 2
+      }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => navigate('/archived')}
+          startIcon={<Icons.Archive />}
+          sx={{ borderRadius: 2 }}
+        >
+          Archived Properties
+        </Button>
       </Box>
 
       <PropertyDialog

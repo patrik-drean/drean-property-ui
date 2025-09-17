@@ -29,7 +29,9 @@ import { useNavigate } from 'react-router-dom';
 import { Link as RouterLink } from 'react-router-dom';
 import PropertyDialog from './PropertyDialog';
 import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from './shared/PropertyTooltips';
+import PropertyCardGrid from './shared/PropertyCardGrid';
 import { getStatusColor, getStatusOrder } from '../utils/statusColors';
+import useResponsiveLayout from '../hooks/useResponsiveLayout';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -128,6 +130,9 @@ const PropertiesPage: React.FC = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [expandedProperties, setExpandedProperties] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+  
+  // Responsive layout
+  const { useCardLayout } = useResponsiveLayout();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -499,6 +504,19 @@ ${property.zillowLink}`;
         gap: { xs: 1, sm: 0 }
       }}>
         <Typography variant="h5" sx={{ fontWeight: 600 }}>Investment Opportunities</Typography>
+        
+        {/* Mobile Card View */}
+        <PropertyCardGrid
+          properties={sortedProperties}
+          onEdit={handleEditProperty}
+          onViewDetails={(property) => navigate(`/property/${property.id}`)}
+          formatCurrency={formatCurrency}
+          formatPercentage={formatPercentage}
+          getRentRatioColor={getRentRatioColor}
+          getARVRatioColor={getARVRatioColor}
+          filterFunction={(property) => !['Operational', 'Selling', 'Needs Tenant', 'Rehab'].includes(property.status)}
+          emptyMessage="No investment opportunities found"
+        />
         <Box sx={{ 
           display: 'flex', 
           flexDirection: { xs: 'column', sm: 'row' },
@@ -1392,6 +1410,19 @@ ${property.zillowLink}`;
 
       {/* Properties Held */}
       <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>Properties Held</Typography>
+      
+      {/* Mobile Card View for Properties Held */}
+      <PropertyCardGrid
+        properties={sortedProperties}
+        onEdit={handleEditProperty}
+        onViewDetails={(property) => navigate(`/property/${property.id}`)}
+        formatCurrency={formatCurrency}
+        formatPercentage={formatPercentage}
+        getRentRatioColor={getRentRatioColor}
+        getARVRatioColor={getARVRatioColor}
+        filterFunction={(property) => ['Operational', 'Selling', 'Needs Tenant', 'Rehab'].includes(property.status)}
+        emptyMessage="No properties held"
+      />
       
       {/* Desktop view - Operational Properties Table */}
       <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>

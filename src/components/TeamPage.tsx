@@ -31,6 +31,7 @@ import {
 import * as Icons from '@mui/icons-material';
 import { Contact, CreateContact, Property, PropertyStatus } from '../types/property';
 import { getContacts, createContact, updateContact, deleteContact, getProperties, addContactToProperty, removeContactFromProperty } from '../services/api';
+import { getStatusColor, getStatusOrder } from '../utils/statusColors';
 
 // Status chip component (same as PropertiesPage)
 interface StatusChipProps {
@@ -52,49 +53,9 @@ const StatusChip = styled(Chip, {
   }
 }));
 
-// Helper function to get status color (same as PropertiesPage)
-const getStatusColor = (status: PropertyStatus): string => {
-  switch (status) {
-    case 'Opportunity':
-      return '#4CAF50'; // Green
-    case 'Soft Offer':
-      return '#FFC107'; // Amber
-    case 'Hard Offer':
-      return '#FF9800'; // Orange
-    case 'Rehab':
-      return '#F44336'; // Red
-    case 'Operational':
-      return '#2196F3'; // Blue
-    case 'Needs Tenant':
-      return '#9C27B0'; // Purple
-    case 'Selling':
-      return '#FF5722'; // Deep Orange
-    default:
-      return '#757575'; // Grey
-  }
-};
+// Status color function is now imported from utils/statusColors.ts
 
-// Helper function to get status order (same as PropertiesPage)
-const getStatusOrder = (status: PropertyStatus) => {
-  switch (status) {
-    case 'Opportunity':
-      return 0;
-    case 'Soft Offer':
-      return 1;
-    case 'Hard Offer':
-      return 2;
-    case 'Rehab':
-      return 3;
-    case 'Selling':
-      return 4;
-    case 'Needs Tenant':
-      return 5;
-    case 'Operational':
-      return 6;
-    default:
-      return 7;
-  }
-};
+// Status order function is now imported from utils/statusColors.ts
 
 const TeamPage: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);

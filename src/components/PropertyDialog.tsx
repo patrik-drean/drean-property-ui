@@ -27,6 +27,7 @@ import {
   calculatePerfectRentForHoldScore, 
   calculatePerfectARVForFlipScore 
 } from '../utils/scoreCalculator';
+import { getStatusColor } from '../utils/statusColors';
 
 // Styled MenuItem for status dropdown
 const StyledMenuItem = styled(MenuItem)<{ statuscolor: string }>(({ statuscolor }) => ({
@@ -271,27 +272,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     }
   });
 
-  // Helper function to get status color
-  const getStatusColor = (status: PropertyStatus): string => {
-    switch (status) {
-      case 'Opportunity':
-        return '#4CAF50'; // Green
-      case 'Soft Offer':
-        return '#FFC107'; // Amber
-      case 'Hard Offer':
-        return '#FF9800'; // Orange
-      case 'Rehab':
-        return '#F44336'; // Red
-      case 'Operational':
-        return '#2196F3'; // Blue
-      case 'Needs Tenant':
-        return '#9C27B0'; // Purple
-      case 'Selling':
-        return '#FF5722'; // Deep Orange
-      default:
-        return '#757575'; // Grey
-    }
-  };
+  // Status color function is now imported from utils/statusColors.ts
 
   const handleCurrencyInput = (value: string) => {
     // Remove any non-digit characters

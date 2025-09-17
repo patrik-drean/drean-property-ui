@@ -1,0 +1,74 @@
+# PropGuide AI Development Rules
+
+## Design System Reference
+**ALWAYS** reference the design system documentation at `docs/DESIGN_SYSTEM.md` when making any UI/UX decisions or styling changes.
+
+### Key Design Principles
+- **Professional Trust**: Use colors and typography that inspire confidence
+- **Data Clarity**: Prioritize readability of financial metrics
+- **Investor-Focused**: Design for quick decision-making
+
+## Code Standards
+
+### TypeScript
+- Use strict TypeScript with proper type definitions
+- Define interfaces for all data structures
+- Use proper typing for Material-UI components
+
+### React Best Practices
+- Use functional components with hooks
+- Implement proper error boundaries
+- Use React.memo for performance optimization when needed
+- Follow Material-UI component patterns
+
+### Styling Guidelines
+- Use Material-UI theme system for all styling
+- Follow the spacing system (8px base unit)
+- Use semantic color names from the design system
+- Implement responsive design with mobile-first approach
+- Ensure accessibility compliance (WCAG AA)
+
+### Component Structure
+- Keep components focused and single-purpose
+- Use proper prop interfaces
+- Implement proper loading and error states
+- Follow Material-UI component composition patterns
+
+## File Organization
+- Components in `src/components/`
+- Pages in `src/pages/`
+- Services in `src/services/`
+- Types in `src/types/`
+- Utils in `src/utils/`
+- Theme configuration in `src/theme.ts`
+
+## Real Estate Investment Context
+- Always consider the investor's workflow and decision-making process
+- Prioritize financial data clarity and accuracy
+- Use appropriate color coding for financial metrics
+- Implement proper data validation for financial inputs
+- Consider mobile usage for property viewing and updates
+
+## Performance Considerations
+- Optimize for fast loading of financial data
+- Implement proper caching strategies
+- Use lazy loading for non-critical components
+- Optimize images and assets
+- Monitor bundle size
+
+## Testing Requirements
+- Test all financial calculations thoroughly
+- Verify color contrast ratios for accessibility
+- Test responsive design on multiple devices
+- Validate form inputs and error handling
+- Test navigation and user flows
+
+## Documentation
+- Update `docs/DESIGN_SYSTEM.md` when making design changes
+- Document any new component patterns
+- Keep API documentation current
+- Maintain changelog for significant updates
+
+---
+
+**Remember**: This is a real estate investment platform. Every design decision should support the investor's ability to make informed decisions quickly and confidently.

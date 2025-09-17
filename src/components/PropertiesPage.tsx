@@ -29,6 +29,7 @@ import { useNavigate } from 'react-router-dom';
 import { Link as RouterLink } from 'react-router-dom';
 import PropertyDialog from './PropertyDialog';
 import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from './shared/PropertyTooltips';
+import { getStatusColor, getStatusOrder } from '../utils/statusColors';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -80,27 +81,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   height: '46px'
 }));
 
-// Helper function to get status color
-const getStatusColor = (status: PropertyStatus): string => {
-  switch (status) {
-    case 'Opportunity':
-      return '#4CAF50'; // Green
-    case 'Soft Offer':
-      return '#FFC107'; // Amber
-    case 'Hard Offer':
-      return '#FF9800'; // Orange
-    case 'Rehab':
-      return '#F44336'; // Red
-    case 'Operational':
-      return '#2196F3'; // Blue
-    case 'Needs Tenant':
-      return '#9C27B0'; // Purple
-    case 'Selling':
-      return '#E91E63'; // Pink
-    default:
-      return '#757575'; // Grey
-  }
-};
+// Status color function is now imported from utils/statusColors.ts
 
 // Add new helper function for score background color
 const getScoreBackgroundColor = (score: number): string => {
@@ -172,26 +153,7 @@ const PropertiesPage: React.FC = () => {
 
 
 
-  const getStatusOrder = (status: PropertyStatus) => {
-    switch (status) {
-      case 'Opportunity':
-        return 0;
-      case 'Soft Offer':
-        return 1;
-      case 'Hard Offer':
-        return 2;
-      case 'Selling':
-        return 3;
-      case 'Rehab':
-        return 4;
-      case 'Needs Tenant':
-        return 5;
-      case 'Operational':
-        return 6;
-      default:
-        return 7;
-    }
-  };
+  // Status order function is now imported from utils/statusColors.ts
 
   const sortedProperties = [...properties].sort((a, b) => {
     const orderA = getStatusOrder(a.status);

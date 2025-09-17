@@ -130,7 +130,6 @@ const Navigation: React.FC = () => {
         position="fixed" 
         elevation={1} 
         sx={{ 
-          backgroundColor: '#2E3B55',
           zIndex: (theme) => theme.zIndex.drawer + 1,
           width: '100%',
           left: 0,

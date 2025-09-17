@@ -1,0 +1,15 @@
+# Cursor ignore file
+# This file tells Cursor what to ignore, overriding .gitignore for AI context
+
+# Allow Cursor to access .env files for better context
+# (These are still ignored by git via .gitignore)
+
+# You can add other patterns here that you want Cursor to ignore
+# but keep in git, or vice versa
+
+# Example: If you want Cursor to ignore certain large files:
+# *.log
+# node_modules/
+# bin/
+# obj/
+

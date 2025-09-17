@@ -132,7 +132,13 @@ const TeamPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await getContacts();
-      setContacts(data);
+      // Ensure all contacts have required array properties
+      const normalizedContacts = data.map(contact => ({
+        ...contact,
+        tags: Array.from(new Set(contact.tags ?? [])), // Remove duplicates
+        relatedPropertyIds: Array.from(new Set(contact.relatedPropertyIds ?? [])) // Remove duplicates
+      }));
+      setContacts(normalizedContacts);
     } catch (error) {
       console.error('Error fetching contacts:', error);
       setSnackbar({ open: true, message: 'Error fetching contacts', severity: 'error' });
@@ -144,6 +150,7 @@ const TeamPage: React.FC = () => {
   const fetchProperties = async () => {
     try {
       const data = await getProperties(false); // Only get non-archived properties
+      
       setProperties(data);
     } catch (error) {
       console.error('Error fetching properties:', error);
@@ -162,7 +169,7 @@ const TeamPage: React.FC = () => {
         type: contact.type,
         location: contact.location,
         notes: contact.notes,
-        tags: contact.tags,
+        tags: contact.tags || [],
       });
     } else {
       setEditingContact(null);
@@ -229,7 +236,7 @@ const TeamPage: React.FC = () => {
 
   const handleOpenPropertyLinkDialog = (contact: Contact) => {
     setSelectedContactForProperty(contact);
-    setLinkedPropertyIds(new Set(contact.relatedPropertyIds));
+    setLinkedPropertyIds(new Set(contact.relatedPropertyIds || []));
     setPropertyLinkDialogOpen(true);
   };
 
@@ -305,8 +312,10 @@ const TeamPage: React.FC = () => {
     return properties.find(property => property.id === propertyId);
   };
 
-  // Sort properties by status (same as PropertiesPage)
-  const sortedProperties = [...properties].sort((a, b) => {
+  // Sort properties by status (same as PropertiesPage) and remove duplicates
+  const sortedProperties = Array.from(
+    new Map(properties.map(property => [property.id, property])).values()
+  ).sort((a, b) => {
     const orderA = getStatusOrder(a.status);
     const orderB = getStatusOrder(b.status);
     
@@ -482,7 +491,7 @@ const TeamPage: React.FC = () => {
                       </Typography>
                     )}
                     
-                    {contact.tags.length > 0 && (
+                    {contact.tags && contact.tags.length > 0 && (
                       <Box display="flex" flexWrap="wrap" gap={0.5} mb={1}>
                         {contact.tags.map(tag => (
                           <Chip
@@ -496,7 +505,7 @@ const TeamPage: React.FC = () => {
                       </Box>
                     )}
                     
-                                         {contact.relatedPropertyIds.length > 0 && (
+                                         {contact.relatedPropertyIds && contact.relatedPropertyIds.length > 0 && (
                        <Box>
                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                            Properties ({contact.relatedPropertyIds.length}):
@@ -722,7 +731,7 @@ const TeamPage: React.FC = () => {
                       </Box>
                     }
                     secondary={
-                      <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                      <Box component="span" display="flex" alignItems="center" gap={1} mt={0.5}>
                         <StatusChip status={property.status} label={property.status} />
                         <Typography variant="caption" color="text.secondary">
                           Offer Price: ${property.offerPrice.toLocaleString()}

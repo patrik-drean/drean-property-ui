@@ -545,17 +545,17 @@ ${property.zillowLink}`;
         {['Opportunity', 'Soft Offer', 'Hard Offer'].map((status) => {
           const statusProperties = sortedProperties.filter(p => p.status === status);
           const statusColor = getStatusColor(status as any);
-          
+
           return (
-            <Box 
+            <Box
               key={status}
-              sx={{ 
+              sx={{
                 flex: 1,
-                p: 2,
-                borderRadius: 2,
+                p: 1,
+                borderRadius: 1.5,
                 backgroundColor: statusColor,
                 color: 'white',
-                minHeight: '80px',
+                minHeight: '40px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
@@ -563,14 +563,11 @@ ${property.zillowLink}`;
                 textAlign: 'center'
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.25, fontSize: '0.7rem', lineHeight: 1.2 }}>
                 {status}
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.1rem', lineHeight: 1.2 }}>
                 {statusProperties.length}
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                {statusProperties.length === 1 ? 'property' : 'properties'}
               </Typography>
             </Box>
           );
@@ -1028,17 +1025,17 @@ ${property.zillowLink}`;
         {['Rehab', 'Needs Tenant', 'Operational', 'Selling'].map((status) => {
           const statusProperties = sortedProperties.filter(p => p.status === status);
           const statusColor = getStatusColor(status as any);
-          
+
           return (
-            <Box 
+            <Box
               key={status}
-              sx={{ 
+              sx={{
                 flex: 1,
-                p: 2,
-                borderRadius: 2,
+                p: 1,
+                borderRadius: 1.5,
                 backgroundColor: statusColor,
                 color: 'white',
-                minHeight: '80px',
+                minHeight: '40px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
@@ -1046,14 +1043,11 @@ ${property.zillowLink}`;
                 textAlign: 'center'
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.25, fontSize: '0.7rem', lineHeight: 1.2 }}>
                 {status}
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.1rem', lineHeight: 1.2 }}>
                 {statusProperties.length}
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                {statusProperties.length === 1 ? 'property' : 'properties'}
               </Typography>
             </Box>
           );

@@ -621,7 +621,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
             <AccordionSummary 
               expandIcon={<Icons.ExpandMore />}
               sx={{ 
-                backgroundColor: '#e3f2fd', 
+                backgroundColor: '#D4AF37', 
                 borderRadius: 1
               }}
             >
@@ -802,7 +802,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
             <AccordionSummary 
               expandIcon={<Icons.ExpandMore />}
               sx={{ 
-                backgroundColor: '#e3f2fd', 
+                backgroundColor: '#D4AF37', 
                 borderRadius: 1
               }}
             >
@@ -1061,7 +1061,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
             <AccordionSummary 
               expandIcon={<Icons.ExpandMore />}
               sx={{ 
-                backgroundColor: '#e3f2fd', 
+                backgroundColor: '#D4AF37', 
                 borderRadius: 1
               }}
             >

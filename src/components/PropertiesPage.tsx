@@ -21,6 +21,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  useTheme,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
@@ -133,6 +134,7 @@ const PropertiesPage: React.FC = () => {
   
   // Responsive layout
   const { useCardLayout } = useResponsiveLayout();
+  const theme = useTheme();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -503,7 +505,21 @@ ${property.zillowLink}`;
         mb: 2,
         gap: { xs: 1, sm: 0 }
       }}>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>Investment Opportunities</Typography>
+        <Typography 
+          variant="h5" 
+          sx={{ 
+            fontWeight: 600,
+            position: 'sticky',
+            top: 0,
+            backgroundColor: theme.palette.background.default,
+            zIndex: 1,
+            py: 1,
+            mb: 2,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          Opportunities
+        </Typography>
         
         {/* Mobile Card View */}
         <PropertyCardGrid
@@ -516,6 +532,7 @@ ${property.zillowLink}`;
           getARVRatioColor={getARVRatioColor}
           filterFunction={(property) => !['Operational', 'Selling', 'Needs Tenant', 'Rehab'].includes(property.status)}
           emptyMessage="No investment opportunities found"
+          variant="opportunity"
         />
         <Box sx={{ 
           display: 'flex', 
@@ -939,7 +956,21 @@ ${property.zillowLink}`;
       
 
       {/* Properties Held */}
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>Properties Held</Typography>
+                    <Typography 
+        variant="h5" 
+                      sx={{
+          fontWeight: 600,
+          position: 'sticky',
+          top: 0,
+          backgroundColor: theme.palette.background.default,
+          zIndex: 1,
+          py: 1,
+          mb: 2,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        Portfolio
+                    </Typography>
       
       {/* Mobile Card View for Properties Held */}
       <PropertyCardGrid
@@ -952,6 +983,7 @@ ${property.zillowLink}`;
         getARVRatioColor={getARVRatioColor}
         filterFunction={(property) => ['Operational', 'Selling', 'Needs Tenant', 'Rehab'].includes(property.status)}
         emptyMessage="No properties held"
+        variant="portfolio"
       />
       
       {/* Desktop view - Operational Properties Table */}

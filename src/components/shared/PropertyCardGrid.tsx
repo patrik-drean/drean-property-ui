@@ -16,7 +16,7 @@ interface PropertyCardGridProps {
   getRentRatioColor: (value: number) => string;
   getARVRatioColor: (value: number) => string;
   showActions?: boolean;
-  variant?: 'default' | 'compact';
+  variant?: 'default' | 'compact' | 'opportunity' | 'portfolio';
   filterFunction?: (property: Property) => boolean;
   emptyMessage?: string;
 }
@@ -70,21 +70,22 @@ const PropertyCardGrid: React.FC<PropertyCardGridProps> = ({
 
       {/* Cards Grid */}
       {filteredProperties.length > 0 ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: getCardSpacing() }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: getCardSpacing(), alignItems: 'center' }}>
           {filteredProperties.map((property) => (
-            <PropertyCard
-              key={property.id}
-              property={property}
-              onEdit={onEdit}
-              onViewDetails={onViewDetails}
-              onArchive={onArchive}
-              formatCurrency={formatCurrency}
-              formatPercentage={formatPercentage}
-              getRentRatioColor={getRentRatioColor}
-              getARVRatioColor={getARVRatioColor}
-              showActions={showActions}
-              variant={variant}
-            />
+            <Box key={property.id} sx={{ width: '100%', maxWidth: '600px' }}>
+              <PropertyCard
+                property={property}
+                onEdit={onEdit}
+                onViewDetails={onViewDetails}
+                onArchive={onArchive}
+                formatCurrency={formatCurrency}
+                formatPercentage={formatPercentage}
+                getRentRatioColor={getRentRatioColor}
+                getARVRatioColor={getARVRatioColor}
+                showActions={showActions}
+                variant={variant || 'default'}
+              />
+            </Box>
           ))}
         </Box>
       ) : (

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -11,6 +11,7 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
+  Collapse,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property } from '../../types/property';
@@ -35,7 +36,7 @@ interface PropertyCardProps {
   getRentRatioColor: (value: number) => string;
   getARVRatioColor: (value: number) => string;
   showActions?: boolean;
-  variant?: 'default' | 'compact' | 'detailed';
+  variant?: 'default' | 'compact' | 'detailed' | 'opportunity' | 'portfolio';
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({
@@ -53,6 +54,16 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
+
+  // Function to truncate address for mobile
+  const truncateAddress = (address: string) => {
+    if (!isMobile) return address;
+    
+    // Split address by comma and take only the first part (street address)
+    const parts = address.split(',');
+    return parts[0].trim();
+  };
 
   const rentRatio = calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts);
   const arvRatio = calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv);
@@ -212,12 +223,26 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   }
 
   // Default variant - full featured card
+  const getCardBackgroundColor = () => {
+    switch (variant) {
+      case 'opportunity':
+        return theme.palette.primary.light + '08'; // Very light green tint
+      case 'portfolio':
+        return theme.palette.secondary.light + '08'; // Very light gold tint
+      default:
+        return theme.palette.background.paper;
+    }
+  };
+
   return (
-    <Card 
-      sx={{ 
+    <Card
+      sx={{
         mb: 2,
         borderRadius: 2,
         boxShadow: theme.shadows[2],
+        mx: 'auto',
+        maxWidth: '100%',
+        backgroundColor: getCardBackgroundColor(),
         '&:hover': {
           boxShadow: theme.shadows[4],
           transform: 'translateY(-2px)',
@@ -241,19 +266,19 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
                   </IconButton>
                 </Tooltip>
               )}
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  fontWeight: 600,
-                  fontSize: isMobile ? '1rem' : '1.1rem',
-                  lineHeight: 1.2,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {property.address}
-              </Typography>
+                     <Typography
+                       variant="h6"
+                       sx={{
+                         fontWeight: 600,
+                         fontSize: isMobile ? '1rem' : '1.1rem',
+                         lineHeight: 1.2,
+                         overflow: 'hidden',
+                         textOverflow: 'ellipsis',
+                         whiteSpace: 'nowrap',
+                       }}
+                     >
+                       {truncateAddress(property.address)}
+                     </Typography>
             </Box>
             <StatusChip status={property.status} />
           </Box>
@@ -300,18 +325,32 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Key Financial Metrics Section - Most Prominent */}
         <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: theme.palette.text.secondary }}>
-            Key Metrics
-          </Typography>
           <Grid container spacing={1}>
             <Grid item xs={6} sm={3}>
               <Box sx={{ textAlign: 'center', p: 1, backgroundColor: theme.palette.action.hover, borderRadius: 1 }}>
                 <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
-                  Rent %
+                  Cashflow
                 </Typography>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    color: monthlyCashflow > 0 ? theme.palette.success.main : theme.palette.error.main,
+                    fontSize: isMobile ? '1rem' : '1.1rem',
+                  }}
+                >
+                  {formatCurrency(monthlyCashflow)}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Box sx={{ textAlign: 'center', p: 1, backgroundColor: theme.palette.action.hover, borderRadius: 1 }}>
+                <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
+                  Rent Ratio
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
                     fontWeight: 700,
                     color: getRentRatioColor(rentRatio),
                     fontSize: isMobile ? '1rem' : '1.1rem',
@@ -324,11 +363,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             <Grid item xs={6} sm={3}>
               <Box sx={{ textAlign: 'center', p: 1, backgroundColor: theme.palette.action.hover, borderRadius: 1 }}>
                 <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
-                  ARV %
+                  ARV Ratio
                 </Typography>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
+                <Typography
+                  variant="h6"
+                  sx={{
                     fontWeight: 700,
                     color: getARVRatioColor(arvRatio),
                     fontSize: isMobile ? '1rem' : '1.1rem',
@@ -343,32 +382,15 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
                 <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
                   Equity
                 </Typography>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
+                <Typography
+                  variant="h6"
+                  sx={{
                     fontWeight: 700,
                     color: equity > 0 ? theme.palette.success.main : theme.palette.error.main,
                     fontSize: isMobile ? '1rem' : '1.1rem',
                   }}
                 >
                   {formatCurrency(equity)}
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', p: 1, backgroundColor: theme.palette.action.hover, borderRadius: 1 }}>
-                <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
-                  Cashflow
-                </Typography>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontWeight: 700,
-                    color: monthlyCashflow > 0 ? theme.palette.success.main : theme.palette.error.main,
-                    fontSize: isMobile ? '1rem' : '1.1rem',
-                  }}
-                >
-                  {formatCurrency(monthlyCashflow)}
                 </Typography>
               </Box>
             </Grid>
@@ -427,93 +449,112 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           </Box>
         </Box>
 
-        {/* Secondary Details Section */}
+        {/* Property Details & Notes Section - Combined Collapsible */}
         <Divider sx={{ my: 1 }} />
         <Box>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: theme.palette.text.secondary }}>
-            Property Details
-          </Typography>
-          <Grid container spacing={1}>
-            <Grid item xs={6} sm={3}>
-              <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
-                Units
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {property.units || 'N/A'}
-              </Typography>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
-                Sq Ft
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {property.squareFootage ? property.squareFootage.toLocaleString() : 'N/A'}
-              </Typography>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
-                Offer
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {formatCurrency(property.offerPrice)}
-              </Typography>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
-                Rehab
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {formatCurrency(property.rehabCosts)}
-              </Typography>
-            </Grid>
-          </Grid>
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              py: 0.5,
+              '&:hover': {
+                backgroundColor: theme.palette.action.hover,
+                borderRadius: 1,
+              }
+            }}
+            onClick={() => setDetailsExpanded(!detailsExpanded)}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>
+              Property Details {property.notes && '& Notes'}
+            </Typography>
+            <IconButton size="small" sx={{ p: 0.5 }}>
+              {detailsExpanded ? <Icons.ExpandLess /> : <Icons.ExpandMore />}
+            </IconButton>
+          </Box>
           
-          {/* Additional details row */}
-          <Grid container spacing={1} sx={{ mt: 1 }}>
-            <Grid item xs={6} sm={6}>
-              <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
-                Potential Rent
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {formatCurrency(property.potentialRent)}
-              </Typography>
-            </Grid>
-            <Grid item xs={6} sm={6}>
-              <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
-                ARV
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {formatCurrency(property.arv)}
-              </Typography>
-            </Grid>
-          </Grid>
-        </Box>
+          <Collapse in={detailsExpanded}>
+            <Box sx={{ mt: 1 }}>
+              {/* Property Details */}
+              <Grid container spacing={1}>
+                <Grid item xs={6} sm={3}>
+                  <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
+                    Units
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {property.units || 'N/A'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
+                    Sq Ft
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {property.squareFootage ? property.squareFootage.toLocaleString() : 'N/A'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
+                    Offer
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {formatCurrency(property.offerPrice)}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
+                    Rehab
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {formatCurrency(property.rehabCosts)}
+                  </Typography>
+                </Grid>
+              </Grid>
+              
+              {/* Additional details row */}
+              <Grid container spacing={1} sx={{ mt: 1 }}>
+                <Grid item xs={6} sm={6}>
+                  <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
+                    Potential Rent
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {formatCurrency(property.potentialRent)}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6} sm={6}>
+                  <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary }}>
+                    ARV
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {formatCurrency(property.arv)}
+                  </Typography>
+                </Grid>
+              </Grid>
 
-        {/* Notes Section (if available) */}
-        {property.notes && (
-          <>
-            <Divider sx={{ my: 1 }} />
-            <Box>
-              <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary, mb: 0.5 }}>
-                Notes
-              </Typography>
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  fontStyle: 'italic',
-                  color: theme.palette.text.secondary,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                }}
-              >
-                {property.notes}
-              </Typography>
+              {/* Notes Section (if available) */}
+              {property.notes && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Box>
+                    <Typography variant="caption" sx={{ display: 'block', color: theme.palette.text.secondary, mb: 0.5 }}>
+                      Notes
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontStyle: 'italic',
+                        color: theme.palette.text.secondary,
+                      }}
+                    >
+                      {property.notes}
+                    </Typography>
+                  </Box>
+                </>
+              )}
             </Box>
-          </>
-        )}
+          </Collapse>
+        </Box>
       </CardContent>
     </Card>
   );

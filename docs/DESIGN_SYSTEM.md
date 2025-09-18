@@ -229,6 +229,44 @@ Financial metrics use color coding for quick assessment:
 }
 ```
 
+## Mobile Card System
+
+### Overview
+A comprehensive mobile-first card system that automatically switches between table and card layouts based on screen size. The system prioritizes key financial metrics for quick decision-making.
+
+### Key Components
+- **PropertyCard**: Individual property display card
+- **PropertyCardGrid**: Container for responsive card layout
+- **useResponsiveLayout**: Hook for consistent responsive behavior
+
+### Card Layout Structure
+1. **Header**: Address + Status + Actions
+2. **Key Metrics**: Rent %, ARV %, Equity, Cashflow (most prominent)
+3. **Investment Scores**: Hold Score & Flip Score badges
+4. **Property Details**: Secondary information
+5. **Notes**: Collapsible notes section
+
+### Responsive Breakpoints
+- **Mobile** (`< 900px`): Single column cards, compact spacing
+- **Tablet** (`900px - 1200px`): Single column cards, standard spacing  
+- **Desktop** (`> 1200px`): Table layout (cards hidden)
+
+### Usage Example
+```typescript
+<PropertyCardGrid
+  properties={properties}
+  title="Investment Opportunities"
+  onEdit={handleEditProperty}
+  onViewDetails={(property) => navigate(`/property/${property.id}`)}
+  formatCurrency={formatCurrency}
+  formatPercentage={formatPercentage}
+  getRentRatioColor={getRentRatioColor}
+  getARVRatioColor={getARVRatioColor}
+  filterFunction={(property) => !['Operational', 'Selling'].includes(property.status)}
+  emptyMessage="No properties found"
+/>
+```
+
 ## Design Tokens
 
 ### Status Color Functions

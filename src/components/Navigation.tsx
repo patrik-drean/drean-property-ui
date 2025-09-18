@@ -23,6 +23,7 @@ import CalculateIcon from '@mui/icons-material/Calculate';
 import MenuIcon from '@mui/icons-material/Menu';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import PeopleIcon from '@mui/icons-material/People';
+import Logo from './Logo';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
@@ -69,8 +70,11 @@ const Navigation: React.FC = () => {
         role="presentation"
         onClick={toggleDrawer}
       >
-        <Box sx={{ p: 2 }}>
-          <Typography variant="h6" fontWeight="bold">PropGuide AI</Typography>
+        <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ marginRight: '4px', display: 'flex', alignItems: 'center' }}>
+            <Logo width={40} height={27} />
+          </Box>
+          <Typography variant="h6" fontWeight="bold" sx={{ lineHeight: 1 }}>PropGuide AI</Typography>
         </Box>
         <Divider />
         <List>
@@ -134,6 +138,7 @@ const Navigation: React.FC = () => {
           width: '100%',
           left: 0,
           right: 0,
+          borderRadius: 0,
         }}
       >
         <Container maxWidth={false} sx={{ px: { xs: 1, sm: 3 } }}>
@@ -144,25 +149,30 @@ const Navigation: React.FC = () => {
                 aria-label="open drawer"
                 edge="start"
                 onClick={toggleDrawer}
-                sx={{ mr: 2 }}
+                sx={{ mr: 2, ml: 1 }}
               >
                 <MenuIcon />
               </IconButton>
             )}
             
-            <Typography 
-              variant="h5" 
-              component="div" 
-              sx={{ 
-                fontWeight: 600,
-                letterSpacing: '0.5px',
-                color: '#FFFFFF',
-                flexGrow: 1,
-                fontSize: { xs: '1.2rem', sm: '1.5rem' }
-              }}
-            >
-              PropGuide AI
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+              <Box sx={{ marginRight: '4px', display: 'flex', alignItems: 'center' }}>
+                <Logo width={48} height={32} />
+              </Box>
+              <Typography 
+                variant="h5" 
+                component="div" 
+                sx={{ 
+                  fontWeight: 600,
+                  letterSpacing: '0.5px',
+                  color: '#FFFFFF',
+                  fontSize: { xs: '1.2rem', sm: '1.5rem' },
+                  lineHeight: 1
+                }}
+              >
+                PropGuide AI
+              </Typography>
+            </Box>
             
             {/* Remove the Todos tab from the desktop nav */}
             {!isMobile && (

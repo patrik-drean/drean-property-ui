@@ -15,6 +15,11 @@
 - Define interfaces for all data structures
 - Use proper typing for Material-UI components
 
+### Shared Utilities
+- **Status Colors**: Use `getStatusColor()` from `src/utils/statusColors.ts` instead of duplicating color logic
+- **Status Order**: Use `getStatusOrder()` from `src/utils/statusColors.ts` for consistent sorting
+- **Status Descriptions**: Use `getStatusDescription()` for human-readable status text
+
 ### React Best Practices
 - Use functional components with hooks
 - Implement proper error boundaries

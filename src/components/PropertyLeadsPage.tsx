@@ -24,6 +24,11 @@ import {
   styled,
   Checkbox,
   Chip,
+  Pagination,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { PropertyLead, CreatePropertyLead } from '../types/property';
@@ -138,6 +143,11 @@ const PropertyLeadsPage: React.FC = () => {
   });
   const [locallyConvertedLeads, setLocallyConvertedLeads] = useState<Set<string>>(new Set());
   const [expandedLeads, setExpandedLeads] = useState<Set<string>>(new Set());
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [totalItems, setTotalItems] = useState(0);
 
   // Default message template
   const defaultMessageTemplate = `Hi there! My name is Patrik. I really like this property and believe it has great potential. I'd like to explore an offer around {PRICE}. I'm an experienced investor who is reliable and quick when it comes to closing. If this number is in the ballpark, I'd love to discuss further. Let me know what you and the seller think! Have a great day! 
@@ -204,6 +214,9 @@ const PropertyLeadsPage: React.FC = () => {
     try {
       const data = await getPropertyLeadsWithArchivedStatus(showArchived);
       setPropertyLeads(data);
+      setTotalItems(data.length);
+      // Reset to first page when data changes
+      setCurrentPage(1);
     } catch (err) {
       console.error('Error fetching property leads:', err);
       setError('Failed to load property leads. Please try again.');
@@ -250,6 +263,33 @@ const PropertyLeadsPage: React.FC = () => {
       return a.address.localeCompare(b.address);
     });
   };
+
+  // Pagination helper functions - now using memoized version
+  const getPaginatedLeads = () => paginatedLeads;
+
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setCurrentPage(page);
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleItemsPerPageChange = (event: any) => {
+    const newItemsPerPage = event.target.value;
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page
+  };
+
+  // Performance optimization: Memoize sorted leads to avoid re-sorting on every render
+  const sortedLeads = React.useMemo(() => sortPropertyLeads(propertyLeads), [propertyLeads]);
+  
+  // Performance optimization: Memoize paginated leads
+  const paginatedLeads = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedLeads.slice(startIndex, endIndex);
+  }, [sortedLeads, currentPage, itemsPerPage]);
 
   const handleAddLead = () => {
     setIsEditing(false);
@@ -818,7 +858,29 @@ const PropertyLeadsPage: React.FC = () => {
 
       {/* Desktop view - Table */}
       <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>
-        <Paper elevation={2}>
+        <Paper elevation={2} sx={{ position: 'relative' }}>
+          {loading && (
+            <Box sx={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              height: '4px', 
+              backgroundColor: 'primary.main',
+              zIndex: 1
+            }}>
+              <Box sx={{
+                height: '100%',
+                backgroundColor: 'primary.light',
+                animation: 'pulse 1.5s ease-in-out infinite',
+                '@keyframes pulse': {
+                  '0%': { width: '0%' },
+                  '50%': { width: '100%' },
+                  '100%': { width: '0%' }
+                }
+              }} />
+            </Box>
+          )}
           <TableContainer>
             <Table>
               <TableHead>
@@ -868,7 +930,7 @@ const PropertyLeadsPage: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  sortPropertyLeads(propertyLeads).map((lead) => (
+                  getPaginatedLeads().map((lead) => (
                     <StyledTableRow 
                       key={lead.id}
                       sx={{
@@ -1094,7 +1156,7 @@ const PropertyLeadsPage: React.FC = () => {
             </Typography>
           </Paper>
         ) : (
-          sortPropertyLeads(propertyLeads).map((lead) => {
+          getPaginatedLeads().map((lead) => {
             const isExpanded = expandedLeads.has(lead.id);
             return (
               <Paper 
@@ -1420,6 +1482,64 @@ const PropertyLeadsPage: React.FC = () => {
           })
         )}
       </Box>
+
+      {/* Pagination Controls */}
+      {propertyLeads.length > 0 && (
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          mt: 3,
+          mb: 2,
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 2, sm: 0 }
+        }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 2,
+            flexDirection: { xs: 'column', sm: 'row' },
+            width: { xs: '100%', sm: 'auto' }
+          }}>
+            <Typography variant="body2" color="text.secondary">
+              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} leads
+            </Typography>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Per page</InputLabel>
+              <Select
+                value={itemsPerPage}
+                label="Per page"
+                onChange={handleItemsPerPageChange}
+                disabled={loading}
+              >
+                <MenuItem value={10}>10</MenuItem>
+                <MenuItem value={25}>25</MenuItem>
+                <MenuItem value={50}>50</MenuItem>
+                <MenuItem value={100}>100</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+          
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={handlePageChange}
+            color="primary"
+            size="large"
+            showFirstButton
+            showLastButton
+            disabled={loading}
+            sx={{
+              '& .MuiPaginationItem-root': {
+                borderRadius: 2,
+              },
+              '& .MuiPaginationItem-root.Mui-disabled': {
+                opacity: 0.5,
+              }
+            }}
+          />
+        </Box>
+      )}
 
       {/* Add/Edit Dialog */}
       <PropertyLeadDialog

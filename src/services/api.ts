@@ -107,6 +107,27 @@ export const getPropertyLeadsWithArchivedStatus = async (showArchived?: boolean)
   return response.data;
 };
 
+// Enhanced version with pagination support
+export const getPropertyLeadsPaginated = async (
+  showArchived?: boolean,
+  page?: number,
+  pageSize?: number,
+  tags?: string[],
+  converted?: boolean
+): Promise<{ data: PropertyLead[]; total: number; page: number; pageSize: number }> => {
+  const params: any = { showArchived };
+  
+  if (page !== undefined) params.page = page;
+  if (pageSize !== undefined) params.pageSize = pageSize;
+  if (tags && tags.length > 0) params.tags = tags.join(',');
+  if (converted !== undefined) params.converted = converted;
+  
+  const response = await api.get<{ data: PropertyLead[]; total: number; page: number; pageSize: number }>('/api/PropertyLeads', {
+    params
+  });
+  return response.data;
+};
+
 // Note API Methods
 export const getNotesByPropertyId = async (propertyId: string): Promise<Note[]> => {
   const response = await api.get<Note[]>(`/api/Notes/property/${propertyId}`);

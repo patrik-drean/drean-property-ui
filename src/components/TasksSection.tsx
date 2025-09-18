@@ -329,7 +329,7 @@ const TasksSection: React.FC<TasksSectionProps> = memo(({ property, onPropertyUp
               label={linkedSection.name} 
               size="small" 
               onDelete={handleUnlinkSection}
-              sx={{ backgroundColor: '#e3f2fd' }}
+              sx={{ backgroundColor: '#D4AF37', color: '#2c3e50' }}
             />
             <Button size="small" variant="outlined" onClick={openCreateDialog}>
               Add Task

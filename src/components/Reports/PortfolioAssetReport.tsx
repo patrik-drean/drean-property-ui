@@ -223,11 +223,17 @@ export const PortfolioAssetReport: React.FC<PortfolioAssetReportProps> = ({
   const sortedProperties = useMemo(() => {
     if (!report) return [];
     return [...report.properties].sort((a, b) => {
-      // Sort operational properties first, then by equity descending
-      if (a.isOperational !== b.isOperational) {
-        return a.isOperational ? -1 : 1;
+      // First sort by status using the same order as properties page
+      const statusOrder = ['Opportunity', 'Soft Offer', 'Hard Offer', 'Selling', 'Rehab', 'Needs Tenant', 'Operational'];
+      const aStatusIndex = statusOrder.indexOf(a.status);
+      const bStatusIndex = statusOrder.indexOf(b.status);
+
+      if (aStatusIndex !== bStatusIndex) {
+        return aStatusIndex - bStatusIndex;
       }
-      return b.equity - a.equity;
+
+      // Then sort alphabetically by address
+      return a.address.localeCompare(b.address);
     });
   }, [report]);
 

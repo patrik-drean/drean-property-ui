@@ -144,13 +144,17 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
   const sortedProperties = useMemo(() => {
     if (!report) return [];
     return [...report.properties].sort((a, b) => {
-      // Sort operational properties first, then by net cash flow descending
-      if (a.isOperational !== b.isOperational) {
-        return a.isOperational ? -1 : 1;
+      // First sort by status using the same order as properties page
+      const statusOrder = ['Opportunity', 'Soft Offer', 'Hard Offer', 'Selling', 'Rehab', 'Needs Tenant', 'Operational'];
+      const aStatusIndex = statusOrder.indexOf(a.status);
+      const bStatusIndex = statusOrder.indexOf(b.status);
+
+      if (aStatusIndex !== bStatusIndex) {
+        return aStatusIndex - bStatusIndex;
       }
-      const aNetCashFlow = selectedScenario === 'current' ? a.currentNetCashFlow : a.potentialNetCashFlow;
-      const bNetCashFlow = selectedScenario === 'current' ? b.currentNetCashFlow : b.potentialNetCashFlow;
-      return bNetCashFlow - aNetCashFlow;
+
+      // Then sort alphabetically by address
+      return a.address.localeCompare(b.address);
     });
   }, [report, selectedScenario]);
 
@@ -205,7 +209,7 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
         <ToggleButtonGroup
           value={selectedScenario}
           exclusive
-          onChange={(event, newScenario) => {
+          onChange={(_, newScenario) => {
             if (newScenario !== null) {
               setSelectedScenario(newScenario);
             }
@@ -245,7 +249,7 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
       </Box>
 
       {/* Summary cards */}
-      <Grid container spacing={3} mb={4}>
+      <Grid container spacing={3} mb={4} px={2}>
         <Grid item xs={12} sm={6} md={3}>
           <SummaryCard
             title={`${selectedScenario === 'current' ? 'Current' : 'Potential'} Monthly Income`}

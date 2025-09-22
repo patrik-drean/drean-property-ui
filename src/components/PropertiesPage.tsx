@@ -166,16 +166,14 @@ const PropertiesPage: React.FC = () => {
   const sortedProperties = [...properties].sort((a, b) => {
     const orderA = getStatusOrder(a.status);
     const orderB = getStatusOrder(b.status);
-    
+
     // First sort by status
     if (orderA !== orderB) {
       return orderA - orderB;
     }
-    
-    // Then sort by Hold Score in descending order
-    const scoreA = calculateHoldScore(a);
-    const scoreB = calculateHoldScore(b);
-    return scoreB - scoreA;
+
+    // Then sort alphabetically by address
+    return a.address.localeCompare(b.address);
   });
 
 
@@ -579,7 +577,7 @@ ${property.zillowLink}`;
       <PropertyCardGrid
         properties={sortedProperties}
         onEdit={handleEditProperty}
-        onViewDetails={(property) => navigate(`/property/${property.id}`)}
+        onViewDetails={(property) => navigate(`/properties/${property.id}`)}
         formatCurrency={formatCurrency}
         formatPercentage={formatPercentage}
         getRentRatioColor={getRentRatioColor}
@@ -710,9 +708,9 @@ ${property.zillowLink}`;
                           </Tooltip>
                         )}
                         <RouterLink
-                          to={`/properties/${encodeURIComponent(property.address)}`}
+                          to={`/properties/${property.id}`}
                           style={{
-                            color: '#1976d2',
+                            color: '#1B4D3E',
                             textDecoration: 'none',
                             fontWeight: 500,
                             display: 'block',
@@ -1059,7 +1057,7 @@ ${property.zillowLink}`;
       <PropertyCardGrid
         properties={sortedProperties}
         onEdit={handleEditProperty}
-        onViewDetails={(property) => navigate(`/property/${property.id}`)}
+        onViewDetails={(property) => navigate(`/properties/${property.id}`)}
         formatCurrency={formatCurrency}
         formatPercentage={formatPercentage}
         getRentRatioColor={getRentRatioColor}
@@ -1162,9 +1160,9 @@ ${property.zillowLink}`;
                               </Tooltip>
                             )}
                             <RouterLink
-                              to={`/properties/${encodeURIComponent(property.address)}`}
+                              to={`/properties/${property.id}`}
                               style={{
-                                color: '#1976d2',
+                                color: '#1B4D3E',
                                 textDecoration: 'none',
                                 fontWeight: 500,
                                 display: 'block',

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Paper, Button, Chip, Card, TextField, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, IconButton, Tooltip, Link as MuiLink, Divider, Snackbar, Alert, Avatar, Select, MenuItem, FormControl, InputLabel, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, Note, Link as PropertyLink, CreateNote, CreateLink, Contact } from '../types/property';
-import { getProperty } from '../services/api';
+import { getPropertyById } from '../services/api';
 import { getNotesByPropertyId, createNote, getLinksByPropertyId, createLink, deleteNote, deleteLink, getContactsByPropertyId } from '../services/api';
 import PropertyDialog from '../components/PropertyDialog';
 import TasksSection from '../components/TasksSection';
@@ -24,7 +24,7 @@ import {
 } from '../utils/scoreCalculator';
 
 const PropertyDetailsPage: React.FC = () => {
-  const { address } = useParams<{ address: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [property, setProperty] = useState<Property | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -178,10 +178,9 @@ const PropertyDetailsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!address) return;
+    if (!id) return;
     setLoading(true);
-    const decodedAddress = decodeURIComponent(address);
-    getProperty(decodedAddress)
+    getPropertyById(id)
       .then((property) => {
         setProperty(property);
         // Set initial expanded sections based on property status
@@ -210,7 +209,7 @@ const PropertyDetailsPage: React.FC = () => {
         setSnackbar({ open: true, message: 'Failed to load property details', severity: 'error' });
       })
       .finally(() => setLoading(false));
-  }, [address]);
+  }, [id]);
 
   const handleAddNote = async () => {
     if (!property || !newNote.trim()) return;

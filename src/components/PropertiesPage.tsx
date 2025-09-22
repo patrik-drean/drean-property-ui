@@ -318,6 +318,7 @@ const PropertiesPage: React.FC = () => {
           units: propertyWithScore.units,
           actualRent: propertyWithScore.actualRent,
           currentHouseValue: propertyWithScore.currentHouseValue,
+          currentLoanValue: propertyWithScore.currentLoanValue,
           propertyUnits: propertyWithScore.propertyUnits,
           monthlyExpenses: propertyWithScore.monthlyExpenses,
           capitalCosts: propertyWithScore.capitalCosts

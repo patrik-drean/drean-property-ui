@@ -76,6 +76,7 @@ export interface Property {
     units: number | null;
     actualRent: number;
     currentHouseValue: number;
+    currentLoanValue: number | null;
     propertyUnits: PropertyUnit[];
     monthlyExpenses: MonthlyExpenses | null;
     capitalCosts: CapitalCosts | null;

@@ -354,6 +354,7 @@ export const testPerfectValueCalculations = () => {
     units,
     actualRent: 0,
     currentHouseValue: 0,
+    currentLoanValue: null,
     propertyUnits: [],
     monthlyExpenses: null,
     capitalCosts: null

@@ -142,10 +142,10 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
       ]
     }));
     
-    // Initialize status change date for the new unit
+    // Initialize status change date for the new unit (empty)
     setUnitStatusChangeDates(prev => ({
       ...prev,
-      [newUnitIndex]: todayDateString
+      [newUnitIndex]: ''
     }));
   };
 
@@ -508,10 +508,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
           // Use the date from the last status change
           const lastStatusChange = unit.statusHistory[unit.statusHistory.length - 1];
           initialStatusChangeDates[index] = lastStatusChange.dateStart.split('T')[0];
-        } else {
-          // Default to today if no status history
-          initialStatusChangeDates[index] = getTodayDateString();
         }
+        // No default date - leave empty if no status history
       });
       setUnitStatusChangeDates(initialStatusChangeDates);
       
@@ -941,8 +939,10 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                           value={unit.status}
                           onChange={(e) => {
                             const newStatus = e.target.value;
-                            const statusChangeDate = unitStatusChangeDates[index] || getTodayDateString();
-                            updateUnitStatus(index, newStatus, statusChangeDate);
+                            const statusChangeDate = unitStatusChangeDates[index];
+                            if (statusChangeDate) {
+                              updateUnitStatus(index, newStatus, statusChangeDate);
+                            }
                           }}
                           label="Status"
                         >
@@ -968,7 +968,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                         fullWidth
                         label="Status Change Date"
                         type="date"
-                        value={unitStatusChangeDates[index] || getTodayDateString()}
+                        value={unitStatusChangeDates[index] || ''}
                         onChange={(e) => {
                           const newDate = e.target.value;
                           

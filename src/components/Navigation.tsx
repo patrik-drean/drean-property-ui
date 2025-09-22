@@ -22,6 +22,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import MenuIcon from '@mui/icons-material/Menu';
 import ListAltIcon from '@mui/icons-material/ListAlt';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import PeopleIcon from '@mui/icons-material/People';
 import Logo from './Logo';
 
@@ -89,9 +90,9 @@ const Navigation: React.FC = () => {
             </ListItemIcon>
             <ListItemText primary="Properties" />
           </ListItem>
-          <ListItem 
-            button 
-            component={RouterLink} 
+          <ListItem
+            button
+            component={RouterLink}
             to="/leads"
             selected={isActive('/leads')}
           >
@@ -100,9 +101,20 @@ const Navigation: React.FC = () => {
             </ListItemIcon>
             <ListItemText primary="Leads" />
           </ListItem>
-          <ListItem 
-            button 
-            component={RouterLink} 
+          <ListItem
+            button
+            component={RouterLink}
+            to="/reports"
+            selected={isActive('/reports')}
+          >
+            <ListItemIcon>
+              <AssessmentIcon color={isActive('/reports') ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Reports" />
+          </ListItem>
+          <ListItem
+            button
+            component={RouterLink}
             to="/team"
             selected={isActive('/team')}
           >
@@ -197,7 +209,16 @@ const Navigation: React.FC = () => {
                 >
                   Leads
                 </Button>
-                
+
+                <Button
+                  component={RouterLink}
+                  to="/reports"
+                  startIcon={<AssessmentIcon />}
+                  sx={getNavButtonStyle('/reports')}
+                >
+                  Reports
+                </Button>
+
                 <Button
                   component={RouterLink}
                   to="/team"

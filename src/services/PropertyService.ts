@@ -4,7 +4,7 @@ import { Property } from '../types/property';
 // import { Property } from '../types/property';
 
 // Define the base URL from the environment or use a default
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://p7mxmmgxaw.us-west-2.awsapprunner.com';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://drean-property-api-production.up.railway.app';
 
 // Define the PropertyDTO from the API
 interface PropertyDTO {

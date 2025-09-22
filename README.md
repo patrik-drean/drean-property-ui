@@ -86,7 +86,7 @@ npm install --save gh-pages
 3. Configure the API endpoint in `.env.production`:
 ```
 # Production API URL
-REACT_APP_API_BASE_URL=https://p7mxmmgxaw.us-west-2.awsapprunner.com
+REACT_APP_API_BASE_URL=https://drean-property-api-production.up.railway.app
 
 # Set to false to use the real API backend instead of mock data
 REACT_APP_USE_MOCK_API=false
@@ -99,7 +99,7 @@ npm run deploy
 
 5. The app will be available at `https://patrik-drean.github.io/drean-property-ui`
 
-The current live demo is configured to use the real backend API hosted on AWS App Runner at `https://p7mxmmgxaw.us-west-2.awsapprunner.com`.
+The current live demo is configured to use the real backend API hosted on Railway at `https://drean-property-api-production.up.railway.app`.
 
 ### Other Free Deployment Options
 

@@ -243,6 +243,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     units: null,
     actualRent: 0,
     currentHouseValue: 0,
+    currentLoanValue: null,
     propertyUnits: [],
     monthlyExpenses: {
       id: '',
@@ -419,6 +420,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
       units: null,
       actualRent: 0,
       currentHouseValue: 0,
+      currentLoanValue: null,
       propertyUnits: [],
       monthlyExpenses: {
         id: '',
@@ -472,6 +474,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         units: property.units,
         actualRent: property.actualRent,
         currentHouseValue: property.currentHouseValue,
+        currentLoanValue: property.currentLoanValue,
         propertyUnits: property.propertyUnits,
         monthlyExpenses: property.monthlyExpenses || {
           id: '',
@@ -1079,6 +1082,23 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     value={formatInputCurrency(newProperty.currentHouseValue)}
                     onChange={(e) => setNewProperty({ ...newProperty, currentHouseValue: handleCurrencyInput(e.target.value) })}
                     margin="normal"
+                    InputProps={{
+                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                    }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Current Loan Value"
+                    value={newProperty.currentLoanValue !== null ? formatInputCurrency(newProperty.currentLoanValue) : ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setNewProperty({
+                        ...newProperty,
+                        currentLoanValue: value === '' ? null : handleCurrencyInput(value)
+                      });
+                    }}
+                    margin="normal"
+                    placeholder="Optional"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
                     }}

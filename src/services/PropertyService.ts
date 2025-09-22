@@ -35,6 +35,7 @@ interface PropertyDTO {
   units: number | null;
   actualRent: number;
   currentHouseValue: number;
+  currentLoanValue: number | null;
   propertyUnits: {
     id: string;
     propertyId: string;
@@ -97,6 +98,7 @@ const mapDTOToProperty = (dto: PropertyDTO): Property => {
     units: dto.units,
     actualRent: dto.actualRent,
     currentHouseValue: dto.currentHouseValue,
+    currentLoanValue: dto.currentLoanValue,
     propertyUnits: dto.propertyUnits.map(unit => ({
       ...unit,
       statusHistory: unit.statusHistory || [{

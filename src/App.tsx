@@ -10,21 +10,25 @@ import ArchivedPropertiesPage from './components/ArchivedPropertiesPage';
 import Calculator from './components/Calculator';
 import PropertyLeadsPage from './components/PropertyLeadsPage';
 import PropertyDetailsPage from './pages/PropertyDetailsPage';
+import InvestmentReportPage from './pages/InvestmentReportPage';
 import TeamPage from './components/TeamPage';
 import { ReportsPage } from './pages/ReportsPage';
 
 const router = createHashRouter(
   createRoutesFromElements(
-    <Route element={<Navigation />}>
-      <Route path="/" element={<Navigate to="/properties" replace />} />
-      <Route path="/properties" element={<PropertiesPage />} />
-      <Route path="/properties/:id" element={<PropertyDetailsPage />} />
-      <Route path="/archived" element={<ArchivedPropertiesPage />} />
-      <Route path="/calculator" element={<Calculator />} />
-      <Route path="/leads" element={<PropertyLeadsPage />} />
-      <Route path="/reports" element={<ReportsPage />} />
-      <Route path="/team" element={<TeamPage />} />
-    </Route>
+    <>
+      <Route path="/reports/investment/:reportId" element={<InvestmentReportPage />} />
+      <Route element={<Navigation />}>
+        <Route path="/" element={<Navigate to="/properties" replace />} />
+        <Route path="/properties" element={<PropertiesPage />} />
+        <Route path="/properties/:id" element={<PropertyDetailsPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/archived" element={<ArchivedPropertiesPage />} />
+        <Route path="/calculator" element={<Calculator />} />
+        <Route path="/leads" element={<PropertyLeadsPage />} />
+        <Route path="/team" element={<TeamPage />} />
+      </Route>
+    </>
   )
 );
 

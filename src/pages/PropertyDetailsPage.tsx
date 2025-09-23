@@ -9,6 +9,7 @@ import PropertyDialog from '../components/PropertyDialog';
 import TasksSection from '../components/TasksSection';
 import ContactDialog from '../components/ContactDialog';
 import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from '../components/shared/PropertyTooltips';
+import ShareReportButton from '../components/Reports/ShareReportButton';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -325,14 +326,27 @@ const PropertyDetailsPage: React.FC = () => {
           </IconButton>
           <Typography variant="h5">Property Details</Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<Icons.Edit />}
-          onClick={() => setPropertyDialogOpen(true)}
-          sx={{ borderRadius: 2, alignSelf: { xs: 'stretch', sm: 'flex-end' } }}
-        >
-          Edit Property
-        </Button>
+        <Box display="flex" gap={2} flexDirection={{ xs: 'column', sm: 'row' }} mb={3}>
+          <Button
+            variant="contained"
+            startIcon={<Icons.Edit />}
+            onClick={() => setPropertyDialogOpen(true)}
+            size="large"
+            sx={{
+              flex: 1,
+              maxWidth: { sm: '200px' },
+              borderRadius: 2
+            }}
+          >
+            Edit
+          </Button>
+          <ShareReportButton
+            property={property}
+            variant="outlined"
+            size="large"
+            sx={{ flex: 1 }}
+          />
+        </Box>
       </Box>
       {/* Property Details - takes up full width */}
       <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>

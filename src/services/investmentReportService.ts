@@ -1,6 +1,12 @@
-import jsPDF from 'jspdf';
 import { Property } from '../types/property';
-import { InvestmentSummaryData, InvestmentCalculations, ReportError } from '../types/investmentReport';
+import {
+  InvestmentReportData,
+  InvestmentCalculations,
+  ReportError,
+  HoldScoreBreakdown,
+  FlipScoreBreakdown,
+  ExpenseBreakdown
+} from '../types/investmentReport';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -11,6 +17,8 @@ import {
   calculateFlipScore,
   getHoldScoreBreakdown,
   getFlipScoreBreakdown,
+  calculatePerfectRentForHoldScore,
+  calculatePerfectARVForFlipScore,
 } from '../utils/scoreCalculator';
 
 // Format currency for display
@@ -32,16 +40,15 @@ export const formatPercentage = (value: number): string => {
   }).format(value);
 };
 
-// Sanitize address for filename
-const sanitizeForFilename = (text: string): string => {
-  return text.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+// Generate unique report ID
+export const generateReportId = (): string => {
+  return `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
-// Generate report filename
-export const generateFilename = (address: string): string => {
-  const sanitizedAddress = sanitizeForFilename(address);
-  const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  return `Investment-Summary-${sanitizedAddress}-${date}.pdf`;
+// Generate shareable report URL
+export const generateReportUrl = (reportId: string): string => {
+  const baseUrl = window.location.origin;
+  return `${baseUrl}/#/reports/investment/${reportId}`;
 };
 
 // Validate property data and collect errors
@@ -76,316 +83,141 @@ export const validatePropertyData = (property: Property): ReportError[] => {
   return errors;
 };
 
-// Calculate all investment metrics
+// Calculate all investment metrics based on Investment Details tooltips
 export const calculateInvestmentMetrics = (property: Property): InvestmentCalculations => {
+  // Basic calculations
   const rentRatio = calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts);
   const arvRatio = calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv);
-  const newLoan = calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv);
+  const newLoanAmount = calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv);
   const homeEquity = calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv);
-  const monthlyCashflow = calculateCashflow(property.potentialRent, property.offerPrice, newLoan);
+  const monthlyCashflow = calculateCashflow(property.potentialRent, property.offerPrice, newLoanAmount);
 
+  // Investment scores
   const holdScore = calculateHoldScore(property);
   const flipScore = calculateFlipScore(property);
-  const holdScoreBreakdown = getHoldScoreBreakdown(property);
-  const flipScoreBreakdown = getFlipScoreBreakdown(property);
+  const holdBreakdown = getHoldScoreBreakdown(property);
+  const flipBreakdown = getFlipScoreBreakdown(property);
 
-  // Capital requirements
-  const downPayment = property.capitalCosts?.downPayment || 0;
-  const closingCosts = property.capitalCosts?.closingCosts || 0;
-  const upfrontRepairs = property.capitalCosts?.upfrontRepairs || property.rehabCosts;
-  const otherCapitalCosts = property.capitalCosts?.other || 0;
-  const totalCapitalRequired = downPayment + closingCosts + upfrontRepairs + otherCapitalCosts;
+  // Perfect score calculations
+  const perfectRentForHoldScore = calculatePerfectRentForHoldScore(
+    property.offerPrice,
+    property.rehabCosts,
+    property.arv,
+    property.units || 1
+  );
+  const perfectARVForFlipScore = calculatePerfectARVForFlipScore(
+    property.offerPrice,
+    property.rehabCosts
+  );
 
-  // Returns analysis
-  const annualCashflow = monthlyCashflow * 12;
-  const monthlyIncome = property.potentialRent;
-  const monthlyExpenses = property.monthlyExpenses?.total || 0;
-  const roiProjection = totalCapitalRequired > 0 ? (annualCashflow / totalCapitalRequired) : 0;
+  // Hold Score Breakdown
+  const holdScoreBreakdown: HoldScoreBreakdown = {
+    totalScore: holdBreakdown.totalScore,
+    cashflowScore: holdBreakdown.cashflowScore || 0,
+    rentRatioScore: holdBreakdown.rentRatioScore || 0,
+    cashflowPerUnit: monthlyCashflow / (property.units || 1),
+    rentRatioPercentage: rentRatio,
+  };
+
+  // Flip Score Breakdown
+  const flipScoreBreakdown: FlipScoreBreakdown = {
+    totalScore: flipBreakdown.totalScore,
+    arvRatioScore: flipBreakdown.arvRatioScore || 0,
+    equityScore: flipBreakdown.equityScore || 0,
+    arvRatioPercentage: arvRatio,
+    equityAmount: homeEquity,
+  };
+
+  // Monthly Expenses Breakdown
+  const monthlyExpenses: ExpenseBreakdown = {
+    mortgage: property.monthlyExpenses?.mortgage || 0,
+    taxes: property.monthlyExpenses?.taxes || 0,
+    insurance: property.monthlyExpenses?.insurance || 0,
+    propertyManagement: property.monthlyExpenses?.propertyManagement || 0,
+    utilities: property.monthlyExpenses?.utilities || 0,
+    vacancy: property.monthlyExpenses?.vacancy || 0,
+    capEx: property.monthlyExpenses?.capEx || 0,
+    other: property.monthlyExpenses?.other || 0,
+    total: property.monthlyExpenses?.total || 0,
+  };
+
+  // Financing Details
+  const purchasePrice = property.offerPrice;
+  const rehabCosts = property.rehabCosts;
+  const totalInvestment = purchasePrice + rehabCosts;
+  const downPaymentRequired = property.capitalCosts?.downPayment || (totalInvestment * 0.25); // Assume 25% if not specified
+  const closingCosts = property.capitalCosts?.closingCosts || (purchasePrice * 0.02); // Assume 2% if not specified
+  const postRefinanceEquity = homeEquity;
+  const cashOnCashReturn = downPaymentRequired > 0 ? (monthlyCashflow * 12) / downPaymentRequired : 0;
 
   return {
+    // Investment Summary Section
     rentRatio,
     arvRatio,
     holdScore,
     flipScore,
-    holdScoreBreakdown,
-    flipScoreBreakdown,
     homeEquity,
     monthlyCashflow,
-    newLoan,
-    totalCapitalRequired,
-    downPayment,
-    closingCosts,
-    upfrontRepairs,
-    otherCapitalCosts,
-    annualCashflow,
-    monthlyIncome,
+
+    // Investment Scores Analysis Section
+    holdScoreBreakdown,
+    flipScoreBreakdown,
+    perfectRentForHoldScore,
+    perfectARVForFlipScore,
+
+    // Cash Flow Analysis Section
+    monthlyIncome: property.potentialRent,
     monthlyExpenses,
-    roiProjection,
+    netMonthlyCashflow: monthlyCashflow,
+    annualCashflow: monthlyCashflow * 12,
+
+    // Financing Details Section
+    purchasePrice,
+    rehabCosts,
+    totalInvestment,
+    arv: property.arv,
+    newLoanAmount,
+    downPaymentRequired,
+    closingCosts,
+    postRefinanceEquity,
+    cashOnCashReturn,
   };
 };
 
-// Prepare report data
-export const prepareReportData = (property: Property): InvestmentSummaryData => {
+// Prepare report data for web sharing
+export const prepareReportData = (property: Property): InvestmentReportData => {
   const calculations = calculateInvestmentMetrics(property);
+  const reportId = generateReportId();
 
   return {
     property,
     calculations,
+    reportId,
     generatedAt: new Date(),
   };
 };
 
-// Color definitions matching theme
-const COLORS = {
-  header: '#2E7D32',
-  sectionHeader: '#1976D2',
-  positive: '#4CAF50',
-  negative: '#F44336',
-  neutral: '#212121',
-  light: '#757575',
-  background: '#f8f9fa',
+// Get score color based on score value (for web display)
+export const getScoreColor = (score: number): string => {
+  if (score >= 9) return '#4CAF50'; // Green
+  if (score >= 7) return '#FFC107'; // Yellow/Orange
+  if (score >= 5) return '#FF9800'; // Orange
+  return '#F44336'; // Red
 };
 
-// Get color based on value (for metrics)
-const getMetricColor = (value: number, isPositive: boolean = true): string => {
-  if (value === 0) return COLORS.neutral;
-  return (isPositive ? value > 0 : value < 0) ? COLORS.positive : COLORS.negative;
+// Get metric color for positive/negative values
+export const getMetricColor = (value: number, isPositive: boolean = true): string => {
+  if (value === 0) return '#757575'; // Gray
+  return (isPositive ? value > 0 : value < 0) ? '#4CAF50' : '#F44336';
 };
 
-// Get score color based on score value
-const getScoreColor = (score: number): string => {
-  if (score >= 9) return COLORS.positive;
-  if (score >= 7) return '#FFC107';
-  if (score >= 5) return '#FF9800';
-  return COLORS.negative;
-};
+// Generate filename for PDF exports (when needed)
+export const generateFilename = (address: string): string => {
+  const today = new Date().toISOString().split('T')[0];
+  const sanitizedAddress = address
+    .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .trim();
 
-// Generate PDF report
-export const generateInvestmentSummaryPDF = async (data: InvestmentSummaryData): Promise<void> => {
-  const { property, calculations } = data;
-
-  // Create PDF with letter size
-  const pdf = new jsPDF('portrait', 'in', 'letter');
-  const pageWidth = 8.5;
-  const pageHeight = 11;
-  const margin = 0.75;
-  const contentWidth = pageWidth - (margin * 2);
-
-  let yPosition = margin;
-
-  // Helper function to add text with color
-  const addText = (text: string, x: number, y: number, options: {
-    fontSize?: number;
-    fontWeight?: 'normal' | 'bold';
-    color?: string;
-    align?: 'left' | 'center' | 'right';
-  } = {}) => {
-    const { fontSize = 10, fontWeight = 'normal', color = COLORS.neutral, align = 'left' } = options;
-
-    pdf.setFontSize(fontSize);
-    pdf.setFont('helvetica', fontWeight);
-    pdf.setTextColor(color);
-
-    if (align === 'center') {
-      pdf.text(text, x, y, { align: 'center' });
-    } else if (align === 'right') {
-      pdf.text(text, x, y, { align: 'right' });
-    } else {
-      pdf.text(text, x, y);
-    }
-  };
-
-  // Helper function to add section header
-  const addSectionHeader = (title: string, y: number): number => {
-    addText(title, margin, y, { fontSize: 12, fontWeight: 'bold', color: COLORS.sectionHeader });
-    return y + 0.25;
-  };
-
-  // Header Section
-  addText('INVESTMENT SUMMARY REPORT', pageWidth / 2, yPosition, {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.header,
-    align: 'center'
-  });
-  yPosition += 0.3;
-
-  addText(property.address, pageWidth / 2, yPosition, {
-    fontSize: 14,
-    fontWeight: 'bold',
-    align: 'center'
-  });
-  yPosition += 0.2;
-
-  addText(`Status: ${property.status}`, pageWidth / 2, yPosition, {
-    fontSize: 10,
-    align: 'center'
-  });
-  yPosition += 0.1;
-
-  addText(`Generated: ${data.generatedAt.toLocaleDateString()}`, pageWidth / 2, yPosition, {
-    fontSize: 8,
-    color: COLORS.light,
-    align: 'center'
-  });
-  yPosition += 0.4;
-
-  // Section 1: Property Overview
-  yPosition = addSectionHeader('Property Overview', yPosition);
-  const col1 = margin;
-  const col2 = margin + contentWidth / 3;
-  const col3 = margin + (contentWidth * 2 / 3);
-
-  addText('Square Footage:', col1, yPosition, { fontWeight: 'bold' });
-  addText(property.squareFootage?.toLocaleString() || 'N/A', col1 + 1.2, yPosition);
-
-  addText('Units:', col2, yPosition, { fontWeight: 'bold' });
-  addText(property.units?.toString() || 'N/A', col2 + 0.8, yPosition);
-
-  addText('Current Value:', col3, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(property.currentHouseValue || property.arv), col3 + 1.2, yPosition);
-  yPosition += 0.35;
-
-  // Section 2: Investment Analysis
-  yPosition = addSectionHeader('Investment Analysis', yPosition);
-
-  addText('Offer Price:', col1, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(property.offerPrice), col1 + 1.2, yPosition);
-
-  addText('Rehab Costs:', col2, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(property.rehabCosts), col2 + 1.2, yPosition);
-
-  addText('ARV:', col3, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(property.arv), col3 + 1.2, yPosition);
-  yPosition += 0.2;
-
-  addText('Potential Rent:', col1, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(property.potentialRent), col1 + 1.2, yPosition);
-
-  addText('Rent Ratio:', col2, yPosition, { fontWeight: 'bold' });
-  addText(formatPercentage(calculations.rentRatio), col2 + 1.2, yPosition, {
-    color: calculations.rentRatio >= 0.01 ? COLORS.positive : COLORS.negative
-  });
-
-  addText('ARV Ratio:', col3, yPosition, { fontWeight: 'bold' });
-  addText(formatPercentage(calculations.arvRatio), col3 + 1.2, yPosition, {
-    color: calculations.arvRatio <= 0.80 ? COLORS.positive : COLORS.negative
-  });
-  yPosition += 0.35;
-
-  // Investment Scores
-  addText('Hold Score:', col1, yPosition, { fontWeight: 'bold' });
-  addText(`${calculations.holdScore}/10`, col1 + 1.2, yPosition, {
-    color: getScoreColor(calculations.holdScore),
-    fontWeight: 'bold'
-  });
-
-  addText('Flip Score:', col2, yPosition, { fontWeight: 'bold' });
-  addText(`${calculations.flipScore}/10`, col2 + 1.2, yPosition, {
-    color: getScoreColor(calculations.flipScore),
-    fontWeight: 'bold'
-  });
-  yPosition += 0.35;
-
-  // Section 3: Financial Metrics
-  yPosition = addSectionHeader('Financial Metrics', yPosition);
-
-  addText('Home Equity:', col1, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(calculations.homeEquity), col1 + 1.2, yPosition, {
-    color: getMetricColor(calculations.homeEquity)
-  });
-
-  addText('Monthly Cashflow:', col2, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(calculations.monthlyCashflow), col2 + 1.2, yPosition, {
-    color: getMetricColor(calculations.monthlyCashflow)
-  });
-
-  addText('Annual Cashflow:', col3, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(calculations.annualCashflow), col3 + 1.2, yPosition, {
-    color: getMetricColor(calculations.annualCashflow)
-  });
-  yPosition += 0.35;
-
-  // Section 4: Capital Requirements
-  yPosition = addSectionHeader('Capital Requirements', yPosition);
-
-  addText('Down Payment:', col1, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(calculations.downPayment), col1 + 1.2, yPosition);
-
-  addText('Closing Costs:', col2, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(calculations.closingCosts), col2 + 1.2, yPosition);
-
-  addText('Upfront Repairs:', col3, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(calculations.upfrontRepairs), col3 + 1.2, yPosition);
-  yPosition += 0.2;
-
-  addText('Other Costs:', col1, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(calculations.otherCapitalCosts), col1 + 1.2, yPosition);
-
-  addText('Total Capital:', col2, yPosition, { fontWeight: 'bold', fontSize: 11 });
-  addText(formatCurrency(calculations.totalCapitalRequired), col2 + 1.2, yPosition, {
-    fontWeight: 'bold',
-    fontSize: 11,
-    color: COLORS.sectionHeader
-  });
-  yPosition += 0.35;
-
-  // Section 5: Returns Analysis
-  yPosition = addSectionHeader('Returns Analysis', yPosition);
-
-  addText('Monthly Income:', col1, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(calculations.monthlyIncome), col1 + 1.2, yPosition, {
-    color: COLORS.positive
-  });
-
-  addText('Monthly Expenses:', col2, yPosition, { fontWeight: 'bold' });
-  addText(formatCurrency(calculations.monthlyExpenses), col2 + 1.2, yPosition, {
-    color: COLORS.negative
-  });
-
-  addText('ROI Projection:', col3, yPosition, { fontWeight: 'bold' });
-  addText(formatPercentage(calculations.roiProjection), col3 + 1.2, yPosition, {
-    color: getMetricColor(calculations.roiProjection),
-    fontWeight: 'bold'
-  });
-  yPosition += 0.5;
-
-  // Footer
-  const footerY = pageHeight - margin - 0.3;
-  addText('Generated by PropGuide Investment Analysis Platform', pageWidth / 2, footerY, {
-    fontSize: 8,
-    color: COLORS.light,
-    align: 'center'
-  });
-
-  // Save PDF
-  const filename = generateFilename(property.address);
-  pdf.save(filename);
-};
-
-// Main service function to generate and download report
-export const generateInvestmentSummary = async (property: Property): Promise<void> => {
-  try {
-    // Validate data
-    const errors = validatePropertyData(property);
-    const hasErrors = errors.some(error => error.severity === 'error');
-
-    if (hasErrors) {
-      const errorMessages = errors
-        .filter(error => error.severity === 'error')
-        .map(error => error.message)
-        .join(', ');
-      throw new Error(`Cannot generate report: ${errorMessages}`);
-    }
-
-    // Prepare data
-    const reportData = prepareReportData(property);
-
-    // Generate PDF
-    await generateInvestmentSummaryPDF(reportData);
-
-  } catch (error) {
-    console.error('Error generating investment summary:', error);
-    throw error;
-  }
+  return `Investment-Summary-${sanitizedAddress}-${today}.pdf`;
 };

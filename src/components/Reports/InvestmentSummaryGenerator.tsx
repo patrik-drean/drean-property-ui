@@ -22,7 +22,6 @@ import {
 import { Property } from '../../types/property';
 import { ReportError } from '../../types/investmentReport';
 import {
-  generateInvestmentSummary,
   validatePropertyData,
   prepareReportData,
   formatCurrency,
@@ -47,7 +46,8 @@ export const InvestmentSummaryGenerator: React.FC<InvestmentSummaryGeneratorProp
   const handleGenerateReport = async () => {
     try {
       setLoading(true);
-      await generateInvestmentSummary(property);
+      // PDF generation functionality removed - use ShareReportButton instead
+      console.log('PDF generation not available in this component');
     } catch (error) {
       console.error('Error generating investment summary:', error);
       // Error handling is done in the service, this will show user-friendly messages
@@ -226,7 +226,7 @@ export const InvestmentSummaryGenerator: React.FC<InvestmentSummaryGeneratorProp
                   Total Capital Required
                 </Typography>
                 <Typography variant="body1" fontWeight="bold">
-                  {formatCurrency(calculations.totalCapitalRequired)}
+                  {formatCurrency(calculations.totalInvestment)}
                 </Typography>
               </Box>
 
@@ -248,10 +248,10 @@ export const InvestmentSummaryGenerator: React.FC<InvestmentSummaryGeneratorProp
                 </Typography>
                 <Typography
                   variant="body1"
-                  color={calculations.roiProjection > 0 ? 'success.main' : 'error.main'}
+                  color={calculations.cashOnCashReturn > 0 ? 'success.main' : 'error.main'}
                   fontWeight="bold"
                 >
-                  {formatPercentage(calculations.roiProjection)}
+                  {formatPercentage(calculations.cashOnCashReturn)}
                 </Typography>
               </Box>
             </Box>

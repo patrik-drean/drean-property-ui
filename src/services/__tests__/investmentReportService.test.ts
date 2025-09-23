@@ -31,6 +31,8 @@ jest.mock('../../utils/scoreCalculator', () => ({
   calculateFlipScore: jest.fn(),
   getHoldScoreBreakdown: jest.fn(),
   getFlipScoreBreakdown: jest.fn(),
+  calculatePerfectRentForHoldScore: jest.fn(),
+  calculatePerfectARVForFlipScore: jest.fn(),
 }));
 
 const mockProperty: Property = {
@@ -110,6 +112,8 @@ describe('investmentReportService', () => {
       arvRatioScore: 6,
       equityScore: 1,
     });
+    (scoreCalculator.calculatePerfectRentForHoldScore as jest.Mock).mockReturnValue(2000);
+    (scoreCalculator.calculatePerfectARVForFlipScore as jest.Mock).mockReturnValue(250000);
   });
 
   describe('formatCurrency', () => {
@@ -258,30 +262,28 @@ describe('investmentReportService', () => {
       expect(metrics.flipScore).toBe(7);
       expect(metrics.homeEquity).toBe(45000);
       expect(metrics.monthlyCashflow).toBe(95);
-      expect(metrics.totalCapitalRequired).toBe(60000);
+      expect(metrics.totalInvestment).toBe(175000); // purchase + rehab
       expect(metrics.annualCashflow).toBe(1140); // 95 * 12
-      expect(metrics.roiProjection).toBeCloseTo(0.019); // 1140 / 60000
+      expect(metrics.cashOnCashReturn).toBeCloseTo(0.038); // 1140 / 30000
     });
 
     it('handles missing capital costs', () => {
       const propertyWithoutCapitalCosts = { ...mockProperty, capitalCosts: null };
       const metrics = calculateInvestmentMetrics(propertyWithoutCapitalCosts);
 
-      expect(metrics.downPayment).toBe(0);
-      expect(metrics.closingCosts).toBe(0);
-      expect(metrics.upfrontRepairs).toBe(25000); // Uses rehabCosts as fallback
-      expect(metrics.otherCapitalCosts).toBe(0);
-      expect(metrics.totalCapitalRequired).toBe(25000);
+      expect(metrics.downPaymentRequired).toBe(43750); // 25% of totalInvestment
+      expect(metrics.closingCosts).toBe(3000); // 2% of purchase price
+      expect(metrics.totalInvestment).toBe(175000); // purchase + rehab
     });
 
     it('handles missing monthly expenses', () => {
       const propertyWithoutExpenses = { ...mockProperty, monthlyExpenses: null };
       const metrics = calculateInvestmentMetrics(propertyWithoutExpenses);
 
-      expect(metrics.monthlyExpenses).toBe(0);
+      expect(metrics.monthlyExpenses.total).toBe(0);
     });
 
-    it('calculates ROI as zero when no capital required', () => {
+    it('calculates ROI correctly even with capital costs', () => {
       const propertyNoCapital = {
         ...mockProperty,
         capitalCosts: {
@@ -296,7 +298,8 @@ describe('investmentReportService', () => {
       };
       const metrics = calculateInvestmentMetrics(propertyNoCapital);
 
-      expect(metrics.roiProjection).toBe(0);
+      // ROI should be calculated based on the default down payment (25% of total investment)
+      expect(metrics.cashOnCashReturn).toBeGreaterThan(0);
     });
   });
 
@@ -317,10 +320,11 @@ describe('investmentReportService', () => {
       const requiredFields = [
         'rentRatio', 'arvRatio', 'holdScore', 'flipScore',
         'holdScoreBreakdown', 'flipScoreBreakdown',
-        'homeEquity', 'monthlyCashflow', 'newLoan',
-        'totalCapitalRequired', 'downPayment', 'closingCosts',
-        'upfrontRepairs', 'otherCapitalCosts',
-        'annualCashflow', 'monthlyIncome', 'monthlyExpenses', 'roiProjection'
+        'homeEquity', 'monthlyCashflow', 'newLoanAmount',
+        'totalInvestment', 'downPaymentRequired', 'closingCosts',
+        'purchasePrice', 'rehabCosts', 'arv',
+        'annualCashflow', 'monthlyIncome', 'monthlyExpenses', 'cashOnCashReturn',
+        'perfectRentForHoldScore', 'perfectARVForFlipScore'
       ];
 
       requiredFields.forEach(field => {

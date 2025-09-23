@@ -3,6 +3,7 @@ import { createHashRouter, RouterProvider, createRoutesFromElements, Route, Navi
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
+import { PropertiesProvider } from './contexts/PropertiesContext';
 import Navigation from './components/Navigation';
 import PropertiesPage from './components/PropertiesPage';
 import ArchivedPropertiesPage from './components/ArchivedPropertiesPage';
@@ -31,7 +32,9 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <RouterProvider router={router} />
+      <PropertiesProvider>
+        <RouterProvider router={router} />
+      </PropertiesProvider>
     </ThemeProvider>
   );
 };

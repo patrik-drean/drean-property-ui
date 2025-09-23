@@ -30,8 +30,9 @@ import {
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Contact, CreateContact, Property, PropertyStatus } from '../types/property';
-import { getContacts, createContact, updateContact, deleteContact, getProperties, addContactToProperty, removeContactFromProperty } from '../services/api';
+import { getContacts, createContact, updateContact, deleteContact, addContactToProperty, removeContactFromProperty } from '../services/api';
 import { getStatusColor, getStatusOrder } from '../utils/statusColors';
+import { useProperties } from '../contexts/PropertiesContext';
 
 // Status chip component (same as PropertiesPage)
 interface StatusChipProps {
@@ -58,8 +59,8 @@ const StatusChip = styled(Chip, {
 // Status order function is now imported from utils/statusColors.ts
 
 const TeamPage: React.FC = () => {
+  const { properties } = useProperties();
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
@@ -86,7 +87,6 @@ const TeamPage: React.FC = () => {
 
   useEffect(() => {
     fetchContacts();
-    fetchProperties();
   }, []);
 
   const fetchContacts = async () => {
@@ -108,15 +108,6 @@ const TeamPage: React.FC = () => {
     }
   };
 
-  const fetchProperties = async () => {
-    try {
-      const data = await getProperties(false); // Only get non-archived properties
-      
-      setProperties(data);
-    } catch (error) {
-      console.error('Error fetching properties:', error);
-    }
-  };
 
   const handleOpenDialog = (contact?: Contact) => {
     if (contact) {

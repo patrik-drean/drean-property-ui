@@ -28,6 +28,7 @@ import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
 import { api } from '../services/apiConfig';
 import { useNavigate } from 'react-router-dom';
+import { useProperties } from '../contexts/PropertiesContext';
 import { Link as RouterLink } from 'react-router-dom';
 import PropertyDialog from './PropertyDialog';
 import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from './shared/PropertyTooltips';
@@ -124,7 +125,7 @@ const StatusChip = styled(Chip, {
 }));
 
 const PropertiesPage: React.FC = () => {
-  const [properties, setProperties] = useState<Property[]>([]);
+  const { properties, loading, error, refreshProperties, updateProperty, addProperty, removeProperty } = useProperties();
   const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -254,27 +255,7 @@ const PropertiesPage: React.FC = () => {
 
   const totalUnits = getTotalUnits();
 
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        const data = await api.getProperties(false); // Explicitly request only non-archived properties
-        console.log('Fetched properties:', data);
-        console.log('Property addresses:', data.map(p => p.address));
-        console.log('Property IDs:', data.map(p => p.id));
-        
-        // Deduplicate properties by ID to handle backend duplicates
-        const uniqueProperties = data.filter((property, index, self) => 
-          index === self.findIndex(p => p.id === property.id)
-        );
-        
-        console.log('Unique properties after deduplication:', uniqueProperties.length);
-        setProperties(uniqueProperties);
-      } catch (error) {
-        console.error('Error fetching properties:', error);
-      }
-    };
-    fetchProperties();
-  }, []);
+  // Properties are now managed by the context
 
   const handleEditProperty = (property: Property) => {
     setEditingProperty(property);
@@ -324,14 +305,12 @@ const PropertiesPage: React.FC = () => {
         
         const updatedProperty = await api.updateProperty(editingProperty.id, propertyToUpdate);
         
-        // Update local state with the returned property
-        setProperties(properties.map(p => 
-          p.id === editingProperty.id ? updatedProperty : p
-        ));
+        // Update context with the returned property
+        updateProperty(updatedProperty);
       } else {
         // Add new property
         const addedProperty = await api.addProperty(propertyWithScore);
-        setProperties([...properties, addedProperty]);
+        addProperty(addedProperty);
       }
     } catch (err: any) {
       console.error('Error saving property:', err);
@@ -352,7 +331,7 @@ const PropertiesPage: React.FC = () => {
   const handleArchive = async (id: string) => {
     try {
       await api.archiveProperty(id);
-      setProperties(properties.filter(p => p.id !== id));
+      removeProperty(id);
     } catch (error) {
       console.error('Error archiving property:', error);
     }
@@ -361,7 +340,7 @@ const PropertiesPage: React.FC = () => {
   const handleUpdateRentcast = async (id: string) => {
     try {
       const updatedProperty = await api.updatePropertyRentcast(id);
-      setProperties(properties.map(p => p.id === id ? updatedProperty : p));
+      updateProperty(updatedProperty);
     } catch (error) {
       console.error('Error updating Rentcast data:', error);
     }
@@ -478,6 +457,43 @@ ${property.zillowLink}`;
 
 
   
+  // Show loading state
+  if (loading && properties.length === 0) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '50vh',
+        flexDirection: 'column',
+        gap: 2
+      }}>
+        <Icons.Refresh />
+        <Typography variant="h6">Loading properties...</Typography>
+      </Box>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '50vh',
+        flexDirection: 'column',
+        gap: 2
+      }}>
+        <Icons.Error color="error" sx={{ fontSize: 48 }} />
+        <Typography variant="h6" color="error">Failed to load properties</Typography>
+        <Button variant="contained" onClick={refreshProperties}>
+          Try Again
+        </Button>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ 
       p: 0, 

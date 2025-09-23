@@ -161,6 +161,14 @@ export const PropertyCashFlowRow: React.FC<PropertyCashFlowRowProps> = ({
         <TableCell align="right">
           <div>
             <Typography variant="body2" color="text.secondary">
+              Expenses
+            </Typography>
+            <CurrencyCell value={expenses.total} />
+          </div>
+        </TableCell>
+        <TableCell align="right">
+          <div>
+            <Typography variant="body2" color="text.secondary">
               Cash Flow
             </Typography>
             <CurrencyCell value={netCashFlow} showPositiveNegative />
@@ -187,19 +195,25 @@ export const PropertyCashFlowRow: React.FC<PropertyCashFlowRowProps> = ({
         <CurrencyCell value={rentIncome} />
       </TableCell>
       <TableCell align="right">
-        <CurrencyCell value={expenses.mortgage} />
-      </TableCell>
-      <TableCell align="right">
-        <CurrencyCell value={expenses.propertyTax} />
-      </TableCell>
-      <TableCell align="right">
-        <CurrencyCell value={expenses.propertyManagement} />
-      </TableCell>
-      <TableCell align="right">
         <CurrencyCell value={expenses.total} />
       </TableCell>
       <TableCell align="right">
         <CurrencyCell value={netCashFlow} showPositiveNegative variant="h6" />
+      </TableCell>
+      <TableCell align="center">
+        <Typography variant="body2">
+          {property.operationalUnits}
+        </Typography>
+      </TableCell>
+      <TableCell align="center">
+        <Typography variant="body2">
+          {property.behindRentUnits}
+        </Typography>
+      </TableCell>
+      <TableCell align="center">
+        <Typography variant="body2">
+          {property.vacantUnits}
+        </Typography>
       </TableCell>
     </TableRow>
   );

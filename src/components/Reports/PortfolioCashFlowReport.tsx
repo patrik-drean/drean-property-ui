@@ -83,13 +83,15 @@ const ExpenseBreakdown: React.FC<{
 }> = ({ expenses }) => {
 
   const expenseItems = [
-    { label: 'Mortgage Payments', value: expenses.mortgage },
-    { label: 'Property Tax', value: expenses.propertyTax },
+    { label: 'Mortgage', value: expenses.mortgage },
+    { label: 'Taxes', value: expenses.taxes },
+    { label: 'Insurance', value: expenses.insurance },
     { label: 'Property Management', value: expenses.propertyManagement },
-    { label: 'Maintenance Reserve', value: expenses.maintenance },
-    { label: 'Vacancy Allowance', value: expenses.vacancy },
-    { label: 'Insurance & Other', value: expenses.insurance + expenses.other }
-  ].filter(item => item.value > 0);
+    { label: 'Utilities', value: expenses.utilities },
+    { label: 'Vacancy', value: expenses.vacancy },
+    { label: 'CapEx', value: expenses.capEx },
+    { label: 'Other', value: expenses.other }
+  ];
 
   return (
     <Card>
@@ -156,7 +158,7 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
       // Then sort alphabetically by address
       return a.address.localeCompare(b.address);
     });
-  }, [report, selectedScenario]);
+  }, [report]);
 
   if (loading) {
     return (
@@ -250,7 +252,7 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
 
       {/* Summary cards */}
       <Grid container spacing={3} mb={4} px={2}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <SummaryCard
             title={`${selectedScenario === 'current' ? 'Current' : 'Potential'} Monthly Income`}
             value={formatCurrency(scenarioIncome)}
@@ -259,7 +261,7 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
             subtitle={`${summary.operationalPropertiesCount} operational properties`}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <SummaryCard
             title="Monthly Expenses"
             value={formatCurrency(scenarioExpenses.total)}
@@ -268,7 +270,7 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
             subtitle="All operational expenses"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <SummaryCard
             title={`${selectedScenario === 'current' ? 'Current' : 'Potential'} Net Cash Flow`}
             value={formatCurrency(scenarioNetCashFlow)}
@@ -277,16 +279,52 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
             subtitle="Monthly profit/loss"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <SummaryCard
-            title="Total Properties"
-            value={summary.propertiesCount.toString()}
-            icon={<HomeIcon />}
-            color="primary"
-            subtitle={`${summary.operationalPropertiesCount} operational`}
-          />
-        </Grid>
       </Grid>
+
+      {/* Portfolio Overview */}
+      <Box mb={4} px={2}>
+        <Typography variant="h6" component="div" mb={2} sx={{ fontWeight: 600 }}>
+          Portfolio Overview
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={3}>
+            <SummaryCard
+              title="Total Properties"
+              value={summary.propertiesCount.toString()}
+              icon={<HomeIcon />}
+              color="primary"
+              subtitle={`${summary.operationalPropertiesCount} operational`}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <SummaryCard
+              title="Operational Units"
+              value={summary.totalOperationalUnits.toString()}
+              icon={<HomeIcon />}
+              color="success"
+              subtitle="Units generating income"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <SummaryCard
+              title="Behind Rent Units"
+              value={summary.totalBehindRentUnits.toString()}
+              icon={<TrendingDownIcon />}
+              color="warning"
+              subtitle="Units with late payments"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <SummaryCard
+              title="Vacant Units"
+              value={summary.totalVacantUnits.toString()}
+              icon={<HomeIcon />}
+              color="error"
+              subtitle="Units without tenants"
+            />
+          </Grid>
+        </Grid>
+      </Box>
 
       {/* Expense breakdown */}
       {scenarioExpenses.total > 0 && (
@@ -315,14 +353,9 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
                 <TableCell align="right">
                   {isMobile ? 'Rent' : 'Monthly Rent'}
                 </TableCell>
-                {!isMobile && (
-                  <>
-                    <TableCell align="right">Mortgage</TableCell>
-                    <TableCell align="right">Property Tax</TableCell>
-                    <TableCell align="right">Management</TableCell>
-                    <TableCell align="right">Total Expenses</TableCell>
-                  </>
-                )}
+                <TableCell align="right">
+                  {isMobile ? 'Expenses' : 'Total Expenses'}
+                </TableCell>
                 <TableCell align="right">
                   <Box display="flex" alignItems="center" justifyContent="flex-end">
                     Net Cash Flow
@@ -337,6 +370,13 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
                     )}
                   </Box>
                 </TableCell>
+                {!isMobile && (
+                  <>
+                    <TableCell align="center">Operational Units</TableCell>
+                    <TableCell align="center">Behind Rent Units</TableCell>
+                    <TableCell align="center">Vacant Units</TableCell>
+                  </>
+                )}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -356,9 +396,9 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
       {/* Footer note */}
       <Box mt={2}>
         <Typography variant="caption" color="text.secondary">
-          * Cash flow calculations include mortgage, property tax (2.5% annually),
-          insurance ($130/month), property management (12% of rent), maintenance reserve (5% of rent),
-          and vacancy allowance (8% of rent). Current scenario uses actual rent; Potential scenario uses potential rent.
+          * Cash flow calculations use actual monthly expenses from property data including mortgage, taxes,
+          insurance, property management, utilities, vacancy allowance, CapEx, and other costs.
+          Current scenario uses actual rent; Potential scenario uses potential rent.
           Only operational properties (Operational, Needs Tenant, Selling, Rehab, Closed) are included in reports.
         </Typography>
       </Box>

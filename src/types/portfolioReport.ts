@@ -8,11 +8,12 @@ export interface PropertyCashFlowData {
   currentRentIncome: number;
   currentExpenses: {
     mortgage: number;
-    propertyTax: number;
+    taxes: number;
     insurance: number;
     propertyManagement: number;
-    maintenance: number;
+    utilities: number;
     vacancy: number;
+    capEx: number;
     other: number;
     total: number;
   };
@@ -21,16 +22,21 @@ export interface PropertyCashFlowData {
   potentialRentIncome: number;
   potentialExpenses: {
     mortgage: number;
-    propertyTax: number;
+    taxes: number;
     insurance: number;
     propertyManagement: number;
-    maintenance: number;
+    utilities: number;
     vacancy: number;
+    capEx: number;
     other: number;
     total: number;
   };
   potentialNetCashFlow: number;
   isOperational: boolean;
+  // Unit status counts
+  operationalUnits: number;
+  behindRentUnits: number;
+  vacantUnits: number;
 }
 
 export interface PropertyAssetData {
@@ -49,11 +55,12 @@ export interface CashFlowSummary {
   currentTotalRentIncome: number;
   currentTotalExpenses: {
     mortgage: number;
-    propertyTax: number;
+    taxes: number;
     insurance: number;
     propertyManagement: number;
-    maintenance: number;
+    utilities: number;
     vacancy: number;
+    capEx: number;
     other: number;
     total: number;
   };
@@ -62,17 +69,22 @@ export interface CashFlowSummary {
   potentialTotalRentIncome: number;
   potentialTotalExpenses: {
     mortgage: number;
-    propertyTax: number;
+    taxes: number;
     insurance: number;
     propertyManagement: number;
-    maintenance: number;
+    utilities: number;
     vacancy: number;
+    capEx: number;
     other: number;
     total: number;
   };
   potentialTotalNetCashFlow: number;
   propertiesCount: number;
   operationalPropertiesCount: number;
+  // Unit totals
+  totalOperationalUnits: number;
+  totalBehindRentUnits: number;
+  totalVacantUnits: number;
 }
 
 export interface AssetSummary {

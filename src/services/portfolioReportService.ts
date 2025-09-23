@@ -240,7 +240,7 @@ export class PortfolioReportService {
         'Status',
         `${scenarioPrefix} Monthly Rent`,
         'Mortgage Payment',
-        'Property Tax',
+        'Taxes',
         'Property Management',
         'Total Expenses',
         `${scenarioPrefix} Net Cash Flow`
@@ -256,7 +256,7 @@ export class PortfolioReportService {
           property.status,
           rentIncome.toFixed(2),
           expenses.mortgage.toFixed(2),
-          expenses.propertyTax.toFixed(2),
+          expenses.taxes.toFixed(2),
           expenses.propertyManagement.toFixed(2),
           expenses.total.toFixed(2),
           netCashFlow.toFixed(2)
@@ -273,7 +273,7 @@ export class PortfolioReportService {
         '',
         summaryIncome.toFixed(2),
         summaryExpenses.mortgage.toFixed(2),
-        summaryExpenses.propertyTax.toFixed(2),
+        summaryExpenses.taxes.toFixed(2),
         summaryExpenses.propertyManagement.toFixed(2),
         summaryExpenses.total.toFixed(2),
         summaryNetCashFlow.toFixed(2)

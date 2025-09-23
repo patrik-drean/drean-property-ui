@@ -374,11 +374,11 @@ const PropertyDetailsPage: React.FC = () => {
           <AccordionSummary 
             expandIcon={<Icons.ExpandMore />}
             sx={{ 
-              backgroundColor: '#D4AF37', 
+              backgroundColor: '#2E7D32', 
               borderRadius: 1
             }}
           >
-            <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
               Investment Details
             </Typography>
           </AccordionSummary>
@@ -566,11 +566,11 @@ const PropertyDetailsPage: React.FC = () => {
           <AccordionSummary 
             expandIcon={<Icons.ExpandMore />}
             sx={{ 
-              backgroundColor: '#D4AF37', 
+              backgroundColor: '#2E7D32', 
               borderRadius: 1
             }}
           >
-            <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
               Operational Details
             </Typography>
           </AccordionSummary>
@@ -743,11 +743,11 @@ const PropertyDetailsPage: React.FC = () => {
           <AccordionSummary 
             expandIcon={<Icons.ExpandMore />}
             sx={{ 
-              backgroundColor: '#D4AF37', 
+              backgroundColor: '#2E7D32', 
               borderRadius: 1
             }}
           >
-            <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
               Asset Details
             </Typography>
           </AccordionSummary>

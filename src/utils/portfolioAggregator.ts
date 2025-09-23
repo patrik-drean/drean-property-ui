@@ -10,10 +10,7 @@ import {
   ReportGenerationResult,
   OPERATIONAL_STATUSES
 } from '../types/portfolioReport';
-import {
-  calculateNewLoan,
-  calculateMonthlyMortgage
-} from './scoreCalculator';
+// Note: We no longer calculate expenses - we use actual monthly expenses from property data
 
 /**
  * Checks if a property is considered operational for reporting purposes
@@ -37,11 +34,12 @@ export const calculatePropertyCashFlow = (property: Property): PropertyCashFlowD
       currentRentIncome: 0,
       currentExpenses: {
         mortgage: 0,
-        propertyTax: 0,
+        taxes: 0,
         insurance: 0,
         propertyManagement: 0,
-        maintenance: 0,
+        utilities: 0,
         vacancy: 0,
+        capEx: 0,
         other: 0,
         total: 0
       },
@@ -49,16 +47,20 @@ export const calculatePropertyCashFlow = (property: Property): PropertyCashFlowD
       potentialRentIncome: 0,
       potentialExpenses: {
         mortgage: 0,
-        propertyTax: 0,
+        taxes: 0,
         insurance: 0,
         propertyManagement: 0,
-        maintenance: 0,
+        utilities: 0,
         vacancy: 0,
+        capEx: 0,
         other: 0,
         total: 0
       },
       potentialNetCashFlow: 0,
-      isOperational: false
+      isOperational: false,
+      operationalUnits: 0,
+      behindRentUnits: 0,
+      vacantUnits: 0
     };
   }
 
@@ -68,24 +70,51 @@ export const calculatePropertyCashFlow = (property: Property): PropertyCashFlowD
   // Potential scenario: Use potential rent
   const potentialRentIncome = property.potentialRent || 0;
 
-  // Calculate fixed expenses (same for both scenarios)
-  const newLoanAmount = calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv);
-  const mortgagePayment = calculateMonthlyMortgage(newLoanAmount);
-  const propertyTax = (property.offerPrice * 0.025) / 12; // 2.5% annually
-  const insurance = 130; // Fixed per property
-  const other = 0; // Additional expenses if any
+  // Use actual monthly expenses from property data if available
+  const monthlyExpenses = property.monthlyExpenses || {
+    mortgage: 0,
+    taxes: 0,
+    insurance: 0,
+    propertyManagement: 0,
+    utilities: 0,
+    vacancy: 0,
+    capEx: 0,
+    other: 0,
+    total: 0
+  };
 
-  // Current scenario expenses (variable expenses based on actual rent)
-  const currentPropertyManagement = currentRentIncome * 0.12; // 12% of rent
-  const currentMaintenance = currentRentIncome * 0.05; // 5% of rent for maintenance reserve
-  const currentVacancy = currentRentIncome * 0.08; // 8% vacancy allowance
-  const currentTotalExpenses = mortgagePayment + propertyTax + insurance + currentPropertyManagement + currentMaintenance + currentVacancy + other;
+  // For both scenarios, use the same actual expenses from the property
+  // The current vs potential scenarios only differ in rent income, not expenses
+  const currentTotalExpenses = monthlyExpenses.total;
+  const potentialTotalExpenses = monthlyExpenses.total;
 
-  // Potential scenario expenses (variable expenses based on potential rent)
-  const potentialPropertyManagement = potentialRentIncome * 0.12; // 12% of rent
-  const potentialMaintenance = potentialRentIncome * 0.05; // 5% of rent for maintenance reserve
-  const potentialVacancy = potentialRentIncome * 0.08; // 8% vacancy allowance
-  const potentialTotalExpenses = mortgagePayment + propertyTax + insurance + potentialPropertyManagement + potentialMaintenance + potentialVacancy + other;
+  // Calculate unit status counts from propertyUnits array
+  let operationalUnits = 0;
+  let behindRentUnits = 0;
+  let vacantUnits = 0;
+
+  if (property.propertyUnits && property.propertyUnits.length > 0) {
+    property.propertyUnits.forEach(unit => {
+      switch (unit.status) {
+        case 'Operational':
+          operationalUnits++;
+          break;
+        case 'Behind On Rent':
+          behindRentUnits++;
+          break;
+        case 'Vacant':
+          vacantUnits++;
+          break;
+        default:
+          // For any other status, count as operational
+          operationalUnits++;
+          break;
+      }
+    });
+  } else {
+    // If no unit data, use total units as operational for operational properties
+    operationalUnits = property.units || 0;
+  }
 
   return {
     id: property.id,
@@ -93,29 +122,34 @@ export const calculatePropertyCashFlow = (property: Property): PropertyCashFlowD
     status: property.status,
     currentRentIncome,
     currentExpenses: {
-      mortgage: mortgagePayment,
-      propertyTax,
-      insurance,
-      propertyManagement: currentPropertyManagement,
-      maintenance: currentMaintenance,
-      vacancy: currentVacancy,
-      other,
+      mortgage: monthlyExpenses.mortgage,
+      taxes: monthlyExpenses.taxes,
+      insurance: monthlyExpenses.insurance,
+      propertyManagement: monthlyExpenses.propertyManagement,
+      utilities: monthlyExpenses.utilities,
+      vacancy: monthlyExpenses.vacancy,
+      capEx: monthlyExpenses.capEx,
+      other: monthlyExpenses.other,
       total: currentTotalExpenses
     },
     currentNetCashFlow: currentRentIncome - currentTotalExpenses,
     potentialRentIncome,
     potentialExpenses: {
-      mortgage: mortgagePayment,
-      propertyTax,
-      insurance,
-      propertyManagement: potentialPropertyManagement,
-      maintenance: potentialMaintenance,
-      vacancy: potentialVacancy,
-      other,
+      mortgage: monthlyExpenses.mortgage,
+      taxes: monthlyExpenses.taxes,
+      insurance: monthlyExpenses.insurance,
+      propertyManagement: monthlyExpenses.propertyManagement,
+      utilities: monthlyExpenses.utilities,
+      vacancy: monthlyExpenses.vacancy,
+      capEx: monthlyExpenses.capEx,
+      other: monthlyExpenses.other,
       total: potentialTotalExpenses
     },
     potentialNetCashFlow: potentialRentIncome - potentialTotalExpenses,
-    isOperational: true
+    isOperational: true,
+    operationalUnits,
+    behindRentUnits,
+    vacantUnits
   };
 };
 
@@ -128,10 +162,10 @@ export const calculatePropertyAssets = (property: Property): PropertyAssetData =
   // Use current house value if available, otherwise use ARV
   const currentValue = property.currentHouseValue > 0 ? property.currentHouseValue : property.arv;
 
-  // Use current loan value if available, otherwise calculate new loan amount
+  // Use current loan value if available, otherwise default to 0
   const loanValue = property.currentLoanValue !== null && property.currentLoanValue > 0
     ? property.currentLoanValue
-    : (isOperational ? calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv) : 0);
+    : 0;
 
   const equity = currentValue - loanValue;
   const equityPercent = currentValue > 0 ? (equity / currentValue) * 100 : 0;
@@ -183,11 +217,12 @@ export const aggregateCashFlowData = (properties: Property[]): ReportGenerationR
     currentTotalRentIncome: propertyData.reduce((sum, p) => sum + p.currentRentIncome, 0),
     currentTotalExpenses: {
       mortgage: propertyData.reduce((sum, p) => sum + p.currentExpenses.mortgage, 0),
-      propertyTax: propertyData.reduce((sum, p) => sum + p.currentExpenses.propertyTax, 0),
+      taxes: propertyData.reduce((sum, p) => sum + p.currentExpenses.taxes, 0),
       insurance: propertyData.reduce((sum, p) => sum + p.currentExpenses.insurance, 0),
       propertyManagement: propertyData.reduce((sum, p) => sum + p.currentExpenses.propertyManagement, 0),
-      maintenance: propertyData.reduce((sum, p) => sum + p.currentExpenses.maintenance, 0),
+      utilities: propertyData.reduce((sum, p) => sum + p.currentExpenses.utilities, 0),
       vacancy: propertyData.reduce((sum, p) => sum + p.currentExpenses.vacancy, 0),
+      capEx: propertyData.reduce((sum, p) => sum + p.currentExpenses.capEx, 0),
       other: propertyData.reduce((sum, p) => sum + p.currentExpenses.other, 0),
       total: propertyData.reduce((sum, p) => sum + p.currentExpenses.total, 0)
     },
@@ -196,17 +231,22 @@ export const aggregateCashFlowData = (properties: Property[]): ReportGenerationR
     potentialTotalRentIncome: propertyData.reduce((sum, p) => sum + p.potentialRentIncome, 0),
     potentialTotalExpenses: {
       mortgage: propertyData.reduce((sum, p) => sum + p.potentialExpenses.mortgage, 0),
-      propertyTax: propertyData.reduce((sum, p) => sum + p.potentialExpenses.propertyTax, 0),
+      taxes: propertyData.reduce((sum, p) => sum + p.potentialExpenses.taxes, 0),
       insurance: propertyData.reduce((sum, p) => sum + p.potentialExpenses.insurance, 0),
       propertyManagement: propertyData.reduce((sum, p) => sum + p.potentialExpenses.propertyManagement, 0),
-      maintenance: propertyData.reduce((sum, p) => sum + p.potentialExpenses.maintenance, 0),
+      utilities: propertyData.reduce((sum, p) => sum + p.potentialExpenses.utilities, 0),
       vacancy: propertyData.reduce((sum, p) => sum + p.potentialExpenses.vacancy, 0),
+      capEx: propertyData.reduce((sum, p) => sum + p.potentialExpenses.capEx, 0),
       other: propertyData.reduce((sum, p) => sum + p.potentialExpenses.other, 0),
       total: propertyData.reduce((sum, p) => sum + p.potentialExpenses.total, 0)
     },
     potentialTotalNetCashFlow: propertyData.reduce((sum, p) => sum + p.potentialNetCashFlow, 0),
     propertiesCount: propertyData.length,
-    operationalPropertiesCount: operationalProperties.length
+    operationalPropertiesCount: operationalProperties.length,
+    // Calculate unit totals
+    totalOperationalUnits: propertyData.reduce((sum, p) => sum + p.operationalUnits, 0),
+    totalBehindRentUnits: propertyData.reduce((sum, p) => sum + p.behindRentUnits, 0),
+    totalVacantUnits: propertyData.reduce((sum, p) => sum + p.vacantUnits, 0)
   };
 
   const report: PortfolioCashFlowReport = {

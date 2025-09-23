@@ -281,8 +281,20 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     return numericValue ? parseInt(numericValue) : 0;
   };
 
+  const handleCurrencyInputNullable = (value: string): number | null => {
+    if (value === '') return null;
+    // Remove any non-digit characters
+    const numericValue = value.replace(/[^0-9]/g, '');
+    return numericValue ? parseInt(numericValue) : null;
+  };
+
   const formatInputCurrency = (value: number) => {
     if (value === 0) return '';
+    return value.toLocaleString('en-US');
+  };
+
+  const formatInputCurrencyNullable = (value: number | null) => {
+    if (value === null || value === 0) return '';
     return value.toLocaleString('en-US');
   };
 
@@ -622,11 +634,11 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
             <AccordionSummary 
               expandIcon={<Icons.ExpandMore />}
               sx={{ 
-                backgroundColor: '#D4AF37', 
+                backgroundColor: '#2E7D32', 
                 borderRadius: 1
               }}
             >
-              <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600 }}>
+              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
                 Investment Details
               </Typography>
             </AccordionSummary>
@@ -803,11 +815,11 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
             <AccordionSummary 
               expandIcon={<Icons.ExpandMore />}
               sx={{ 
-                backgroundColor: '#D4AF37', 
+                backgroundColor: '#2E7D32', 
                 borderRadius: 1
               }}
             >
-              <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600 }}>
+              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
                 Operational Details
               </Typography>
             </AccordionSummary>
@@ -1064,11 +1076,11 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
             <AccordionSummary 
               expandIcon={<Icons.ExpandMore />}
               sx={{ 
-                backgroundColor: '#D4AF37', 
+                backgroundColor: '#2E7D32', 
                 borderRadius: 1
               }}
             >
-              <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600 }}>
+              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
                 Asset Details
               </Typography>
             </AccordionSummary>
@@ -1089,12 +1101,11 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Current Loan Value"
-                    value={newProperty.currentLoanValue !== null ? formatInputCurrency(newProperty.currentLoanValue) : ''}
+                    value={formatInputCurrencyNullable(newProperty.currentLoanValue)}
                     onChange={(e) => {
-                      const value = e.target.value;
                       setNewProperty({
                         ...newProperty,
-                        currentLoanValue: value === '' ? null : handleCurrencyInput(value)
+                        currentLoanValue: handleCurrencyInputNullable(e.target.value)
                       });
                     }}
                     margin="normal"

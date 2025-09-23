@@ -9,6 +9,7 @@ import PropertyDialog from '../components/PropertyDialog';
 import TasksSection from '../components/TasksSection';
 import ContactDialog from '../components/ContactDialog';
 import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from '../components/shared/PropertyTooltips';
+import InvestmentSummaryGenerator from '../components/Reports/InvestmentSummaryGenerator';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -325,14 +326,17 @@ const PropertyDetailsPage: React.FC = () => {
           </IconButton>
           <Typography variant="h5">Property Details</Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<Icons.Edit />}
-          onClick={() => setPropertyDialogOpen(true)}
-          sx={{ borderRadius: 2, alignSelf: { xs: 'stretch', sm: 'flex-end' } }}
-        >
-          Edit Property
-        </Button>
+        <Box display="flex" gap={2} flexDirection={{ xs: 'column', sm: 'row' }}>
+          <InvestmentSummaryGenerator property={property} />
+          <Button
+            variant="outlined"
+            startIcon={<Icons.Edit />}
+            onClick={() => setPropertyDialogOpen(true)}
+            sx={{ borderRadius: 2 }}
+          >
+            Edit Property
+          </Button>
+        </Box>
       </Box>
       {/* Property Details - takes up full width */}
       <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>

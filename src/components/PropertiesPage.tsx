@@ -533,46 +533,6 @@ ${property.zillowLink}`;
         Opportunities
       </Typography>
       
-      {/* Opportunities Status Summary Cards */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: { xs: 'column', sm: 'row' },
-        gap: 2,
-        mb: 3,
-        px: { xs: 1, sm: 0 }
-      }}>
-        {['Opportunity', 'Soft Offer', 'Hard Offer'].map((status) => {
-          const statusProperties = sortedProperties.filter(p => p.status === status);
-          const statusColor = getStatusColor(status as any);
-
-          return (
-            <Box
-              key={status}
-              sx={{
-                flex: 1,
-                p: 1,
-                borderRadius: 1.5,
-                backgroundColor: statusColor,
-                color: 'white',
-                minHeight: '40px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                textAlign: 'center'
-              }}
-            >
-              <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.25, fontSize: '0.7rem', lineHeight: 1.2 }}>
-                {status}
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.1rem', lineHeight: 1.2 }}>
-                {statusProperties.length}
-              </Typography>
-            </Box>
-          );
-        })}
-      </Box>
-      
       {/* Mobile Card View */}
       <PropertyCardGrid
         properties={sortedProperties}
@@ -1012,46 +972,6 @@ ${property.zillowLink}`;
       >
         Portfolio
                     </Typography>
-      
-      {/* Portfolio Status Summary Cards */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: { xs: 'column', sm: 'row' },
-        gap: 2,
-        mb: 3,
-        px: { xs: 1, sm: 0 }
-      }}>
-        {['Rehab', 'Needs Tenant', 'Operational', 'Selling'].map((status) => {
-          const statusProperties = sortedProperties.filter(p => p.status === status);
-          const statusColor = getStatusColor(status as any);
-
-          return (
-            <Box
-              key={status}
-              sx={{
-                flex: 1,
-                p: 1,
-                borderRadius: 1.5,
-                backgroundColor: statusColor,
-                color: 'white',
-                minHeight: '40px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                textAlign: 'center'
-              }}
-            >
-              <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.25, fontSize: '0.7rem', lineHeight: 1.2 }}>
-                {status}
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '1.1rem', lineHeight: 1.2 }}>
-                {statusProperties.length}
-              </Typography>
-            </Box>
-          );
-        })}
-      </Box>
       
       {/* Mobile Card View for Properties Held */}
       <PropertyCardGrid

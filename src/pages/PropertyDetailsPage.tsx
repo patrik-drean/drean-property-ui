@@ -331,11 +331,13 @@ const PropertyDetailsPage: React.FC = () => {
             variant="contained"
             startIcon={<Icons.Edit />}
             onClick={() => setPropertyDialogOpen(true)}
-            size="large"
+            size="small"
             sx={{
               flex: 1,
               maxWidth: { sm: '200px' },
-              borderRadius: 2
+              borderRadius: 2,
+              py: 0.5,
+              fontSize: '0.875rem'
             }}
           >
             Edit
@@ -343,8 +345,8 @@ const PropertyDetailsPage: React.FC = () => {
           <ShareReportButton
             property={property}
             variant="outlined"
-            size="large"
-            sx={{ flex: 1 }}
+            size="small"
+            sx={{ flex: 1, py: 0.5 }}
           />
         </Box>
       </Box>

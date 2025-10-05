@@ -6,13 +6,13 @@ import {
   Grid,
   Card,
   CardContent,
-  LinearProgress,
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   AccountBalance as AccountBalanceIcon,
   AttachMoney as AttachMoneyIcon,
+  ShowChart as ShowChartIcon,
 } from '@mui/icons-material';
 import { Property } from '../../types/property';
 import { InvestmentCalculations } from '../../types/investmentReport';
@@ -27,38 +27,34 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
   property,
   calculations,
 }) => {
-  const ScoreGauge: React.FC<{ score: number; label: string; maxScore: number }> = ({
+  // Score Card for stacked layout
+  const ScoreCard: React.FC<{ score: number; label: string; maxScore: number }> = ({
     score,
     label,
     maxScore,
   }) => {
-    const percentage = (score / maxScore) * 100;
     const color = getScoreColor(score);
 
     return (
-      <Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-          <Typography variant="body2" color="text.secondary">
+      <Card elevation={2} sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        py: 1,
+        bgcolor: color,
+        color: '#fff',
+      }}>
+        <CardContent sx={{ textAlign: 'center', py: 0, '&:last-child': { pb: 0 } }}>
+          <Typography variant="body2" sx={{ mb: 0.25, opacity: 0.9, fontWeight: 500, fontSize: '0.875rem' }}>
             {label}
           </Typography>
-          <Typography variant="h6" fontWeight="bold" sx={{ color }}>
-            {score}/{maxScore}
+          <Typography variant="h5" fontWeight="bold">
+            {Math.round(score)}/{maxScore}
           </Typography>
-        </Box>
-        <LinearProgress
-          variant="determinate"
-          value={percentage}
-          sx={{
-            height: 8,
-            borderRadius: 4,
-            bgcolor: 'grey.200',
-            '& .MuiLinearProgress-bar': {
-              bgcolor: color,
-              borderRadius: 4,
-            },
-          }}
-        />
-      </Box>
+        </CardContent>
+      </Card>
     );
   };
 
@@ -96,33 +92,26 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
       </Typography>
 
       <Grid container spacing={3}>
-        {/* Investment Scores */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={1} sx={{ p: 2, bgcolor: '#f8f9fa' }}>
-            <Typography variant="h6" gutterBottom>
-              Investment Scores
-            </Typography>
-            <Box mb={3}>
-              <ScoreGauge
-                score={calculations.holdScore}
-                label="Hold Score"
-                maxScore={10}
-              />
-            </Box>
-            <Box>
-              <ScoreGauge
-                score={calculations.flipScore}
-                label="Flip Score"
-                maxScore={10}
-              />
-            </Box>
-          </Paper>
+        {/* Top Row: Investment Scores */}
+        <Grid item xs={6} md={6}>
+          <ScoreCard
+            score={calculations.holdScore}
+            label="Hold Score"
+            maxScore={10}
+          />
+        </Grid>
+        <Grid item xs={6} md={6}>
+          <ScoreCard
+            score={calculations.flipScore}
+            label="Flip Score"
+            maxScore={10}
+          />
         </Grid>
 
-        {/* Key Metrics */}
-        <Grid item xs={12} md={6}>
+        {/* Metric Cards Grid - 6 cards */}
+        <Grid item xs={12}>
           <Grid container spacing={2}>
-            <Grid item xs={6}>
+            <Grid item xs={6} sm={4}>
               <MetricCard
                 title="Rent Ratio"
                 value={formatPercentage(calculations.rentRatio)}
@@ -131,25 +120,7 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
                 subtitle="Monthly rent / Purchase price"
               />
             </Grid>
-            <Grid item xs={6}>
-              <MetricCard
-                title="ARV Ratio"
-                value={formatPercentage(calculations.arvRatio)}
-                icon={<TrendingDownIcon />}
-                color={calculations.arvRatio <= 0.80 ? '#4CAF50' : '#F44336'}
-                subtitle="Purchase / ARV"
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <MetricCard
-                title="Home Equity"
-                value={formatCurrency(calculations.homeEquity)}
-                icon={<AccountBalanceIcon />}
-                color={getMetricColor(calculations.homeEquity)}
-                subtitle="Post-refinance equity"
-              />
-            </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={6} sm={4}>
               <MetricCard
                 title="Monthly Cash Flow"
                 value={formatCurrency(calculations.monthlyCashflow)}
@@ -158,10 +129,50 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
                 subtitle="Net monthly income"
               />
             </Grid>
+            <Grid item xs={6} sm={4}>
+              <MetricCard
+                title="ARV Ratio"
+                value={formatPercentage(calculations.arvRatio)}
+                icon={<TrendingDownIcon />}
+                color={calculations.arvRatio <= 0.80 ? '#4CAF50' : '#F44336'}
+                subtitle="Purchase / ARV"
+              />
+            </Grid>
+            <Grid item xs={6} sm={4}>
+              <MetricCard
+                title="Home Equity"
+                value={formatCurrency(calculations.homeEquity)}
+                icon={<AccountBalanceIcon />}
+                color={getMetricColor(calculations.homeEquity)}
+                subtitle="Post-refinance equity"
+              />
+            </Grid>
+            <Grid item xs={6} sm={4}>
+              <MetricCard
+                title="Cash-on-Cash Return"
+                value={formatPercentage(calculations.cashOnCashReturn)}
+                icon={<ShowChartIcon />}
+                color={calculations.cashOnCashReturn >= 0.15 ? '#4CAF50' : calculations.cashOnCashReturn >= 0.08 ? '#FF9800' : '#F44336'}
+                subtitle={`Annual: ${formatCurrency(calculations.monthlyCashflow * 12)} / ${formatCurrency(calculations.downPaymentRequired)}`}
+              />
+            </Grid>
+            <Grid item xs={6} sm={4}>
+              <MetricCard
+                title="Cap Rate"
+                value={formatPercentage(calculations.monthlyCashflow * 12 / calculations.purchasePrice)}
+                icon={<ShowChartIcon />}
+                color={(() => {
+                  const capRate = calculations.monthlyCashflow * 12 / calculations.purchasePrice;
+                  if (capRate >= 0.05 && capRate <= 0.10) return '#4CAF50'; // Green: 5-10%
+                  return '#FF9800'; // Orange: outside ideal range
+                })()}
+                subtitle="Net operating income rate"
+              />
+            </Grid>
           </Grid>
         </Grid>
 
-        {/* Property Details */}
+        {/* Property Overview */}
         <Grid item xs={12}>
           <Box mt={2}>
             <Typography variant="h6" gutterBottom>
@@ -201,6 +212,12 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
                 </Typography>
               </Grid>
             </Grid>
+            {/* Disclaimer */}
+            <Box mt={3}>
+              <Typography variant="body2" sx={{ fontStyle: 'italic', color: '#757575', fontSize: '0.875rem', textAlign: 'center' }}>
+                *These figures are estimates based on available data. Investors should conduct their own due diligence and verify all information independently before making investment decisions.*
+              </Typography>
+            </Box>
           </Box>
         </Grid>
       </Grid>

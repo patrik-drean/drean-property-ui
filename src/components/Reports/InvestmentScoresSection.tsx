@@ -6,14 +6,11 @@ import {
   Grid,
   Card,
   CardContent,
-  LinearProgress,
   Divider,
 } from '@mui/material';
 import {
   ShowChart as ShowChartIcon,
   TrendingUp as TrendingUpIcon,
-  Home as HomeIcon,
-  AttachMoney as AttachMoneyIcon,
 } from '@mui/icons-material';
 import { Property } from '../../types/property';
 import { InvestmentCalculations } from '../../types/investmentReport';
@@ -36,7 +33,6 @@ const InvestmentScoresSection: React.FC<InvestmentScoresSectionProps> = ({
     children: React.ReactNode;
   }> = ({ title, totalScore, maxScore, icon, children }) => {
     const color = getScoreColor(totalScore);
-    const percentage = (totalScore / maxScore) * 100;
 
     return (
       <Card elevation={1} sx={{ height: '100%' }}>
@@ -49,28 +45,13 @@ const InvestmentScoresSection: React.FC<InvestmentScoresSectionProps> = ({
           </Box>
 
           {/* Total Score Display */}
-          <Box mb={3}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="body2" color="text.secondary">
-                Total Score
-              </Typography>
-              <Typography variant="h5" fontWeight="bold" sx={{ color }}>
-                {totalScore}/{maxScore}
-              </Typography>
-            </Box>
-            <LinearProgress
-              variant="determinate"
-              value={percentage}
-              sx={{
-                height: 10,
-                borderRadius: 5,
-                bgcolor: 'grey.200',
-                '& .MuiLinearProgress-bar': {
-                  bgcolor: color,
-                  borderRadius: 5,
-                },
-              }}
-            />
+          <Box mb={3} textAlign="center" p={2} bgcolor={color} borderRadius={2}>
+            <Typography variant="body2" sx={{ color: '#fff', opacity: 0.9, mb: 0.5 }}>
+              Total Score
+            </Typography>
+            <Typography variant="h4" fontWeight="bold" sx={{ color: '#fff' }}>
+              {totalScore.toFixed(1)}/{maxScore}
+            </Typography>
           </Box>
 
           <Divider sx={{ my: 2 }} />
@@ -82,42 +63,48 @@ const InvestmentScoresSection: React.FC<InvestmentScoresSectionProps> = ({
     );
   };
 
-  const ScoreComponent: React.FC<{
+  // Score Badge Component - replaces progress bars
+  const ScoreBadge: React.FC<{
     label: string;
     score: number;
     maxScore: number;
     detail: string;
   }> = ({ label, score, maxScore, detail }) => {
     const percentage = (score / maxScore) * 100;
-    const color = getScoreColor(score);
+    let badgeBgColor = '#4CAF50'; // Green for 90-100%
+    if (percentage < 90 && percentage >= 70) {
+      badgeBgColor = '#FF9800'; // Orange for 70-89%
+    } else if (percentage < 70) {
+      badgeBgColor = '#F44336'; // Red for <70%
+    }
 
     return (
-      <Box mb={2}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
-          <Typography variant="body2" fontWeight="medium">
+      <Box mb={2.5} display="flex" alignItems="center" gap={1.5}>
+        <Box
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: badgeBgColor,
+            color: '#fff',
+            px: 1.5,
+            py: 0.5,
+            borderRadius: 1,
+            fontWeight: 'bold',
+            fontSize: '0.875rem',
+            minWidth: '60px',
+          }}
+        >
+          {score}/{maxScore}
+        </Box>
+        <Box flex={1}>
+          <Typography variant="body2" fontWeight="medium" gutterBottom>
             {label}
           </Typography>
-          <Typography variant="body2" fontWeight="bold" sx={{ color }}>
-            {score}/{maxScore}
+          <Typography variant="caption" color="text.secondary">
+            {detail}
           </Typography>
         </Box>
-        <LinearProgress
-          variant="determinate"
-          value={percentage}
-          sx={{
-            height: 6,
-            borderRadius: 3,
-            bgcolor: 'grey.200',
-            mb: 0.5,
-            '& .MuiLinearProgress-bar': {
-              bgcolor: color,
-              borderRadius: 3,
-            },
-          }}
-        />
-        <Typography variant="caption" color="text.secondary">
-          {detail}
-        </Typography>
       </Box>
     );
   };
@@ -126,9 +113,6 @@ const InvestmentScoresSection: React.FC<InvestmentScoresSectionProps> = ({
     <Paper elevation={2} sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom color="primary" fontWeight="bold">
         Investment Scores Analysis
-      </Typography>
-      <Typography variant="body2" color="text.secondary" mb={3}>
-        Detailed breakdown of hold and flip investment scores with key metrics
       </Typography>
 
       <Grid container spacing={3}>
@@ -140,13 +124,13 @@ const InvestmentScoresSection: React.FC<InvestmentScoresSectionProps> = ({
             maxScore={10}
             icon={<TrendingUpIcon />}
           >
-            <ScoreComponent
+            <ScoreBadge
               label="Cash Flow Score"
               score={calculations.holdScoreBreakdown.cashflowScore}
               maxScore={8}
               detail={`${formatCurrency(calculations.holdScoreBreakdown.cashflowPerUnit)} per unit monthly`}
             />
-            <ScoreComponent
+            <ScoreBadge
               label="Rent Ratio Score"
               score={calculations.holdScoreBreakdown.rentRatioScore}
               maxScore={2}
@@ -158,7 +142,7 @@ const InvestmentScoresSection: React.FC<InvestmentScoresSectionProps> = ({
                 Perfect Hold Score (10/10)
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Would require rent of {formatCurrency(calculations.perfectRentForHoldScore)} per month
+                Would require rent of <em>over {formatCurrency(calculations.perfectRentForHoldScore)}</em>
               </Typography>
             </Box>
           </ScoreBreakdownCard>
@@ -172,13 +156,13 @@ const InvestmentScoresSection: React.FC<InvestmentScoresSectionProps> = ({
             maxScore={10}
             icon={<ShowChartIcon />}
           >
-            <ScoreComponent
+            <ScoreBadge
               label="ARV Ratio Score"
               score={calculations.flipScoreBreakdown.arvRatioScore}
               maxScore={8}
               detail={`${formatPercentage(calculations.flipScoreBreakdown.arvRatioPercentage)} purchase to ARV ratio`}
             />
-            <ScoreComponent
+            <ScoreBadge
               label="Home Equity Score"
               score={calculations.flipScoreBreakdown.equityScore}
               maxScore={2}
@@ -190,7 +174,7 @@ const InvestmentScoresSection: React.FC<InvestmentScoresSectionProps> = ({
                 Perfect Flip Score (10/10)
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Would require ARV of {formatCurrency(calculations.perfectARVForFlipScore)}
+                Would require ARV of <em>over {formatCurrency(calculations.perfectARVForFlipScore)}</em>
               </Typography>
             </Box>
           </ScoreBreakdownCard>

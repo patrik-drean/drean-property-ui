@@ -139,9 +139,22 @@ export const getShareableLink = (reportId: string): ShareableReportLink | null =
   return linkStorage.get(reportId) || null;
 };
 
+// Get base URL with GitHub Pages support
+const getBaseUrl = (): string => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isDevelopment = window.location.hostname === 'localhost';
+
+  if (isProduction && !isDevelopment) {
+    // GitHub Pages deployment - includes /drean-property-ui base path
+    return `${window.location.origin}/drean-property-ui`;
+  }
+  // Local development
+  return window.location.origin;
+};
+
 // Generate shareable report URL
 export const generateReportUrl = (reportId: string): string => {
-  const baseUrl = window.location.origin;
+  const baseUrl = getBaseUrl();
   return `${baseUrl}/#/reports/investment/${reportId}`;
 };
 

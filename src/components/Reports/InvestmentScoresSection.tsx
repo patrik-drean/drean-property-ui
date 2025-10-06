@@ -45,12 +45,12 @@ const InvestmentScoresSection: React.FC<InvestmentScoresSectionProps> = ({
           </Box>
 
           {/* Total Score Display */}
-          <Box mb={3} textAlign="center" p={2} bgcolor={color} borderRadius={2}>
-            <Typography variant="body2" sx={{ color: '#fff', opacity: 0.9, mb: 0.5 }}>
+          <Box mb={3} textAlign="center" py={1} bgcolor={color} borderRadius={2}>
+            <Typography variant="body2" sx={{ color: '#fff', opacity: 0.9, mb: 0.25, fontWeight: 500, fontSize: '0.875rem' }}>
               Total Score
             </Typography>
-            <Typography variant="h4" fontWeight="bold" sx={{ color: '#fff' }}>
-              {totalScore.toFixed(1)}/{maxScore}
+            <Typography variant="h5" fontWeight="bold" sx={{ color: '#fff' }}>
+              {Math.round(totalScore)}/{maxScore}
             </Typography>
           </Box>
 

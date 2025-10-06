@@ -152,7 +152,7 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
                 title="Cash-on-Cash Return"
                 value={formatPercentage(calculations.cashOnCashReturn)}
                 icon={<ShowChartIcon />}
-                color={calculations.cashOnCashReturn >= 0.15 ? '#4CAF50' : calculations.cashOnCashReturn >= 0.08 ? '#FF9800' : '#F44336'}
+                color={calculations.cashOnCashReturn >= 0.05 ? '#4CAF50' : '#F44336'}
                 subtitle={`Annual: ${formatCurrency(calculations.monthlyCashflow * 12)} / ${formatCurrency(calculations.downPaymentRequired)}`}
               />
             </Grid>

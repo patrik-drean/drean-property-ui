@@ -141,14 +141,11 @@ export const getShareableLink = (reportId: string): ShareableReportLink | null =
 
 // Get base URL with GitHub Pages support
 const getBaseUrl = (): string => {
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isDevelopment = window.location.hostname === 'localhost';
-
-  if (isProduction && !isDevelopment) {
-    // GitHub Pages deployment - includes /drean-property-ui base path
+  // Check if current path includes /drean-property-ui (works for both dev and prod)
+  if (window.location.pathname.includes('/drean-property-ui')) {
     return `${window.location.origin}/drean-property-ui`;
   }
-  // Local development
+  // Default for local development without base path
   return window.location.origin;
 };
 

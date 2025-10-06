@@ -139,9 +139,19 @@ export const getShareableLink = (reportId: string): ShareableReportLink | null =
   return linkStorage.get(reportId) || null;
 };
 
+// Get base URL with GitHub Pages support
+const getBaseUrl = (): string => {
+  // Check if current path includes /drean-property-ui (works for both dev and prod)
+  if (window.location.pathname.includes('/drean-property-ui')) {
+    return `${window.location.origin}/drean-property-ui`;
+  }
+  // Default for local development without base path
+  return window.location.origin;
+};
+
 // Generate shareable report URL
 export const generateReportUrl = (reportId: string): string => {
-  const baseUrl = window.location.origin;
+  const baseUrl = getBaseUrl();
   return `${baseUrl}/#/reports/investment/${reportId}`;
 };
 

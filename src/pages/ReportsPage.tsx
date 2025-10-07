@@ -20,7 +20,8 @@ import {
   TrendingUp as TrendingUpIcon,
   Home as HomeIcon,
   Refresh as RefreshIcon,
-  GetApp as DownloadIcon
+  GetApp as DownloadIcon,
+  AccountBalance as AccountBalanceIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { Property } from '../types/property';
@@ -31,6 +32,7 @@ import {
 } from '../types/portfolioReport';
 import { PortfolioCashFlowReport } from '../components/Reports/PortfolioCashFlowReport';
 import { PortfolioAssetReport } from '../components/Reports/PortfolioAssetReport';
+import { PortfolioPLReport } from '../components/Reports/PortfolioPLReport';
 import { portfolioReportService } from '../services/portfolioReportService';
 
 interface TabPanelProps {
@@ -196,13 +198,6 @@ export const ReportsPage: React.FC = () => {
         </Box>
 
         <Box display="flex" alignItems="center" gap={1}>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/reports/portfolio-pl')}
-            sx={{ mr: 1 }}
-          >
-            Portfolio P&L
-          </Button>
           <Tooltip title="Refresh Reports">
             <IconButton
               onClick={handleRefresh}
@@ -213,7 +208,7 @@ export const ReportsPage: React.FC = () => {
             </IconButton>
           </Tooltip>
 
-          {!isMobile && (
+          {!isMobile && currentTab !== 2 && (
             <Tooltip title={`Export ${currentTab === 0 ? 'Cash Flow' : 'Asset'} Report`}>
               <IconButton
                 onClick={() => handleExport(currentTab === 0 ? 'cashflow' : 'assets')}
@@ -291,7 +286,8 @@ export const ReportsPage: React.FC = () => {
               value={currentTab}
               onChange={handleTabChange}
               aria-label="portfolio reports tabs"
-              variant={isMobile ? 'fullWidth' : 'standard'}
+              variant={isMobile ? 'fullWidth' : 'scrollable'}
+              scrollButtons={isMobile ? 'auto' : false}
             >
               <Tab
                 label="Cash Flow Analysis"
@@ -304,6 +300,12 @@ export const ReportsPage: React.FC = () => {
                 icon={<HomeIcon />}
                 iconPosition={isMobile ? 'top' : 'start'}
                 {...a11yProps(1)}
+              />
+              <Tab
+                label="Portfolio P&L"
+                icon={<AccountBalanceIcon />}
+                iconPosition={isMobile ? 'top' : 'start'}
+                {...a11yProps(2)}
               />
             </Tabs>
           </Box>
@@ -330,8 +332,12 @@ export const ReportsPage: React.FC = () => {
             />
           </TabPanel>
 
+          <TabPanel value={currentTab} index={2}>
+            <PortfolioPLReport months={6} />
+          </TabPanel>
+
           {/* Mobile export buttons */}
-          {isMobile && (
+          {isMobile && currentTab !== 2 && (
             <Box p={2} textAlign="center">
               <Button
                 variant="outlined"

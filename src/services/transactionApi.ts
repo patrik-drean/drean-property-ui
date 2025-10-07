@@ -53,22 +53,15 @@ export const transactionApi = {
     return response.data;
   },
 
-  // Validate CSV import data (mock implementation for now)
+  // Validate CSV import data
   validateImport: async (csvText: string): Promise<any> => {
-    // TODO: Implement actual validation API call when backend is ready
-    // For now, return a mock response
-    return Promise.resolve({
-      validTransactions: [],
-      errors: [],
-      validCount: 0,
-      errorCount: 0,
-    });
+    const response = await api.post('/api/transactions/import/validate', { csvText });
+    return response.data;
   },
 
   // Import CSV data
   import: async (csvText: string): Promise<Transaction[]> => {
-    // TODO: Implement actual import API call when backend is ready
-    // For now, return a mock response
-    return Promise.resolve([]);
+    const response = await api.post<Transaction[]>('/api/transactions/import', { csvText });
+    return response.data;
   },
 };

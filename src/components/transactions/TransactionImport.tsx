@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import { Download as DownloadIcon, Upload as UploadIcon } from '@mui/icons-material';
 import { TransactionCreate } from '../../types/transaction';
+import { transactionApi } from '../../services/transactionApi';
 
 interface ValidationError {
   line: number;
@@ -66,58 +67,17 @@ export const TransactionImport: React.FC<TransactionImportProps> = ({ open, onCl
 
     try {
       setLoading(true);
-      // TODO: Implement actual validation API call when backend is ready
-      // For now, simulate validation
-      const lines = csvText.trim().split('\n');
-      const errors: ValidationError[] = [];
-      const validTransactions: TransactionCreate[] = [];
-      
-      // Skip header row
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        const parts = line.split(',');
-        if (parts.length < 3) {
-          errors.push({ line: i + 1, message: 'Invalid CSV format - missing required fields' });
-          continue;
-        }
-        
-        const [date, amount, category, property, unit, description, overrideDate, payee, expenseType] = parts;
-        
-        // Basic validation
-        if (!date || !amount || !category) {
-          errors.push({ line: i + 1, message: 'Missing required fields: date, amount, or category' });
-          continue;
-        }
-        
-        const amountNum = parseFloat(amount);
-        if (isNaN(amountNum)) {
-          errors.push({ line: i + 1, message: 'Invalid amount format' });
-          continue;
-        }
-        
-        validTransactions.push({
-          date: date.trim(),
-          amount: amountNum,
-          category: category.trim(),
-          propertyId: property?.trim() || undefined,
-          unit: unit?.trim() || undefined,
-          description: description?.trim() || undefined,
-          overrideDate: overrideDate?.trim() || undefined,
-          payee: payee?.trim() || undefined,
-          expenseType: expenseType?.trim() || 'Operating',
-        });
-      }
-      
-      setValidationResult({
-        validTransactions,
-        errors,
-        validCount: validTransactions.length,
-        errorCount: errors.length,
-      });
+      const result = await transactionApi.validateImport(csvText);
+      setValidationResult(result);
     } catch (err) {
       console.error('Validation error:', err);
+      // Handle validation error - could show a snackbar or error message
+      setValidationResult({
+        validTransactions: [],
+        errors: [{ line: 1, message: 'Validation failed: ' + (err instanceof Error ? err.message : 'Unknown error') }],
+        validCount: 0,
+        errorCount: 1,
+      });
     } finally {
       setLoading(false);
     }

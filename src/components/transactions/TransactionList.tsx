@@ -26,6 +26,7 @@ import {
 import { Edit as EditIcon, Delete as DeleteIcon, Upload as UploadIcon, ViewList as ViewListIcon, ViewModule as ViewModuleIcon } from '@mui/icons-material';
 import { Transaction } from '../../types/transaction';
 import { transactionApi } from '../../services/transactionApi';
+import PropertyService from '../../services/PropertyService';
 import { format } from 'date-fns';
 
 interface TransactionListProps {
@@ -41,6 +42,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, on
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [propertyAddresses, setPropertyAddresses] = useState<Map<string, string>>(new Map());
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -61,9 +63,23 @@ export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, on
     }
   }, [propertyId]);
 
+  const loadProperties = useCallback(async () => {
+    try {
+      const properties = await PropertyService.getAllProperties();
+      const addressMap = new Map<string, string>();
+      properties.forEach(property => {
+        addressMap.set(property.id, property.address);
+      });
+      setPropertyAddresses(addressMap);
+    } catch (err) {
+      console.error('Failed to load property addresses:', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadTransactions();
-  }, [propertyId, loadTransactions]);
+    loadProperties();
+  }, [propertyId, loadTransactions, loadProperties]);
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this transaction?')) return;
@@ -82,6 +98,14 @@ export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, on
       style: 'currency',
       currency: 'USD',
     }).format(Math.abs(amount));
+  };
+
+  const getPropertyDisplay = (propertyId?: string) => {
+    if (!propertyId) return 'Business';
+    const fullAddress = propertyAddresses.get(propertyId);
+    if (!fullAddress) return `Property ${propertyId.slice(0, 8)}`;
+    // Return just the street number and name (first part before comma)
+    return fullAddress.split(',')[0].trim();
   };
 
   const handleViewModeChange = (_: React.MouseEvent<HTMLElement>, newViewMode: ViewMode | null) => {
@@ -127,17 +151,14 @@ export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, on
               <TableCell>{transaction.category}</TableCell>
               <TableCell>{transaction.description || transaction.payee || '—'}</TableCell>
               <TableCell>
-                {transaction.propertyId ? (
-                  <>
-                    Property {transaction.propertyId.slice(0, 8)}
-                    {transaction.unit && ` - ${transaction.unit}`}
-                  </>
-                ) : (
-                  'Business'
-                )}
+                {getPropertyDisplay(transaction.propertyId)}
+                {transaction.unit && ` - ${transaction.unit}`}
               </TableCell>
               <TableCell align="right">
-                <Typography color={transaction.amount > 0 ? 'success.main' : 'text.primary'}>
+                <Typography
+                  color={transaction.amount > 0 ? 'primary.main' : 'error.main'}
+                  fontWeight={transaction.amount > 0 ? 600 : 500}
+                >
                   {transaction.amount > 0 ? '+' : '-'}
                   {formatCurrency(transaction.amount)}
                 </Typography>
@@ -146,7 +167,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, on
                 <Chip
                   label={transaction.expenseType}
                   size="small"
-                  color={transaction.expenseType === 'Capital' ? 'warning' : 'default'}
+                  variant="outlined"
+                  sx={{
+                    borderColor: transaction.expenseType === 'Capital' ? 'secondary.main' : 'grey.400',
+                    color: transaction.expenseType === 'Capital' ? 'secondary.main' : 'text.secondary'
+                  }}
                 />
               </TableCell>
               <TableCell align="center">
@@ -173,7 +198,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, on
               <Typography variant="h6" color="text.secondary" gutterBottom>
                 {transaction.category}
               </Typography>
-              <Typography variant="h5" color={transaction.amount > 0 ? 'success.main' : 'text.primary'}>
+              <Typography
+                variant="h5"
+                color={transaction.amount > 0 ? 'primary.main' : 'error.main'}
+                fontWeight={transaction.amount > 0 ? 600 : 500}
+              >
                 {transaction.amount > 0 ? '+' : '-'}
                 {formatCurrency(transaction.amount)}
               </Typography>
@@ -184,20 +213,18 @@ export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, on
                 {transaction.description || transaction.payee || '—'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {transaction.propertyId ? (
-                  <>
-                    Property {transaction.propertyId.slice(0, 8)}
-                    {transaction.unit && ` - ${transaction.unit}`}
-                  </>
-                ) : (
-                  'Business'
-                )}
+                {getPropertyDisplay(transaction.propertyId)}
+                {transaction.unit && ` - ${transaction.unit}`}
               </Typography>
               <Box mt={1}>
                 <Chip
                   label={transaction.expenseType}
                   size="small"
-                  color={transaction.expenseType === 'Capital' ? 'warning' : 'default'}
+                  variant="outlined"
+                  sx={{
+                    borderColor: transaction.expenseType === 'Capital' ? 'secondary.main' : 'grey.400',
+                    color: transaction.expenseType === 'Capital' ? 'secondary.main' : 'text.secondary'
+                  }}
                 />
               </Box>
             </CardContent>

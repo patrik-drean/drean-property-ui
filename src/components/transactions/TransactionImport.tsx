@@ -39,7 +39,7 @@ interface ValidationResult {
 interface TransactionImportProps {
   open: boolean;
   onClose: () => void;
-  onImport: (transactions: TransactionCreate[]) => void;
+  onImport: (csvText: string, transactionCount: number) => void;
 }
 
 export const TransactionImport: React.FC<TransactionImportProps> = ({ open, onClose, onImport }) => {
@@ -85,7 +85,7 @@ export const TransactionImport: React.FC<TransactionImportProps> = ({ open, onCl
 
   const handleImport = () => {
     if (validationResult && validationResult.validCount > 0) {
-      onImport(validationResult.validTransactions);
+      onImport(csvText, validationResult.validCount);
       handleClose();
     }
   };

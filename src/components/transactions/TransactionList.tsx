@@ -23,7 +23,7 @@ import {
   Snackbar,
   Alert,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, ViewList as ViewListIcon, ViewModule as ViewModuleIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon, Upload as UploadIcon, ViewList as ViewListIcon, ViewModule as ViewModuleIcon } from '@mui/icons-material';
 import { Transaction } from '../../types/transaction';
 import { transactionApi } from '../../services/transactionApi';
 import { format } from 'date-fns';
@@ -31,12 +31,12 @@ import { format } from 'date-fns';
 interface TransactionListProps {
   propertyId?: string; // Optional: filter by property
   onEdit: (transaction: Transaction) => void;
-  onAdd: () => void;
+  onImport: () => void;
 }
 
 type ViewMode = 'table' | 'cards';
 
-export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, onEdit, onAdd }) => {
+export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, onEdit, onImport }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -233,8 +233,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, on
               <ViewModuleIcon />
             </ToggleButton>
           </ToggleButtonGroup>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd}>
-            Add Transaction
+          <Button variant="contained" startIcon={<UploadIcon />} onClick={onImport}>
+            Import Transactions
           </Button>
         </Stack>
       </Box>
@@ -242,7 +242,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, on
       {transactions.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <Typography color="text.secondary">
-            No transactions yet. Click "Add Transaction" to create your first transaction.
+            No transactions yet. Click "Import Transactions" to import your first transactions from CSV.
           </Typography>
         </Paper>
       ) : (

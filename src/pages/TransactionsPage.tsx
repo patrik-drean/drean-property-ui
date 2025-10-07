@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Container, Box, Snackbar, Alert } from '@mui/material';
 import { TransactionList } from '../components/transactions/TransactionList';
-import { TransactionForm } from '../components/transactions/TransactionForm';
-import { Transaction } from '../types/transaction';
+import { TransactionImport } from '../components/transactions/TransactionImport';
+import { TransactionCreate } from '../types/transaction';
+import { transactionApi } from '../services/transactionApi';
 
 export const TransactionsPage: React.FC = () => {
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>(undefined);
+  const [importOpen, setImportOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
@@ -14,28 +14,38 @@ export const TransactionsPage: React.FC = () => {
     severity: 'success'
   });
 
-  const handleAdd = () => {
-    setEditingTransaction(undefined);
-    setFormOpen(true);
+  const handleImport = () => {
+    setImportOpen(true);
   };
 
-  const handleEdit = (transaction: Transaction) => {
-    setEditingTransaction(transaction);
-    setFormOpen(true);
-  };
-
-  const handleSave = async () => {
+  const handleImportTransactions = async (transactions: TransactionCreate[]) => {
     try {
+      // Convert transactions to CSV format for the API
+      const csvData = [
+        'date,amount,category,property,unit,description,override_date,payee,expense_type',
+        ...transactions.map(t => [
+          t.date,
+          t.amount,
+          t.category,
+          t.propertyId || '',
+          t.unit || '',
+          t.description || '',
+          t.overrideDate || '',
+          t.payee || '',
+          t.expenseType || 'Operating'
+        ].join(','))
+      ].join('\n');
+      
+      await transactionApi.import(csvData);
       setRefreshKey((prev) => prev + 1); // Trigger list refresh
-      setSnackbar({ open: true, message: editingTransaction ? 'Transaction updated successfully' : 'Transaction created successfully', severity: 'success' });
+      setSnackbar({ open: true, message: `${transactions.length} transactions imported successfully`, severity: 'success' });
     } catch (err) {
-      setSnackbar({ open: true, message: err instanceof Error ? err.message : 'Failed to save transaction', severity: 'error' });
+      setSnackbar({ open: true, message: err instanceof Error ? err.message : 'Failed to import transactions', severity: 'error' });
     }
   };
 
-  const handleFormClose = () => {
-    setFormOpen(false);
-    setEditingTransaction(undefined);
+  const handleImportClose = () => {
+    setImportOpen(false);
   };
 
   return (
@@ -43,14 +53,13 @@ export const TransactionsPage: React.FC = () => {
       <Box py={4}>
         <TransactionList
           key={refreshKey}
-          onAdd={handleAdd}
-          onEdit={handleEdit}
+          onImport={handleImport}
+          onEdit={() => {}} // TODO: Implement edit functionality if needed
         />
-        <TransactionForm
-          open={formOpen}
-          transaction={editingTransaction}
-          onClose={handleFormClose}
-          onSave={handleSave}
+        <TransactionImport
+          open={importOpen}
+          onClose={handleImportClose}
+          onImport={handleImportTransactions}
         />
         
         <Snackbar

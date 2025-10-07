@@ -24,6 +24,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import PeopleIcon from '@mui/icons-material/People';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import Logo from './Logo';
 
 const Navigation: React.FC = () => {
@@ -111,6 +112,17 @@ const Navigation: React.FC = () => {
               <AssessmentIcon color={isActive('/reports') ? 'primary' : 'inherit'} />
             </ListItemIcon>
             <ListItemText primary="Reports" />
+          </ListItem>
+          <ListItem
+            button
+            component={RouterLink}
+            to="/transactions"
+            selected={isActive('/transactions')}
+          >
+            <ListItemIcon>
+              <AccountBalanceIcon color={isActive('/transactions') ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Transactions" />
           </ListItem>
           <ListItem
             button
@@ -217,6 +229,15 @@ const Navigation: React.FC = () => {
                   sx={getNavButtonStyle('/reports')}
                 >
                   Reports
+                </Button>
+
+                <Button
+                  component={RouterLink}
+                  to="/transactions"
+                  startIcon={<AccountBalanceIcon />}
+                  sx={getNavButtonStyle('/transactions')}
+                >
+                  Transactions
                 </Button>
 
                 <Button

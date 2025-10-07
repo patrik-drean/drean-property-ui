@@ -1,10 +1,11 @@
 import {
   generatePropertyPLReport,
+  generatePortfolioPLReport,
   getIncomeCategories,
   getExpenseCategories
 } from '../reportUtils';
 import { Transaction } from '../../types/transaction';
-import { format, subMonths } from 'date-fns';
+import { format, subMonths, startOfMonth } from 'date-fns';
 
 describe('reportUtils', () => {
   const mockPropertyId = 'prop-123';
@@ -321,6 +322,102 @@ describe('reportUtils', () => {
 
       const categories = getExpenseCategories(report);
       expect(categories).toHaveLength(0);
+    });
+  });
+
+  describe('generatePortfolioPLReport', () => {
+    const properties = [
+      { id: 'prop-1', address: '123 Main St', archived: false, status: 'Operational' },
+      { id: 'prop-2', address: '456 Oak Ave', archived: false, status: 'Operational' },
+      { id: 'prop-3', address: '789 Pine Rd', archived: true, status: 'Operational' },
+      { id: 'prop-4', address: '321 Elm St', archived: false, status: 'Soft offer' },
+    ];
+
+    const createTransaction = (
+      amount: number,
+      category: string,
+      date: string,
+      propertyId?: string,
+      expenseType: string = 'Operating',
+      overrideDate?: string
+    ): Transaction => ({
+      id: Math.random().toString(),
+      date,
+      amount,
+      category,
+      propertyId,
+      expenseType,
+      overrideDate,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    it('should aggregate transactions across multiple properties', () => {
+      const currentMonth = format(startOfMonth(new Date()), 'yyyy-MM');
+      const transactions: Transaction[] = [
+        createTransaction(1000, 'Rent', `${currentMonth}-01`, 'prop-1'),
+        createTransaction(800, 'Rent', `${currentMonth}-01`, 'prop-2'),
+        createTransaction(-200, 'Utilities', `${currentMonth}-05`, 'prop-1'),
+        createTransaction(-150, 'Utilities', `${currentMonth}-05`, 'prop-2'),
+      ];
+
+      const report = generatePortfolioPLReport(transactions, properties);
+
+      const currentMonthData = report.months.find(m => m.month === currentMonth);
+      expect(currentMonthData?.totalIncome).toBe(1800);
+      expect(currentMonthData?.totalExpenses).toBe(350);
+      expect(currentMonthData?.netIncome).toBe(1450);
+    });
+
+    it('should exclude archived properties', () => {
+      const currentMonth = format(startOfMonth(new Date()), 'yyyy-MM');
+      const transactions: Transaction[] = [
+        createTransaction(1000, 'Rent', `${currentMonth}-01`, 'prop-1'),
+        createTransaction(500, 'Rent', `${currentMonth}-01`, 'prop-3'), // Archived
+      ];
+
+      const report = generatePortfolioPLReport(transactions, properties);
+
+      const currentMonthData = report.months.find(m => m.month === currentMonth);
+      expect(currentMonthData?.totalIncome).toBe(1000); // Archived property excluded
+    });
+
+    it('should exclude properties in Soft Offer, Hard Offer, and Opportunity status', () => {
+      const currentMonth = format(startOfMonth(new Date()), 'yyyy-MM');
+      const testProperties = [
+        { id: 'prop-1', address: '123 Main St', archived: false, status: 'Operational' },
+        { id: 'prop-2', address: '456 Oak Ave', archived: false, status: 'Soft offer' },
+        { id: 'prop-3', address: '789 Pine Rd', archived: false, status: 'Hard offer' },
+        { id: 'prop-4', address: '321 Elm St', archived: false, status: 'Opportunity' },
+      ];
+
+      const transactions: Transaction[] = [
+        createTransaction(1000, 'Rent', `${currentMonth}-01`, 'prop-1'),
+        createTransaction(500, 'Rent', `${currentMonth}-01`, 'prop-2'),
+        createTransaction(500, 'Rent', `${currentMonth}-01`, 'prop-3'),
+        createTransaction(500, 'Rent', `${currentMonth}-01`, 'prop-4'),
+      ];
+
+      const report = generatePortfolioPLReport(transactions, testProperties);
+
+      const currentMonthData = report.months.find(m => m.month === currentMonth);
+      expect(currentMonthData?.totalIncome).toBe(1000); // Only operational property
+    });
+
+    it('should calculate last full month correctly', () => {
+      const lastMonth = format(subMonths(startOfMonth(new Date()), 1), 'yyyy-MM');
+
+      const transactions: Transaction[] = [
+        createTransaction(1000, 'Rent', `${lastMonth}-01`, 'prop-1'),
+        createTransaction(800, 'Rent', `${lastMonth}-01`, 'prop-2'),
+        createTransaction(-200, 'Utilities', `${lastMonth}-05`, 'prop-1'),
+      ];
+
+      const report = generatePortfolioPLReport(transactions, properties);
+
+      expect(report.lastFullMonth.totalIncome).toBe(1800);
+      expect(report.lastFullMonth.totalExpenses).toBe(200);
+      expect(report.lastFullMonth.netIncome).toBe(1600);
     });
   });
 });

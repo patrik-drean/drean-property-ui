@@ -196,6 +196,13 @@ export const ReportsPage: React.FC = () => {
         </Box>
 
         <Box display="flex" alignItems="center" gap={1}>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/reports/portfolio-pl')}
+            sx={{ mr: 1 }}
+          >
+            Portfolio P&L
+          </Button>
           <Tooltip title="Refresh Reports">
             <IconButton
               onClick={handleRefresh}

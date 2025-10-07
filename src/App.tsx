@@ -15,6 +15,7 @@ import TeamPage from './components/TeamPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { TransactionsPage } from './pages/TransactionsPage';
 import { PropertyPLReportPage } from './pages/PropertyPLReportPage';
+import { PortfolioPLReportPage } from './pages/PortfolioPLReportPage';
 
 const router = createHashRouter(
   createRoutesFromElements(
@@ -26,6 +27,7 @@ const router = createHashRouter(
         <Route path="/properties" element={<PropertiesPage />} />
         <Route path="/properties/:id" element={<PropertyDetailsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/reports/portfolio-pl" element={<PortfolioPLReportPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
         <Route path="/archived" element={<ArchivedPropertiesPage />} />
         <Route path="/calculator" element={<Calculator />} />

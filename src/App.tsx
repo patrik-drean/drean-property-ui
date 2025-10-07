@@ -14,11 +14,13 @@ import InvestmentReportPage from './pages/InvestmentReportPage';
 import TeamPage from './components/TeamPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { TransactionsPage } from './pages/TransactionsPage';
+import { PropertyPLReportPage } from './pages/PropertyPLReportPage';
 
 const router = createHashRouter(
   createRoutesFromElements(
     <>
       <Route path="/reports/investment/:reportId" element={<InvestmentReportPage />} />
+      <Route path="/reports/property-pl/:propertyId" element={<PropertyPLReportPage />} />
       <Route element={<Navigation />}>
         <Route path="/" element={<Navigate to="/properties" replace />} />
         <Route path="/properties" element={<PropertiesPage />} />

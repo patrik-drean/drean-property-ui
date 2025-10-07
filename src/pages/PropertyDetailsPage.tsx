@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Box, Typography, Paper, Button, Chip, Card, TextField, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, IconButton, Tooltip, Link as MuiLink, Divider, Snackbar, Alert, Avatar, Select, MenuItem, FormControl, InputLabel, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, Note, Link as PropertyLink, CreateNote, CreateLink, Contact } from '../types/property';
@@ -341,6 +341,22 @@ const PropertyDetailsPage: React.FC = () => {
             }}
           >
             Edit
+          </Button>
+          <Button
+            component={Link}
+            to={`/reports/property-pl/${property.id}`}
+            variant="outlined"
+            startIcon={<Icons.Assessment />}
+            size="small"
+            sx={{
+              flex: 1,
+              maxWidth: { sm: '200px' },
+              borderRadius: 2,
+              py: 0.5,
+              fontSize: '0.875rem'
+            }}
+          >
+            P&L Report
           </Button>
           <ShareReportButton
             property={property}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Box, Typography, Paper, Button, Chip, Card, TextField, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, IconButton, Tooltip, Link as MuiLink, Divider, Snackbar, Alert, Avatar, Select, MenuItem, FormControl, InputLabel, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, Card, TextField, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, IconButton, Tooltip, Link as MuiLink, Divider, Snackbar, Alert, Avatar, Select, MenuItem, FormControl, InputLabel, Accordion, AccordionSummary, AccordionDetails, Menu } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, Note, Link as PropertyLink, CreateNote, CreateLink, Contact } from '../types/property';
 import { getPropertyById } from '../services/api';
@@ -9,7 +9,8 @@ import PropertyDialog from '../components/PropertyDialog';
 import TasksSection from '../components/TasksSection';
 import ContactDialog from '../components/ContactDialog';
 import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from '../components/shared/PropertyTooltips';
-import ShareReportButton from '../components/Reports/ShareReportButton';
+import { prepareReportData } from '../services/investmentReportService';
+import { createShareableReport } from '../services/reportSharingService';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -41,6 +42,7 @@ const PropertyDetailsPage: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [reportsMenuAnchor, setReportsMenuAnchor] = useState<null | HTMLElement>(null);
 
   // Determine which sections should be expanded based on status
   const getInitialExpandedSections = (status: string) => {
@@ -303,9 +305,37 @@ const PropertyDetailsPage: React.FC = () => {
     }
   }, [property]);
 
+  const handleReportsMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setReportsMenuAnchor(event.currentTarget);
+  };
+
+  const handleReportsMenuClose = () => {
+    setReportsMenuAnchor(null);
+  };
+
+  const handleInvestmentReport = () => {
+    if (!property) return;
+    try {
+      // Prepare report data
+      const reportData = prepareReportData(property);
+
+      // Create shareable link
+      const shareableLink = createShareableReport(reportData);
+
+      // Open report in new tab
+      window.open(shareableLink.url, '_blank', 'noopener,noreferrer');
+
+      handleReportsMenuClose();
+    } catch (error) {
+      console.error('Error generating investment report:', error);
+      handleSnackbar('Failed to generate investment report', 'error');
+      handleReportsMenuClose();
+    }
+  };
+
   const handleAccordionChange = (section: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-    setExpandedSections(prev => 
-      isExpanded 
+    setExpandedSections(prev =>
+      isExpanded
         ? [...prev, section]
         : prev.filter(s => s !== section)
     );
@@ -343,10 +373,10 @@ const PropertyDetailsPage: React.FC = () => {
             Edit
           </Button>
           <Button
-            component={Link}
-            to={`/reports/property-pl/${property.id}`}
             variant="outlined"
             startIcon={<Icons.Assessment />}
+            endIcon={<Icons.ArrowDropDown />}
+            onClick={handleReportsMenuOpen}
             size="small"
             sx={{
               flex: 1,
@@ -356,14 +386,34 @@ const PropertyDetailsPage: React.FC = () => {
               fontSize: '0.875rem'
             }}
           >
-            P&L Report
+            Reports
           </Button>
-          <ShareReportButton
-            property={property}
-            variant="outlined"
-            size="small"
-            sx={{ flex: 1, py: 0.5 }}
-          />
+          <Menu
+            anchorEl={reportsMenuAnchor}
+            open={Boolean(reportsMenuAnchor)}
+            onClose={handleReportsMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'left',
+            }}
+          >
+            <MenuItem
+              component={Link}
+              to={`/reports/property-pl/${property.id}`}
+              onClick={handleReportsMenuClose}
+            >
+              <Icons.Assessment sx={{ mr: 1 }} />
+              P&L Report
+            </MenuItem>
+            <MenuItem onClick={handleInvestmentReport}>
+              <Icons.TrendingUp sx={{ mr: 1 }} />
+              Investment Report
+            </MenuItem>
+          </Menu>
         </Box>
       </Box>
       {/* Property Details - takes up full width */}

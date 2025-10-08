@@ -17,6 +17,8 @@ import { transactionApi } from '../../services/transactionApi';
 import PropertyService from '../../services/PropertyService';
 import { generatePropertyPLReport, getIncomeCategories, getExpenseCategories } from '../../utils/reportUtils';
 import type { PropertyPLReport as PLReport } from '../../utils/reportUtils';
+import type { Property } from '../../types/property';
+import { PropertyOperationalSummary } from './PropertyOperationalSummary';
 
 interface PropertyPLReportProps {
   propertyId: string;
@@ -28,6 +30,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
   months = 6
 }) => {
   const [report, setReport] = useState<PLReport | null>(null);
+  const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +40,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
         setLoading(true);
 
         // Fetch property details and transactions
-        const [property, transactions] = await Promise.all([
+        const [propertyData, transactions] = await Promise.all([
           PropertyService.getPropertyById(propertyId),
           transactionApi.getByProperty(propertyId)
         ]);
@@ -46,10 +49,11 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
         const plReport = generatePropertyPLReport(
           transactions,
           propertyId,
-          property.address,
+          propertyData.address,
           months
         );
 
+        setProperty(propertyData);
         setReport(plReport);
       } catch (err) {
         console.error('Failed to load report:', err);
@@ -209,6 +213,11 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
           Export CSV
         </Button>
       </Box>
+
+      {/* Operational Summary Dashboard */}
+      {property && (
+        <PropertyOperationalSummary property={property} plReport={report} />
+      )}
 
       <Paper sx={{ overflowX: 'auto' }}>
         <Table size="small">

@@ -24,6 +24,8 @@ export interface PropertyUnit {
     status: string;
     rent: number;
     notes: string;
+    leaseDate?: string | null;
+    dateOfLastRent?: string | null;
     createdAt: string;
     updatedAt: string;
     statusHistory: StatusHistory[];

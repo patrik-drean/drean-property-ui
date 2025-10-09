@@ -77,11 +77,22 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
   // Calculate all metrics
   const metrics: OperationalMetrics = calculateOperationalMetrics(property, plReport);
 
+  // Calculate rent alerts
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  const neverRentedUnits = property.propertyUnits?.filter(unit => !unit.dateOfLastRent) || [];
+  const overdueUnits = property.propertyUnits?.filter(unit =>
+    unit.dateOfLastRent && new Date(unit.dateOfLastRent) < thirtyDaysAgo
+  ) || [];
+
   // Determine if there are any critical alerts
   const hasCriticalAlerts =
     metrics.consecutiveMonthsWithLosses > 0 ||
     metrics.vacantUnits.length > 0 ||
-    metrics.delinquentUnits.length > 0;
+    metrics.delinquentUnits.length > 0 ||
+    neverRentedUnits.length > 0 ||
+    overdueUnits.length > 0;
 
   return (
     <Box mb={4}>
@@ -164,6 +175,64 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
                       }}
                     />
                   ))}
+                </Box>
+              </Alert>
+            )}
+
+            {/* Units with No Rent Reported */}
+            {neverRentedUnits.length > 0 && (
+              <Alert severity="warning" variant="outlined" sx={{ py: 1.5 }}>
+                <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+                  {neverRentedUnits.length} Unit{neverRentedUnits.length > 1 ? 's' : ''} with No Rent Reported
+                </Typography>
+                <Box display="flex" flexWrap="wrap" gap={1}>
+                  {neverRentedUnits.map((unit, index) => (
+                    <Chip
+                      key={unit.id}
+                      label={
+                        <Typography component="span" sx={{ fontSize: '1rem' }}>
+                          Unit {property.propertyUnits.indexOf(unit) + 1}: No rent transactions found
+                        </Typography>
+                      }
+                      size="medium"
+                      variant="outlined"
+                      sx={{
+                        py: 2,
+                        px: 1.5,
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Alert>
+            )}
+
+            {/* Units with Overdue Rent */}
+            {overdueUnits.length > 0 && (
+              <Alert severity="error" variant="outlined" sx={{ py: 1.5 }}>
+                <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+                  {overdueUnits.length} Unit{overdueUnits.length > 1 ? 's' : ''} with Overdue Rent (&gt;30 days)
+                </Typography>
+                <Box display="flex" flexWrap="wrap" gap={1}>
+                  {overdueUnits.map((unit) => {
+                    const lastRent = new Date(unit.dateOfLastRent!);
+                    const daysAgo = Math.floor((now.getTime() - lastRent.getTime()) / (1000 * 60 * 60 * 24));
+                    return (
+                      <Chip
+                        key={unit.id}
+                        label={
+                          <Typography component="span" sx={{ fontSize: '1rem' }}>
+                            Unit {property.propertyUnits.indexOf(unit) + 1}: <strong>{daysAgo} days ago</strong> - {lastRent.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
+                          </Typography>
+                        }
+                        size="medium"
+                        variant="outlined"
+                        sx={{
+                          py: 2,
+                          px: 1.5,
+                        }}
+                      />
+                    );
+                  })}
                 </Box>
               </Alert>
             )}

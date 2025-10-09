@@ -122,7 +122,6 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
 
   const addUnit = () => {
     const now = new Date().toISOString();
-    const todayDateString = getTodayDateString();
     const newUnitIndex = newProperty.propertyUnits.length;
     
     setNewProperty(prev => ({
@@ -212,10 +211,6 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     });
   };
 
-  const updateActualRent = () => {
-    const totalRent = newProperty.propertyUnits.reduce((sum, unit) => sum + unit.rent, 0);
-    setNewProperty(prev => ({ ...prev, actualRent: totalRent }));
-  };
   const [newProperty, setNewProperty] = useState<Omit<Property, 'id'>>({
     address: '',
     status: 'Opportunity',
@@ -977,8 +972,19 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                         }}
                       />
                     </Box>
-                    
+
                     <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2, 1fr)' }} gap={2} sx={{ mt: 2 }}>
+                      <TextField
+                        fullWidth
+                        type="date"
+                        label="Lease Date"
+                        value={unit.leaseDate ? new Date(unit.leaseDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => updateUnit(index, 'leaseDate', e.target.value ? new Date(e.target.value + 'T12:00:00.000Z').toISOString() : '')}
+                        InputLabelProps={{
+                          shrink: true,
+                        }}
+                        helperText="Optional - lease start or renewal date"
+                      />
                       <TextField
                         fullWidth
                         label="Status Change Date"

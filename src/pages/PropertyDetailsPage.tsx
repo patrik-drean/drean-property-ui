@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Paper, Button, Chip, Card, TextField, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, IconButton, Tooltip, Link as MuiLink, Divider, Snackbar, Alert, Avatar, Select, MenuItem, FormControl, InputLabel, Accordion, AccordionSummary, AccordionDetails, Menu } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, Note, Link as PropertyLink, CreateNote, CreateLink, Contact } from '../types/property';
@@ -402,9 +402,13 @@ const PropertyDetailsPage: React.FC = () => {
             }}
           >
             <MenuItem
-              component={Link}
-              to={`/reports/property-pl/${property.id}`}
-              onClick={handleReportsMenuClose}
+              onClick={() => {
+                // Construct URL with hash routing (works for both local and GitHub Pages)
+                const baseUrl = window.location.origin + window.location.pathname;
+                const plReportUrl = `${baseUrl}#/reports/property-pl/${property.id}`;
+                window.open(plReportUrl, '_blank', 'noopener,noreferrer');
+                handleReportsMenuClose();
+              }}
             >
               <Icons.Assessment sx={{ mr: 1 }} />
               P&L Report
@@ -780,11 +784,19 @@ const PropertyDetailsPage: React.FC = () => {
                         <Typography variant="body2" sx={{ mb: 0.5 }}>
                           <strong>Rent:</strong> {formatCurrency(unit.rent)}
                         </Typography>
+                        {unit.leaseDate && (
+                          <Typography variant="body2" sx={{ mb: 0.5 }}>
+                            <strong>Lease Date:</strong> {new Date(unit.leaseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
+                          </Typography>
+                        )}
+                        <Typography variant="body2" sx={{ mb: 0.5 }}>
+                          <strong>Last Rent:</strong> {unit.dateOfLastRent ? new Date(unit.dateOfLastRent).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'Never'}
+                        </Typography>
                         {(() => {
                           const daysSinceChange = getDaysSinceStatusChange(unit);
                           const hasStatusHistory = unit.statusHistory && unit.statusHistory.length > 0;
                           const label = hasStatusHistory ? 'Status Duration:' : 'Days in Status:';
-                          
+
                           let displayText;
                           if (daysSinceChange > 0) {
                             displayText = `in ${daysSinceChange} day${daysSinceChange !== 1 ? 's' : ''}`;
@@ -793,7 +805,7 @@ const PropertyDetailsPage: React.FC = () => {
                           } else {
                             displayText = 'today';
                           }
-                          
+
                           return (
                             <Typography variant="body2" sx={{ mb: 0.5 }}>
                               <strong>{label}</strong> {displayText}

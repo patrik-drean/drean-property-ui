@@ -125,6 +125,7 @@ const StatusChip = styled(Chip, {
 }));
 
 const PropertiesPage: React.FC = () => {
+  const theme = useTheme();
   const { properties, loading, error, refreshProperties, updateProperty, addProperty, removeProperty } = useProperties();
   const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -133,10 +134,9 @@ const PropertiesPage: React.FC = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [expandedProperties, setExpandedProperties] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
-  
+
   // Responsive layout
   const { useCardLayout } = useResponsiveLayout();
-  const theme = useTheme();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -686,7 +686,7 @@ ${property.zillowLink}`;
                         <RouterLink
                           to={`/properties/${property.id}`}
                           style={{
-                            color: '#1B4D3E',
+                            color: theme.palette.primary.main,
                             textDecoration: 'none',
                             fontWeight: 500,
                             display: 'block',
@@ -1098,7 +1098,7 @@ ${property.zillowLink}`;
                             <RouterLink
                               to={`/properties/${property.id}`}
                               style={{
-                                color: '#1B4D3E',
+                                color: theme.palette.primary.main,
                                 textDecoration: 'none',
                                 fontWeight: 500,
                                 display: 'block',

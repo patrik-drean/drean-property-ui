@@ -15,21 +15,21 @@ declare module '@mui/material/styles' {
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1B4D3E',      // Forest green - trust, growth, stability
-      light: '#2E7D32',      // Lighter green for hover states
-      dark: '#0D2818',       // Darker green for active states
+      main: '#1E293B',       // Slate 800 - Modern, professional
+      light: '#475569',      // Slate 600 - For subheaders and hover states
+      dark: '#0F172A',       // Slate 900 - For active states
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#D4AF37',       // Gold - wealth, success, premium
-      light: '#FFD700',      // Lighter gold for highlights
-      dark: '#B8860B',       // Darker gold for pressed states
-      contrastText: '#000000',
+      main: '#06B6D4',       // Cyan 500 - Innovation, clarity
+      light: '#22D3EE',      // Cyan 400 - For highlights
+      dark: '#0891B2',       // Cyan 600 - For pressed states
+      contrastText: '#ffffff',
     },
     accent: {
-      main: '#14b8a6',       // Teal - modern sophistication
-      light: '#5eead4',      // Lighter teal for accents
-      dark: '#0f766e',       // Darker teal for active states
+      main: '#10B981',       // Emerald 500 - Success, positive returns
+      light: '#34D399',      // Emerald 400 - For accents
+      dark: '#059669',       // Emerald 600 - For active states
       contrastText: '#ffffff',
     },
     neutral: {
@@ -135,7 +135,7 @@ const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: '#1B4D3E',
+          backgroundColor: '#1E293B',
           boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
         },
       },
@@ -193,7 +193,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiTableCell-head': {
-            backgroundColor: '#1B4D3E',
+            backgroundColor: '#1E293B',
             color: '#ffffff',
             fontWeight: 'bold',
             fontSize: '0.875rem',
@@ -208,7 +208,7 @@ const theme = createTheme({
             backgroundColor: '#fafafa',
           },
           '&:hover': {
-            backgroundColor: '#f0f9f4',
+            backgroundColor: '#f1f5f9',  // Slate 100 - subtle hover
           },
         },
       },
@@ -235,10 +235,10 @@ const theme = createTheme({
           '& .MuiOutlinedInput-root': {
             borderRadius: '8px',
             '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#1B4D3E',
+              borderColor: '#1E293B',
             },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#1B4D3E',
+              borderColor: '#06B6D4',  // Cyan accent on focus
               borderWidth: '2px',
             },
           },
@@ -258,7 +258,7 @@ const theme = createTheme({
         root: {
           borderRadius: '8px',
           '&:hover': {
-            backgroundColor: 'rgba(27, 77, 62, 0.08)',
+            backgroundColor: 'rgba(30, 41, 59, 0.08)',  // Slate 800 with transparency
           },
         },
       },

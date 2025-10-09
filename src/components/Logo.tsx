@@ -20,9 +20,9 @@ const Logo: React.FC<{ width?: number; height?: number; className?: string }> = 
       xmlSpace="preserve"
       className={className}
     >
-      <path 
-        fill="#D4AF37" 
-        opacity="1.000000" 
+      <path
+        fill="#06B6D4"
+        opacity="1.000000"
         stroke="none" 
         d="
         M186.999954,169.207092 

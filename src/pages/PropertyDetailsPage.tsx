@@ -457,10 +457,10 @@ const PropertyDetailsPage: React.FC = () => {
           onChange={handleAccordionChange('opportunity')}
           sx={{ mb: 2, '&:before': { display: 'none' } }}
         >
-          <AccordionSummary 
+          <AccordionSummary
             expandIcon={<Icons.ExpandMore />}
-            sx={{ 
-              backgroundColor: '#2E7D32', 
+            sx={{
+              backgroundColor: 'accent.main',
               borderRadius: 1
             }}
           >
@@ -649,10 +649,10 @@ const PropertyDetailsPage: React.FC = () => {
           onChange={handleAccordionChange('operational')}
           sx={{ mb: 2, '&:before': { display: 'none' } }}
         >
-          <AccordionSummary 
+          <AccordionSummary
             expandIcon={<Icons.ExpandMore />}
-            sx={{ 
-              backgroundColor: '#2E7D32', 
+            sx={{
+              backgroundColor: 'accent.main',
               borderRadius: 1
             }}
           >
@@ -834,10 +834,10 @@ const PropertyDetailsPage: React.FC = () => {
           onChange={handleAccordionChange('asset')}
           sx={{ mb: 2, '&:before': { display: 'none' } }}
         >
-          <AccordionSummary 
+          <AccordionSummary
             expandIcon={<Icons.ExpandMore />}
-            sx={{ 
-              backgroundColor: '#2E7D32', 
+            sx={{
+              backgroundColor: 'accent.main',
               borderRadius: 1
             }}
           >

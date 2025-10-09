@@ -12,7 +12,6 @@ import {
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
-  Warning as WarningIcon,
   Home as HomeIcon,
   AttachMoney as MoneyIcon,
 } from '@mui/icons-material';
@@ -86,8 +85,14 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
     unit.dateOfLastRent && new Date(unit.dateOfLastRent) < thirtyDaysAgo
   ) || [];
 
-  // Determine if there are any critical alerts
+  // Determine if there are any critical alerts (error level)
   const hasCriticalAlerts =
+    metrics.consecutiveMonthsWithLosses >= 3 ||
+    metrics.delinquentUnits.length > 0 ||
+    overdueUnits.length > 0;
+
+  // Determine if there are any alerts at all
+  const hasAnyAlerts =
     metrics.consecutiveMonthsWithLosses > 0 ||
     metrics.vacantUnits.length > 0 ||
     metrics.delinquentUnits.length > 0 ||
@@ -96,31 +101,35 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
 
   return (
     <Box mb={4}>
+      {/* Urgent Items Header */}
+      {hasAnyAlerts && (
+        <Typography variant="h4" fontWeight="bold" mb={2} color="text.primary">
+          Urgent Items
+        </Typography>
+      )}
+
       {/* Alerts */}
-      {hasCriticalAlerts && (
+      {hasAnyAlerts && (
         <Paper
           sx={{
             p: 3,
             mb: 3,
             bgcolor: 'grey.50',
             borderLeft: '4px solid',
-            borderColor: 'error.main',
+            borderColor: hasCriticalAlerts ? 'error.main' : 'warning.main',
           }}
         >
-          <Box display="flex" alignItems="center" mb={2.5}>
-            <WarningIcon sx={{ color: 'error.main', mr: 1.5, fontSize: 28 }} />
-            <Typography variant="h5" fontWeight="bold" color="text.primary">
-              Alerts
-            </Typography>
-          </Box>
-
           <Box display="flex" flexDirection="column" gap={2}>
-            {/* Consecutive Months with Losses */}
+            {/* Consecutive Months with Negative Cashflow - Warning for 1-2 months, Error for 3+ months */}
             {metrics.consecutiveMonthsWithLosses > 0 && (
-              <Alert severity="error" variant="outlined" sx={{ py: 1.5 }}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  {metrics.consecutiveMonthsWithLosses} consecutive month
-                  {metrics.consecutiveMonthsWithLosses > 1 ? 's' : ''} with losses
+              <Alert
+                severity={metrics.consecutiveMonthsWithLosses >= 3 ? "error" : "warning"}
+                variant="outlined"
+                sx={{ py: 1.5 }}
+              >
+                <Typography variant="subtitle1">
+                  <strong>Negative Cashflow:</strong> {metrics.consecutiveMonthsWithLosses} consecutive month
+                  {metrics.consecutiveMonthsWithLosses > 1 ? 's' : ''} with negative cashflow
                 </Typography>
               </Alert>
             )}
@@ -128,8 +137,8 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
             {/* Vacant Units */}
             {metrics.vacantUnits.length > 0 && (
               <Alert severity="warning" variant="outlined" sx={{ py: 1.5 }}>
-                <Typography variant="subtitle1" fontWeight="bold" mb={1}>
-                  {metrics.vacantUnits.length} Vacant Unit{metrics.vacantUnits.length > 1 ? 's' : ''}
+                <Typography variant="subtitle1" mb={1}>
+                  <strong>Vacancy:</strong> {metrics.vacantUnits.length} vacant unit{metrics.vacantUnits.length > 1 ? 's' : ''}
                 </Typography>
                 <Box display="flex" flexWrap="wrap" gap={1}>
                   {metrics.vacantUnits.map((unit) => (
@@ -155,8 +164,8 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
             {/* Delinquent Units */}
             {metrics.delinquentUnits.length > 0 && (
               <Alert severity="error" variant="outlined" sx={{ py: 1.5 }}>
-                <Typography variant="subtitle1" fontWeight="bold" mb={1}>
-                  {metrics.delinquentUnits.length} Unit{metrics.delinquentUnits.length > 1 ? 's' : ''} Behind on Rent
+                <Typography variant="subtitle1" mb={1}>
+                  <strong>Delinquent Rent:</strong> {metrics.delinquentUnits.length} unit{metrics.delinquentUnits.length > 1 ? 's' : ''} behind on rent
                 </Typography>
                 <Box display="flex" flexWrap="wrap" gap={1}>
                   {metrics.delinquentUnits.map((unit) => (
@@ -182,11 +191,11 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
             {/* Units with No Rent Reported */}
             {neverRentedUnits.length > 0 && (
               <Alert severity="warning" variant="outlined" sx={{ py: 1.5 }}>
-                <Typography variant="subtitle1" fontWeight="bold" mb={1}>
-                  {neverRentedUnits.length} Unit{neverRentedUnits.length > 1 ? 's' : ''} with No Rent Reported
+                <Typography variant="subtitle1" mb={1}>
+                  <strong>No Rent:</strong> {neverRentedUnits.length} unit{neverRentedUnits.length > 1 ? 's' : ''} with no rent reported
                 </Typography>
                 <Box display="flex" flexWrap="wrap" gap={1}>
-                  {neverRentedUnits.map((unit, index) => (
+                  {neverRentedUnits.map((unit) => (
                     <Chip
                       key={unit.id}
                       label={
@@ -209,8 +218,8 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
             {/* Units with Overdue Rent */}
             {overdueUnits.length > 0 && (
               <Alert severity="error" variant="outlined" sx={{ py: 1.5 }}>
-                <Typography variant="subtitle1" fontWeight="bold" mb={1}>
-                  {overdueUnits.length} Unit{overdueUnits.length > 1 ? 's' : ''} with Overdue Rent (&gt;30 days)
+                <Typography variant="subtitle1" mb={1}>
+                  <strong>Overdue Rent:</strong> {overdueUnits.length} unit{overdueUnits.length > 1 ? 's' : ''} overdue &gt;30 days
                 </Typography>
                 <Box display="flex" flexWrap="wrap" gap={1}>
                   {overdueUnits.map((unit) => {
@@ -239,6 +248,11 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
           </Box>
         </Paper>
       )}
+
+      {/* Property Summary Header */}
+      <Typography variant="h4" fontWeight="bold" mb={2} mt={hasAnyAlerts ? 4 : 0} color="text.primary">
+        Property Summary
+      </Typography>
 
       {/* Last Month Metrics */}
       <Grid container spacing={2} mb={3}>

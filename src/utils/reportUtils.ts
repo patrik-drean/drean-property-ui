@@ -36,8 +36,11 @@ export function generatePropertyPLReport(
     t.expenseType === 'Operating'
   );
 
-  // Get last N months
-  const endDate = new Date();
+  // Get last N complete months (excluding current incomplete month)
+  // If today is October 9, the last complete month is September
+  const today = new Date();
+  const lastCompleteMonth = subMonths(startOfMonth(today), 1); // Go back to start of last month
+  const endDate = endOfMonth(lastCompleteMonth); // End of last complete month
   const startDate = subMonths(endDate, months);
 
   // Group by month using override_date if present, else date

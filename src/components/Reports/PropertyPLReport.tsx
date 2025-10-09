@@ -195,7 +195,13 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
   const expenseCategories = getExpenseCategories(report);
 
   return (
-    <Box>
+    <Box sx={{
+      height: '100vh',
+      width: '100%',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      position: 'relative'
+    }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Box>
           <Typography variant="h5" gutterBottom>

@@ -21,6 +21,7 @@ export interface StatusHistory {
 export interface PropertyUnit {
     id: string;
     propertyId: string;
+    unitNumber: string;
     status: string;
     rent: number;
     notes: string;

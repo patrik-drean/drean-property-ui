@@ -768,8 +768,8 @@ const PropertyDetailsPage: React.FC = () => {
                   {property.propertyUnits.map((unit, index) => (
                     <Card key={unit.id || index} sx={{ p: 2, border: '1px solid #e0e0e0' }}>
                       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                        <Typography variant="subtitle2" fontWeight={600}>Unit {index + 1}</Typography>
-                        <Chip 
+                        <Typography variant="subtitle2" fontWeight={600}>Unit {unit.unitNumber}</Typography>
+                        <Chip
                           label={unit.status} 
                           size="small" 
                           sx={{ 

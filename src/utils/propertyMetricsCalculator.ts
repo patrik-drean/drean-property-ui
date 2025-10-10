@@ -98,13 +98,9 @@ export function getTopExpenseCategories(
  */
 export function getVacantUnits(units: PropertyUnit[]): VacantUnitInfo[] {
   return units
-    .map((u, index) => ({
-      unit: u,
-      unitNumber: (index + 1).toString(),
-    }))
-    .filter(({ unit }) => unit.status === 'Vacant')
-    .map(({ unit, unitNumber }) => ({
-      unitNumber,
+    .filter((unit) => unit.status === 'Vacant')
+    .map((unit) => ({
+      unitNumber: unit.unitNumber,
       rent: unit.rent,
       daysVacant: calculateDaysSinceStatusChange(unit),
       status: unit.status,
@@ -117,19 +113,15 @@ export function getVacantUnits(units: PropertyUnit[]): VacantUnitInfo[] {
  */
 export function getDelinquentUnits(units: PropertyUnit[]): DelinquentUnitInfo[] {
   return units
-    .map((u, index) => ({
-      unit: u,
-      unitNumber: (index + 1).toString(),
-    }))
-    .filter(({ unit }) => unit.status === 'Behind on Rent')
-    .map(({ unit, unitNumber }) => {
+    .filter((unit) => unit.status === 'Behind on Rent')
+    .map((unit) => {
       const daysBehind = calculateDaysSinceStatusChange(unit);
       // Calculate amount owed (approximate based on days behind)
       const monthsBehind = Math.floor(daysBehind / 30);
       const amountOwed = unit.rent * monthsBehind;
 
       return {
-        unitNumber,
+        unitNumber: unit.unitNumber,
         rent: unit.rent,
         daysBehind,
         amountOwed,

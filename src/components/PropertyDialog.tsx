@@ -120,10 +120,37 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     }));
   };
 
+  // Validation helpers for unit numbers
+  const getUnitNumberError = (unitNumber: string, currentIndex: number): string => {
+    // Check if empty
+    if (!unitNumber || unitNumber.trim() === '') {
+      return 'Unit number is required';
+    }
+
+    // Check format (alphanumeric, hyphen, underscore only)
+    const validFormat = /^[a-zA-Z0-9_-]+$/;
+    if (!validFormat.test(unitNumber.trim())) {
+      return 'Unit number can only contain letters, numbers, hyphens, and underscores';
+    }
+
+    // Check for duplicates (case-insensitive)
+    const isDuplicate = newProperty.propertyUnits.some((u, idx) =>
+      idx !== currentIndex && u.unitNumber.toLowerCase() === unitNumber.trim().toLowerCase()
+    );
+    if (isDuplicate) {
+      return 'Unit number must be unique within this property';
+    }
+
+    return '';
+  };
+
   const addUnit = () => {
     const now = new Date().toISOString();
     const newUnitIndex = newProperty.propertyUnits.length;
-    
+
+    // Auto-generate next unit number
+    const nextUnitNumber = (newProperty.propertyUnits.length + 1).toString();
+
     setNewProperty(prev => ({
       ...prev,
       propertyUnits: [
@@ -131,16 +158,18 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         {
           id: `temp-${Date.now()}`,
           propertyId: '',
+          unitNumber: nextUnitNumber,
           status: 'Vacant',
           rent: 0,
           notes: '',
+          leaseDate: null,
           createdAt: now,
           updatedAt: now,
           statusHistory: [{ status: 'Vacant', dateStart: now }]
         }
       ]
     }));
-    
+
     // Initialize status change date for the new unit (empty)
     setUnitStatusChangeDates(prev => ({
       ...prev,
@@ -931,17 +960,29 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <Card key={unit.id} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0' }}>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                       <Typography variant="subtitle2" fontWeight={600}>
-                        Unit {index + 1}
+                        Unit {unit.unitNumber}
                       </Typography>
-                      <IconButton 
-                        size="small" 
+                      <IconButton
+                        size="small"
                         onClick={() => removeUnit(index)}
                         color="error"
                       >
                         <Icons.Delete />
                       </IconButton>
                     </Box>
-                    
+
+                    <Box mb={2}>
+                      <TextField
+                        fullWidth
+                        label="Unit Number"
+                        value={unit.unitNumber}
+                        onChange={(e) => updateUnit(index, 'unitNumber', e.target.value)}
+                        required
+                        error={!!getUnitNumberError(unit.unitNumber, index)}
+                        helperText={getUnitNumberError(unit.unitNumber, index)}
+                      />
+                    </Box>
+
                     <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2, 1fr)' }} gap={2}>
                       <FormControl fullWidth>
                         <InputLabel>Status</InputLabel>
@@ -983,7 +1024,6 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                         InputLabelProps={{
                           shrink: true,
                         }}
-                        helperText="Optional - lease start or renewal date"
                       />
                       <TextField
                         fullWidth

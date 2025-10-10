@@ -200,7 +200,7 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
                       key={unit.id}
                       label={
                         <Typography component="span" sx={{ fontSize: '1rem' }}>
-                          Unit {property.propertyUnits.indexOf(unit) + 1}: No rent transactions found
+                          Unit {unit.unitNumber}: No rent transactions found
                         </Typography>
                       }
                       size="medium"
@@ -230,7 +230,7 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
                         key={unit.id}
                         label={
                           <Typography component="span" sx={{ fontSize: '1rem' }}>
-                            Unit {property.propertyUnits.indexOf(unit) + 1}: <strong>{daysAgo} days ago</strong> - {lastRent.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
+                            Unit {unit.unitNumber}: <strong>{daysAgo} days ago</strong> - {lastRent.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
                           </Typography>
                         }
                         size="medium"

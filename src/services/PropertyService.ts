@@ -39,9 +39,11 @@ interface PropertyDTO {
   propertyUnits: {
     id: string;
     propertyId: string;
+    unitNumber: string;
     status: string;
     rent: number;
     notes: string;
+    leaseDate?: string | null;
     createdAt: string;
     updatedAt: string;
     statusHistory?: {
@@ -99,8 +101,16 @@ const mapDTOToProperty = (dto: PropertyDTO): Property => {
     actualRent: dto.actualRent,
     currentHouseValue: dto.currentHouseValue,
     currentLoanValue: dto.currentLoanValue,
-    propertyUnits: dto.propertyUnits.map(unit => ({
-      ...unit,
+    propertyUnits: dto.propertyUnits.map((unit, index) => ({
+      id: unit.id,
+      propertyId: unit.propertyId,
+      unitNumber: unit.unitNumber || (index + 1).toString(), // Fallback for backwards compatibility
+      status: unit.status,
+      rent: unit.rent,
+      notes: unit.notes,
+      leaseDate: unit.leaseDate,
+      createdAt: unit.createdAt,
+      updatedAt: unit.updatedAt,
       statusHistory: unit.statusHistory || [{
         status: unit.status,
         dateStart: unit.createdAt || unit.updatedAt || new Date().toISOString()

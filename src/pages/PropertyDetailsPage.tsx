@@ -461,17 +461,12 @@ const PropertyDetailsPage: React.FC = () => {
         <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} gap={2} mb={3}>
           <Box flex={1}>
             <MuiLink href={property.zillowLink} target="_blank" rel="noopener noreferrer" variant="h6" sx={{ fontWeight: 600, color: 'primary.main', textDecoration: 'none', wordBreak: 'break-word' }}>{property.address}</MuiLink>
-            {property.notes && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {property.notes}
-              </Typography>
-            )}
           </Box>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Chip 
-              label={property.status} 
-              size="small" 
-              sx={{ 
+            <Chip
+              label={property.status}
+              size="small"
+              sx={{
                 backgroundColor: getStatusColor(property.status),
                 color: 'white',
                 fontWeight: 500,

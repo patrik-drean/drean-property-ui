@@ -691,37 +691,35 @@ ${property.zillowLink}`;
                 .map((property) => (
                 <StyledTableRow key={property.id}>
                   <TableCell sx={{ pl: 1 }}>
-                    <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {property.zillowLink && (
-                          <Tooltip title="Open Zillow" arrow>
-                            <IconButton
-                              href={property.zillowLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              size="small"
-                            >
-                              <Icons.OpenInNew fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        <RouterLink
-                          to={`/properties/${property.id}`}
-                          style={{
-                            color: theme.palette.primary.main,
-                            textDecoration: 'none',
-                            fontWeight: 500,
-                            display: 'block',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: 280
-                          }}
-                        >
-                          {property.address}
-                        </RouterLink>
-                      </Box>
-                    </Tooltip>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {property.zillowLink && (
+                        <Tooltip title="Open Zillow" arrow>
+                          <IconButton
+                            href={property.zillowLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            size="small"
+                          >
+                            <Icons.OpenInNew fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <RouterLink
+                        to={`/properties/${property.id}`}
+                        style={{
+                          color: theme.palette.primary.main,
+                          textDecoration: 'none',
+                          fontWeight: 500,
+                          display: 'block',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: 280
+                        }}
+                      >
+                        {property.address}
+                      </RouterLink>
+                    </Box>
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center' }}>
                     {property.units || ''}
@@ -1110,37 +1108,35 @@ ${property.zillowLink}`;
                     <StyledTableRow key={property.id}>
                       {/* Property */}
                       <TableCell sx={{ pl: 1 }}>
-                        <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {property.zillowLink && (
-                              <Tooltip title="Open Zillow" arrow>
-                                <IconButton
-                                  href={property.zillowLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  size="small"
-                                >
-                                  <Icons.OpenInNew fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                            <RouterLink
-                              to={`/properties/${property.id}`}
-                              style={{
-                                color: theme.palette.primary.main,
-                                textDecoration: 'none',
-                                fontWeight: 500,
-                                display: 'block',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: 280
-                              }}
-                            >
-                              {property.address}
-                            </RouterLink>
-                          </Box>
-                        </Tooltip>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {property.zillowLink && (
+                            <Tooltip title="Open Zillow" arrow>
+                              <IconButton
+                                href={property.zillowLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                size="small"
+                              >
+                                <Icons.OpenInNew fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          <RouterLink
+                            to={`/properties/${property.id}`}
+                            style={{
+                              color: theme.palette.primary.main,
+                              textDecoration: 'none',
+                              fontWeight: 500,
+                              display: 'block',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: 280
+                            }}
+                          >
+                            {property.address}
+                          </RouterLink>
+                        </Box>
                       </TableCell>
 
                       {/* Status */}

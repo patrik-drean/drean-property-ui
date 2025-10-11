@@ -8,6 +8,7 @@ import { getNotesByPropertyId, createNote, getLinksByPropertyId, createLink, del
 import PropertyDialog from '../components/PropertyDialog';
 import TasksSection from '../components/TasksSection';
 import ContactDialog from '../components/ContactDialog';
+import { MarkdownNoteModal } from '../components/MarkdownNoteModal';
 import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from '../components/shared/PropertyTooltips';
 import { prepareReportData } from '../services/investmentReportService';
 import { createShareableReport } from '../services/reportSharingService';
@@ -43,6 +44,7 @@ const PropertyDetailsPage: React.FC = () => {
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [reportsMenuAnchor, setReportsMenuAnchor] = useState<null | HTMLElement>(null);
+  const [notesModalOpen, setNotesModalOpen] = useState(false);
 
   // Determine which sections should be expanded based on status
   const getInitialExpandedSections = (status: string) => {
@@ -272,7 +274,7 @@ const PropertyDetailsPage: React.FC = () => {
 
   const handleSaveProperty = async (propertyData: Omit<Property, 'id'>) => {
     if (!property) return;
-    
+
     try {
       const { updateProperty } = await import('../services/api');
       const updatedProperty = await updateProperty(property.id, propertyData);
@@ -281,6 +283,24 @@ const PropertyDetailsPage: React.FC = () => {
     } catch (error) {
       console.error('Error updating property:', error);
       setSnackbar({ open: true, message: 'Failed to update property', severity: 'error' });
+      throw error;
+    }
+  };
+
+  const handleSaveNotes = async (content: string) => {
+    if (!property) return;
+
+    try {
+      const { updateProperty } = await import('../services/api');
+      const updatedProperty = await updateProperty(property.id, {
+        ...property,
+        notes: content
+      });
+      setProperty(updatedProperty);
+      setSnackbar({ open: true, message: 'Notes saved successfully', severity: 'success' });
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      setSnackbar({ open: true, message: 'Failed to save notes', severity: 'error' });
       throw error;
     }
   };
@@ -371,6 +391,21 @@ const PropertyDetailsPage: React.FC = () => {
             }}
           >
             Edit
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Icons.Description />}
+            onClick={() => setNotesModalOpen(true)}
+            size="small"
+            sx={{
+              flex: 1,
+              maxWidth: { sm: '200px' },
+              borderRadius: 2,
+              py: 0.5,
+              fontSize: '0.875rem'
+            }}
+          >
+            Notes
           </Button>
           <Button
             variant="outlined"
@@ -1097,6 +1132,13 @@ const PropertyDetailsPage: React.FC = () => {
         propertyId={property.id}
         propertyContacts={contacts}
         onContactsUpdate={handleContactsUpdate}
+      />
+      <MarkdownNoteModal
+        open={notesModalOpen}
+        onClose={() => setNotesModalOpen(false)}
+        onSave={handleSaveNotes}
+        initialContent={property.notes}
+        title="Property Notes"
       />
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>

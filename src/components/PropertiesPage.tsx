@@ -124,6 +124,28 @@ const StatusChip = styled(Chip, {
   }
 }));
 
+// Helper functions for unit counting
+const getOperationalUnitsCount = (property: Property): number => {
+  if (!property.propertyUnits || property.propertyUnits.length === 0) {
+    return 0;
+  }
+  return property.propertyUnits.filter(unit => unit.status === 'Operational').length;
+};
+
+const getBehindRentUnitsCount = (property: Property): number => {
+  if (!property.propertyUnits || property.propertyUnits.length === 0) {
+    return 0;
+  }
+  return property.propertyUnits.filter(unit => unit.status === 'Behind On Rent').length;
+};
+
+const getVacantUnitsCount = (property: Property): number => {
+  if (!property.propertyUnits || property.propertyUnits.length === 0) {
+    return 0;
+  }
+  return property.propertyUnits.filter(unit => unit.status === 'Vacant').length;
+};
+
 const PropertiesPage: React.FC = () => {
   const theme = useTheme();
   const { properties, loading, error, refreshProperties, updateProperty, addProperty, removeProperty } = useProperties();
@@ -1044,23 +1066,29 @@ ${property.zillowLink}`;
           <Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }} padding="none">
             <TableHead>
               <TableRow>
-                <StyledTableCell className="header" width="30%" sx={{ pl: 1 }}>
-                  <Typography variant="body2" fontWeight="bold" noWrap>Address</Typography>
+                <StyledTableCell className="header" width="25%" sx={{ pl: 1 }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Property</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header" width="8%" sx={{ textAlign: 'center' }}>
-                  <Typography variant="body2" fontWeight="bold" noWrap>Units</Typography>
-                </StyledTableCell>
-                <StyledTableCell className="header" width="12%">
+                <StyledTableCell className="header" width="10%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Status</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header" width="15%">
-                  <Typography variant="body2" fontWeight="bold" noWrap>Expenses</Typography>
+                <StyledTableCell className="header" width="12%" sx={{ textAlign: 'right' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Monthly Rent</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header" width="15%">
-                  <Typography variant="body2" fontWeight="bold" noWrap>Rent</Typography>
+                <StyledTableCell className="header" width="12%" sx={{ textAlign: 'right' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Total Expenses</Typography>
                 </StyledTableCell>
-                <StyledTableCell className="header" width="15%">
-                  <Typography variant="body2" fontWeight="bold" noWrap>Cashflow</Typography>
+                <StyledTableCell className="header" width="12%" sx={{ textAlign: 'right' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Net Cash Flow</Typography>
+                </StyledTableCell>
+                <StyledTableCell className="header" width="9%" sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Operational Units</Typography>
+                </StyledTableCell>
+                <StyledTableCell className="header" width="9%" sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Behind Rent Units</Typography>
+                </StyledTableCell>
+                <StyledTableCell className="header" width="9%" sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>Vacant Units</Typography>
                 </StyledTableCell>
                 <StyledTableCell className="header" width="5%" sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Actions</Typography>
@@ -1080,6 +1108,7 @@ ${property.zillowLink}`;
                   
                   return (
                     <StyledTableRow key={property.id}>
+                      {/* Property */}
                       <TableCell sx={{ pl: 1 }}>
                         <Tooltip title={property.notes || "No notes available"} arrow placement="top-start">
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1113,86 +1142,71 @@ ${property.zillowLink}`;
                           </Box>
                         </Tooltip>
                       </TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}>
-                        {property.units || ''}
-                      </TableCell>
+
+                      {/* Status */}
                       <TableCell>
-                        <StatusChip 
-                          label={property.status} 
-                          status={property.status} 
+                        <StatusChip
+                          label={property.status}
+                          status={property.status}
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>
-                        {formatCurrency(totalExpenses)}
+
+                      {/* Monthly Rent */}
+                      <TableCell align="right">
+                        <Typography variant="body2">
+                          {formatCurrency(rent)}
+                        </Typography>
                       </TableCell>
-                      <TableCell>
-                        {(() => {
-                          const vacantUnits = property.propertyUnits?.filter(unit => unit.status === 'Vacant') || [];
-                          const potentialRent = property.potentialRent || 0;
-                          
-                          return vacantUnits.length > 0 ? (
-                            <Tooltip 
-                              title={
-                                <div>
-                                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                    Potential Rent: {formatCurrency(potentialRent)}
-                                  </Typography>
-                                  <Typography variant="body2" sx={{ color: 'white', fontSize: '0.75rem' }}>
-                                    {vacantUnits.length} vacant unit{vacantUnits.length > 1 ? 's' : ''}
-                                  </Typography>
-                                </div>
-                              } 
-                              arrow 
-                              placement="top"
-                            >
-                              <Box component="span">
-                                {formatCurrency(rent)}
-                              </Box>
-                            </Tooltip>
-                          ) : (
-                            formatCurrency(rent)
-                          );
-                        })()}
+
+                      {/* Total Expenses */}
+                      <TableCell align="right">
+                        <Typography variant="body2">
+                          {formatCurrency(totalExpenses)}
+                        </Typography>
                       </TableCell>
-                      <TableCell>
-                        {(() => {
-                          const vacantUnits = property.propertyUnits?.filter(unit => unit.status === 'Vacant') || [];
-                          const potentialRent = property.potentialRent || 0;
-                          const potentialCashflow = potentialRent - totalExpenses;
-                          
-                          return vacantUnits.length > 0 ? (
-                            <Tooltip 
-                              title={
-                                <div>
-                                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                    Potential Cashflow: {formatCurrency(potentialCashflow)}
-                                  </Typography>
-                                  <Typography variant="body2" sx={{ color: 'white', fontSize: '0.75rem' }}>
-                                    {vacantUnits.length} vacant unit{vacantUnits.length > 1 ? 's' : ''}
-                                  </Typography>
-                                </div>
-                              } 
-                              arrow 
-                              placement="top"
-                            >
-                              <Typography sx={{ 
-                                color: getCashflowColor(cashflow),
-                                fontWeight: 500
-                              }}>
-                                {formatCurrency(cashflow)}
-                              </Typography>
-                            </Tooltip>
-                          ) : (
-                            <Typography sx={{ 
-                              color: getCashflowColor(cashflow),
-                              fontWeight: 500
-                            }}>
-                              {formatCurrency(cashflow)}
-                            </Typography>
-                          );
-                        })()}
+
+                      {/* Net Cash Flow */}
+                      <TableCell align="right">
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: getCashflowColor(cashflow),
+                            fontWeight: 600
+                          }}
+                        >
+                          {formatCurrency(cashflow)}
+                        </Typography>
                       </TableCell>
+
+                      {/* Operational Units */}
+                      <TableCell align="center">
+                        <Typography variant="body2">
+                          {getOperationalUnitsCount(property)}
+                        </Typography>
+                      </TableCell>
+
+                      {/* Behind Rent Units */}
+                      <TableCell align="center">
+                        <Typography
+                          variant="body2"
+                          sx={{ color: getBehindRentUnitsCount(property) > 0 ? 'warning.main' : 'text.primary' }}
+                        >
+                          {getBehindRentUnitsCount(property)}
+                        </Typography>
+                      </TableCell>
+
+                      {/* Vacant Units */}
+                      <TableCell align="center">
+                        <Typography
+                          variant="body2"
+                          sx={{ color: getVacantUnitsCount(property) > 0 ? 'error.main' : 'text.primary' }}
+                        >
+                          {getVacantUnitsCount(property)}
+                        </Typography>
+                      </TableCell>
+
+                      {/* Actions */}
                       <TableCell sx={{ textAlign: 'center' }}>
                         <Tooltip title="Actions">
                           <IconButton
@@ -1203,7 +1217,7 @@ ${property.zillowLink}`;
                               padding: 2,
                               width: '20px',
                               height: '20px',
-                              '&:hover': { 
+                              '&:hover': {
                                 backgroundColor: 'rgba(25, 118, 210, 0.2)'
                               }
                             }}

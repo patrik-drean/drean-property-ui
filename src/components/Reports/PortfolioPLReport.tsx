@@ -9,12 +9,11 @@ import {
   Paper,
   Typography,
   CircularProgress,
-  Button,
   Accordion,
   AccordionSummary,
   AccordionDetails
 } from '@mui/material';
-import { Download as DownloadIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { transactionApi } from '../../services/transactionApi';
 import PropertyService from '../../services/PropertyService';
@@ -92,71 +91,6 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
     };
   };
 
-  const handleExportCSV = () => {
-    if (!report) return;
-
-    const rows = [];
-
-    // Header
-    rows.push(['Portfolio P&L Report']);
-    rows.push([]);
-
-    // Main P&L
-    rows.push(['Category', ...report.months.map(m => formatMonth(m.month)), '6-Mo Avg']);
-
-    const incomeCategories = getIncomeCategories(report);
-    rows.push(['INCOME']);
-    incomeCategories.forEach(category => {
-      rows.push([
-        category,
-        ...report.months.map(m => m.incomeByCategory[category] || 0),
-        report.months.reduce((sum, m) => sum + (m.incomeByCategory[category] || 0), 0) / report.months.length
-      ]);
-    });
-    rows.push([
-      'Total Income',
-      ...report.months.map(m => m.totalIncome),
-      report.sixMonthAverage.totalIncome
-    ]);
-
-    const expenseCategories = getExpenseCategories(report);
-    rows.push(['EXPENSES']);
-    expenseCategories.forEach(category => {
-      rows.push([
-        category,
-        ...report.months.map(m => m.expensesByCategory[category] || 0),
-        report.months.reduce((sum, m) => sum + (m.expensesByCategory[category] || 0), 0) / report.months.length
-      ]);
-    });
-    rows.push([
-      'Total Expenses',
-      ...report.months.map(m => m.totalExpenses),
-      report.sixMonthAverage.totalExpenses
-    ]);
-    rows.push([
-      'Net Income',
-      ...report.months.map(m => m.netIncome),
-      report.sixMonthAverage.netIncome
-    ]);
-
-    // Property breakdown
-    rows.push([]);
-    rows.push(['Property Breakdown']);
-    rows.push(['Property', 'Total Income (6mo)', 'Total Expenses (6mo)', 'Net Income (6mo)', 'Last Mo Income', 'Last Mo Expenses', 'Last Mo Net']);
-    report.propertyBreakdowns.forEach(p => {
-      rows.push([p.propertyAddress, p.totalIncome, p.totalExpenses, p.netIncome, p.lastMonthIncome, p.lastMonthExpenses, p.lastMonthNetIncome]);
-    });
-
-    const csvContent = rows.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `portfolio-pl-report.csv`;
-    link.click();
-    window.URL.revokeObjectURL(url);
-  };
-
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
@@ -190,9 +124,6 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">Portfolio P&L Report</Typography>
-        <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleExportCSV}>
-          Export CSV
-        </Button>
       </Box>
 
       {/* Main P&L Table */}
@@ -339,7 +270,7 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
       </Paper>
 
       {/* Property Breakdown */}
-      <Accordion>
+      <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">Property Breakdown</Typography>
         </AccordionSummary>
@@ -376,6 +307,8 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
                     ) : (
                       <a
                         href={`#/reports/property-pl/${prop.propertyId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         style={{ color: 'inherit', textDecoration: 'underline' }}
                       >
                         {prop.propertyAddress}

@@ -44,6 +44,7 @@ interface PropertyDTO {
     rent: number;
     notes: string;
     leaseDate?: string | null;
+    dateOfLastRent?: string | null;
     createdAt: string;
     updatedAt: string;
     statusHistory?: {
@@ -109,6 +110,7 @@ const mapDTOToProperty = (dto: PropertyDTO): Property => {
       rent: unit.rent,
       notes: unit.notes,
       leaseDate: unit.leaseDate,
+      dateOfLastRent: unit.dateOfLastRent,
       createdAt: unit.createdAt,
       updatedAt: unit.updatedAt,
       statusHistory: unit.statusHistory || [{

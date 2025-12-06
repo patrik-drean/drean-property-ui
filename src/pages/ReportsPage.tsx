@@ -208,10 +208,10 @@ export const ReportsPage: React.FC = () => {
             </IconButton>
           </Tooltip>
 
-          {!isMobile && currentTab !== 2 && (
-            <Tooltip title={`Export ${currentTab === 0 ? 'Cash Flow' : 'Asset'} Report`}>
+          {!isMobile && currentTab !== 0 && (
+            <Tooltip title={`Export ${currentTab === 1 ? 'Cash Flow' : 'Asset'} Report`}>
               <IconButton
-                onClick={() => handleExport(currentTab === 0 ? 'cashflow' : 'assets')}
+                onClick={() => handleExport(currentTab === 1 ? 'cashflow' : 'assets')}
                 disabled={loading || (!cashFlowReport && !assetReport)}
                 color="primary"
               >
@@ -290,20 +290,20 @@ export const ReportsPage: React.FC = () => {
               scrollButtons={isMobile ? 'auto' : false}
             >
               <Tab
-                label="Cash Flow Analysis"
-                icon={<TrendingUpIcon />}
+                label="Portfolio P&L"
+                icon={<AccountBalanceIcon />}
                 iconPosition={isMobile ? 'top' : 'start'}
                 {...a11yProps(0)}
               />
               <Tab
-                label="Asset Analysis"
-                icon={<HomeIcon />}
+                label="Cash Flow Analysis"
+                icon={<TrendingUpIcon />}
                 iconPosition={isMobile ? 'top' : 'start'}
                 {...a11yProps(1)}
               />
               <Tab
-                label="Portfolio P&L"
-                icon={<AccountBalanceIcon />}
+                label="Asset Analysis"
+                icon={<HomeIcon />}
                 iconPosition={isMobile ? 'top' : 'start'}
                 {...a11yProps(2)}
               />
@@ -312,6 +312,10 @@ export const ReportsPage: React.FC = () => {
 
           {/* Tab panels */}
           <TabPanel value={currentTab} index={0}>
+            <PortfolioPLReport months={6} />
+          </TabPanel>
+
+          <TabPanel value={currentTab} index={1}>
             <PortfolioCashFlowReport
               properties={properties}
               report={cashFlowReport}
@@ -322,7 +326,7 @@ export const ReportsPage: React.FC = () => {
             />
           </TabPanel>
 
-          <TabPanel value={currentTab} index={1}>
+          <TabPanel value={currentTab} index={2}>
             <PortfolioAssetReport
               properties={properties}
               report={assetReport}
@@ -332,21 +336,17 @@ export const ReportsPage: React.FC = () => {
             />
           </TabPanel>
 
-          <TabPanel value={currentTab} index={2}>
-            <PortfolioPLReport months={6} />
-          </TabPanel>
-
           {/* Mobile export buttons */}
-          {isMobile && currentTab !== 2 && (
+          {isMobile && currentTab !== 0 && (
             <Box p={2} textAlign="center">
               <Button
                 variant="outlined"
                 startIcon={<DownloadIcon />}
-                onClick={() => handleExport(currentTab === 0 ? 'cashflow' : 'assets')}
+                onClick={() => handleExport(currentTab === 1 ? 'cashflow' : 'assets')}
                 disabled={!cashFlowReport && !assetReport}
                 fullWidth
               >
-                Export {currentTab === 0 ? 'Cash Flow' : 'Asset'} Report
+                Export {currentTab === 1 ? 'Cash Flow' : 'Asset'} Report
               </Button>
             </Box>
           )}

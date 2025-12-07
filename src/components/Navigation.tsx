@@ -25,6 +25,7 @@ import ListAltIcon from '@mui/icons-material/ListAlt';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import PeopleIcon from '@mui/icons-material/People';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import SmsIcon from '@mui/icons-material/Sms';
 import Logo from './Logo';
 
 const Navigation: React.FC = () => {
@@ -135,9 +136,20 @@ const Navigation: React.FC = () => {
             </ListItemIcon>
             <ListItemText primary="Team" />
           </ListItem>
-          <ListItem 
-            button 
-            component={RouterLink} 
+          <ListItem
+            button
+            component={RouterLink}
+            to="/messaging"
+            selected={isActive('/messaging')}
+          >
+            <ListItemIcon>
+              <SmsIcon color={isActive('/messaging') ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Messaging" />
+          </ListItem>
+          <ListItem
+            button
+            component={RouterLink}
             to="/calculator"
             selected={isActive('/calculator')}
           >
@@ -248,7 +260,16 @@ const Navigation: React.FC = () => {
                 >
                   Team
                 </Button>
-                
+
+                <Button
+                  component={RouterLink}
+                  to="/messaging"
+                  startIcon={<SmsIcon />}
+                  sx={getNavButtonStyle('/messaging')}
+                >
+                  Messaging
+                </Button>
+
                 <Button
                   component={RouterLink}
                   to="/calculator"

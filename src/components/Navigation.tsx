@@ -17,7 +17,10 @@ import {
   useMediaQuery,
   useTheme,
   Divider,
+  Menu,
+  MenuItem,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HomeIcon from '@mui/icons-material/Home';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -33,6 +36,16 @@ const Navigation: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(null);
+  const moreMenuOpen = Boolean(moreMenuAnchor);
+
+  const handleMoreMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setMoreMenuAnchor(event.currentTarget);
+  };
+
+  const handleMoreMenuClose = () => {
+    setMoreMenuAnchor(null);
+  };
   
   // Helper to determine if a path is active
   const isActive = (path: string) => location.pathname === path;
@@ -236,33 +249,6 @@ const Navigation: React.FC = () => {
 
                 <Button
                   component={RouterLink}
-                  to="/reports"
-                  startIcon={<AssessmentIcon />}
-                  sx={getNavButtonStyle('/reports')}
-                >
-                  Reports
-                </Button>
-
-                <Button
-                  component={RouterLink}
-                  to="/transactions"
-                  startIcon={<AccountBalanceIcon />}
-                  sx={getNavButtonStyle('/transactions')}
-                >
-                  Transactions
-                </Button>
-
-                <Button
-                  component={RouterLink}
-                  to="/team"
-                  startIcon={<PeopleIcon />}
-                  sx={getNavButtonStyle('/team')}
-                >
-                  Team
-                </Button>
-
-                <Button
-                  component={RouterLink}
                   to="/messaging"
                   startIcon={<SmsIcon />}
                   sx={getNavButtonStyle('/messaging')}
@@ -271,13 +257,79 @@ const Navigation: React.FC = () => {
                 </Button>
 
                 <Button
-                  component={RouterLink}
-                  to="/calculator"
-                  startIcon={<CalculateIcon />}
-                  sx={getNavButtonStyle('/calculator')}
+                  onClick={handleMoreMenuClick}
+                  endIcon={<ExpandMoreIcon />}
+                  sx={{
+                    ...navButtonStyle,
+                    backgroundColor: moreMenuOpen || isActive('/reports') || isActive('/transactions') || isActive('/team') || isActive('/calculator')
+                      ? 'rgba(255, 255, 255, 0.15)'
+                      : 'transparent',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.25)',
+                    },
+                  }}
                 >
-                  Calculator
+                  More
                 </Button>
+                <Menu
+                  anchorEl={moreMenuAnchor}
+                  open={moreMenuOpen}
+                  onClose={handleMoreMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                >
+                  <MenuItem
+                    component={RouterLink}
+                    to="/reports"
+                    onClick={handleMoreMenuClose}
+                    selected={isActive('/reports')}
+                  >
+                    <ListItemIcon>
+                      <AssessmentIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Reports</ListItemText>
+                  </MenuItem>
+                  <MenuItem
+                    component={RouterLink}
+                    to="/transactions"
+                    onClick={handleMoreMenuClose}
+                    selected={isActive('/transactions')}
+                  >
+                    <ListItemIcon>
+                      <AccountBalanceIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Transactions</ListItemText>
+                  </MenuItem>
+                  <MenuItem
+                    component={RouterLink}
+                    to="/team"
+                    onClick={handleMoreMenuClose}
+                    selected={isActive('/team')}
+                  >
+                    <ListItemIcon>
+                      <PeopleIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Team</ListItemText>
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem
+                    component={RouterLink}
+                    to="/calculator"
+                    onClick={handleMoreMenuClose}
+                    selected={isActive('/calculator')}
+                  >
+                    <ListItemIcon>
+                      <CalculateIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Calculator</ListItemText>
+                  </MenuItem>
+                </Menu>
               </Stack>
             )}
           </Toolbar>

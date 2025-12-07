@@ -146,7 +146,7 @@ const PropertyLeadsPage: React.FC = () => {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [itemsPerPage, setItemsPerPage] = useState(100);
   const [totalItems, setTotalItems] = useState(0);
 
   // Default message template

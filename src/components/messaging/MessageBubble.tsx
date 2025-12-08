@@ -1,20 +1,36 @@
-import React from 'react';
-import { Box, Typography, Tooltip } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Tooltip, Button, CircularProgress } from '@mui/material';
 import {
   Check as CheckIcon,
   DoneAll as DoneAllIcon,
   Error as ErrorIcon,
   Schedule as ScheduleIcon,
+  Refresh as RetryIcon,
 } from '@mui/icons-material';
 import { SmsMessage } from '../../types/sms';
+import { smsService } from '../../services/smsService';
 import { format } from 'date-fns';
 
 interface MessageBubbleProps {
   message: SmsMessage;
+  onRetry?: () => void;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onRetry }) => {
+  const [retrying, setRetrying] = useState(false);
   const isOutbound = message.direction === 'outbound';
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    try {
+      await smsService.retryMessage(message.id);
+      onRetry?.();
+    } catch (err) {
+      console.error('Retry failed:', err);
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const getStatusIcon = () => {
     switch (message.status) {
@@ -115,6 +131,30 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             </Tooltip>
           )}
         </Box>
+        {message.status === 'failed' && isOutbound && (
+          <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button
+              size="small"
+              color="error"
+              startIcon={retrying ? <CircularProgress size={14} color="inherit" /> : <RetryIcon />}
+              onClick={handleRetry}
+              disabled={retrying}
+              sx={{
+                textTransform: 'none',
+                fontSize: '0.75rem',
+                py: 0.25,
+                px: 1,
+                minHeight: 'auto',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                },
+              }}
+            >
+              {retrying ? 'Retrying...' : 'Retry'}
+            </Button>
+          </Box>
+        )}
       </Box>
     </Box>
   );

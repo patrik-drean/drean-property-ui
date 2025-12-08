@@ -115,7 +115,7 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
           </Box>
         ) : (
           messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            <MessageBubble key={message.id} message={message} onRetry={onMessageSent} />
           ))
         )}
         <div ref={messagesEndRef} />

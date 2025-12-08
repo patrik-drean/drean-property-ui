@@ -3,8 +3,9 @@ import {
   Box,
   TextField,
   IconButton,
-  Typography,
   CircularProgress,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { Send as SendIcon } from '@mui/icons-material';
 import { smsService } from '../../services/smsService';
@@ -35,7 +36,15 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
   const templateVariables: TemplateVariables = {
     name: leadName,
@@ -55,7 +64,6 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     if (!message.trim() || sending || isOverLimit) return;
 
     setSending(true);
-    setError(null);
 
     try {
       const response = await smsService.sendMessage({
@@ -66,16 +74,32 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       });
 
       if (!response.success) {
-        setError(response.errorMessage || 'Failed to send message');
+        setSnackbar({
+          open: true,
+          message: response.errorMessage || 'Failed to send message. You can retry from the message.',
+          severity: 'error',
+        });
       } else {
         setMessage('');
         onMessageSent();
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to send message');
+      const errorMessage =
+        err.response?.data ||
+        err.message ||
+        'Network error. Please check your connection and try again.';
+      setSnackbar({
+        open: true,
+        message: typeof errorMessage === 'string' ? errorMessage : 'Failed to send message',
+        severity: 'error',
+      });
     } finally {
       setSending(false);
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -87,12 +111,6 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 
   return (
     <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', backgroundColor: 'white' }}>
-      {error && (
-        <Typography color="error" variant="caption" sx={{ mb: 1, display: 'block' }}>
-          {error}
-        </Typography>
-      )}
-
       <Box sx={{ mb: 1 }}>
         <TemplatePicker
           variables={templateVariables}
@@ -140,6 +158,21 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           {sending ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
         </IconButton>
       </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={handleCloseSnackbar}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

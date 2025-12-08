@@ -349,8 +349,10 @@ describe('MessageComposer', () => {
       const button = getSendButton();
       fireEvent.click(button);
 
+      // Error should be displayed in a Snackbar alert
       await waitFor(() => {
-        expect(screen.getByText('Invalid phone number')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.getByText(/Invalid phone number/)).toBeInTheDocument();
       });
     });
 
@@ -365,8 +367,10 @@ describe('MessageComposer', () => {
       const button = getSendButton();
       fireEvent.click(button);
 
+      // Error should be displayed in a Snackbar alert
       await waitFor(() => {
-        expect(screen.getByText('Network error')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.getByText(/Network error/)).toBeInTheDocument();
       });
     });
 
@@ -383,8 +387,10 @@ describe('MessageComposer', () => {
       const button = getSendButton();
       fireEvent.click(button);
 
+      // Error should be displayed in a Snackbar alert with retry message
       await waitFor(() => {
-        expect(screen.getByText('Failed to send message')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.getByText(/Failed to send message/)).toBeInTheDocument();
       });
     });
 
@@ -403,13 +409,13 @@ describe('MessageComposer', () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(screen.getByText('Failed')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toBeInTheDocument();
       });
 
       expect(input).toHaveValue('Hello');
     });
 
-    it('should clear error when typing new message', async () => {
+    it('should dismiss error when close button clicked', async () => {
       mockSmsService.sendMessage.mockResolvedValueOnce({
         success: false,
         errorMessage: 'Failed',
@@ -424,19 +430,15 @@ describe('MessageComposer', () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(screen.getByText('Failed')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toBeInTheDocument();
       });
 
-      // Error should be cleared on next send attempt
-      mockSmsService.sendMessage.mockResolvedValueOnce({
-        success: true,
-        messageId: 'msg-1',
-      });
-
-      fireEvent.click(button);
+      // Close the snackbar by clicking the close button
+      const closeButton = screen.getByTitle('Close');
+      fireEvent.click(closeButton);
 
       await waitFor(() => {
-        expect(screen.queryByText('Failed')).not.toBeInTheDocument();
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
       });
     });
   });

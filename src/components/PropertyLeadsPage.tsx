@@ -41,6 +41,7 @@ import {
   archivePropertyLead
 } from '../services/api';
 import PropertyLeadDialog from './PropertyLeadDialog';
+import { MessageLeadButton } from './messaging/MessageLeadButton';
 
 // Styled components for consistent UI elements
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -991,20 +992,21 @@ const PropertyLeadsPage: React.FC = () => {
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Tooltip title="Copy templated message">
-                            <ActionIconButton 
+                            <ActionIconButton
                               size="small"
                               onClick={() => copyTemplatedMessage(lead)}
                             >
                               <Icons.Message fontSize="small" />
                             </ActionIconButton>
                           </Tooltip>
+                          <MessageLeadButton lead={lead} iconOnly size="small" />
                           {lead.sellerPhone && (
                             <Tooltip title="Copy phone number">
                               <Button
                                 variant="text"
                                 size="small"
                                 onClick={() => copyPhoneNumber(lead.sellerPhone)}
-                                sx={{ 
+                                sx={{
                                   textTransform: 'none',
                                   minWidth: 'auto',
                                   padding: '4px 8px'
@@ -1020,7 +1022,7 @@ const PropertyLeadsPage: React.FC = () => {
                                 variant="text"
                                 size="small"
                                 onClick={() => copyToClipboard(lead.sellerEmail, 'Email address copied to clipboard!')}
-                                sx={{ 
+                                sx={{
                                   textTransform: 'none',
                                   minWidth: 'auto',
                                   padding: '4px 8px'
@@ -1372,12 +1374,13 @@ const PropertyLeadsPage: React.FC = () => {
                     )}
 
                     {/* Action Buttons */}
-                    <Box sx={{ 
+                    <Box sx={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
                       gap: 1,
                       mt: 2
                     }}>
+                      <MessageLeadButton lead={lead} variant="outlined" size="small" />
                       <Button
                         variant="outlined"
                         startIcon={<Icons.Message />}

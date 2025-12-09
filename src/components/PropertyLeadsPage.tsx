@@ -20,7 +20,6 @@ import {
   Snackbar,
   Alert,
   Box,
-  Link,
   styled,
   Checkbox,
   Chip,
@@ -915,6 +914,7 @@ const PropertyLeadsPage: React.FC = () => {
                     </Box>
                   </StyledTableCell>
                   <StyledTableCell className="header">Units</StyledTableCell>
+                  <StyledTableCell className="header">Sq Ft</StyledTableCell>
                   <StyledTableCell className="header">Listing Price</StyledTableCell>
                   <StyledTableCell className="header">Seller Contact</StyledTableCell>
                   <StyledTableCell className="header">Last Contact</StyledTableCell>
@@ -925,7 +925,7 @@ const PropertyLeadsPage: React.FC = () => {
               <TableBody>
                 {propertyLeads.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
+                    <TableCell colSpan={9} align="center">
                       <Typography variant="body1" sx={{ py: 2 }}>
                         No property leads found. Add your first lead.
                       </Typography>
@@ -960,34 +960,82 @@ const PropertyLeadsPage: React.FC = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {lead.zillowLink ? (
-                            <Link 
-                              href={lead.zillowLink} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              sx={{ 
-                                color: 'primary.main',
-                                textDecoration: 'none',
-                                '&:hover': {
-                                  textDecoration: 'underline'
-                                }
-                              }}
-                            >
-                              {lead.address}
-                            </Link>
-                          ) : (
-                            lead.address
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {lead.zillowLink && (
+                            <Tooltip title="Open Zillow" arrow>
+                              <IconButton
+                                href={lead.zillowLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                size="small"
+                              >
+                                <Icons.OpenInNew fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                           )}
-                          {(lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) && (
-                            <ConvertedBadge>
-                              <Icons.CheckCircle fontSize="inherit" sx={{ mr: 0.5 }} />
-                              Converted
-                            </ConvertedBadge>
-                          )}
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            {lead.address}
+                            {(lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) && (
+                              <ConvertedBadge>
+                                <Icons.CheckCircle fontSize="inherit" sx={{ mr: 0.5 }} />
+                                Converted
+                              </ConvertedBadge>
+                            )}
+                          </Box>
                         </Box>
                       </TableCell>
                       <TableCell>{lead.units || ''}</TableCell>
+                      <TableCell>
+                        {lead.squareFootage !== null ? (
+                          <Tooltip
+                            title={
+                              <Box sx={{ textAlign: 'left' }}>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                  Rules of Thumb
+                                </Typography>
+                                <Typography variant="body2">
+                                  ARV Guess: {formatCurrency(160 * lead.squareFootage)}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Rent Guess: {formatCurrency(1.1 * lead.squareFootage)}
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1, mb: 0.5 }}>
+                                  Rehab
+                                </Typography>
+                                <Typography variant="body2">
+                                  Light: {formatCurrency(20 * lead.squareFootage)}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Medium: {formatCurrency(40 * lead.squareFootage)}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Heavy: {formatCurrency(75 * lead.squareFootage)}
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1, mb: 0.5 }}>
+                                  MAO
+                                </Typography>
+                                <Typography variant="body2">
+                                  Light: {formatCurrency((160 * lead.squareFootage * 0.7) - (20 * lead.squareFootage))}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Medium: {formatCurrency((160 * lead.squareFootage * 0.7) - (40 * lead.squareFootage))}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Heavy: {formatCurrency((160 * lead.squareFootage * 0.7) - (75 * lead.squareFootage))}
+                                </Typography>
+                              </Box>
+                            }
+                            arrow
+                            placement="top"
+                          >
+                            <Box component="span" sx={{ cursor: 'help' }}>
+                              {lead.squareFootage.toLocaleString()}
+                            </Box>
+                          </Tooltip>
+                        ) : (
+                          ''
+                        )}
+                      </TableCell>
                       <TableCell>{formatCurrency(lead.listingPrice)}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

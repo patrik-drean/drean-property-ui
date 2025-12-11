@@ -98,6 +98,49 @@ const NotContactedText = styled(Typography)(({ theme }) => ({
   fontWeight: 'bold',
 }));
 
+// Helper function to calculate ARV Guess for a lead
+const calculateARVGuess = (squareFootage: number | null): number => {
+  if (!squareFootage) return 0;
+  return 160 * squareFootage;
+};
+
+// Helper function to calculate lead score based on listing price vs ARV
+const calculateLeadScore = (listingPrice: number, squareFootage: number | null): number => {
+  const arvGuess = calculateARVGuess(squareFootage);
+  if (!arvGuess || arvGuess === 0) return 0;
+
+  const ratio = listingPrice / arvGuess;
+
+  // Calculate score based on ratio thresholds
+  if (ratio >= 0.95) return 1;
+  if (ratio >= 0.90) return 2;
+  if (ratio >= 0.85) return 3;
+  if (ratio >= 0.80) return 4;
+  if (ratio >= 0.75) return 5;
+  if (ratio >= 0.70) return 6;
+  if (ratio >= 0.65) return 7;
+  if (ratio >= 0.60) return 8;
+  if (ratio >= 0.55) return 9;
+  // Anything 50% and under is a 10
+  return 10;
+};
+
+// Helper function to get score background color
+const getScoreBackgroundColor = (score: number): string => {
+  if (score >= 8) return '#4CAF50'; // Green for 8-10
+  if (score >= 5) return '#FFC107'; // Yellow for 5-7
+  if (score >= 1) return '#F44336'; // Red for 1-4
+  return '#9E9E9E'; // Grey for 0 (no data)
+};
+
+// Helper function to get score text color
+const getScoreColor = (score: number): string => {
+  if (score >= 8) return '#E8F5E9'; // Light green text for green background
+  if (score >= 5) return '#212121'; // Dark text for yellow background
+  if (score >= 1) return '#FFEBEE'; // Light red text for red background
+  return '#FFFFFF'; // White text for grey background
+};
+
 const PropertyLeadsPage: React.FC = () => {
   const [propertyLeads, setPropertyLeads] = useState<PropertyLead[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -909,7 +952,7 @@ const PropertyLeadsPage: React.FC = () => {
                       />
                     </Tooltip>
                   </StyledTableCell>
-                  <StyledTableCell className="header">
+                  <StyledTableCell className="header" sx={{ maxWidth: '280px' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       Address
                       <Tooltip title="Green highlight and badge indicates leads that have been converted to properties">
@@ -921,7 +964,8 @@ const PropertyLeadsPage: React.FC = () => {
                   <StyledTableCell className="header">Sq Ft</StyledTableCell>
                   <StyledTableCell className="header">Listing Price</StyledTableCell>
                   <StyledTableCell className="header">Seller Contact</StyledTableCell>
-                  <StyledTableCell className="header">Last Contact</StyledTableCell>
+                  <StyledTableCell className="header" sx={{ minWidth: '150px' }}>Last Contact</StyledTableCell>
+                  <StyledTableCell className="header">Score</StyledTableCell>
                   <StyledTableCell className="header">Notes</StyledTableCell>
                   <StyledTableCell className="header" sx={{ width: '220px' }}>Actions</StyledTableCell>
                 </TableRow>
@@ -963,7 +1007,7 @@ const PropertyLeadsPage: React.FC = () => {
                           onChange={() => handleSelectLead(lead.id)}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ maxWidth: '280px' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {lead.zillowLink && (
                             <Tooltip title="Open Zillow" arrow>
@@ -977,7 +1021,13 @@ const PropertyLeadsPage: React.FC = () => {
                               </IconButton>
                             </Tooltip>
                           )}
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
                             {lead.address}
                             {(lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) && (
                               <ConvertedBadge>
@@ -1089,12 +1139,12 @@ const PropertyLeadsPage: React.FC = () => {
                           )}
                         </Box>
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ minWidth: '150px' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           {formatDate(lead.lastContactDate)}
                           <Tooltip title="Mark as Contacted Today">
-                            <ActionIconButton 
-                              size="small" 
+                            <ActionIconButton
+                              size="small"
                               sx={{ ml: 1 }}
                               onClick={() => handleUpdateLastContact(lead)}
                             >
@@ -1104,9 +1154,63 @@ const PropertyLeadsPage: React.FC = () => {
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ 
-                          maxWidth: '200px', 
-                          overflow: 'hidden', 
+                        {(() => {
+                          const score = calculateLeadScore(lead.listingPrice, lead.squareFootage);
+                          const arvGuess = calculateARVGuess(lead.squareFootage);
+
+                          if (score === 0) {
+                            return (
+                              <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+                                N/A
+                              </Typography>
+                            );
+                          }
+
+                          return (
+                            <Tooltip
+                              title={
+                                <>
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                    Score Calculation:
+                                  </Typography>
+                                  <Typography variant="body2">
+                                    Listing Price: {formatCurrency(lead.listingPrice)}
+                                  </Typography>
+                                  <Typography variant="body2">
+                                    ARV Guess: {formatCurrency(arvGuess)}
+                                  </Typography>
+                                  <Typography variant="body2">
+                                    Ratio: {((lead.listingPrice / arvGuess) * 100).toFixed(1)}%
+                                  </Typography>
+                                </>
+                              }
+                              arrow
+                              placement="top"
+                            >
+                              <Box sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: getScoreBackgroundColor(score),
+                                color: getScoreColor(score),
+                                p: '4px 12px',
+                                borderRadius: 2,
+                                fontWeight: 'bold',
+                                minWidth: '50px',
+                                height: '28px',
+                                cursor: 'help',
+                                boxShadow: 1
+                              }}>
+                                {score}/10
+                              </Box>
+                            </Tooltip>
+                          );
+                        })()}
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{
+                          maxWidth: '200px',
+                          overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
                         }}>
@@ -1283,8 +1387,8 @@ const PropertyLeadsPage: React.FC = () => {
                   </Box>
 
                   {/* Quick Metrics Row */}
-                  <Box sx={{ 
-                    display: 'grid', 
+                  <Box sx={{
+                    display: 'grid',
                     gridTemplateColumns: 'repeat(3, 1fr)',
                     gap: 1,
                     fontSize: '0.75rem'
@@ -1302,10 +1406,37 @@ const PropertyLeadsPage: React.FC = () => {
                       </Typography>
                     </Box>
                     <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">Last Contact</Typography>
-                      <Typography variant="body2" fontWeight="medium">
-                        {formatDate(lead.lastContactDate)}
-                      </Typography>
+                      <Typography variant="caption" color="text.secondary" display="block">Score</Typography>
+                      {(() => {
+                        const score = calculateLeadScore(lead.listingPrice, lead.squareFootage);
+
+                        if (score === 0) {
+                          return (
+                            <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+                              N/A
+                            </Typography>
+                          );
+                        }
+
+                        return (
+                          <Box sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: getScoreBackgroundColor(score),
+                            color: getScoreColor(score),
+                            p: '2px 8px',
+                            borderRadius: 1,
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem',
+                            minWidth: '40px',
+                            height: '24px',
+                            boxShadow: 1
+                          }}>
+                            {score}/10
+                          </Box>
+                        );
+                      })()}
                     </Box>
                   </Box>
                 </Box>

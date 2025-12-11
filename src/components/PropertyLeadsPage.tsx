@@ -236,10 +236,14 @@ const PropertyLeadsPage: React.FC = () => {
       if (a.archived !== b.archived) {
         return a.archived ? 1 : -1; // Non-archived leads first
       }
-      
+
       // Then sort by last contact date (not contacted leads first, then most recent)
       if (!a.lastContactDate && !b.lastContactDate) {
-        // Both have no contact date, continue to next criteria
+        // Both have no contact date, sort by created date (most recent first)
+        const createdDateComparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (createdDateComparison !== 0) {
+          return createdDateComparison;
+        }
       } else if (!a.lastContactDate) {
         return -1; // a has no contact date, put it first
       } else if (!b.lastContactDate) {
@@ -251,14 +255,14 @@ const PropertyLeadsPage: React.FC = () => {
           return dateComparison;
         }
       }
-      
+
       // Then sort by number of units descending (null/undefined units go to the end)
       const aUnits = a.units || 0;
       const bUnits = b.units || 0;
       if (aUnits !== bUnits) {
         return bUnits - aUnits; // Descending order
       }
-      
+
       // Finally sort alphabetically by address ascending
       return a.address.localeCompare(b.address);
     });

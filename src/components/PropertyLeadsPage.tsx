@@ -524,25 +524,12 @@ const PropertyLeadsPage: React.FC = () => {
     const message = replaceTemplateVariables(customMessage, lead);
 
     try {
-      // First copy the message
       await navigator.clipboard.writeText(message);
       setSnackbar({
         open: true,
         message: 'Message copied to clipboard!',
         severity: 'success',
       });
-
-      // Wait a brief moment before copying the phone number
-      setTimeout(async () => {
-        if (lead.sellerPhone) {
-          await navigator.clipboard.writeText(lead.sellerPhone);
-          setSnackbar({
-            open: true,
-            message: 'Phone number copied to clipboard!',
-            severity: 'success',
-          });
-        }
-      }, 1000); // Wait a second before copying phone number
     } catch (err) {
       console.error('Failed to copy: ', err);
       setSnackbar({
@@ -1098,7 +1085,7 @@ const PropertyLeadsPage: React.FC = () => {
                               size="small"
                               onClick={() => copyTemplatedMessage(lead)}
                             >
-                              <Icons.Message fontSize="small" />
+                              <Icons.ContentCopy fontSize="small" />
                             </ActionIconButton>
                           </Tooltip>
                           <MessageLeadButton lead={lead} iconOnly size="small" />
@@ -1115,22 +1102,6 @@ const PropertyLeadsPage: React.FC = () => {
                                 }}
                               >
                                 {lead.sellerPhone}
-                              </Button>
-                            </Tooltip>
-                          )}
-                          {lead.sellerEmail && (
-                            <Tooltip title="Copy email address">
-                              <Button
-                                variant="text"
-                                size="small"
-                                onClick={() => copyToClipboard(lead.sellerEmail, 'Email address copied to clipboard!')}
-                                sx={{
-                                  textTransform: 'none',
-                                  minWidth: 'auto',
-                                  padding: '4px 8px'
-                                }}
-                              >
-                                {lead.sellerEmail}
                               </Button>
                             </Tooltip>
                           )}
@@ -1566,7 +1537,7 @@ const PropertyLeadsPage: React.FC = () => {
                       <MessageLeadButton lead={lead} variant="outlined" size="small" />
                       <Button
                         variant="outlined"
-                        startIcon={<Icons.Message />}
+                        startIcon={<Icons.ContentCopy />}
                         size="small"
                         onClick={(e) => {
                           e.stopPropagation();

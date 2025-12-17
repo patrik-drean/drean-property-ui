@@ -173,6 +173,20 @@ export const MessagingPage: React.FC = () => {
 
   const handleSelectConversation = async (conversation: SmsConversation) => {
     await fetchSelectedConversation(conversation.id);
+
+    // Fetch lead data if this conversation has a propertyLeadId
+    if (conversation.propertyLeadId) {
+      try {
+        const lead = await getPropertyLead(conversation.propertyLeadId);
+        setLeadData(lead);
+      } catch (err) {
+        console.error('Failed to fetch lead data:', err);
+        setLeadData(null);
+      }
+    } else {
+      setLeadData(null);
+    }
+
     if (isMobile) {
       setMobileDrawerOpen(false);
     }
@@ -336,6 +350,7 @@ export const MessagingPage: React.FC = () => {
               leadName={leadData?.address}
               leadAddress={leadData?.address}
               leadPrice={leadData?.listingPrice?.toLocaleString()}
+              zillowLink={leadData?.zillowLink}
             />
           ) : (
             <Box

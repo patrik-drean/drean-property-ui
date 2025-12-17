@@ -102,6 +102,10 @@ export interface PropertyLead {
     squareFootage: number | null;
     units: number | null;
     notes: string;
+    respondedDate?: string | null;
+    convertedDate?: string | null;
+    underContractDate?: string | null;
+    soldDate?: string | null;
 }
 
 export interface CreatePropertyLead {
@@ -129,6 +133,10 @@ export interface UpdatePropertyLead {
     squareFootage?: number | null;
     units?: number | null;
     notes?: string;
+    respondedDate?: string | null;
+    convertedDate?: string | null;
+    underContractDate?: string | null;
+    soldDate?: string | null;
 }
 
 export interface BatchCreatePropertyLeads {

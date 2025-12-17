@@ -31,14 +31,16 @@ import {
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { PropertyLead, CreatePropertyLead } from '../types/property';
-import { 
-  getPropertyLeadsWithArchivedStatus, 
-  addPropertyLead, 
-  updatePropertyLead, 
-  deletePropertyLead, 
-  addProperty, 
+import {
+  getPropertyLeadsWithArchivedStatus,
+  addPropertyLead,
+  updatePropertyLead,
+  deletePropertyLead,
+  addProperty,
   archivePropertyLead
 } from '../services/api';
+import { smsService } from '../services/smsService';
+import { SmsConversation } from '../types/sms';
 import PropertyLeadDialog from './PropertyLeadDialog';
 import { MessageLeadButton } from './messaging/MessageLeadButton';
 
@@ -143,6 +145,7 @@ const getScoreColor = (score: number): string => {
 
 const PropertyLeadsPage: React.FC = () => {
   const [propertyLeads, setPropertyLeads] = useState<PropertyLead[]>([]);
+  const [conversations, setConversations] = useState<SmsConversation[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -235,6 +238,12 @@ const PropertyLeadsPage: React.FC = () => {
     });
   };
 
+  // Helper function to get unread message count for a lead
+  const getUnreadCount = (leadId: string): number => {
+    const conversation = conversations.find(c => c.propertyLeadId === leadId);
+    return conversation?.unreadCount || 0;
+  };
+
   // Removed handleInputChange as it's no longer needed
 
   const handleCurrencyInput = (value: string) => {
@@ -251,25 +260,52 @@ const PropertyLeadsPage: React.FC = () => {
 
 
 
-  const fetchPropertyLeads = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchPropertyLeads = useCallback(async (isInitialLoad = false) => {
+    // Only show loading spinner on initial load, not on background refresh
+    if (isInitialLoad) {
+      setLoading(true);
+      setError(null);
+    }
     try {
-      const data = await getPropertyLeadsWithArchivedStatus(showArchived);
-      setPropertyLeads(data);
-      setTotalItems(data.length);
-      // Reset to first page when data changes
-      setCurrentPage(1);
+      // Fetch both leads and conversations in parallel
+      const [leadsData, conversationsData] = await Promise.all([
+        getPropertyLeadsWithArchivedStatus(showArchived),
+        smsService.getConversations().catch(() => []), // Gracefully handle SMS service errors
+      ]);
+
+      setPropertyLeads(leadsData);
+      setConversations(conversationsData);
+      setTotalItems(leadsData.length);
+
+      // Only reset to first page on initial load, not on background refresh
+      if (isInitialLoad) {
+        setCurrentPage(1);
+      }
     } catch (err) {
       console.error('Error fetching property leads:', err);
-      setError('Failed to load property leads. Please try again.');
+      if (isInitialLoad) {
+        setError('Failed to load property leads. Please try again.');
+      }
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   }, [showArchived]);
 
   useEffect(() => {
-    fetchPropertyLeads();
+    fetchPropertyLeads(true); // Initial load with loading spinner
+  }, [fetchPropertyLeads]);
+
+  // Auto-refresh leads every 10 seconds - silently in the background
+  useEffect(() => {
+    const POLL_INTERVAL = 10000; // 10 seconds
+    const intervalId = setInterval(() => {
+      fetchPropertyLeads(false); // Background refresh without loading spinner
+    }, POLL_INTERVAL);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
   }, [fetchPropertyLeads]);
 
   // Add sorting function for property leads - modified to handle archived status
@@ -370,7 +406,7 @@ const PropertyLeadsPage: React.FC = () => {
         });
       }
       setOpenDialog(false);
-      fetchPropertyLeads();
+      fetchPropertyLeads(false); // Background refresh after save
     } catch (err) {
       console.error('Error saving property lead:', err);
       setSnackbar({
@@ -390,7 +426,7 @@ const PropertyLeadsPage: React.FC = () => {
           message: 'Property lead deleted successfully',
           severity: 'success',
         });
-        fetchPropertyLeads();
+        fetchPropertyLeads(false); // Background refresh after delete
       } catch (err) {
         console.error('Error deleting property lead:', err);
         setSnackbar({
@@ -475,7 +511,7 @@ const PropertyLeadsPage: React.FC = () => {
           severity: 'success',
         });
         setSelectedLeads([]);
-        fetchPropertyLeads();
+        fetchPropertyLeads(false); // Background refresh after bulk delete
       } catch (err) {
         console.error('Error deleting property leads:', err);
         setSnackbar({
@@ -667,10 +703,10 @@ const PropertyLeadsPage: React.FC = () => {
         message: 'Successfully converted lead to property',
         severity: 'success',
       });
-      
+
       // After a short delay, refresh the data
       setTimeout(() => {
-        fetchPropertyLeads();
+        fetchPropertyLeads(false); // Background refresh after conversion
       }, 500);
     } catch (err: any) {
       console.error('Error converting lead to property:', err);
@@ -948,11 +984,11 @@ const PropertyLeadsPage: React.FC = () => {
                     </Box>
                   </StyledTableCell>
                   <StyledTableCell className="header">Units</StyledTableCell>
-                  <StyledTableCell className="header">Sq Ft</StyledTableCell>
                   <StyledTableCell className="header">Listing Price</StyledTableCell>
                   <StyledTableCell className="header">Seller Contact</StyledTableCell>
                   <StyledTableCell className="header" sx={{ minWidth: '150px' }}>Last Contact</StyledTableCell>
                   <StyledTableCell className="header">Score</StyledTableCell>
+                  <StyledTableCell className="header">Sq Ft</StyledTableCell>
                   <StyledTableCell className="header">Notes</StyledTableCell>
                   <StyledTableCell className="header" sx={{ width: '220px' }}>Actions</StyledTableCell>
                 </TableRow>
@@ -1011,13 +1047,31 @@ const PropertyLeadsPage: React.FC = () => {
                           <Box sx={{
                             display: 'flex',
                             alignItems: 'center',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
+                            gap: 1,
+                            minWidth: 0,
+                            flex: 1
                           }}>
-                            {lead.address}
+                            <Box sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              minWidth: 0
+                            }}>
+                              {lead.address}
+                            </Box>
+                            {getUnreadCount(lead.id) > 0 && (
+                              <Tooltip title={`${getUnreadCount(lead.id)} unread message${getUnreadCount(lead.id) > 1 ? 's' : ''}`} arrow>
+                                <Chip
+                                  icon={<Icons.Message fontSize="small" />}
+                                  label={getUnreadCount(lead.id)}
+                                  size="small"
+                                  color="error"
+                                  sx={{ height: '20px', fontSize: '0.7rem', flexShrink: 0 }}
+                                />
+                              </Tooltip>
+                            )}
                             {(lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) && (
-                              <ConvertedBadge>
+                              <ConvertedBadge sx={{ flexShrink: 0 }}>
                                 <Icons.CheckCircle fontSize="inherit" sx={{ mr: 0.5 }} />
                                 Converted
                               </ConvertedBadge>
@@ -1026,57 +1080,6 @@ const PropertyLeadsPage: React.FC = () => {
                         </Box>
                       </TableCell>
                       <TableCell>{lead.units || ''}</TableCell>
-                      <TableCell>
-                        {lead.squareFootage !== null ? (
-                          <Tooltip
-                            title={
-                              <Box sx={{ textAlign: 'left' }}>
-                                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                  Rules of Thumb
-                                </Typography>
-                                <Typography variant="body2">
-                                  ARV Guess: {formatCurrency(160 * lead.squareFootage)}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Rent Guess: {formatCurrency(1.1 * lead.squareFootage)}
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1, mb: 0.5 }}>
-                                  Rehab
-                                </Typography>
-                                <Typography variant="body2">
-                                  Light: {formatCurrency(20 * lead.squareFootage)}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Medium: {formatCurrency(40 * lead.squareFootage)}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Heavy: {formatCurrency(75 * lead.squareFootage)}
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1, mb: 0.5 }}>
-                                  MAO
-                                </Typography>
-                                <Typography variant="body2">
-                                  Light: {formatCurrency((160 * lead.squareFootage * 0.7) - (20 * lead.squareFootage))}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Medium: {formatCurrency((160 * lead.squareFootage * 0.7) - (40 * lead.squareFootage))}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Heavy: {formatCurrency((160 * lead.squareFootage * 0.7) - (75 * lead.squareFootage))}
-                                </Typography>
-                              </Box>
-                            }
-                            arrow
-                            placement="top"
-                          >
-                            <Box component="span" sx={{ cursor: 'help' }}>
-                              {lead.squareFootage.toLocaleString()}
-                            </Box>
-                          </Tooltip>
-                        ) : (
-                          ''
-                        )}
-                      </TableCell>
                       <TableCell>{formatCurrency(lead.listingPrice)}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1177,6 +1180,57 @@ const PropertyLeadsPage: React.FC = () => {
                             </Tooltip>
                           );
                         })()}
+                      </TableCell>
+                      <TableCell>
+                        {lead.squareFootage !== null ? (
+                          <Tooltip
+                            title={
+                              <Box sx={{ textAlign: 'left' }}>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                  Rules of Thumb
+                                </Typography>
+                                <Typography variant="body2">
+                                  ARV Guess: {formatCurrency(160 * lead.squareFootage)}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Rent Guess: {formatCurrency(1.1 * lead.squareFootage)}
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1, mb: 0.5 }}>
+                                  Rehab
+                                </Typography>
+                                <Typography variant="body2">
+                                  Light: {formatCurrency(20 * lead.squareFootage)}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Medium: {formatCurrency(40 * lead.squareFootage)}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Heavy: {formatCurrency(75 * lead.squareFootage)}
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1, mb: 0.5 }}>
+                                  MAO
+                                </Typography>
+                                <Typography variant="body2">
+                                  Light: {formatCurrency((160 * lead.squareFootage * 0.7) - (20 * lead.squareFootage))}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Medium: {formatCurrency((160 * lead.squareFootage * 0.7) - (40 * lead.squareFootage))}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Heavy: {formatCurrency((160 * lead.squareFootage * 0.7) - (75 * lead.squareFootage))}
+                                </Typography>
+                              </Box>
+                            }
+                            arrow
+                            placement="top"
+                          >
+                            <Box component="span" sx={{ cursor: 'help' }}>
+                              {lead.squareFootage.toLocaleString()}
+                            </Box>
+                          </Tooltip>
+                        ) : (
+                          ''
+                        )}
                       </TableCell>
                       <TableCell>
                         <Box sx={{
@@ -1325,20 +1379,30 @@ const PropertyLeadsPage: React.FC = () => {
                         }}
                         size="small"
                       />
-                      <Typography 
-                        variant="body1" 
+                      <Typography
+                        variant="body1"
                         fontWeight="medium"
-                        sx={{ 
+                        sx={{
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
-                          flex: 1
+                          flex: 1,
+                          minWidth: 0
                         }}
                       >
                         {lead.address}
                       </Typography>
+                      {getUnreadCount(lead.id) > 0 && (
+                        <Chip
+                          icon={<Icons.Message fontSize="small" />}
+                          label={getUnreadCount(lead.id)}
+                          size="small"
+                          color="error"
+                          sx={{ height: '20px', fontSize: '0.7rem', flexShrink: 0 }}
+                        />
+                      )}
                       {(lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) && (
-                        <ConvertedBadge>
+                        <ConvertedBadge sx={{ flexShrink: 0 }}>
                           <Icons.CheckCircle fontSize="inherit" sx={{ mr: 0.5 }} />
                           Converted
                         </ConvertedBadge>

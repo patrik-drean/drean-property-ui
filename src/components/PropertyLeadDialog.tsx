@@ -6,8 +6,13 @@ import {
   DialogActions,
   TextField,
   Button,
-  Box
+  Box,
+  Divider,
+  Typography
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 interface PropertyLeadDialogProps {
   open: boolean;
@@ -146,6 +151,72 @@ const PropertyLeadDialog: React.FC<PropertyLeadDialogProps> = ({
             rows={3}
             placeholder="Add any notes about this property lead..."
           />
+
+          {/* Stage Tracking Section */}
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="h6" gutterBottom>
+            Stage Tracking
+          </Typography>
+
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <DatePicker
+                label="Contacted Date"
+                value={formData.lastContactDate ? new Date(formData.lastContactDate) : null}
+                onChange={(newValue) => setFormData({ ...formData, lastContactDate: newValue ? newValue.toISOString() : null })}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+
+              <DatePicker
+                label="Responded Date"
+                value={formData.respondedDate ? new Date(formData.respondedDate) : null}
+                onChange={(newValue) => setFormData({ ...formData, respondedDate: newValue ? newValue.toISOString() : null })}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+
+              <DatePicker
+                label="Converted Date"
+                value={formData.convertedDate ? new Date(formData.convertedDate) : null}
+                onChange={(newValue) => setFormData({ ...formData, convertedDate: newValue ? newValue.toISOString() : null })}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+
+              <DatePicker
+                label="Under Contract Date"
+                value={formData.underContractDate ? new Date(formData.underContractDate) : null}
+                onChange={(newValue) => setFormData({ ...formData, underContractDate: newValue ? newValue.toISOString() : null })}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+
+              <DatePicker
+                label="Sold Date"
+                value={formData.soldDate ? new Date(formData.soldDate) : null}
+                onChange={(newValue) => setFormData({ ...formData, soldDate: newValue ? newValue.toISOString() : null })}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
+              />
+            </Box>
+          </LocalizationProvider>
         </Box>
       </DialogContent>
       <DialogActions>

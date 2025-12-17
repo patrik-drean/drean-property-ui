@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Box, Typography, Chip, Tooltip } from '@mui/material';
+import { Box, Typography, Chip, Tooltip, IconButton } from '@mui/material';
 import {
   Phone as PhoneIcon,
   OpenInNew as OpenInNewIcon,
@@ -14,6 +14,7 @@ interface ConversationViewProps {
   leadName?: string;
   leadAddress?: string;
   leadPrice?: string;
+  zillowLink?: string;
 }
 
 export const ConversationView: React.FC<ConversationViewProps> = ({
@@ -22,6 +23,7 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
   leadName,
   leadAddress,
   leadPrice,
+  zillowLink,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { conversation: conv, messages } = conversation;
@@ -52,9 +54,27 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
           borderBottom: '1px solid #e0e0e0',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          gap: 2,
         }}
       >
+        {zillowLink && (
+          <Tooltip title="Open Zillow" arrow>
+            <IconButton
+              href={zillowLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                '&:hover': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.15)'
+                }
+              }}
+            >
+              <OpenInNewIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
         <Box>
           <Typography variant="h6">
             {conv.displayName || conv.phoneNumber}

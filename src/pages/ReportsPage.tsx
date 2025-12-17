@@ -21,9 +21,10 @@ import {
   Home as HomeIcon,
   Refresh as RefreshIcon,
   GetApp as DownloadIcon,
-  AccountBalance as AccountBalanceIcon
+  AccountBalance as AccountBalanceIcon,
+  Leaderboard as LeaderboardIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Property } from '../types/property';
 import {
   PortfolioCashFlowReport as CashFlowReportType,
@@ -33,6 +34,7 @@ import {
 import { PortfolioCashFlowReport } from '../components/Reports/PortfolioCashFlowReport';
 import { PortfolioAssetReport } from '../components/Reports/PortfolioAssetReport';
 import { PortfolioPLReport } from '../components/Reports/PortfolioPLReport';
+import { SalesFunnelReportComponent } from '../components/Reports/SalesFunnelReport';
 import { portfolioReportService } from '../services/portfolioReportService';
 
 interface TabPanelProps {
@@ -71,9 +73,15 @@ export const ReportsPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Read tab from URL query parameter
+  const searchParams = new URLSearchParams(location.search);
+  const tabParam = searchParams.get('tab');
+  const initialTab = tabParam ? parseInt(tabParam) : 0;
 
   // State management
-  const [currentTab, setCurrentTab] = useState(0);
+  const [currentTab, setCurrentTab] = useState(initialTab);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -141,6 +149,10 @@ export const ReportsPage: React.FC = () => {
    */
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
+    // Update URL query parameter
+    const newSearchParams = new URLSearchParams(window.location.search);
+    newSearchParams.set('tab', newValue.toString());
+    navigate(`/reports?${newSearchParams.toString()}`, { replace: true });
   };
 
   /**
@@ -186,6 +198,20 @@ export const ReportsPage: React.FC = () => {
     loadReports();
   }, [loadReports]);
 
+  /**
+   * Update tab when URL changes (browser back/forward)
+   */
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      const tabIndex = parseInt(tabParam);
+      if (tabIndex !== currentTab) {
+        setCurrentTab(tabIndex);
+      }
+    }
+  }, [location.search, currentTab]);
+
   return (
     <Container maxWidth="xl" sx={{ py: 3, px: 2 }}>
       {/* Page header */}
@@ -208,7 +234,7 @@ export const ReportsPage: React.FC = () => {
             </IconButton>
           </Tooltip>
 
-          {!isMobile && currentTab !== 0 && (
+          {!isMobile && currentTab !== 0 && currentTab !== 3 && (
             <Tooltip title={`Export ${currentTab === 1 ? 'Cash Flow' : 'Asset'} Report`}>
               <IconButton
                 onClick={() => handleExport(currentTab === 1 ? 'cashflow' : 'assets')}
@@ -307,6 +333,12 @@ export const ReportsPage: React.FC = () => {
                 iconPosition={isMobile ? 'top' : 'start'}
                 {...a11yProps(2)}
               />
+              <Tab
+                label="Sales Funnel"
+                icon={<LeaderboardIcon />}
+                iconPosition={isMobile ? 'top' : 'start'}
+                {...a11yProps(3)}
+              />
             </Tabs>
           </Box>
 
@@ -336,8 +368,12 @@ export const ReportsPage: React.FC = () => {
             />
           </TabPanel>
 
+          <TabPanel value={currentTab} index={3}>
+            <SalesFunnelReportComponent />
+          </TabPanel>
+
           {/* Mobile export buttons */}
-          {isMobile && currentTab !== 0 && (
+          {isMobile && currentTab !== 0 && currentTab !== 3 && (
             <Box p={2} textAlign="center">
               <Button
                 variant="outlined"

@@ -1,17 +1,37 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { ReportsPage } from '../ReportsPage';
 import { portfolioReportService } from '../../services/portfolioReportService';
 
 // Mock the dependencies
 jest.mock('../../services/portfolioReportService');
+jest.mock('../../services/salesFunnelService');
+
+// Mock the responsive layout hook
+jest.mock('../../hooks/useResponsiveLayout', () => ({
+  useResponsiveLayout: () => ({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+  }),
+}));
 
 // Mock react-router-dom
 const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  useNavigate: () => mockNavigate
-}));
+const mockLocation = { search: '', pathname: '/reports', state: null, hash: '', key: 'default' };
+jest.mock('react-router-dom', () => {
+  const mockReact = require('react');
+  return {
+    Link: mockReact.forwardRef(
+      ({ children, to }: { children: any; to: string }, ref: any) =>
+        mockReact.createElement('a', { href: to, ref }, children)
+    ),
+    useNavigate: () => mockNavigate,
+    useLocation: () => mockLocation,
+    BrowserRouter: ({ children }: any) => mockReact.createElement('div', {}, children),
+  };
+}, { virtual: true });
 
 const theme = createTheme();
 
@@ -89,15 +109,16 @@ describe('ReportsPage', () => {
   });
 
   describe('tab order', () => {
-    it('should display Portfolio P&L as the first tab', async () => {
+    it('should display all 4 tabs in correct order', async () => {
       renderWithProviders(<ReportsPage />);
 
       await waitFor(() => {
         const tabs = screen.getAllByRole('tab');
-        expect(tabs).toHaveLength(3);
+        expect(tabs).toHaveLength(4);
         expect(tabs[0]).toHaveTextContent('Portfolio P&L');
         expect(tabs[1]).toHaveTextContent('Cash Flow Analysis');
         expect(tabs[2]).toHaveTextContent('Asset Analysis');
+        expect(tabs[3]).toHaveTextContent('Sales Funnel');
       });
     });
 
@@ -204,6 +225,56 @@ describe('ReportsPage', () => {
 
       await waitFor(() => {
         expect(screen.getByText('No Properties Found')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Sales Funnel Integration', () => {
+    it('should render Sales Funnel tab as 4th tab', async () => {
+      renderWithProviders(<ReportsPage />);
+
+      await waitFor(() => {
+        const salesFunnelTab = screen.getByRole('tab', { name: /Sales Funnel/i });
+        expect(salesFunnelTab).toBeInTheDocument();
+      });
+    });
+
+    it('should update URL when Sales Funnel tab is clicked', async () => {
+      renderWithProviders(<ReportsPage />);
+
+      await waitFor(() => {
+        const salesFunnelTab = screen.getByRole('tab', { name: /Sales Funnel/i });
+        fireEvent.click(salesFunnelTab);
+      });
+
+      expect(mockNavigate).toHaveBeenCalledWith('/reports?tab=3', { replace: true });
+    });
+
+    it('should select Sales Funnel tab when URL has tab=3 parameter', async () => {
+      mockLocation.search = '?tab=3';
+
+      renderWithProviders(<ReportsPage />);
+
+      await waitFor(() => {
+        const salesFunnelTab = screen.getByRole('tab', { name: /Sales Funnel/i });
+        expect(salesFunnelTab).toHaveAttribute('aria-selected', 'true');
+      });
+
+      // Reset location for other tests
+      mockLocation.search = '';
+    });
+
+    it('should NOT show export button when Sales Funnel tab is selected', async () => {
+      renderWithProviders(<ReportsPage />);
+
+      await waitFor(() => {
+        const salesFunnelTab = screen.getByRole('tab', { name: /Sales Funnel/i });
+        fireEvent.click(salesFunnelTab);
+      });
+
+      await waitFor(() => {
+        const exportButtons = screen.queryAllByRole('button', { name: /Export.*Report/i });
+        expect(exportButtons.length).toBe(0);
       });
     });
   });

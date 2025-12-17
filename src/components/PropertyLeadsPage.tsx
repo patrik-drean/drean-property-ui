@@ -30,6 +30,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { PropertyLead, CreatePropertyLead } from '../types/property';
 import {
   getPropertyLeadsWithArchivedStatus,
@@ -144,6 +145,7 @@ const getScoreColor = (score: number): string => {
 };
 
 const PropertyLeadsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [propertyLeads, setPropertyLeads] = useState<PropertyLead[]>([]);
   const [conversations, setConversations] = useState<SmsConversation[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -868,8 +870,8 @@ const PropertyLeadsPage: React.FC = () => {
             </Tooltip>
           )}
         </Box>
-        <Box sx={{ 
-          display: 'flex', 
+        <Box sx={{
+          display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
           alignItems: { xs: 'stretch', sm: 'center' },
           gap: { xs: 1, sm: 1 },
@@ -878,11 +880,22 @@ const PropertyLeadsPage: React.FC = () => {
         }}>
           <Button
             variant="outlined"
+            startIcon={<Icons.Assessment />}
+            onClick={() => navigate('/reports?tab=3')}
+            sx={{
+              borderRadius: 2,
+              width: { xs: '100%', sm: 'auto' }
+            }}
+          >
+            View Sales Report
+          </Button>
+          <Button
+            variant="outlined"
             color="primary"
             onClick={handleOpenMessageDialog}
             startIcon={<Icons.Message />}
-            sx={{ 
-              borderRadius: 2, 
+            sx={{
+              borderRadius: 2,
               width: { xs: '100%', sm: 'auto' }
             }}
           >

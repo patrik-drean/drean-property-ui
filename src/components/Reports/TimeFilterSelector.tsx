@@ -41,11 +41,27 @@ export const TimeFilterSelector: React.FC<TimeFilterSelectorProps> = ({
         sx={{
           display: 'flex',
           flexWrap: 'wrap',
-          gap: 1,
+          gap: 0.5,
           '& .MuiToggleButton-root': {
             textTransform: 'none',
             fontWeight: 500,
             minWidth: isMobile ? '100px' : '120px',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1,
+            px: 2,
+            py: 0.75,
+            '&.Mui-selected': {
+              backgroundColor: theme.palette.primary.main,
+              color: 'white',
+              borderColor: theme.palette.primary.main,
+              '&:hover': {
+                backgroundColor: theme.palette.primary.dark,
+              },
+            },
+            '&:hover': {
+              backgroundColor: theme.palette.action.hover,
+            },
           },
         }}
       >

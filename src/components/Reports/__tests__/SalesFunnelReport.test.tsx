@@ -198,16 +198,6 @@ describe('SalesFunnelReportComponent', () => {
       });
     });
 
-    it('should display report timestamp', async () => {
-      mockedService.getSalesFunnelReport.mockResolvedValue(mockReport);
-
-      renderWithTheme(<SalesFunnelReportComponent />);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Report generated at/)).toBeInTheDocument();
-      });
-    });
-
     it('should have refresh button in success state', async () => {
       mockedService.getSalesFunnelReport.mockResolvedValue(mockReport);
 

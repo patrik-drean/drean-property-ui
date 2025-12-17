@@ -25,7 +25,7 @@ export const SalesFunnelReportComponent: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<SalesFunnelReport | null>(null);
-  const [selectedPreset, setSelectedPreset] = useState<TimeFilterPreset>('allTime');
+  const [selectedPreset, setSelectedPreset] = useState<TimeFilterPreset>('last7');
 
   const loadReport = async () => {
     setLoading(true);
@@ -103,7 +103,7 @@ export const SalesFunnelReportComponent: React.FC = () => {
 
   // Success state - Display table
   return (
-    <Box>
+    <Box sx={{ p: 3 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5" component="h2">
           Sales Funnel Analysis
@@ -160,10 +160,6 @@ export const SalesFunnelReportComponent: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
-
-      <Typography variant="caption" color="textSecondary" sx={{ mt: 2, display: 'block' }}>
-        Report generated at {new Date(report.generatedAt).toLocaleString()}
-      </Typography>
     </Box>
   );
 };

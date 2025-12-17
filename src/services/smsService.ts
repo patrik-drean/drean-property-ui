@@ -107,6 +107,13 @@ export const smsService = {
     await api.post(`/api/sms/conversations/${conversationId}/read`);
   },
 
+  /**
+   * Mark a conversation as unread
+   */
+  async markConversationUnread(conversationId: string): Promise<void> {
+    await api.post(`/api/sms/conversations/${conversationId}/unread`);
+  },
+
   // ============ Template Methods ============
 
   /**

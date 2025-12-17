@@ -64,19 +64,6 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
             <Typography variant="body2" color="text.secondary">
               {conv.phoneNumber}
             </Typography>
-            {conv.propertyLeadId && (
-              <Tooltip title="View Lead">
-                <Chip
-                  label="Lead"
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                  onClick={handleOpenLead}
-                  icon={<OpenInNewIcon fontSize="small" />}
-                  sx={{ cursor: 'pointer' }}
-                />
-              </Tooltip>
-            )}
             {conv.contactId && (
               <Tooltip title="View Contact">
                 <Chip

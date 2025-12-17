@@ -25,6 +25,37 @@ interface MessageComposerProps {
 const MAX_SMS_LENGTH = 160;
 const MAX_TOTAL_LENGTH = 1600; // ~10 segments
 
+/**
+ * Calculate discounted price (listing price × 0.8)
+ */
+const calculateDiscountedPrice = (priceString?: string): string | undefined => {
+  if (!priceString) return undefined;
+
+  try {
+    // Remove non-numeric characters except decimal point
+    const numericPrice = priceString.replace(/[^0-9.]/g, '');
+    const price = parseFloat(numericPrice);
+
+    if (isNaN(price)) return undefined;
+
+    const discounted = price * 0.8;
+    return `$${Math.round(discounted).toLocaleString()}`;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Extract short address (street address only, no city/state)
+ */
+const extractShortAddress = (fullAddress?: string): string | undefined => {
+  if (!fullAddress) return undefined;
+
+  // Split by comma and take first part (street address)
+  const parts = fullAddress.split(',');
+  return parts[0].trim();
+};
+
 export const MessageComposer: React.FC<MessageComposerProps> = ({
   phoneNumber,
   propertyLeadId,
@@ -51,6 +82,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     address: leadAddress,
     price: leadPrice,
     phone: phoneNumber,
+    discounted_price: calculateDiscountedPrice(leadPrice),
+    address_short: extractShortAddress(leadAddress),
   };
 
   const handleTemplateSelect = (body: string) => {

@@ -72,5 +72,7 @@ export interface TemplateVariables {
   address?: string;
   price?: string;
   phone?: string;
+  discounted_price?: string;
+  address_short?: string;
   [key: string]: string | undefined;
 }

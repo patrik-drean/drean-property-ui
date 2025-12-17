@@ -9,7 +9,7 @@ import {
 } from '@mui/icons-material';
 import { SmsMessage } from '../../types/sms';
 import { smsService } from '../../services/smsService';
-import { format } from 'date-fns';
+import { formatMountainTime } from '../../utils/timezone';
 
 interface MessageBubbleProps {
   message: SmsMessage;
@@ -55,7 +55,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onRetry }
         return 'Sent';
       case 'delivered':
         return message.deliveredAt
-          ? `Delivered ${format(new Date(message.deliveredAt), 'MMM d, h:mm a')}`
+          ? `Delivered ${formatMountainTime(message.deliveredAt)}`
           : 'Delivered';
       case 'failed':
         return message.errorMessage || 'Failed to send';
@@ -66,8 +66,21 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onRetry }
 
   const formatMessageTime = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'h:mm a');
-    } catch {
+      // CRITICAL FIX: Backend returns timestamps without 'Z' suffix
+      // Without 'Z', JavaScript interprets as local time instead of UTC
+      const utcString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+      const date = new Date(utcString);
+
+      // Format just the time portion in Mountain Time
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Denver',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+      return formatter.format(date);
+    } catch (err) {
+      console.error('[MessageBubble] Error formatting time:', err);
       return '';
     }
   };

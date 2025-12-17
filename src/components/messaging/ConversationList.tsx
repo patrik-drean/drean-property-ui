@@ -10,23 +10,38 @@ import {
   Box,
   TextField,
   InputAdornment,
+  Menu,
+  MenuItem,
+  ListItemIcon,
 } from '@mui/material';
-import { Search as SearchIcon, Person as PersonIcon } from '@mui/icons-material';
+import {
+  Search as SearchIcon,
+  Person as PersonIcon,
+  MarkEmailUnread as MarkUnreadIcon,
+} from '@mui/icons-material';
 import { SmsConversation } from '../../types/sms';
-import { formatDistanceToNow } from 'date-fns';
+import { formatMessageTime } from '../../utils/timezone';
+import { smsService } from '../../services/smsService';
 
 interface ConversationListProps {
   conversations: SmsConversation[];
   selectedId?: string;
   onSelect: (conversation: SmsConversation) => void;
+  onRefresh?: () => void;
 }
 
 export const ConversationList: React.FC<ConversationListProps> = ({
   conversations,
   selectedId,
   onSelect,
+  onRefresh,
 }) => {
   const [search, setSearch] = React.useState('');
+  const [contextMenu, setContextMenu] = React.useState<{
+    mouseX: number;
+    mouseY: number;
+    conversationId: string;
+  } | null>(null);
 
   const filteredConversations = conversations.filter((conv) => {
     const searchLower = search.toLowerCase();
@@ -39,10 +54,32 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   const formatTime = (dateString?: string) => {
     if (!dateString) return '';
+    return formatMessageTime(dateString);
+  };
+
+  const handleContextMenu = (event: React.MouseEvent, conversationId: string) => {
+    event.preventDefault();
+    setContextMenu({
+      mouseX: event.clientX,
+      mouseY: event.clientY,
+      conversationId,
+    });
+  };
+
+  const handleClose = () => {
+    setContextMenu(null);
+  };
+
+  const handleMarkUnread = async () => {
+    if (!contextMenu) return;
+
     try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch {
-      return '';
+      await smsService.markConversationUnread(contextMenu.conversationId);
+      onRefresh?.();
+    } catch (err) {
+      console.error('Failed to mark conversation as unread:', err);
+    } finally {
+      handleClose();
     }
   };
 
@@ -80,6 +117,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               key={conv.id}
               selected={conv.id === selectedId}
               onClick={() => onSelect(conv)}
+              onContextMenu={(e) => handleContextMenu(e, conv.id)}
               sx={{
                 borderBottom: '1px solid #f0f0f0',
                 '&.Mui-selected': {
@@ -129,6 +167,25 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           ))
         )}
       </List>
+
+      {/* Context Menu */}
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleClose}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem onClick={handleMarkUnread}>
+          <ListItemIcon>
+            <MarkUnreadIcon fontSize="small" />
+          </ListItemIcon>
+          <Typography variant="body2">Mark as Unread</Typography>
+        </MenuItem>
+      </Menu>
     </Box>
   );
 };

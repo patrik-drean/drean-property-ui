@@ -230,6 +230,7 @@ export const MessagingPage: React.FC = () => {
       conversations={conversations}
       selectedId={selectedConversation?.conversation.id}
       onSelect={handleSelectConversation}
+      onRefresh={fetchConversations}
     />
   );
 

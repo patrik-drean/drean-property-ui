@@ -66,5 +66,8 @@
     "moduleNameMapper": {
       "^axios$": "axios/dist/node/axios.cjs"
     }
+  },
+  "devDependencies": {
+    "yaml": "^2.8.2"
   }
 }

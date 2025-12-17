@@ -4,6 +4,8 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
 import { PropertiesProvider } from './contexts/PropertiesContext';
+import { MessagingPopoverProvider } from './contexts/MessagingPopoverContext';
+import { MessagingPopover } from './components/messaging/MessagingPopover';
 import Navigation from './components/Navigation';
 import PropertiesPage from './components/PropertiesPage';
 import ArchivedPropertiesPage from './components/ArchivedPropertiesPage';
@@ -45,7 +47,11 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <PropertiesProvider>
-        <RouterProvider router={router} />
+        <MessagingPopoverProvider>
+          <RouterProvider router={router} />
+          {/* Global messaging popover - persists across navigation */}
+          <MessagingPopover />
+        </MessagingPopoverProvider>
       </PropertiesProvider>
     </ThemeProvider>
   );

@@ -1,8 +1,8 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button, Tooltip, IconButton } from '@mui/material';
 import { Sms as SmsIcon } from '@mui/icons-material';
 import { PropertyLead } from '../../types/property';
+import { useMessagingPopover } from '../../contexts/MessagingPopoverContext';
 
 interface MessageLeadButtonProps {
   lead: PropertyLead;
@@ -17,13 +17,19 @@ export const MessageLeadButton: React.FC<MessageLeadButtonProps> = ({
   size = 'small',
   iconOnly = false,
 }) => {
-  const navigate = useNavigate();
+  const { openPopover } = useMessagingPopover();
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (lead.sellerPhone) {
-      // Navigate to messaging with phone number and lead ID
-      navigate(`/messaging?phone=${encodeURIComponent(lead.sellerPhone)}&lead=${lead.id}`);
+      // Open messaging popover with phone number, lead ID, and lead data for templates
+      openPopover({
+        phoneNumber: lead.sellerPhone,
+        leadId: lead.id,
+        leadName: lead.address, // PropertyLead only has address, not a separate name
+        leadAddress: lead.address,
+        leadPrice: lead.listingPrice?.toString(),
+      });
     }
   };
 

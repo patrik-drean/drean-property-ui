@@ -7,11 +7,13 @@ import {
   Button,
   CircularProgress,
   Alert,
+  Tooltip,
 } from '@mui/material';
 import {
   Close as CloseIcon,
   Minimize as MinimizeIcon,
   OpenInNew as OpenInNewIcon,
+  MarkAsUnread as MarkAsUnreadIcon,
 } from '@mui/icons-material';
 import { useMessagingPopover } from '../../contexts/MessagingPopoverContext';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
@@ -120,6 +122,20 @@ export const MessagingPopover: React.FC = () => {
     }
   };
 
+  /**
+   * Mark conversation as unread and close popover
+   */
+  const handleMarkAsUnread = async () => {
+    if (!conversation?.conversation.id) return;
+
+    try {
+      await smsService.markConversationUnread(conversation.conversation.id);
+      closePopover();
+    } catch (error) {
+      console.error('Failed to mark conversation as unread:', error);
+    }
+  };
+
   // Don't render if not open
   if (!isOpen) return null;
 
@@ -180,22 +196,38 @@ export const MessagingPopover: React.FC = () => {
         <Typography variant="subtitle1" noWrap sx={{ flex: 1, fontWeight: 600 }}>
           {conversation?.conversation.displayName || conversation?.conversation.phoneNumber || 'Loading...'}
         </Typography>
-        <IconButton
-          size="small"
-          onClick={minimizePopover}
-          sx={{ color: 'inherit' }}
-          aria-label="Minimize conversation"
-        >
-          <MinimizeIcon />
-        </IconButton>
-        <IconButton
-          size="small"
-          onClick={closePopover}
-          sx={{ color: 'inherit' }}
-          aria-label="Close conversation"
-        >
-          <CloseIcon />
-        </IconButton>
+        {conversation?.conversation.id && (
+          <Tooltip title="Mark as unread" arrow>
+            <IconButton
+              size="small"
+              onClick={handleMarkAsUnread}
+              sx={{ color: 'inherit' }}
+              aria-label="Mark conversation as unread"
+            >
+              <MarkAsUnreadIcon />
+            </IconButton>
+          </Tooltip>
+        )}
+        <Tooltip title="Minimize" arrow>
+          <IconButton
+            size="small"
+            onClick={minimizePopover}
+            sx={{ color: 'inherit' }}
+            aria-label="Minimize conversation"
+          >
+            <MinimizeIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Close" arrow>
+          <IconButton
+            size="small"
+            onClick={closePopover}
+            sx={{ color: 'inherit' }}
+            aria-label="Close conversation"
+          >
+            <CloseIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       {/* Messages (scrollable, last 8 messages) */}

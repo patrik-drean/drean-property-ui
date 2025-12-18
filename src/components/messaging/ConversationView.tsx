@@ -3,14 +3,17 @@ import { Box, Typography, Chip, Tooltip, IconButton } from '@mui/material';
 import {
   Phone as PhoneIcon,
   OpenInNew as OpenInNewIcon,
+  MarkAsUnread as MarkAsUnreadIcon,
 } from '@mui/icons-material';
 import { MessageBubble } from './MessageBubble';
 import { MessageComposer } from './MessageComposer';
 import { ConversationWithMessages } from '../../types/sms';
+import { smsService } from '../../services/smsService';
 
 interface ConversationViewProps {
   conversation: ConversationWithMessages;
   onMessageSent: () => void;
+  onMarkAsUnread?: () => void;
   leadName?: string;
   leadAddress?: string;
   leadPrice?: string;
@@ -20,6 +23,7 @@ interface ConversationViewProps {
 export const ConversationView: React.FC<ConversationViewProps> = ({
   conversation,
   onMessageSent,
+  onMarkAsUnread,
   leadName,
   leadAddress,
   leadPrice,
@@ -42,6 +46,17 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
   const handleOpenContact = () => {
     if (conv.contactId) {
       window.open(`/#/team?contact=${conv.contactId}`, '_blank');
+    }
+  };
+
+  const handleMarkAsUnread = async () => {
+    if (!conv.id) return;
+
+    try {
+      await smsService.markConversationUnread(conv.id);
+      onMarkAsUnread?.();
+    } catch (error) {
+      console.error('Failed to mark conversation as unread:', error);
     }
   };
 
@@ -75,7 +90,7 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
             </IconButton>
           </Tooltip>
         )}
-        <Box>
+        <Box sx={{ flex: 1 }}>
           <Typography variant="h6">
             {conv.displayName || conv.phoneNumber}
           </Typography>
@@ -99,6 +114,23 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
             )}
           </Box>
         </Box>
+        {conv.id && onMarkAsUnread && (
+          <Tooltip title="Mark as unread" arrow>
+            <IconButton
+              onClick={handleMarkAsUnread}
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                '&:hover': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.15)'
+                }
+              }}
+              aria-label="Mark conversation as unread"
+            >
+              <MarkAsUnreadIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
 
       {/* Messages */}

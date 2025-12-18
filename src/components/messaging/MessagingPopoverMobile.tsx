@@ -10,12 +10,18 @@ import {
   Alert,
   Button,
   Slide,
+  Tooltip,
 } from '@mui/material';
-import { Close as CloseIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
+import {
+  Close as CloseIcon,
+  OpenInNew as OpenInNewIcon,
+  MarkAsUnread as MarkAsUnreadIcon,
+} from '@mui/icons-material';
 import { TransitionProps } from '@mui/material/transitions';
 import { ConversationWithMessages } from '../../types/sms';
 import { MessageBubble } from './MessageBubble';
 import { MessageComposer } from './MessageComposer';
+import { smsService } from '../../services/smsService';
 
 interface MessagingPopoverMobileProps {
   conversation: ConversationWithMessages | null;
@@ -67,6 +73,20 @@ export const MessagingPopoverMobile: React.FC<MessagingPopoverMobileProps> = ({
     }
   };
 
+  /**
+   * Mark conversation as unread and close
+   */
+  const handleMarkAsUnread = async () => {
+    if (!conversation?.conversation.id) return;
+
+    try {
+      await smsService.markConversationUnread(conversation.conversation.id);
+      onClose();
+    } catch (error) {
+      console.error('Failed to mark conversation as unread:', error);
+    }
+  };
+
   return (
     <Dialog
       fullScreen
@@ -87,6 +107,18 @@ export const MessagingPopoverMobile: React.FC<MessagingPopoverMobileProps> = ({
           <Typography variant="h6" sx={{ flex: 1, ml: 2 }} noWrap>
             {conversation?.conversation.displayName || conversation?.conversation.phoneNumber || 'Message'}
           </Typography>
+          {conversation?.conversation.id && (
+            <Tooltip title="Mark as unread" arrow>
+              <IconButton
+                edge="end"
+                color="inherit"
+                onClick={handleMarkAsUnread}
+                aria-label="Mark as unread"
+              >
+                <MarkAsUnreadIcon />
+              </IconButton>
+            </Tooltip>
+          )}
         </Toolbar>
       </AppBar>
 

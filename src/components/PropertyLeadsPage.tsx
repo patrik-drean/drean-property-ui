@@ -30,7 +30,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { PropertyLead, CreatePropertyLead } from '../types/property';
 import {
   getPropertyLeadsWithArchivedStatus,
@@ -56,9 +56,7 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: theme.palette.action.hover,
-  },
+  borderLeft: '6px solid transparent',
   '&:last-child td, &:last-child th': {
     border: 0,
   },
@@ -155,6 +153,7 @@ const PropertyLeadsPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+
   // Add state for custom message dialog
   const [openMessageDialog, setOpenMessageDialog] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
@@ -162,15 +161,23 @@ const PropertyLeadsPage: React.FC = () => {
   // Remove formData and all input handlers from parent
   // Add getInitialFormData helper
   const getInitialFormData = (lead?: PropertyLead) => lead ? {
+    id: lead.id,
     address: lead.address,
     zillowLink: lead.zillowLink,
     listingPrice: lead.listingPrice,
     sellerPhone: lead.sellerPhone,
     sellerEmail: lead.sellerEmail,
     lastContactDate: lead.lastContactDate,
+    respondedDate: lead.respondedDate || null,
+    convertedDate: lead.convertedDate || null,
+    underContractDate: lead.underContractDate || null,
+    soldDate: lead.soldDate || null,
     notes: lead.notes || '',
     squareFootage: lead.squareFootage,
     units: lead.units,
+    convertedToProperty: lead.convertedToProperty || false,
+    archived: lead.archived || false,
+    tags: lead.tags || [],
   } : {
     address: '',
     zillowLink: '',
@@ -178,9 +185,16 @@ const PropertyLeadsPage: React.FC = () => {
     sellerPhone: '',
     sellerEmail: '',
     lastContactDate: null,
+    respondedDate: null,
+    convertedDate: null,
+    underContractDate: null,
+    soldDate: null,
     notes: '',
     squareFootage: null,
     units: null,
+    convertedToProperty: false,
+    archived: false,
+    tags: [],
   };
 
   const [dialogInitialFormData, setDialogInitialFormData] = useState(getInitialFormData());
@@ -191,28 +205,12 @@ const PropertyLeadsPage: React.FC = () => {
   });
   const [locallyConvertedLeads, setLocallyConvertedLeads] = useState<Set<string>>(new Set());
   const [expandedLeads, setExpandedLeads] = useState<Set<string>>(new Set());
-  
+  const [highlightedLeadId, setHighlightedLeadId] = useState<string | null>(null);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(100);
   const [totalItems, setTotalItems] = useState(0);
-
-  // Default message template
-  const defaultMessageTemplate = `Hi there! My name is Patrik. I really like this property and believe it has great potential. I'd like to explore an offer around {PRICE}. I'm an experienced investor who is reliable and quick when it comes to closing. If this number is in the ballpark, I'd love to discuss further. Let me know what you and the seller think! Have a great day! 
-{ZILLOW_LINK}`;
-
-  // Helper function to extract street address (without city and state)
-  const extractStreetAddress = (fullAddress: string): string => {
-    // Split by comma and take the first part (street address)
-    const parts = fullAddress.split(',');
-    return parts[0]?.trim() || fullAddress;
-  };
-
-  // Load custom message from localStorage on component mount
-  useEffect(() => {
-    const savedMessage = localStorage.getItem('customMessageTemplate');
-    setCustomMessage(savedMessage || defaultMessageTemplate);
-  }, [defaultMessageTemplate]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -392,15 +390,21 @@ const PropertyLeadsPage: React.FC = () => {
 
   const handleDialogSave = async (formData: any) => {
     try {
+      // Automatically set convertedToProperty to true if convertedDate is set
+      const dataToSave = {
+        ...formData,
+        convertedToProperty: formData.convertedDate ? true : formData.convertedToProperty
+      };
+
       if (isEditing && editingId) {
-        await updatePropertyLead(editingId, formData);
+        await updatePropertyLead(editingId, dataToSave);
         setSnackbar({
           open: true,
           message: 'Property lead updated successfully',
           severity: 'success',
         });
       } else {
-        await addPropertyLead(formData as CreatePropertyLead);
+        await addPropertyLead(dataToSave as CreatePropertyLead);
         setSnackbar({
           open: true,
           message: 'Property lead added successfully',
@@ -479,6 +483,19 @@ const PropertyLeadsPage: React.FC = () => {
     setOpenDialog(false);
   };
 
+  const handleCloseMessageDialog = () => {
+    setOpenMessageDialog(false);
+  };
+
+  const handleSaveCustomMessage = () => {
+    // Save the custom message if needed
+    setOpenMessageDialog(false);
+  };
+
+  const handleResetToDefault = () => {
+    setCustomMessage('');
+  };
+
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
   };
@@ -501,6 +518,11 @@ const PropertyLeadsPage: React.FC = () => {
         return [...prev, id];
       }
     });
+  };
+
+  const handleRowClick = (leadId: string) => {
+    // Toggle highlight: if already highlighted, unhighlight it
+    setHighlightedLeadId(prev => prev === leadId ? null : leadId);
   };
 
   const handleBulkDelete = async () => {
@@ -546,72 +568,6 @@ const PropertyLeadsPage: React.FC = () => {
     copyToClipboard(phone, 'Phone number copied to clipboard!');
   };
 
-  // Function to replace template variables
-  const replaceTemplateVariables = useCallback((template: string, lead: PropertyLead) => {
-    const discountedPrice = Math.round(lead.listingPrice * 0.8);
-    const formattedPrice = formatCurrencyInK(discountedPrice);
-    const streetAddress = extractStreetAddress(lead.address);
-    
-    return template
-      .replace(/{PRICE}/g, formattedPrice)
-      .replace(/{ZILLOW_LINK}/g, lead.zillowLink || '')
-      .replace(/{ADDRESS}/g, streetAddress);
-  }, []);
-
-  const copyTemplatedMessage = useCallback(async (lead: PropertyLead) => {
-    const message = replaceTemplateVariables(customMessage, lead);
-
-    try {
-      await navigator.clipboard.writeText(message);
-      setSnackbar({
-        open: true,
-        message: 'Message copied to clipboard!',
-        severity: 'success',
-      });
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-      setSnackbar({
-        open: true,
-        message: 'Failed to copy to clipboard',
-        severity: 'error',
-      });
-    }
-  }, [customMessage, replaceTemplateVariables]);
-
-  // Handle opening the message override dialog
-  const handleOpenMessageDialog = () => {
-    setOpenMessageDialog(true);
-  };
-
-  // Handle closing the message override dialog
-  const handleCloseMessageDialog = () => {
-    setOpenMessageDialog(false);
-  };
-
-  // Handle saving the custom message
-  const handleSaveCustomMessage = useCallback(() => {
-    const messageValue = messageTextareaRef.current?.value || customMessage;
-    localStorage.setItem('customMessageTemplate', messageValue);
-    setCustomMessage(messageValue);
-    setOpenMessageDialog(false);
-    setSnackbar({
-      open: true,
-      message: 'Custom message template saved successfully',
-      severity: 'success',
-    });
-  }, [customMessage]);
-
-  // Handle resetting to default message
-  const handleResetToDefault = useCallback(() => {
-    setCustomMessage(defaultMessageTemplate);
-    localStorage.removeItem('customMessageTemplate');
-    setSnackbar({
-      open: true,
-      message: 'Message template reset to default',
-      severity: 'success',
-    });
-  }, [defaultMessageTemplate]);
-
   const handleConvertToProperty = async (lead: PropertyLead) => {
     try {
       // Validate required fields are present
@@ -633,6 +589,7 @@ const PropertyLeadsPage: React.FC = () => {
         rehabCosts: 0,
         potentialRent: 0,
         arv: 0,
+        propertyLeadId: lead.id, // Link property to the lead
         rentCastEstimates: {
           price: 0,
           priceLow: 0,
@@ -667,8 +624,9 @@ const PropertyLeadsPage: React.FC = () => {
         sellerEmail: lead.sellerEmail || '',
         lastContactDate: lead.lastContactDate,
         notes: lead.notes || '',
-        // Explicitly set convertedToProperty to true
+        // Explicitly set convertedToProperty to true and set the conversion date
         convertedToProperty: true,
+        convertedDate: new Date().toISOString(),
         // Include other fields to maintain consistency
         archived: lead.archived,
         tags: lead.tags || [],
@@ -880,8 +838,9 @@ const PropertyLeadsPage: React.FC = () => {
         }}>
           <Button
             variant="outlined"
+            component={RouterLink}
+            to="/reports?tab=3"
             startIcon={<Icons.Assessment />}
-            onClick={() => navigate('/reports?tab=3')}
             sx={{
               borderRadius: 2,
               width: { xs: '100%', sm: 'auto' }
@@ -892,22 +851,10 @@ const PropertyLeadsPage: React.FC = () => {
           <Button
             variant="outlined"
             color="primary"
-            onClick={handleOpenMessageDialog}
-            startIcon={<Icons.Message />}
-            sx={{
-              borderRadius: 2,
-              width: { xs: '100%', sm: 'auto' }
-            }}
-          >
-            Override Message
-          </Button>
-          <Button
-            variant="outlined"
-            color="primary"
             onClick={handleToggleShowArchived}
             startIcon={<Icons.Archive />}
-            sx={{ 
-              borderRadius: 2, 
+            sx={{
+              borderRadius: 2,
               width: { xs: '100%', sm: 'auto' }
             }}
           >
@@ -1017,9 +964,11 @@ const PropertyLeadsPage: React.FC = () => {
                   </TableRow>
                 ) : (
                   getPaginatedLeads().map((lead) => (
-                    <StyledTableRow 
+                    <StyledTableRow
                       key={lead.id}
+                      onClick={() => handleRowClick(lead.id)}
                       sx={{
+                        cursor: 'pointer',
                         ...(lead.archived ? {
                           opacity: 0.6,
                           backgroundColor: '#f5f5f5',
@@ -1028,15 +977,22 @@ const PropertyLeadsPage: React.FC = () => {
                           }
                         } : {}),
                         ...((lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) ? {
-                          borderLeft: '6px solid #4caf50',
+                          borderLeftColor: '#4caf50',
                           backgroundColor: 'rgba(76, 175, 80, 0.08)',
                           '&:hover': {
                             backgroundColor: 'rgba(76, 175, 80, 0.14)',
                           }
+                        } : {}),
+                        ...(highlightedLeadId === lead.id ? {
+                          backgroundColor: 'rgba(25, 118, 210, 0.20) !important',
+                          borderLeftColor: '#1976d2 !important',
+                          '&:hover': {
+                            backgroundColor: 'rgba(25, 118, 210, 0.28) !important',
+                          }
                         } : {})
                       }}
                     >
-                      <TableCell padding="checkbox">
+                      <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
                         <Checkbox
                           color="primary"
                           checked={selectedLeads.includes(lead.id)}
@@ -1094,17 +1050,14 @@ const PropertyLeadsPage: React.FC = () => {
                       </TableCell>
                       <TableCell>{lead.units || ''}</TableCell>
                       <TableCell>{formatCurrency(lead.listingPrice)}</TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Tooltip title="Copy templated message">
-                            <ActionIconButton
-                              size="small"
-                              onClick={() => copyTemplatedMessage(lead)}
-                            >
-                              <Icons.ContentCopy fontSize="small" />
-                            </ActionIconButton>
-                          </Tooltip>
-                          <MessageLeadButton lead={lead} iconOnly size="small" />
+                          <MessageLeadButton
+                            lead={lead}
+                            iconOnly
+                            size="small"
+                            onMessageSent={() => setHighlightedLeadId(lead.id)}
+                          />
                           {lead.sellerPhone && (
                             <Tooltip title="Copy phone number">
                               <Button
@@ -1126,7 +1079,7 @@ const PropertyLeadsPage: React.FC = () => {
                           )}
                         </Box>
                       </TableCell>
-                      <TableCell sx={{ minWidth: '150px' }}>
+                      <TableCell sx={{ minWidth: '150px' }} onClick={(e) => e.stopPropagation()}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           {formatDate(lead.lastContactDate)}
                           <Tooltip title="Mark as Contacted Today">
@@ -1263,13 +1216,13 @@ const PropertyLeadsPage: React.FC = () => {
                           )}
                         </Box>
                       </TableCell>
-                      <TableCell sx={{ width: '220px' }}>
+                      <TableCell sx={{ width: '220px' }} onClick={(e) => e.stopPropagation()}>
                         <Box sx={{ display: 'flex' }}>
                           {lead.archived ? (
                             <>
                               <Tooltip title="Unarchive Lead">
-                                <ActionIconButton 
-                                  size="small" 
+                                <ActionIconButton
+                                  size="small"
                                   sx={{ mr: 1 }}
                                   onClick={() => handleUnarchiveLead(lead.id)}
                                 >
@@ -1277,7 +1230,7 @@ const PropertyLeadsPage: React.FC = () => {
                                 </ActionIconButton>
                               </Tooltip>
                               <Tooltip title="Delete Lead">
-                                <DeleteIconButton 
+                                <DeleteIconButton
                                   size="small"
                                   onClick={() => handleDeleteLead(lead.id)}
                                 >
@@ -1289,8 +1242,8 @@ const PropertyLeadsPage: React.FC = () => {
                             <>
                               {!lead.convertedToProperty && !locallyConvertedLeads.has(lead.id) && (
                                 <Tooltip title="Convert to Property">
-                                  <ActionIconButton 
-                                    size="small" 
+                                  <ActionIconButton
+                                    size="small"
                                     sx={{ mr: 1 }}
                                     onClick={() => handleConvertToProperty(lead)}
                                   >
@@ -1359,11 +1312,12 @@ const PropertyLeadsPage: React.FC = () => {
               <Paper 
                 key={lead.id}
                 elevation={2}
-                sx={{ 
-                  borderRadius: 2, 
+                sx={{
+                  borderRadius: 2,
                   overflow: 'hidden',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease-in-out',
+                  borderLeft: '6px solid transparent',
                   '&:hover': {
                     elevation: 4,
                     transform: 'translateY(-1px)'
@@ -1373,7 +1327,7 @@ const PropertyLeadsPage: React.FC = () => {
                     backgroundColor: '#f5f5f5',
                   } : {}),
                   ...((lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) ? {
-                    borderLeft: '6px solid #4caf50',
+                    borderLeftColor: '#4caf50',
                     backgroundColor: 'rgba(76, 175, 80, 0.08)',
                   } : {})
                 }}
@@ -1614,18 +1568,6 @@ const PropertyLeadsPage: React.FC = () => {
                       <MessageLeadButton lead={lead} variant="outlined" size="small" />
                       <Button
                         variant="outlined"
-                        startIcon={<Icons.ContentCopy />}
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyTemplatedMessage(lead);
-                        }}
-                        fullWidth
-                      >
-                        Copy Message
-                      </Button>
-                      <Button
-                        variant="outlined"
                         startIcon={<Icons.CheckCircle />}
                         size="small"
                         onClick={(e) => {
@@ -1786,157 +1728,6 @@ const PropertyLeadsPage: React.FC = () => {
         handleCurrencyInput={handleCurrencyInput}
         formatInputCurrency={formatInputCurrency}
       />
-
-      {/* Message Override Dialog */}
-      <Dialog
-        open={openMessageDialog}
-        onClose={handleCloseMessageDialog}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            minHeight: '500px'
-          }
-        }}
-      >
-        <DialogTitle sx={{ pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>Customize Message Template</Typography>
-            <Tooltip title="Reset to default message">
-              <IconButton 
-                onClick={handleResetToDefault} 
-                size="small"
-                sx={{ 
-                  color: 'text.secondary',
-                  '&:hover': { color: 'primary.main' }
-                }}
-              >
-                <Icons.Refresh fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 0 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Customize your message template. Use the following variables:
-          </Typography>
-          
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-              Available variables:
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              <Chip
-                label="{PRICE}"
-                size="small"
-                variant="outlined"
-                onClick={() => {
-                  const textarea = messageTextareaRef.current;
-                  if (textarea) {
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const text = textarea.value;
-                    const before = text.substring(0, start);
-                    const after = text.substring(end);
-                    const newText = before + '{PRICE}' + after;
-                    textarea.value = newText;
-                    textarea.focus();
-                    textarea.setSelectionRange(start + 7, start + 7);
-                  }
-                }}
-                sx={{ cursor: 'pointer', fontSize: '0.75rem' }}
-              />
-              <Chip
-                label="{ZILLOW_LINK}"
-                size="small"
-                variant="outlined"
-                onClick={() => {
-                  const textarea = messageTextareaRef.current;
-                  if (textarea) {
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const text = textarea.value;
-                    const before = text.substring(0, start);
-                    const after = text.substring(end);
-                    const newText = before + '{ZILLOW_LINK}' + after;
-                    textarea.value = newText;
-                    textarea.focus();
-                    textarea.setSelectionRange(start + 13, start + 13);
-                  }
-                }}
-                sx={{ cursor: 'pointer', fontSize: '0.75rem' }}
-              />
-              <Chip
-                label="{ADDRESS}"
-                size="small"
-                variant="outlined"
-                onClick={() => {
-                  const textarea = messageTextareaRef.current;
-                  if (textarea) {
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const text = textarea.value;
-                    const before = text.substring(0, start);
-                    const after = text.substring(end);
-                    const newText = before + '{ADDRESS}' + after;
-                    textarea.value = newText;
-                    textarea.focus();
-                    textarea.setSelectionRange(start + 9, start + 9);
-                  }
-                }}
-                sx={{ cursor: 'pointer', fontSize: '0.75rem' }}
-              />
-            </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Click any variable to insert it at the cursor position
-            </Typography>
-          </Box>
-          
-          <TextField
-            autoFocus
-            multiline
-            rows={10}
-            fullWidth
-            variant="outlined"
-            label="Message Template"
-            defaultValue={customMessage}
-            inputRef={messageTextareaRef}
-            placeholder="Enter your custom message template..."
-            sx={{ 
-              fontFamily: 'monospace',
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 1.5
-              }
-            }}
-            inputProps={{
-              style: { fontSize: '14px', lineHeight: '1.5' }
-            }}
-          />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button 
-            onClick={handleCloseMessageDialog} 
-            sx={{ 
-              color: 'text.secondary',
-              '&:hover': { backgroundColor: 'action.hover' }
-            }}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSaveCustomMessage} 
-            variant="contained" 
-            sx={{ 
-              borderRadius: 1.5,
-              px: 3,
-              py: 1
-            }}
-          >
-            Save Template
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Success/Error Notification */}
       <Snackbar

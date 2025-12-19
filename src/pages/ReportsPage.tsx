@@ -24,7 +24,7 @@ import {
   AccountBalance as AccountBalanceIcon,
   Leaderboard as LeaderboardIcon
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { Property } from '../types/property';
 import {
   PortfolioCashFlowReport as CashFlowReportType,
@@ -285,7 +285,8 @@ export const ReportsPage: React.FC = () => {
           </Typography>
           <Button
             variant="contained"
-            onClick={() => navigate('/properties')}
+            component={RouterLink}
+            to="/properties"
             startIcon={<HomeIcon />}
           >
             Go to Properties

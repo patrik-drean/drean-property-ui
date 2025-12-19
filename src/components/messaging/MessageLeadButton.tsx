@@ -9,6 +9,7 @@ interface MessageLeadButtonProps {
   variant?: 'text' | 'outlined' | 'contained';
   size?: 'small' | 'medium' | 'large';
   iconOnly?: boolean;
+  onMessageSent?: () => void;
 }
 
 export const MessageLeadButton: React.FC<MessageLeadButtonProps> = ({
@@ -16,6 +17,7 @@ export const MessageLeadButton: React.FC<MessageLeadButtonProps> = ({
   variant = 'outlined',
   size = 'small',
   iconOnly = false,
+  onMessageSent,
 }) => {
   const { openPopover } = useMessagingPopover();
 
@@ -30,6 +32,8 @@ export const MessageLeadButton: React.FC<MessageLeadButtonProps> = ({
         leadAddress: lead.address,
         leadPrice: lead.listingPrice?.toString(),
       });
+      // Trigger callback to highlight the row
+      onMessageSent?.();
     }
   };
 

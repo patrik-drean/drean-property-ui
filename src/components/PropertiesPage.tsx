@@ -27,6 +27,9 @@ import {
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
 import { api } from '../services/apiConfig';
+import { getPropertyLead } from '../services/api';
+import { smsService } from '../services/smsService';
+import { SmsConversation } from '../types/sms';
 import { useNavigate } from 'react-router-dom';
 import { useProperties } from '../contexts/PropertiesContext';
 import { Link as RouterLink } from 'react-router-dom';
@@ -35,6 +38,7 @@ import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from './shared/Prop
 import PropertyCardGrid from './shared/PropertyCardGrid';
 import { getStatusColor, getStatusOrder } from '../utils/statusColors';
 import useResponsiveLayout from '../hooks/useResponsiveLayout';
+import { useMessagingPopover } from '../contexts/MessagingPopoverContext';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -148,14 +152,60 @@ const getVacantUnitsCount = (property: Property): number => {
 
 const PropertiesPage: React.FC = () => {
   const theme = useTheme();
-  const { properties, loading, error, refreshProperties, updateProperty, addProperty, removeProperty } = useProperties();
+  const { properties, loading, error, refreshProperties, updateProperty, addProperty, removeProperty, isStale } = useProperties();
   const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('Message copied to clipboard!');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [expandedProperties, setExpandedProperties] = useState<Set<string>>(new Set());
+  const [conversations, setConversations] = useState<SmsConversation[]>([]);
   const navigate = useNavigate();
+  const { openPopover } = useMessagingPopover();
+
+  // Refresh properties when navigating to this page if data is stale
+  useEffect(() => {
+    if (isStale) {
+      refreshProperties();
+    }
+  }, [isStale, refreshProperties]);
+
+  // Fetch conversations on mount
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const conversationsData = await smsService.getConversations();
+        setConversations(conversationsData);
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+      }
+    };
+    fetchConversations();
+  }, []);
+
+  // Poll conversations every 10 seconds
+  useEffect(() => {
+    const POLL_INTERVAL = 10000; // 10 seconds
+    const intervalId = setInterval(async () => {
+      try {
+        const conversationsData = await smsService.getConversations();
+        setConversations(conversationsData);
+      } catch (error) {
+        console.error('Error polling conversations:', error);
+      }
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Helper function to get unread message count for a property's linked lead
+  const getUnreadCount = (propertyLeadId: string | null | undefined): number => {
+    if (!propertyLeadId) return 0;
+    const conversation = conversations.find(c => c.propertyLeadId === propertyLeadId);
+    return conversation?.unreadCount || 0;
+  };
 
   // Responsive layout
   const { useCardLayout } = useResponsiveLayout();
@@ -296,6 +346,7 @@ const PropertiesPage: React.FC = () => {
         const propertyToUpdate = {
           address: propertyWithScore.address,
           status: propertyWithScore.status,
+          propertyLeadId: propertyWithScore.propertyLeadId,
           listingPrice: propertyWithScore.listingPrice,
           offerPrice: propertyWithScore.offerPrice,
           rehabCosts: propertyWithScore.rehabCosts,
@@ -426,9 +477,14 @@ ${property.zillowLink}`;
     try {
       const message = formatMessageTemplate(property);
       await navigator.clipboard.writeText(message);
+      setSnackbarMessage('Message copied to clipboard!');
+      setSnackbarSeverity('success');
       setSnackbarOpen(true);
     } catch (error) {
       console.error('Failed to copy message:', error);
+      setSnackbarMessage('Failed to copy message to clipboard.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -442,9 +498,44 @@ ${property.zillowLink}`;
     setSelectedProperty(null);
   };
 
+  const handleMessageProperty = async (property: Property) => {
+    if (!property.propertyLeadId) {
+      setSnackbarMessage('This property is not linked to a lead. Cannot open messaging.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    try {
+      // Fetch the specific lead to get the phone number
+      const lead = await getPropertyLead(property.propertyLeadId);
+
+      if (!lead.sellerPhone) {
+        setSnackbarMessage('This lead has no phone number.');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+        return;
+      }
+
+      // Open messaging popover with phone number and lead data
+      openPopover({
+        phoneNumber: lead.sellerPhone,
+        leadId: property.propertyLeadId,
+        leadName: property.address,
+        leadAddress: property.address,
+        leadPrice: property.listingPrice.toString(),
+      });
+    } catch (error) {
+      console.error('Error opening message for property:', error);
+      setSnackbarMessage('Failed to open messaging. Please try again.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  };
+
   const handleMenuAction = (action: string) => {
     if (!selectedProperty) return;
-    
+
     switch (action) {
       case 'edit':
         handleEditProperty(selectedProperty);
@@ -460,6 +551,9 @@ ${property.zillowLink}`;
         break;
       case 'copyMessage':
         handleCopyMessage(selectedProperty);
+        break;
+      case 'message':
+        handleMessageProperty(selectedProperty);
         break;
     }
     handleMenuClose();
@@ -719,6 +813,17 @@ ${property.zillowLink}`;
                       >
                         {property.address}
                       </RouterLink>
+                      {getUnreadCount(property.propertyLeadId) > 0 && (
+                        <Tooltip title={`${getUnreadCount(property.propertyLeadId)} unread message${getUnreadCount(property.propertyLeadId) > 1 ? 's' : ''}`} arrow>
+                          <Chip
+                            icon={<Icons.Message fontSize="small" />}
+                            label={getUnreadCount(property.propertyLeadId)}
+                            size="small"
+                            color="error"
+                            sx={{ height: '20px', fontSize: '0.7rem', flexShrink: 0 }}
+                          />
+                        </Tooltip>
+                      )}
                     </Box>
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center' }}>
@@ -732,7 +837,55 @@ ${property.zillowLink}`;
                     />
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center' }}>
-                    {property.squareFootage !== null ? property.squareFootage : ''}
+                    {property.squareFootage !== null ? (
+                      <Tooltip
+                        title={
+                          <Box sx={{ textAlign: 'left' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                              Rules of Thumb
+                            </Typography>
+                            <Typography variant="body2">
+                              ARV Guess: {formatCurrency(160 * property.squareFootage)}
+                            </Typography>
+                            <Typography variant="body2">
+                              Rent Guess: {formatCurrency(1.1 * property.squareFootage)}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1, mb: 0.5 }}>
+                              Rehab
+                            </Typography>
+                            <Typography variant="body2">
+                              Light: {formatCurrency(20 * property.squareFootage)}
+                            </Typography>
+                            <Typography variant="body2">
+                              Medium: {formatCurrency(40 * property.squareFootage)}
+                            </Typography>
+                            <Typography variant="body2">
+                              Heavy: {formatCurrency(75 * property.squareFootage)}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1, mb: 0.5 }}>
+                              MAO
+                            </Typography>
+                            <Typography variant="body2">
+                              Light: {formatCurrency((160 * property.squareFootage * 0.7) - (20 * property.squareFootage))}
+                            </Typography>
+                            <Typography variant="body2">
+                              Medium: {formatCurrency((160 * property.squareFootage * 0.7) - (40 * property.squareFootage))}
+                            </Typography>
+                            <Typography variant="body2">
+                              Heavy: {formatCurrency((160 * property.squareFootage * 0.7) - (75 * property.squareFootage))}
+                            </Typography>
+                          </Box>
+                        }
+                        arrow
+                        placement="top"
+                      >
+                        <Box component="span" sx={{ cursor: 'help' }}>
+                          {property.squareFootage.toLocaleString()}
+                        </Box>
+                      </Tooltip>
+                    ) : (
+                      ''
+                    )}
                   </TableCell>
                   <TableCell>
                     <Tooltip 
@@ -963,24 +1116,40 @@ ${property.zillowLink}`;
                       </Box>
                     </Tooltip>
                   </TableCell>
-                  <TableCell className="metric" sx={{ textAlign: 'center' }}>
-                    <Tooltip title="Actions">
-                      <IconButton
-                        onClick={(e) => handleMenuOpen(e, property)}
-                        size="small"
-                        sx={{
-                          backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                          padding: 2,
-                          width: '20px',
-                          height: '20px',
-                          '&:hover': { 
-                            backgroundColor: 'rgba(25, 118, 210, 0.2)'
-                          }
-                        }}
-                      >
-                        <Icons.MoreVert sx={{ fontSize: '0.75rem' }} />
-                      </IconButton>
-                    </Tooltip>
+                  <TableCell className="metric" sx={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center' }}>
+                      {property.propertyLeadId && (
+                        <Tooltip title="Send SMS Message">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleMessageProperty(property)}
+                            color="primary"
+                            sx={{
+                              padding: 0.5,
+                            }}
+                          >
+                            <Icons.Sms fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <Tooltip title="Actions">
+                        <IconButton
+                          onClick={(e) => handleMenuOpen(e, property)}
+                          size="small"
+                          sx={{
+                            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                            padding: 2,
+                            width: '20px',
+                            height: '20px',
+                            '&:hover': {
+                              backgroundColor: 'rgba(25, 118, 210, 0.2)'
+                            }
+                          }}
+                        >
+                          <Icons.MoreVert sx={{ fontSize: '0.75rem' }} />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </TableCell>
                 </StyledTableRow>
               ))}
@@ -1024,7 +1193,7 @@ ${property.zillowLink}`;
       />
       
       {/* Mobile Archived Button */}
-      <Box sx={{ 
+      <Box sx={{
         display: { xs: 'flex', md: 'none' },
         justifyContent: 'center',
         mt: 4,
@@ -1033,7 +1202,8 @@ ${property.zillowLink}`;
         <Button
           variant="outlined"
           color="primary"
-          onClick={() => navigate('/archived')}
+          component={RouterLink}
+          to="/archived"
           startIcon={<Icons.Archive />}
           sx={{ borderRadius: 2 }}
         >
@@ -1136,6 +1306,17 @@ ${property.zillowLink}`;
                           >
                             {property.address}
                           </RouterLink>
+                          {getUnreadCount(property.propertyLeadId) > 0 && (
+                            <Tooltip title={`${getUnreadCount(property.propertyLeadId)} unread message${getUnreadCount(property.propertyLeadId) > 1 ? 's' : ''}`} arrow>
+                              <Chip
+                                icon={<Icons.Message fontSize="small" />}
+                                label={getUnreadCount(property.propertyLeadId)}
+                                size="small"
+                                color="error"
+                                sx={{ height: '20px', fontSize: '0.7rem', flexShrink: 0 }}
+                              />
+                            </Tooltip>
+                          )}
                         </Box>
                       </TableCell>
 
@@ -1203,24 +1384,40 @@ ${property.zillowLink}`;
                       </TableCell>
 
                       {/* Actions */}
-                      <TableCell sx={{ textAlign: 'center' }}>
-                        <Tooltip title="Actions">
-                          <IconButton
-                            onClick={(e) => handleMenuOpen(e, property)}
-                            size="small"
-                            sx={{
-                              backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                              padding: 2,
-                              width: '20px',
-                              height: '20px',
-                              '&:hover': {
-                                backgroundColor: 'rgba(25, 118, 210, 0.2)'
-                              }
-                            }}
-                          >
-                            <Icons.MoreVert sx={{ fontSize: '0.75rem' }} />
-                          </IconButton>
-                        </Tooltip>
+                      <TableCell sx={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center' }}>
+                          {property.propertyLeadId && (
+                            <Tooltip title="Send SMS Message">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleMessageProperty(property)}
+                                color="primary"
+                                sx={{
+                                  padding: 0.5,
+                                }}
+                              >
+                                <Icons.Sms fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          <Tooltip title="Actions">
+                            <IconButton
+                              onClick={(e) => handleMenuOpen(e, property)}
+                              size="small"
+                              sx={{
+                                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                                padding: 2,
+                                width: '20px',
+                                height: '20px',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(25, 118, 210, 0.2)'
+                                }
+                              }}
+                            >
+                              <Icons.MoreVert sx={{ fontSize: '0.75rem' }} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </TableCell>
                     </StyledTableRow>
                   );
@@ -1231,7 +1428,7 @@ ${property.zillowLink}`;
       </Box>
 
       {/* Desktop Archived Button - Bottom */}
-      <Box sx={{ 
+      <Box sx={{
         display: { xs: 'none', md: 'flex' },
         justifyContent: 'center',
         mt: 4,
@@ -1240,7 +1437,8 @@ ${property.zillowLink}`;
         <Button
           variant="outlined"
           color="primary"
-          onClick={() => navigate('/archived')}
+          component={RouterLink}
+          to="/archived"
           startIcon={<Icons.Archive />}
           sx={{ borderRadius: 2 }}
         >
@@ -1262,8 +1460,8 @@ ${property.zillowLink}`;
         onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%' }}>
-          Message copied to clipboard!
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
         </Alert>
       </Snackbar>
 
@@ -1307,12 +1505,6 @@ ${property.zillowLink}`;
             <Icons.Calculate fontSize="small" />
           </ListItemIcon>
           <ListItemText>Send to Calculator</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleMenuAction('copyMessage')}>
-          <ListItemIcon>
-            <Icons.ContentCopy fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Copy Property Message</ListItemText>
         </MenuItem>
       </Menu>
     </Box>

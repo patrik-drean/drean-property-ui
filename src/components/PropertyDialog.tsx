@@ -243,6 +243,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   const [newProperty, setNewProperty] = useState<Omit<Property, 'id'>>({
     address: '',
     status: 'Opportunity',
+    propertyLeadId: null,
     listingPrice: 0,
     offerPrice: 0,
     rehabCosts: 0,
@@ -432,6 +433,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     setNewProperty({
       address: '',
       status: 'Opportunity',
+      propertyLeadId: null,
       listingPrice: 0,
       offerPrice: 0,
       rehabCosts: 0,
@@ -495,6 +497,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
       setNewProperty({
         address: property.address,
         status: property.status,
+        propertyLeadId: property.propertyLeadId,
         listingPrice: property.listingPrice,
         offerPrice: property.offerPrice,
         rehabCosts: property.rehabCosts,
@@ -825,6 +828,15 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   }
                 />
               </Tooltip>
+
+              <TextField
+                fullWidth
+                label="Property Lead ID"
+                value={newProperty.propertyLeadId || ''}
+                onChange={(e) => setNewProperty({ ...newProperty, propertyLeadId: e.target.value || null })}
+                margin="normal"
+                placeholder="Optional - link to original lead"
+              />
             </AccordionDetails>
           </Accordion>
 

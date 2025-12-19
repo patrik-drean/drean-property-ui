@@ -8,8 +8,12 @@ import {
   Button,
   Box,
   Divider,
-  Typography
+  Typography,
+  IconButton,
+  InputAdornment,
+  Tooltip
 } from '@mui/material';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -50,6 +54,12 @@ const PropertyLeadDialog: React.FC<PropertyLeadDialogProps> = ({
     // Optionally, add Zillow parsing logic here if needed
   };
 
+  const handleCopyId = () => {
+    if (formData.id) {
+      navigator.clipboard.writeText(formData.id);
+    }
+  };
+
   return (
     <Dialog 
       open={open} 
@@ -62,6 +72,37 @@ const PropertyLeadDialog: React.FC<PropertyLeadDialogProps> = ({
       </DialogTitle>
       <DialogContent>
         <Box component="form" sx={{ mt: 2 }}>
+          {isEditing && formData.id && (
+            <TextField
+              label="Lead ID"
+              value={formData.id}
+              fullWidth
+              margin="normal"
+              InputProps={{
+                readOnly: true,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Tooltip title="Copy Lead ID">
+                      <IconButton
+                        onClick={handleCopyId}
+                        edge="end"
+                        size="small"
+                      >
+                        <ContentCopyIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                mb: 2,
+                '& .MuiInputBase-input': {
+                  color: 'text.secondary',
+                  fontFamily: 'monospace'
+                }
+              }}
+            />
+          )}
           <TextField
             label="Zillow Link"
             name="zillowLink"

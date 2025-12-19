@@ -64,6 +64,7 @@ export interface Property {
     id: string;
     address: string;
     status: PropertyStatus;
+    propertyLeadId?: string | null;
     listingPrice: number;
     offerPrice: number;
     rehabCosts: number;

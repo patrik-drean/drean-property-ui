@@ -57,11 +57,12 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   borderLeft: '6px solid transparent',
+  backgroundColor: '#ffffff !important',
   '&:last-child td, &:last-child th': {
     border: 0,
   },
   '&:hover': {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f8f9fa !important',
   }
 }));
 

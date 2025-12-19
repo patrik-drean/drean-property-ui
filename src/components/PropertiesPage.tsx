@@ -728,6 +728,9 @@ ${property.zillowLink}`;
                 <StyledTableCell className="header" width="4%" sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Units</Typography>
                 </StyledTableCell>
+                <StyledTableCell className="header" width="4%" sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>SMS</Typography>
+                </StyledTableCell>
                 <StyledTableCell className="header" width="9%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Status</Typography>
                 </StyledTableCell>
@@ -828,6 +831,25 @@ ${property.zillowLink}`;
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center' }}>
                     {property.units || ''}
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'center' }}>
+                    {property.propertyLeadId && (
+                      <Tooltip title="Send SMS Message">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMessageProperty(property);
+                          }}
+                          color="primary"
+                          sx={{
+                            padding: 0.5,
+                          }}
+                        >
+                          <Icons.Sms fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </TableCell>
                   <TableCell>
                     <StatusChip 
@@ -1116,40 +1138,24 @@ ${property.zillowLink}`;
                       </Box>
                     </Tooltip>
                   </TableCell>
-                  <TableCell className="metric" sx={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center' }}>
-                      {property.propertyLeadId && (
-                        <Tooltip title="Send SMS Message">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleMessageProperty(property)}
-                            color="primary"
-                            sx={{
-                              padding: 0.5,
-                            }}
-                          >
-                            <Icons.Sms fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                      <Tooltip title="Actions">
-                        <IconButton
-                          onClick={(e) => handleMenuOpen(e, property)}
-                          size="small"
-                          sx={{
-                            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                            padding: 2,
-                            width: '20px',
-                            height: '20px',
-                            '&:hover': {
-                              backgroundColor: 'rgba(25, 118, 210, 0.2)'
-                            }
-                          }}
-                        >
-                          <Icons.MoreVert sx={{ fontSize: '0.75rem' }} />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
+                  <TableCell className="metric" sx={{ textAlign: 'center' }}>
+                    <Tooltip title="Actions">
+                      <IconButton
+                        onClick={(e) => handleMenuOpen(e, property)}
+                        size="small"
+                        sx={{
+                          backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                          padding: 2,
+                          width: '20px',
+                          height: '20px',
+                          '&:hover': {
+                            backgroundColor: 'rgba(25, 118, 210, 0.2)'
+                          }
+                        }}
+                      >
+                        <Icons.MoreVert sx={{ fontSize: '0.75rem' }} />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </StyledTableRow>
               ))}
@@ -1240,6 +1246,9 @@ ${property.zillowLink}`;
                 <StyledTableCell className="header" width="10%">
                   <Typography variant="body2" fontWeight="bold" noWrap>Status</Typography>
                 </StyledTableCell>
+                <StyledTableCell className="header" width="5%" sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" fontWeight="bold" noWrap>SMS</Typography>
+                </StyledTableCell>
                 <StyledTableCell className="header" width="12%" sx={{ textAlign: 'right' }}>
                   <Typography variant="body2" fontWeight="bold" noWrap>Monthly Rent</Typography>
                 </StyledTableCell>
@@ -1329,6 +1338,27 @@ ${property.zillowLink}`;
                         />
                       </TableCell>
 
+                      {/* SMS */}
+                      <TableCell sx={{ textAlign: 'center' }}>
+                        {property.propertyLeadId && (
+                          <Tooltip title="Send SMS Message">
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMessageProperty(property);
+                              }}
+                              color="primary"
+                              sx={{
+                                padding: 0.5,
+                              }}
+                            >
+                              <Icons.Sms fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </TableCell>
+
                       {/* Monthly Rent */}
                       <TableCell align="right">
                         <Typography variant="body2">
@@ -1384,40 +1414,24 @@ ${property.zillowLink}`;
                       </TableCell>
 
                       {/* Actions */}
-                      <TableCell sx={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center' }}>
-                          {property.propertyLeadId && (
-                            <Tooltip title="Send SMS Message">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleMessageProperty(property)}
-                                color="primary"
-                                sx={{
-                                  padding: 0.5,
-                                }}
-                              >
-                                <Icons.Sms fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          <Tooltip title="Actions">
-                            <IconButton
-                              onClick={(e) => handleMenuOpen(e, property)}
-                              size="small"
-                              sx={{
-                                backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                                padding: 2,
-                                width: '20px',
-                                height: '20px',
-                                '&:hover': {
-                                  backgroundColor: 'rgba(25, 118, 210, 0.2)'
-                                }
-                              }}
-                            >
-                              <Icons.MoreVert sx={{ fontSize: '0.75rem' }} />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
+                      <TableCell sx={{ textAlign: 'center' }}>
+                        <Tooltip title="Actions">
+                          <IconButton
+                            onClick={(e) => handleMenuOpen(e, property)}
+                            size="small"
+                            sx={{
+                              backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                              padding: 2,
+                              width: '20px',
+                              height: '20px',
+                              '&:hover': {
+                                backgroundColor: 'rgba(25, 118, 210, 0.2)'
+                              }
+                            }}
+                          >
+                            <Icons.MoreVert sx={{ fontSize: '0.75rem' }} />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     </StyledTableRow>
                   );

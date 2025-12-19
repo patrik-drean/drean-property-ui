@@ -10,7 +10,6 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  Close as CloseIcon,
   Minimize as MinimizeIcon,
   OpenInNew as OpenInNewIcon,
   MarkAsUnread as MarkAsUnreadIcon,
@@ -50,6 +49,7 @@ export const MessagingPopover: React.FC = () => {
   const [conversation, setConversation] = useState<ConversationWithMessages | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   /**
    * Fetch conversation data when popover opens or conversation changes
@@ -110,6 +110,15 @@ export const MessagingPopover: React.FC = () => {
       fetchConversation();
     }
   }, [isOpen, isMinimized, fetchConversation]);
+
+  /**
+   * Scroll to bottom when conversation messages change
+   */
+  useEffect(() => {
+    if (conversation?.messages && !loading) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [conversation?.messages, loading]);
 
   /**
    * Open full messaging page in new tab
@@ -218,16 +227,6 @@ export const MessagingPopover: React.FC = () => {
             <MinimizeIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Close" arrow>
-          <IconButton
-            size="small"
-            onClick={closePopover}
-            sx={{ color: 'inherit' }}
-            aria-label="Close conversation"
-          >
-            <CloseIcon />
-          </IconButton>
-        </Tooltip>
       </Box>
 
       {/* Messages (scrollable, last 8 messages) */}
@@ -267,6 +266,7 @@ export const MessagingPopover: React.FC = () => {
                 {conversation.messages.slice(-8).map((message) => (
                   <MessageBubble key={message.id} message={message} onRetry={fetchConversation} />
                 ))}
+                <div ref={messagesEndRef} />
               </Box>
             ) : (
               <Alert severity="info">No messages yet. Start the conversation below.</Alert>

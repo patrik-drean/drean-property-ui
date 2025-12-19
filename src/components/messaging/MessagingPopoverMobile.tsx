@@ -13,7 +13,6 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  Close as CloseIcon,
   OpenInNew as OpenInNewIcon,
   MarkAsUnread as MarkAsUnreadIcon,
 } from '@mui/icons-material';
@@ -62,6 +61,17 @@ export const MessagingPopoverMobile: React.FC<MessagingPopoverMobileProps> = ({
   leadAddress,
   leadPrice,
 }) => {
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  /**
+   * Scroll to bottom when conversation messages change
+   */
+  React.useEffect(() => {
+    if (conversation?.messages && !loading) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [conversation?.messages, loading]);
+
   /**
    * Open full messaging page in new tab
    */
@@ -96,15 +106,7 @@ export const MessagingPopoverMobile: React.FC<MessagingPopoverMobileProps> = ({
     >
       <AppBar sx={{ position: 'relative' }}>
         <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            <CloseIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flex: 1, ml: 2 }} noWrap>
+          <Typography variant="h6" sx={{ flex: 1 }} noWrap>
             {conversation?.conversation.displayName || conversation?.conversation.phoneNumber || 'Message'}
           </Typography>
           {conversation?.conversation.id && (
@@ -174,6 +176,7 @@ export const MessagingPopoverMobile: React.FC<MessagingPopoverMobileProps> = ({
                 {conversation.messages.slice(-8).map((message) => (
                   <MessageBubble key={message.id} message={message} onRetry={onRefresh} />
                 ))}
+                <div ref={messagesEndRef} />
               </Box>
             ) : (
               <Alert severity="info">No messages yet. Start the conversation below.</Alert>

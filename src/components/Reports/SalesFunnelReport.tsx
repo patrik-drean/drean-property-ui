@@ -188,38 +188,39 @@ export const SalesFunnelReportComponent: React.FC = () => {
               const hasGoal = STAGE_GOALS[stage.stageName] !== undefined;
 
               return (
-                <Tooltip
+                <TableRow
                   key={stage.stageName}
-                  title={tooltipContent}
-                  arrow
-                  placement="right"
-                  enterDelay={hasGoal ? 200 : 999999}
-                  disableHoverListener={!hasGoal}
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? 'white' : theme.palette.grey[50],
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                  }}
                 >
-                  <TableRow
+                  <TableCell component="th" scope="row">
+                    {stage.stageName}
+                  </TableCell>
+                  <TableCell align="right">{stage.count}</TableCell>
+                  <TableCell
+                    align="right"
                     sx={{
-                      backgroundColor: index % 2 === 0 ? 'white' : theme.palette.grey[50],
-                      '&:hover': {
-                        backgroundColor: theme.palette.action.hover,
-                      },
-                      cursor: hasGoal ? 'help' : 'default',
+                      color: getConversionRateColor(stage.stageName, stage.conversionRateFromPrevious),
+                      fontWeight: 500,
                     }}
                   >
-                    <TableCell component="th" scope="row">
-                      {stage.stageName}
-                    </TableCell>
-                    <TableCell align="right">{stage.count}</TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{
-                        color: getConversionRateColor(stage.stageName, stage.conversionRateFromPrevious),
-                        fontWeight: 500,
-                      }}
+                    <Tooltip
+                      title={tooltipContent}
+                      arrow
+                      placement="left"
+                      enterDelay={hasGoal ? 200 : 999999}
+                      disableHoverListener={!hasGoal}
                     >
-                      {formatConversionRate(stage.conversionRateFromPrevious)}
-                    </TableCell>
-                  </TableRow>
-                </Tooltip>
+                      <span style={{ cursor: hasGoal ? 'help' : 'default' }}>
+                        {formatConversionRate(stage.conversionRateFromPrevious)}
+                      </span>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
               );
             })}
           </TableBody>

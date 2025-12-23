@@ -159,14 +159,8 @@ const InvestmentScoresSection: React.FC<InvestmentScoresSectionProps> = ({
             <ScoreBadge
               label="ARV Ratio Score"
               score={calculations.flipScoreBreakdown.arvRatioScore}
-              maxScore={8}
+              maxScore={10}
               detail={`${formatPercentage(calculations.flipScoreBreakdown.arvRatioPercentage)} purchase to ARV ratio`}
-            />
-            <ScoreBadge
-              label="Home Equity Score"
-              score={calculations.flipScoreBreakdown.equityScore}
-              maxScore={2}
-              detail={`${formatCurrency(calculations.flipScoreBreakdown.equityAmount)} equity amount`}
             />
 
             <Box mt={2} p={2} bgcolor="grey.50" borderRadius={1}>

@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { InvestmentReportData } from '../types/investmentReport';
 import { getReportData } from '../services/reportSharingService';
+import { calculateInvestmentMetrics } from '../services/investmentReportService';
 import InvestmentSummarySection from '../components/Reports/InvestmentSummarySection';
 import InvestmentScoresSection from '../components/Reports/InvestmentScoresSection';
 import CashFlowBreakdownSection from '../components/Reports/CashFlowBreakdownSection';
@@ -34,7 +35,12 @@ const InvestmentReportPage: React.FC = () => {
         if (!data) {
           setError('Report not found or has expired');
         } else {
-          setReportData(data);
+          // Recalculate metrics using current formulas to ensure accuracy
+          const updatedCalculations = calculateInvestmentMetrics(data.property);
+          setReportData({
+            ...data,
+            calculations: updatedCalculations
+          });
         }
       } catch (err) {
         setError('Failed to load report');

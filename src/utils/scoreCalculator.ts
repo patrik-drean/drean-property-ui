@@ -127,13 +127,13 @@ export const calculateHoldRentRatioScore = (rentRatio: number): number => {
 
 // Flip Score calculation functions
 export const calculateFlipARVRatioScore = (arvRatio: number): number => {
-  if (arvRatio <= 0.65) return 8; // 65% or lower gets full points
-  
-  // Deduct 1 point for each 2.5% increment above 65%
+  if (arvRatio <= 0.65) return 10; // 65% or lower gets full points
+
+  // Deduct 1 point for each 3.5% increment above 65%
   const percentageAbove65 = (arvRatio - 0.65) * 100;
-  const deductions = Math.floor(percentageAbove65 / 2.5);
-  const score = 8 - deductions;
-  
+  const deductions = Math.floor(percentageAbove65 / 3.5);
+  const score = 10 - deductions;
+
   return Math.max(0, score); // Ensure score doesn't go below 0
 };
 
@@ -163,15 +163,11 @@ export const calculateHoldScore = (property: Omit<Property, 'id'>): number => {
 
 export const calculateFlipScore = (property: Omit<Property, 'id'>): number => {
   const arvRatio = calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv);
-  const homeEquity = calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv);
-
   const arvRatioScore = calculateFlipARVRatioScore(arvRatio);
-  const equityScore = calculateFlipEquityScore(homeEquity);
 
-  const totalScore = arvRatioScore + equityScore;
-  
+  // Flip score is now based solely on ARV ratio
   // Ensure minimum score of 1, maximum of 10
-  return Math.min(10, Math.max(1, totalScore));
+  return Math.min(10, Math.max(1, arvRatioScore));
 };
 
 // Legacy score calculation (for backward compatibility)
@@ -294,29 +290,14 @@ export const calculatePerfectRentForHoldScore = (offerPrice: number, rehabCosts:
 
 export const calculatePerfectARVForFlipScore = (offerPrice: number, rehabCosts: number): number => {
   // For perfect Flip score (10/10), we need:
-  // 1. ARV ratio score of 8/8 (ARV ratio <= 65%)
-  // 2. Home equity score of 2/2 (home equity >= $75k)
-  
+  // ARV ratio score of 10/10 (ARV ratio <= 65%)
+
   // For perfect ARV ratio: (offerPrice + rehabCosts) / arv <= 0.65
   // So: arv >= (offerPrice + rehabCosts) / 0.65
   const totalInvestment = offerPrice + rehabCosts;
   const arvForPerfectRatio = totalInvestment / 0.65;
-  
-  // For perfect home equity: arv - newLoan >= $75k
-  // Where newLoan = loanAmount + (downPayment - cashRemaining)
-  // loanAmount = totalInvestment - downPayment
-  // downPayment = totalInvestment * 0.25
-  // cashRemaining = $20k
-  const downPayment = totalInvestment * 0.25;
-  const loanAmount = totalInvestment - downPayment;
-  const newLoan = loanAmount + (downPayment - 20000);
-  
-  // So: arv - newLoan >= $75k
-  // arv >= newLoan + $75k
-  const arvForPerfectEquity = newLoan + 75000;
-  
-  // Return the higher of the two values to ensure both conditions are met
-  return Math.ceil(Math.max(arvForPerfectRatio, arvForPerfectEquity));
+
+  return Math.ceil(arvForPerfectRatio);
 };
 
 // Test function to verify calculations (can be removed in production)

@@ -788,8 +788,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                         This ARV amount will achieve:
                       </Typography>
                       <Typography variant="body2" component="ul" sx={{ mt: 0.5, pl: 2 }}>
-                        <li>≤65% ARV ratio (8/8 points)</li>
-                        <li>$75k+ home equity (2/2 points)</li>
+                        <li>≤65% ARV ratio (10/10 pts)</li>
                       </Typography>
                     </Box>
                   ) : (

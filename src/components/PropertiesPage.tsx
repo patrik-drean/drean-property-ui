@@ -1091,12 +1091,8 @@ ${property.zillowLink}`;
                             return (
                               <>
                                 <Typography variant="body2">
-                                  ARV Ratio: {breakdown.arvRatioScore}/8 points
+                                  ARV Ratio: {breakdown.arvRatioScore}/10 points
                                   {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Home Equity: {breakdown.equityScore}/2 points
-                                  {` (${formatCurrency(calculateHomeEquity(property.offerPrice, property.rehabCosts, property.arv))})`}
                                 </Typography>
                                 <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
                                   Total Flip Score: {breakdown.totalScore}/10 points

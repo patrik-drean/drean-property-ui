@@ -1207,9 +1207,11 @@ const PropertyLeadsPage: React.FC = () => {
                           whiteSpace: 'nowrap'
                         }}>
                           {lead.notes ? (
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                              {lead.notes.length > 50 ? `${lead.notes.substring(0, 50)}...` : lead.notes}
-                            </Typography>
+                            <Tooltip title={lead.notes} arrow placement="top">
+                              <Typography variant="body2" sx={{ color: 'text.secondary', cursor: 'help' }}>
+                                {lead.notes.length > 50 ? `${lead.notes.substring(0, 50)}...` : lead.notes}
+                              </Typography>
+                            </Tooltip>
                           ) : (
                             <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
                               No notes

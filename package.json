@@ -2,7 +2,7 @@
   "name": "propguide-ai-client",
   "version": "0.1.1",
   "private": true,
-  "homepage": "https://patrik-drean.github.io/drean-property-ui",
+  "homepage": "https://app.propguide.ai",
   "dependencies": {
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",

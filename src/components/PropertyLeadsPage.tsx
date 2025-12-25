@@ -239,6 +239,57 @@ const PropertyLeadsPage: React.FC = () => {
     });
   };
 
+  // Helper function to format notes for tooltip display
+  const formatNotesForTooltip = (notes: string) => {
+    // Pattern to match the structured data at the end
+    const pattern = /(Property Grade:.*?Zestimate:.*?Rent Estimate:.*?Days on Market:.*?)$/;
+    const match = notes.match(pattern);
+
+    if (match) {
+      const mainText = notes.substring(0, match.index).trim();
+      const structuredData = match[1];
+
+      // Split structured data into individual fields
+      const fields = structuredData.match(/(Property Grade:|Zestimate:|Rent Estimate:|Days on Market:)[^A-Z]*/g) || [];
+
+      return (
+        <Box>
+          {mainText && (
+            <Typography variant="body1" sx={{ mb: mainText ? 2 : 0, fontSize: '0.95rem' }}>
+              {mainText}
+            </Typography>
+          )}
+          {fields.length > 0 && (
+            <Box sx={{
+              borderTop: mainText ? '1px solid rgba(255, 255, 255, 0.3)' : 'none',
+              pt: mainText ? 1 : 0
+            }}>
+              {fields.map((field, index) => (
+                <Typography
+                  key={index}
+                  variant="body2"
+                  sx={{
+                    fontSize: '0.9rem',
+                    lineHeight: 1.6
+                  }}
+                >
+                  {field.trim()}
+                </Typography>
+              ))}
+            </Box>
+          )}
+        </Box>
+      );
+    }
+
+    // If no structured data pattern found, return the notes as is with larger font
+    return (
+      <Typography variant="body1" sx={{ fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>
+        {notes}
+      </Typography>
+    );
+  };
+
   // Helper function to get unread message count for a lead
   const getUnreadCount = (leadId: string): number => {
     const conversation = conversations.find(c => c.propertyLeadId === leadId);
@@ -1207,7 +1258,20 @@ const PropertyLeadsPage: React.FC = () => {
                           whiteSpace: 'nowrap'
                         }}>
                           {lead.notes ? (
-                            <Tooltip title={lead.notes} arrow placement="top">
+                            <Tooltip
+                              title={formatNotesForTooltip(lead.notes)}
+                              arrow
+                              placement="top"
+                              componentsProps={{
+                                tooltip: {
+                                  sx: {
+                                    maxWidth: 500,
+                                    fontSize: '0.95rem',
+                                    padding: 2
+                                  }
+                                }
+                              }}
+                            >
                               <Typography variant="body2" sx={{ color: 'text.secondary', cursor: 'help' }}>
                                 {lead.notes.length > 50 ? `${lead.notes.substring(0, 50)}...` : lead.notes}
                               </Typography>
@@ -1555,9 +1619,30 @@ const PropertyLeadsPage: React.FC = () => {
                     {lead.notes && (
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>Notes</Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                          {lead.notes.length > 100 ? `${lead.notes.substring(0, 100)}...` : lead.notes}
-                        </Typography>
+                        {lead.notes.length > 100 ? (
+                          <Tooltip
+                            title={formatNotesForTooltip(lead.notes)}
+                            arrow
+                            placement="top"
+                            componentsProps={{
+                              tooltip: {
+                                sx: {
+                                  maxWidth: 500,
+                                  fontSize: '0.95rem',
+                                  padding: 2
+                                }
+                              }
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ color: 'text.secondary', cursor: 'help' }}>
+                              {lead.notes.substring(0, 100)}...
+                            </Typography>
+                          </Tooltip>
+                        ) : (
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            {formatNotesForTooltip(lead.notes)}
+                          </Typography>
+                        )}
                       </Box>
                     )}
 

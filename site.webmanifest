@@ -1,19 +1,24 @@
 {
-  "name": "Property Analyzer",
-  "short_name": "Property Analyzer",
+  "name": "PropGuide AI",
+  "short_name": "PropGuide AI",
   "icons": [
     {
-      "src": "/img/favicon.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
     },
     {
-      "src": "/img/favicon.svg",
+      "src": "/logo192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png"
     }
   ],
-  "theme_color": "#2E3B55",
+  "theme_color": "#1E293B",
   "background_color": "#f5f5f5",
   "display": "standalone"
 } 

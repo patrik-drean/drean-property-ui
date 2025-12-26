@@ -239,13 +239,65 @@ const PropertyLeadsPage: React.FC = () => {
     });
   };
 
-  // Helper function to format notes for tooltip display
-  const formatNotesForTooltip = (notes: string) => {
-    // Pattern to match the structured data at the end
+  // Helper function to format metadata for tooltip display
+  const formatMetadataForTooltip = (metadata: Record<string, any>) => {
+    const entries = Object.entries(metadata);
+    if (entries.length === 0) return null;
+
+    return (
+      <Box>
+        {entries.map(([key, value], index) => (
+          <Typography
+            key={index}
+            variant="body2"
+            sx={{
+              fontSize: '0.9rem',
+              lineHeight: 1.6
+            }}
+          >
+            {key}: {String(value)}
+          </Typography>
+        ))}
+      </Box>
+    );
+  };
+
+  // Helper function to format notes and/or metadata for tooltip display
+  const formatNotesForTooltip = (lead: PropertyLead) => {
+    const notes = lead.notes;
+    const metadata = lead.metadata;
+
+    // Check if metadata exists and has content
+    const hasMetadata = metadata && Object.keys(metadata).length > 0;
+
+    // Pattern to match the structured data at the end of notes (for backward compatibility)
     const pattern = /(Property Grade:.*?Zestimate:.*?Rent Estimate:.*?Days on Market:.*?)$/;
     const match = notes.match(pattern);
 
+    if (hasMetadata) {
+      // Display metadata if available (preferred)
+      return (
+        <Box>
+          {notes && (
+            <Typography variant="body1" sx={{ mb: 2, fontSize: '0.95rem' }}>
+              {notes}
+            </Typography>
+          )}
+          <Box sx={{
+            borderTop: notes ? '1px solid rgba(255, 255, 255, 0.3)' : 'none',
+            pt: notes ? 1 : 0
+          }}>
+            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5, fontSize: '0.9rem' }}>
+              Metadata:
+            </Typography>
+            {formatMetadataForTooltip(metadata)}
+          </Box>
+        </Box>
+      );
+    }
+
     if (match) {
+      // Fall back to parsing notes if no metadata (backward compatibility)
       const mainText = notes.substring(0, match.index).trim();
       const structuredData = match[1];
 
@@ -370,7 +422,21 @@ const PropertyLeadsPage: React.FC = () => {
 
       // Then sort by last contact date (not contacted leads first, then most recent)
       if (!a.lastContactDate && !b.lastContactDate) {
-        // Both have no contact date, sort by created date (most recent first)
+        // Both have no contact date (Not Contacted)
+        // Sort by lead score descending (10 -> 1, then null)
+        // Use backend score if available, otherwise calculate client-side (same as display logic)
+        const aScore = (a.leadScore !== null && a.leadScore !== undefined)
+          ? a.leadScore
+          : calculateLeadScore(a.listingPrice, a.squareFootage);
+        const bScore = (b.leadScore !== null && b.leadScore !== undefined)
+          ? b.leadScore
+          : calculateLeadScore(b.listingPrice, b.squareFootage);
+
+        if (aScore !== bScore) {
+          return bScore - aScore; // Descending order (higher scores first)
+        }
+
+        // If scores are equal, sort by created date (most recent first)
         const createdDateComparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         if (createdDateComparison !== 0) {
           return createdDateComparison;
@@ -1147,7 +1213,11 @@ const PropertyLeadsPage: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         {(() => {
-                          const score = calculateLeadScore(lead.listingPrice, lead.squareFootage);
+                          // Use backend score if available, otherwise calculate client-side
+                          const hasBackendScore = lead.leadScore !== null && lead.leadScore !== undefined;
+                          const score: number = hasBackendScore
+                            ? lead.leadScore!
+                            : calculateLeadScore(lead.listingPrice, lead.squareFootage);
                           const arvGuess = calculateARVGuess(lead.squareFootage);
 
                           if (score === 0) {
@@ -1174,6 +1244,11 @@ const PropertyLeadsPage: React.FC = () => {
                                   <Typography variant="body2">
                                     Ratio: {((lead.listingPrice / arvGuess) * 100).toFixed(1)}%
                                   </Typography>
+                                  {hasBackendScore && (
+                                    <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', opacity: 0.8 }}>
+                                      (Backend calculated)
+                                    </Typography>
+                                  )}
                                 </>
                               }
                               arrow
@@ -1257,9 +1332,9 @@ const PropertyLeadsPage: React.FC = () => {
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
                         }}>
-                          {lead.notes ? (
+                          {lead.notes || (lead.metadata && Object.keys(lead.metadata).length > 0) ? (
                             <Tooltip
-                              title={formatNotesForTooltip(lead.notes)}
+                              title={formatNotesForTooltip(lead)}
                               arrow
                               placement="top"
                               componentsProps={{
@@ -1273,7 +1348,7 @@ const PropertyLeadsPage: React.FC = () => {
                               }}
                             >
                               <Typography variant="body2" sx={{ color: 'text.secondary', cursor: 'help' }}>
-                                {lead.notes.length > 50 ? `${lead.notes.substring(0, 50)}...` : lead.notes}
+                                {lead.notes ? (lead.notes.length > 50 ? `${lead.notes.substring(0, 50)}...` : lead.notes) : 'View metadata'}
                               </Typography>
                             </Tooltip>
                           ) : (
@@ -1616,12 +1691,12 @@ const PropertyLeadsPage: React.FC = () => {
                     </Box>
 
                     {/* Notes */}
-                    {lead.notes && (
+                    {(lead.notes || (lead.metadata && Object.keys(lead.metadata).length > 0)) && (
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>Notes</Typography>
-                        {lead.notes.length > 100 ? (
+                        {lead.notes && lead.notes.length > 100 ? (
                           <Tooltip
-                            title={formatNotesForTooltip(lead.notes)}
+                            title={formatNotesForTooltip(lead)}
                             arrow
                             placement="top"
                             componentsProps={{
@@ -1640,7 +1715,7 @@ const PropertyLeadsPage: React.FC = () => {
                           </Tooltip>
                         ) : (
                           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                            {formatNotesForTooltip(lead.notes)}
+                            {formatNotesForTooltip(lead)}
                           </Typography>
                         )}
                       </Box>

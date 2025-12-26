@@ -193,6 +193,42 @@ const PropertyLeadDialog: React.FC<PropertyLeadDialogProps> = ({
             placeholder="Add any notes about this property lead..."
           />
 
+          {/* Metadata Display (Read-only) */}
+          {isEditing && formData.metadata && Object.keys(formData.metadata).length > 0 && (
+            <>
+              <Divider sx={{ my: 3 }} />
+              <Typography variant="h6" gutterBottom>
+                Metadata
+              </Typography>
+              <Box
+                sx={{
+                  backgroundColor: 'grey.50',
+                  border: '1px solid',
+                  borderColor: 'grey.300',
+                  borderRadius: 1,
+                  p: 2,
+                  mt: 1
+                }}
+              >
+                {Object.entries(formData.metadata).map(([key, value], index) => (
+                  <Typography
+                    key={index}
+                    variant="body2"
+                    sx={{
+                      mb: 0.5,
+                      color: 'text.secondary'
+                    }}
+                  >
+                    <strong>{key}:</strong> {String(value)}
+                  </Typography>
+                ))}
+              </Box>
+              <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'text.secondary' }}>
+                Metadata is managed by backend integrations and cannot be edited manually.
+              </Typography>
+            </>
+          )}
+
           {/* Stage Tracking Section */}
           <Divider sx={{ my: 3 }} />
 

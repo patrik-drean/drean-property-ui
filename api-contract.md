@@ -371,6 +371,10 @@ p ix        "updatedAt": "string",
     "sellerPhone": "string",
     "sellerEmail": "string",
     "lastContactDate": "string" | null,
+    "respondedDate": "string" | null,
+    "convertedDate": "string" | null,
+    "underContractDate": "string" | null,
+    "soldDate": "string" | null,
     "createdAt": "string",
     "updatedAt": "string",
     "archived": boolean,
@@ -378,7 +382,11 @@ p ix        "updatedAt": "string",
     "convertedToProperty": boolean,
     "squareFootage": number | null,
     "units": number | null,
-    "notes": "string"
+    "notes": "string",
+    "leadScore": number | null,
+    "metadata": {
+      "key": "value"
+    }
   }
 ]
 ```
@@ -399,14 +407,22 @@ p ix        "updatedAt": "string",
   "sellerPhone": "string",
   "sellerEmail": "string",
   "lastContactDate": "string" | null,
+  "respondedDate": "string" | null,
+  "convertedDate": "string" | null,
+  "underContractDate": "string" | null,
+  "soldDate": "string" | null,
   "createdAt": "string",
   "updatedAt": "string",
   "archived": boolean,
   "tags": ["string"],
-      "convertedToProperty": boolean,
-    "squareFootage": number | null,
-    "units": number | null,
-    "notes": "string"
+  "convertedToProperty": boolean,
+  "squareFootage": number | null,
+  "units": number | null,
+  "notes": "string",
+  "leadScore": number | null,
+  "metadata": {
+    "key": "value"
+  }
 }
 ```
 - **Error Responses**:
@@ -423,14 +439,25 @@ p ix        "updatedAt": "string",
   "listingPrice": number,
   "sellerPhone": "string",
   "sellerEmail": "string",
+  "lastContactDate": "string" | null,
+  "respondedDate": "string" | null,
+  "convertedDate": "string" | null,
+  "underContractDate": "string" | null,
+  "soldDate": "string" | null,
   "tags": ["string"],
   "squareFootage": number | null,
   "units": number | null,
-  "notes": "string"
+  "notes": "string",
+  "leadScore": number | null
 }
 ```
 - **Response**: Created PropertyLead object
-- **Note**: Duplicate addresses are allowed for property leads
+- **Notes**:
+  - Duplicate addresses are allowed for property leads
+  - `leadScore` is optional (1-10). If not provided, it will be auto-calculated based on listing price and square footage
+  - If square footage is missing or zero, `leadScore` will be `null`
+  - If `leadScore` is provided, it must be between 1 and 10 (returns 400 Bad Request if invalid)
+  - `metadata` is read-only and managed by backend services
 
 ### Create Multiple Property Leads (Batch)
 - **Method**: POST
@@ -445,14 +472,19 @@ p ix        "updatedAt": "string",
       "listingPrice": number,
       "sellerPhone": "string",
       "sellerEmail": "string",
+      "lastContactDate": "string" | null,
+      "respondedDate": "string" | null,
+      "convertedDate": "string" | null,
+      "underContractDate": "string" | null,
+      "soldDate": "string" | null,
       "tags": ["string"],
       "squareFootage": number | null,
       "units": number | null,
-      "notes": "string"
+      "notes": "string",
+      "leadScore": number | null
     }
   ]
 }
-```
 ```
 - **Response**: BatchCreateResponse object
 ```json
@@ -467,6 +499,10 @@ p ix        "updatedAt": "string",
       "sellerPhone": "string",
       "sellerEmail": "string",
       "lastContactDate": "string" | null,
+      "respondedDate": "string" | null,
+      "convertedDate": "string" | null,
+      "underContractDate": "string" | null,
+      "soldDate": "string" | null,
       "createdAt": "string",
       "updatedAt": "string",
       "archived": boolean,
@@ -474,15 +510,21 @@ p ix        "updatedAt": "string",
       "convertedToProperty": boolean,
       "squareFootage": number | null,
       "units": number | null,
-      "notes": "string"
+      "notes": "string",
+      "leadScore": number | null,
+      "metadata": {
+        "key": "value"
+      }
     }
   ],
   "errorCount": number,
   "errors": ["string"]
 }
 ```
-```
-- **Note**: Duplicate addresses are allowed for property leads in batch creation
+- **Notes**:
+  - Duplicate addresses are allowed for property leads in batch creation
+  - `leadScore` is optional (1-10) for each lead. If not provided, it will be auto-calculated
+  - Invalid `leadScore` values will result in error messages in the `errors` array for that lead
 
 ### Update Property Lead
 - **Method**: PUT
@@ -498,18 +540,27 @@ p ix        "updatedAt": "string",
   "sellerPhone": "string",
   "sellerEmail": "string",
   "lastContactDate": "string" | null,
+  "respondedDate": "string" | null,
+  "convertedDate": "string" | null,
+  "underContractDate": "string" | null,
+  "soldDate": "string" | null,
   "archived": boolean,
   "tags": ["string"],
   "convertedToProperty": boolean,
   "squareFootage": number | null,
   "units": number | null,
-  "notes": "string"
+  "notes": "string",
+  "leadScore": number | null
 }
 ```
-```
 - **Response**: Updated PropertyLead object
+- **Notes**:
+  - `leadScore` will be automatically recalculated if `listingPrice` or `squareFootage` changes (unless an explicit `leadScore` is provided)
+  - If `leadScore` is provided, it must be between 1 and 10 (returns 400 Bad Request if invalid)
+  - `metadata` is preserved on updates and cannot be modified by clients (backend-managed)
 - **Error Responses**:
   - 404: Property lead with specified ID not found
+  - 400: Invalid `leadScore` value (must be 1-10)
 
 ### Delete Property Lead
 - **Method**: DELETE
@@ -994,7 +1045,61 @@ p ix        "updatedAt": "string",
   - `dateStart`: ISO 8601 timestamp when the unit entered this status
 - **Purpose**: Allows frontend to calculate how many days a unit has been in its current status
 - **Frontend Responsibility**: The frontend is responsible for providing the complete status history array when updating units
-- **Usage Pattern**: 
+- **Usage Pattern**:
   - When creating a new unit, include initial status history: `[{"status": "Vacant", "dateStart": "2025-01-15T10:30:00Z"}]`
   - When changing status, append new entry: `[{"status": "Vacant", "dateStart": "2025-01-15T10:30:00Z"}, {"status": "Operational", "dateStart": "2025-01-20T14:45:00Z"}]`
 - **Benefits**: Frontend controls timing, handles offline scenarios, and provides better user experience
+
+## Property Lead Score and Metadata (Added 2024-12-26)
+
+### Lead Score
+- **`leadScore`**: Integer field (1-10) representing lead quality based on listing price to ARV ratio
+- **Score Range**: 1 (worst deal) to 10 (best deal), or `null` if insufficient data
+- **Auto-Calculation**: Backend automatically calculates score using formula: `ARV = squareFootage × $160/sqft`
+  - Score based on `listingPrice / ARV` ratio:
+    - **10** (Best): 55% or lower
+    - **9**: 55-60%
+    - **8**: 60-65%
+    - **7**: 65-70%
+    - **6**: 70-75%
+    - **5**: 75-80%
+    - **4**: 80-85%
+    - **3**: 85-90%
+    - **2**: 90-95%
+    - **1** (Worst): 95% or higher
+- **Client Override**: Clients can provide explicit `leadScore` value (1-10) to override auto-calculation
+- **Validation**:
+  - If provided, must be between 1 and 10 (inclusive)
+  - Invalid values return 400 Bad Request with error message
+  - Returns `null` if `squareFootage` is missing or zero
+- **Recalculation**: Score automatically recalculates on update if `listingPrice` or `squareFootage` changes (unless client provides explicit override)
+- **Frontend Fallback**: Frontend can calculate score client-side if backend returns `null`
+
+### Metadata
+- **`metadata`**: Dictionary/object containing flexible key-value pairs for lead information
+- **Purpose**: Stores dynamic lead data like Zestimate, Property Grade, Rent Estimate, Days on Market, etc.
+- **Backend-Managed**: Read-only from client perspective - managed by backend services and integrations
+- **Not Editable**: Clients cannot create or modify metadata via API
+- **Preserved on Updates**: Metadata is automatically preserved when updating other lead fields
+- **Storage**: Stored as JSON in PostgreSQL text column
+- **Default**: Empty object `{}` for new leads
+- **Example Structure**:
+```json
+{
+  "propertyGrade": "A",
+  "zestimate": 450000,
+  "rentEstimate": 3500.50,
+  "daysOnMarket": 45,
+  "hasPool": true
+}
+```
+- **Use Case**: Populated by backend integrations (Zillow API, RentCast, etc.) for display in frontend tooltips and UI
+
+### Stage Tracking Fields (Added 2024-12-26)
+- **`lastContactDate`**: ISO 8601 timestamp when lead was last contacted
+- **`respondedDate`**: ISO 8601 timestamp when lead responded
+- **`convertedDate`**: ISO 8601 timestamp when lead converted to property
+- **`underContractDate`**: ISO 8601 timestamp when property went under contract
+- **`soldDate`**: ISO 8601 timestamp when property was sold
+- **Purpose**: Track lead progression through sales funnel stages
+- **All Optional**: Can be `null` if stage not reached

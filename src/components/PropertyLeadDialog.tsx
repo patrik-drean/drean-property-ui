@@ -39,6 +39,52 @@ const PropertyLeadDialog: React.FC<PropertyLeadDialogProps> = ({
 }) => {
   const [formData, setFormData] = useState(initialFormData);
 
+  // Helper function to check if a metadata key represents a financial value
+  const isFinancialKey = (key: string): boolean => {
+    const lowerKey = key.toLowerCase();
+    return lowerKey.includes('price') ||
+           lowerKey.includes('estimate') ||
+           lowerKey.includes('value') ||
+           lowerKey.includes('arv') ||
+           lowerKey.includes('zestimate') ||
+           lowerKey.includes('rent') ||
+           lowerKey.includes('cost');
+  };
+
+  // Helper function to check if a metadata key represents a ratio/percentage
+  const isRatioKey = (key: string): boolean => {
+    const lowerKey = key.toLowerCase();
+    return lowerKey.includes('ratio') ||
+           lowerKey.includes('percent') ||
+           lowerKey.includes('rate');
+  };
+
+  // Helper function to format currency
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  // Helper function to format metadata value based on its key and type
+  const formatMetadataValue = (key: string, value: any): string => {
+    // Check if it's a number
+    if (typeof value === 'number') {
+      // Format as percentage if it's a ratio field
+      if (isRatioKey(key)) {
+        return `${(value * 100).toFixed(1)}%`;
+      }
+      // Format as currency if it's a financial field
+      if (isFinancialKey(key)) {
+        return formatCurrency(value);
+      }
+    }
+    return String(value);
+  };
+
   useEffect(() => {
     if (open) {
       setFormData(initialFormData);
@@ -194,7 +240,14 @@ const PropertyLeadDialog: React.FC<PropertyLeadDialogProps> = ({
           />
 
           {/* Metadata Display (Read-only) */}
-          {isEditing && formData.metadata && Object.keys(formData.metadata).length > 0 && (
+          {isEditing && formData.metadata && (() => {
+            try {
+              const parsed = JSON.parse(formData.metadata);
+              return Object.keys(parsed).length > 0;
+            } catch {
+              return false;
+            }
+          })() && (
             <>
               <Divider sx={{ my: 3 }} />
               <Typography variant="h6" gutterBottom>
@@ -210,21 +263,28 @@ const PropertyLeadDialog: React.FC<PropertyLeadDialogProps> = ({
                   mt: 1
                 }}
               >
-                {Object.entries(formData.metadata).map(([key, value], index) => (
-                  <Typography
-                    key={index}
-                    variant="body2"
-                    sx={{
-                      mb: 0.5,
-                      color: 'text.secondary'
-                    }}
-                  >
-                    <strong>{key}:</strong> {String(value)}
-                  </Typography>
-                ))}
+                {(() => {
+                  try {
+                    const parsed = JSON.parse(formData.metadata!);
+                    return Object.entries(parsed).map(([key, value], index) => (
+                      <Typography
+                        key={index}
+                        variant="body2"
+                        sx={{
+                          mb: 0.5,
+                          color: 'text.secondary'
+                        }}
+                      >
+                        <strong>{key}:</strong> {formatMetadataValue(key, value)}
+                      </Typography>
+                    ));
+                  } catch {
+                    return null;
+                  }
+                })()}
               </Box>
               <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'text.secondary' }}>
-                Metadata is managed by backend integrations and cannot be edited manually.
+                Metadata can be populated by clients or backend integrations.
               </Typography>
             </>
           )}

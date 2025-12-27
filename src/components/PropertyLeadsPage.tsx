@@ -239,27 +239,81 @@ const PropertyLeadsPage: React.FC = () => {
     });
   };
 
-  // Helper function to format metadata for tooltip display
-  const formatMetadataForTooltip = (metadata: Record<string, any>) => {
-    const entries = Object.entries(metadata);
-    if (entries.length === 0) return null;
+  // Helper function to check if metadata has content
+  const hasMetadataContent = (metadata: string | undefined): boolean => {
+    if (!metadata || metadata === '{}') return false;
+    try {
+      const parsed = JSON.parse(metadata);
+      return Object.keys(parsed).length > 0;
+    } catch {
+      return false;
+    }
+  };
 
-    return (
-      <Box>
-        {entries.map(([key, value], index) => (
-          <Typography
-            key={index}
-            variant="body2"
-            sx={{
-              fontSize: '0.9rem',
-              lineHeight: 1.6
-            }}
-          >
-            {key}: {String(value)}
-          </Typography>
-        ))}
-      </Box>
-    );
+  // Helper function to check if a metadata key represents a financial value
+  const isFinancialKey = (key: string): boolean => {
+    const lowerKey = key.toLowerCase();
+    return lowerKey.includes('price') ||
+           lowerKey.includes('estimate') ||
+           lowerKey.includes('value') ||
+           lowerKey.includes('arv') ||
+           lowerKey.includes('zestimate') ||
+           lowerKey.includes('rent') ||
+           lowerKey.includes('cost');
+  };
+
+  // Helper function to check if a metadata key represents a ratio/percentage
+  const isRatioKey = (key: string): boolean => {
+    const lowerKey = key.toLowerCase();
+    return lowerKey.includes('ratio') ||
+           lowerKey.includes('percent') ||
+           lowerKey.includes('rate');
+  };
+
+  // Helper function to format metadata value based on its key and type
+  const formatMetadataValue = (key: string, value: any): string => {
+    // Check if it's a number
+    if (typeof value === 'number') {
+      // Format as percentage if it's a ratio field
+      if (isRatioKey(key)) {
+        return `${(value * 100).toFixed(1)}%`;
+      }
+      // Format as currency if it's a financial field
+      if (isFinancialKey(key)) {
+        return formatCurrency(value);
+      }
+    }
+    return String(value);
+  };
+
+  // Helper function to format metadata for tooltip display
+  const formatMetadataForTooltip = (metadata: string | undefined) => {
+    if (!hasMetadataContent(metadata)) return null;
+
+    try {
+      const parsed: Record<string, any> = JSON.parse(metadata!);
+      const entries = Object.entries(parsed);
+
+      return (
+        <Box>
+          {entries.map(([key, value], index) => (
+            <Typography
+              key={index}
+              variant="body2"
+              sx={{
+                fontSize: '0.9rem',
+                lineHeight: 1.6
+              }}
+            >
+              {key}: {formatMetadataValue(key, value)}
+            </Typography>
+          ))}
+        </Box>
+      );
+    } catch (error) {
+      console.error('Failed to parse metadata JSON:', error);
+      return null;
+    }
   };
 
   // Helper function to format notes and/or metadata for tooltip display
@@ -268,7 +322,7 @@ const PropertyLeadsPage: React.FC = () => {
     const metadata = lead.metadata;
 
     // Check if metadata exists and has content
-    const hasMetadata = metadata && Object.keys(metadata).length > 0;
+    const hasMetadata = hasMetadataContent(metadata);
 
     // Pattern to match the structured data at the end of notes (for backward compatibility)
     const pattern = /(Property Grade:.*?Zestimate:.*?Rent Estimate:.*?Days on Market:.*?)$/;
@@ -1332,7 +1386,7 @@ const PropertyLeadsPage: React.FC = () => {
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
                         }}>
-                          {lead.notes || (lead.metadata && Object.keys(lead.metadata).length > 0) ? (
+                          {lead.notes || hasMetadataContent(lead.metadata) ? (
                             <Tooltip
                               title={formatNotesForTooltip(lead)}
                               arrow
@@ -1691,7 +1745,7 @@ const PropertyLeadsPage: React.FC = () => {
                     </Box>
 
                     {/* Notes */}
-                    {(lead.notes || (lead.metadata && Object.keys(lead.metadata).length > 0)) && (
+                    {(lead.notes || hasMetadataContent(lead.metadata)) && (
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>Notes</Typography>
                         {lead.notes && lead.notes.length > 100 ? (

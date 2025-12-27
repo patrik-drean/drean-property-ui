@@ -108,7 +108,7 @@ export interface PropertyLead {
     underContractDate?: string | null;
     soldDate?: string | null;
     leadScore?: number | null;
-    metadata?: Record<string, any>;
+    metadata?: string;
 }
 
 export interface CreatePropertyLead {
@@ -122,6 +122,7 @@ export interface CreatePropertyLead {
     units?: number | null;
     notes?: string;
     leadScore?: number | null; // Optional override
+    metadata?: string;
 }
 
 export interface UpdatePropertyLead {
@@ -142,6 +143,7 @@ export interface UpdatePropertyLead {
     underContractDate?: string | null;
     soldDate?: string | null;
     leadScore?: number | null; // Optional override
+    metadata?: string;
 }
 
 export interface BatchCreatePropertyLeads {

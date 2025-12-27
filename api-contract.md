@@ -384,12 +384,9 @@ p ix        "updatedAt": "string",
     "units": number | null,
     "notes": "string",
     "leadScore": number | null,
-    "metadata": {
-      "key": "value"
-    }
+    "metadata": "string"
   }
 ]
-```
 ```
 
 ### Get Property Lead by ID
@@ -420,9 +417,7 @@ p ix        "updatedAt": "string",
   "units": number | null,
   "notes": "string",
   "leadScore": number | null,
-  "metadata": {
-    "key": "value"
-  }
+  "metadata": "string"
 }
 ```
 - **Error Responses**:
@@ -448,7 +443,8 @@ p ix        "updatedAt": "string",
   "squareFootage": number | null,
   "units": number | null,
   "notes": "string",
-  "leadScore": number | null
+  "leadScore": number | null,
+  "metadata": "string"
 }
 ```
 - **Response**: Created PropertyLead object
@@ -457,7 +453,7 @@ p ix        "updatedAt": "string",
   - `leadScore` is optional (1-10). If not provided, it will be auto-calculated based on listing price and square footage
   - If square footage is missing or zero, `leadScore` will be `null`
   - If `leadScore` is provided, it must be between 1 and 10 (returns 400 Bad Request if invalid)
-  - `metadata` is read-only and managed by backend services
+  - `metadata` is optional and should be a JSON string (defaults to "{}" if not provided)
 
 ### Create Multiple Property Leads (Batch)
 - **Method**: POST
@@ -481,7 +477,8 @@ p ix        "updatedAt": "string",
       "squareFootage": number | null,
       "units": number | null,
       "notes": "string",
-      "leadScore": number | null
+      "leadScore": number | null,
+      "metadata": "string"
     }
   ]
 }
@@ -512,9 +509,7 @@ p ix        "updatedAt": "string",
       "units": number | null,
       "notes": "string",
       "leadScore": number | null,
-      "metadata": {
-        "key": "value"
-      }
+      "metadata": "string"
     }
   ],
   "errorCount": number,
@@ -550,14 +545,15 @@ p ix        "updatedAt": "string",
   "squareFootage": number | null,
   "units": number | null,
   "notes": "string",
-  "leadScore": number | null
+  "leadScore": number | null,
+  "metadata": "string"
 }
 ```
 - **Response**: Updated PropertyLead object
 - **Notes**:
   - `leadScore` will be automatically recalculated if `listingPrice` or `squareFootage` changes (unless an explicit `leadScore` is provided)
   - If `leadScore` is provided, it must be between 1 and 10 (returns 400 Bad Request if invalid)
-  - `metadata` is preserved on updates and cannot be modified by clients (backend-managed)
+  - `metadata` is optional and can be updated by clients. Should be a JSON string (defaults to "{}" if not provided)
 - **Error Responses**:
   - 404: Property lead with specified ID not found
   - 400: Invalid `leadScore` value (must be 1-10)
@@ -1076,14 +1072,17 @@ p ix        "updatedAt": "string",
 - **Frontend Fallback**: Frontend can calculate score client-side if backend returns `null`
 
 ### Metadata
-- **`metadata`**: Dictionary/object containing flexible key-value pairs for lead information
+- **`metadata`**: JSON string containing flexible key-value pairs for lead information
 - **Purpose**: Stores dynamic lead data like Zestimate, Property Grade, Rent Estimate, Days on Market, etc.
-- **Backend-Managed**: Read-only from client perspective - managed by backend services and integrations
-- **Not Editable**: Clients cannot create or modify metadata via API
-- **Preserved on Updates**: Metadata is automatically preserved when updating other lead fields
-- **Storage**: Stored as JSON in PostgreSQL text column
-- **Default**: Empty object `{}` for new leads
-- **Example Structure**:
+- **Client-Editable**: Clients can read and write metadata via API in create/update operations
+- **Storage**: Stored as JSON string in PostgreSQL text column
+- **Default**: Empty JSON object `"{}"` for new leads
+- **Format**: Must be a valid JSON string. Clients should serialize objects to JSON strings before sending
+- **Example Structure** (as JSON string):
+```json
+"{\"propertyGrade\":\"A\",\"zestimate\":450000,\"rentEstimate\":3500.50,\"daysOnMarket\":45,\"hasPool\":true}"
+```
+- **Example Parsed Object**:
 ```json
 {
   "propertyGrade": "A",
@@ -1093,7 +1092,7 @@ p ix        "updatedAt": "string",
   "hasPool": true
 }
 ```
-- **Use Case**: Populated by backend integrations (Zillow API, RentCast, etc.) for display in frontend tooltips and UI
+- **Use Case**: Can be populated by clients, backend integrations (Zillow API, RentCast, etc.), or both for display in frontend tooltips and UI
 
 ### Stage Tracking Fields (Added 2024-12-26)
 - **`lastContactDate`**: ISO 8601 timestamp when lead was last contacted

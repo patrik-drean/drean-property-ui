@@ -23,6 +23,7 @@ const sampleProperties: Property[] = [
       todoistSectionId: null
     },
     hasRentcastData: true,
+    saleComparables: [],
     notes: 'Good neighborhood, needs some work',
     score: 7,
     zillowLink: 'https://www.zillow.com/homedetails/123-main-st',
@@ -56,6 +57,7 @@ const sampleProperties: Property[] = [
       todoistSectionId: null
     },
     hasRentcastData: true,
+    saleComparables: [],
     notes: 'Needs new roof and HVAC',
     score: 6,
     zillowLink: 'https://www.zillow.com/homedetails/456-oak-ave',
@@ -89,6 +91,7 @@ const sampleProperties: Property[] = [
       todoistSectionId: null
     },
     hasRentcastData: true,
+    saleComparables: [],
     notes: 'This property should be archived but is showing in main list',
     score: 8,
     zillowLink: 'https://www.zillow.com/homedetails/999-wrong-st',
@@ -123,6 +126,7 @@ const sampleProperties: Property[] = [
       todoistSectionId: null
     },
     hasRentcastData: true,
+    saleComparables: [],
     notes: 'Currently rented and generating positive cashflow',
     score: 8,
     zillowLink: 'https://www.zillow.com/homedetails/777-maple-dr',
@@ -157,6 +161,7 @@ const sampleProperties: Property[] = [
       todoistSectionId: null
     },
     hasRentcastData: true,
+    saleComparables: [],
     notes: 'Rehab complete, ready for tenant',
     score: 6,
     zillowLink: 'https://www.zillow.com/homedetails/888-cedar-ln',
@@ -191,6 +196,7 @@ const sampleProperties: Property[] = [
       todoistSectionId: null
     },
     hasRentcastData: true,
+    saleComparables: [],
     notes: 'Ready to sell - good appreciation',
     score: 5,
     zillowLink: 'https://www.zillow.com/homedetails/999-birch-rd',
@@ -229,6 +235,7 @@ const archivedProperties: Property[] = [
       todoistSectionId: null
     },
     hasRentcastData: true,
+    saleComparables: [],
     notes: 'Deal fell through - owner backed out',
     score: 5,
     zillowLink: 'https://www.zillow.com/homedetails/789-pine-blvd',
@@ -263,6 +270,7 @@ const archivedProperties: Property[] = [
       todoistSectionId: null
     },
     hasRentcastData: true,
+    saleComparables: [],
     notes: 'Too much work required - not worth it',
     score: 3,
     zillowLink: 'https://www.zillow.com/homedetails/321-elm-st',

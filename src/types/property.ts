@@ -9,6 +9,20 @@ export interface RentCastEstimates {
     rentHigh: number;
 }
 
+export interface SaleComparable {
+    address: string;
+    price: number;
+    bedrooms: number | null;
+    bathrooms: number | null;
+    squareFootage: number | null;
+    lotSize: number | null;
+    yearBuilt: number | null;
+    distance: number;
+    correlation: number;
+    daysOnMarket: number | null;
+    status: string | null;
+}
+
 export interface TodoMetaData {
     todoistSectionId: string | null;
 }
@@ -73,6 +87,7 @@ export interface Property {
     rentCastEstimates: RentCastEstimates;
     todoMetaData?: TodoMetaData;
     hasRentcastData: boolean;
+    saleComparables: SaleComparable[];
     notes: string;
     score: number;
     zillowLink: string;

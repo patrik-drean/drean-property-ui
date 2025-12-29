@@ -261,6 +261,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
       todoistSectionId: null
     },
     hasRentcastData: false,
+    saleComparables: [],
     notes: '',
     score: 0,
     zillowLink: '',
@@ -451,6 +452,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         todoistSectionId: null
       },
       hasRentcastData: false,
+      saleComparables: [],
       notes: '',
       score: 0,
       zillowLink: '',
@@ -506,6 +508,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         rentCastEstimates: property.rentCastEstimates,
         todoMetaData: property.todoMetaData || { todoistSectionId: null },
         hasRentcastData: property.hasRentcastData,
+        saleComparables: property.saleComparables || [],
         notes: property.notes,
         score: property.score,
         zillowLink: property.zillowLink,

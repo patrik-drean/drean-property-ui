@@ -328,6 +328,7 @@ export const testPerfectValueCalculations = () => {
     rentCastEstimates: { price: 0, priceLow: 0, priceHigh: 0, rent: 0, rentLow: 0, rentHigh: 0 },
     todoMetaData: { todoistSectionId: null },
     hasRentcastData: false,
+    saleComparables: [],
     notes: '',
     score: 0,
     zillowLink: '',

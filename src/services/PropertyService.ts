@@ -28,6 +28,19 @@ interface PropertyDTO {
     todoistSectionId: string | null;
   };
   hasRentcastData: boolean;
+  saleComparables?: {
+    address: string;
+    price: number;
+    bedrooms: number | null;
+    bathrooms: number | null;
+    squareFootage: number | null;
+    lotSize: number | null;
+    yearBuilt: number | null;
+    distance: number;
+    correlation: number;
+    daysOnMarket: number | null;
+    status: string | null;
+  }[];
   notes: string;
   score: number;
   zillowLink: string;
@@ -94,6 +107,7 @@ const mapDTOToProperty = (dto: PropertyDTO): Property => {
     rentCastEstimates: dto.rentCastEstimates,
     todoMetaData: dto.todoMetaData || { todoistSectionId: null },
     hasRentcastData: dto.hasRentcastData,
+    saleComparables: dto.saleComparables || [],
     notes: dto.notes,
     score: dto.score,
     zillowLink: dto.zillowLink,

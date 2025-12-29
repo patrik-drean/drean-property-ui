@@ -774,6 +774,7 @@ const PropertyLeadsPage: React.FC = () => {
           todoistSectionId: null
         },
         hasRentcastData: false,
+        saleComparables: [],
         notes: lead.notes || '',
         score: 0,
         zillowLink: lead.zillowLink,

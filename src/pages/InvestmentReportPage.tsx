@@ -14,6 +14,7 @@ import { getReportData } from '../services/reportSharingService';
 import { calculateInvestmentMetrics } from '../services/investmentReportService';
 import InvestmentSummarySection from '../components/Reports/InvestmentSummarySection';
 import InvestmentScoresSection from '../components/Reports/InvestmentScoresSection';
+import MarketAnalysisSection from '../components/Reports/MarketAnalysisSection';
 import CashFlowBreakdownSection from '../components/Reports/CashFlowBreakdownSection';
 import FinancingDetailsSection from '../components/Reports/FinancingDetailsSection';
 
@@ -130,6 +131,13 @@ const InvestmentReportPage: React.FC = () => {
                 calculations={calculations}
               />
             </Grid>
+
+            {/* Market Analysis & Comparable Sales Section */}
+            {property.hasRentcastData && (
+              <Grid item xs={12}>
+                <MarketAnalysisSection property={property} />
+              </Grid>
+            )}
 
             {/* Cash Flow Breakdown Section */}
             <Grid item xs={12} lg={6}>

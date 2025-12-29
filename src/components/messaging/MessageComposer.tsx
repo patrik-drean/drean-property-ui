@@ -26,7 +26,7 @@ const MAX_SMS_LENGTH = 160;
 const MAX_TOTAL_LENGTH = 1600; // ~10 segments
 
 /**
- * Calculate discounted price (listing price × 0.8)
+ * Calculate discounted price (listing price × 0.8) and format in compact "k" format
  */
 const calculateDiscountedPrice = (priceString?: string): string | undefined => {
   if (!priceString) return undefined;
@@ -39,7 +39,8 @@ const calculateDiscountedPrice = (priceString?: string): string | undefined => {
     if (isNaN(price)) return undefined;
 
     const discounted = price * 0.8;
-    return `$${Math.round(discounted).toLocaleString()}`;
+    const roundedThousands = Math.round(discounted / 1000);
+    return `$${roundedThousands}k`;
   } catch {
     return undefined;
   }

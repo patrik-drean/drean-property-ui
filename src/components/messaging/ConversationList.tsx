@@ -13,6 +13,9 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
+  IconButton,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -36,6 +39,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   onSelect,
   onRefresh,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [search, setSearch] = React.useState('');
   const [contextMenu, setContextMenu] = React.useState<{
     mouseX: number;
@@ -80,6 +85,16 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       console.error('Failed to mark conversation as unread:', err);
     } finally {
       handleClose();
+    }
+  };
+
+  const handleMarkUnreadDirect = async (e: React.MouseEvent, conversationId: string) => {
+    e.stopPropagation(); // Prevent selecting the conversation
+    try {
+      await smsService.markConversationUnread(conversationId);
+      onRefresh?.();
+    } catch (err) {
+      console.error('Failed to mark conversation as unread:', err);
     }
   };
 
@@ -143,7 +158,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                       variant="body1"
                       fontWeight={conv.unreadCount > 0 ? 600 : 400}
                       noWrap
-                      sx={{ maxWidth: 150 }}
+                      sx={{ maxWidth: isMobile ? 120 : 150 }}
                     >
                       {conv.displayName || conv.phoneNumber}
                     </Typography>
@@ -163,6 +178,24 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   </Typography>
                 }
               />
+              {/* Mobile: Explicit mark as unread button */}
+              {isMobile && conv.unreadCount === 0 && (
+                <IconButton
+                  size="small"
+                  onClick={(e) => handleMarkUnreadDirect(e, conv.id)}
+                  sx={{
+                    ml: 1,
+                    color: 'text.secondary',
+                    '&:hover': {
+                      color: 'primary.main',
+                      backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                    },
+                  }}
+                  aria-label="Mark as unread"
+                >
+                  <MarkUnreadIcon fontSize="small" />
+                </IconButton>
+              )}
             </ListItemButton>
           ))
         )}

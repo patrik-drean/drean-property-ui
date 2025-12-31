@@ -10,6 +10,7 @@ import {
   useMediaQuery,
   useTheme,
   IconButton,
+  Badge,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -17,6 +18,7 @@ import {
   Menu as MenuIcon,
   ArrowBack as ArrowBackIcon,
   Add as AddIcon,
+  ForumOutlined as ConversationsIcon,
 } from '@mui/icons-material';
 import { ConversationList } from '../components/messaging/ConversationList';
 import { ConversationView } from '../components/messaging/ConversationView';
@@ -253,8 +255,24 @@ export const MessagingPage: React.FC = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {isMobile && (
-            <IconButton onClick={() => setMobileDrawerOpen(true)} edge="start">
-              <MenuIcon />
+            <IconButton
+              onClick={() => setMobileDrawerOpen(true)}
+              edge="start"
+              sx={{
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
+              }}
+            >
+              <Badge
+                badgeContent={conversations.reduce((sum, c) => sum + c.unreadCount, 0)}
+                color="error"
+                max={99}
+              >
+                <ConversationsIcon />
+              </Badge>
             </IconButton>
           )}
           <Typography variant="h4">Messaging</Typography>
@@ -347,6 +365,7 @@ export const MessagingPage: React.FC = () => {
             <ConversationView
               conversation={selectedConversation}
               onMessageSent={handleMessageSent}
+              onMarkAsUnread={fetchConversations}
               leadName={leadData?.address}
               leadAddress={leadData?.address}
               leadPrice={leadData?.listingPrice?.toLocaleString()}
@@ -377,6 +396,7 @@ export const MessagingPage: React.FC = () => {
         onClose={() => setNewMessageDialogOpen(false)}
         onStartConversation={handleStartNewConversation}
       />
+
     </Box>
   );
 };

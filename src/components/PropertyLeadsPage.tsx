@@ -259,7 +259,8 @@ const PropertyLeadsPage: React.FC = () => {
            lowerKey.includes('arv') ||
            lowerKey.includes('zestimate') ||
            lowerKey.includes('rent') ||
-           lowerKey.includes('cost');
+           lowerKey.includes('cost') ||
+           lowerKey.includes('mao');
   };
 
   // Helper function to check if a metadata key represents a ratio/percentage

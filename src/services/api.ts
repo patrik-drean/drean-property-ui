@@ -4,12 +4,42 @@ import { Property, PropertyLead, CreatePropertyLead, UpdatePropertyLead, BatchCr
 // Use environment variables if available, otherwise use default local development URL
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
 
+const AUTH_TOKEN_KEY = 'authToken';
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Request interceptor - add auth token to requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor - handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear auth state and redirect to login
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem('authUser');
+      window.location.href = '/#/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const getProperties = async (showArchived?: boolean): Promise<Property[]> => {
   const response = await api.get<Property[]>('/api/Properties', {

@@ -19,6 +19,8 @@ import {
   Divider,
   Menu,
   MenuItem,
+  Avatar,
+  Tooltip,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HomeIcon from '@mui/icons-material/Home';
@@ -29,7 +31,9 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import PeopleIcon from '@mui/icons-material/People';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import SmsIcon from '@mui/icons-material/Sms';
+import LogoutIcon from '@mui/icons-material/Logout';
 import Logo from './Logo';
+import { useAuth } from '../contexts/AuthContext';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
@@ -37,7 +41,10 @@ const Navigation: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(null);
+  const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
   const moreMenuOpen = Boolean(moreMenuAnchor);
+  const userMenuOpen = Boolean(userMenuAnchor);
+  const { user, logout } = useAuth();
 
   const handleMoreMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setMoreMenuAnchor(event.currentTarget);
@@ -45,6 +52,19 @@ const Navigation: React.FC = () => {
 
   const handleMoreMenuClose = () => {
     setMoreMenuAnchor(null);
+  };
+
+  const handleUserMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchor(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchor(null);
+  };
+
+  const handleLogout = () => {
+    handleUserMenuClose();
+    logout();
   };
   
   // Helper to determine if a path is active
@@ -172,6 +192,38 @@ const Navigation: React.FC = () => {
             <ListItemText primary="Calculator" />
           </ListItem>
         </List>
+        {user && (
+          <>
+            <Divider />
+            <Box sx={{ p: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Avatar
+                  src={user.pictureUrl || undefined}
+                  alt={user.name}
+                  sx={{ width: 32, height: 32, mr: 1 }}
+                >
+                  {user.name.charAt(0).toUpperCase()}
+                </Avatar>
+                <Box>
+                  <Typography variant="body2" fontWeight={600}>
+                    {user.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {user.email}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+            <List>
+              <ListItem button onClick={handleLogout}>
+                <ListItemIcon>
+                  <LogoutIcon />
+                </ListItemIcon>
+                <ListItemText primary="Logout" />
+              </ListItem>
+            </List>
+          </>
+        )}
       </Box>
     </Drawer>
   );
@@ -331,6 +383,61 @@ const Navigation: React.FC = () => {
                   </MenuItem>
                 </Menu>
               </Stack>
+            )}
+
+            {/* User Menu */}
+            {user && (
+              <Box sx={{ ml: 2 }}>
+                <Tooltip title={user.name}>
+                  <IconButton
+                    onClick={handleUserMenuClick}
+                    sx={{
+                      p: 0.5,
+                      border: '2px solid rgba(255, 255, 255, 0.3)',
+                      '&:hover': {
+                        border: '2px solid rgba(255, 255, 255, 0.5)',
+                      },
+                    }}
+                  >
+                    <Avatar
+                      src={user.pictureUrl || undefined}
+                      alt={user.name}
+                      sx={{ width: 32, height: 32 }}
+                    >
+                      {user.name.charAt(0).toUpperCase()}
+                    </Avatar>
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  anchorEl={userMenuAnchor}
+                  open={userMenuOpen}
+                  onClose={handleUserMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                >
+                  <Box sx={{ px: 2, py: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {user.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {user.email}
+                    </Typography>
+                  </Box>
+                  <Divider />
+                  <MenuItem onClick={handleLogout}>
+                    <ListItemIcon>
+                      <LogoutIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Logout</ListItemText>
+                  </MenuItem>
+                </Menu>
+              </Box>
             )}
           </Toolbar>
         </Container>

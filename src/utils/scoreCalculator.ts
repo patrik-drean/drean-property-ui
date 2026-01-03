@@ -1,4 +1,5 @@
 import { Property, PropertyStatus } from '../types/property';
+import { formatCurrency } from '../services/investmentReportService';
 
 // Base calculation functions
 export const calculateRentRatio = (rent: number, offerPrice: number, rehabCosts: number) => {
@@ -101,17 +102,23 @@ export const calculateRefinancingCashflow = (rent: number, offerPrice: number, a
 };
 
 // Hold Score calculation functions
+// Inverted scoring: Any positive cashflow = max points, decreasing as cashflow becomes more negative
 export const calculateHoldCashflowScore = (cashflow: number, units: number = 1): number => {
   const cashflowPerUnit = cashflow / units;
-  if (cashflowPerUnit >= 200) return 8; // $200 or more per unit
-  if (cashflowPerUnit >= 175) return 7; // $175-$199 per unit
-  if (cashflowPerUnit >= 150) return 6; // $150-$174 per unit
-  if (cashflowPerUnit >= 125) return 5; // $125-$149 per unit
-  if (cashflowPerUnit >= 100) return 4; // $100-$124 per unit
-  if (cashflowPerUnit >= 75) return 3;  // $75-$99 per unit
-  if (cashflowPerUnit >= 50) return 2;  // $50-$74 per unit
-  if (cashflowPerUnit >= 0) return 1;   // $0-$49 per unit
-  return 0; // Negative cashflow
+
+  // Any positive cashflow = max points
+  if (cashflowPerUnit >= 0) return 8;
+
+  // Gradually decrease as cashflow becomes more negative
+  if (cashflowPerUnit >= -25) return 7;   // Slightly negative ($0 to -$25/unit)
+  if (cashflowPerUnit >= -50) return 6;   // -$25 to -$50/unit
+  if (cashflowPerUnit >= -75) return 5;   // -$50 to -$75/unit
+  if (cashflowPerUnit >= -100) return 4;  // -$75 to -$100/unit
+  if (cashflowPerUnit >= -125) return 3;  // -$100 to -$125/unit
+  if (cashflowPerUnit >= -150) return 2;  // -$125 to -$150/unit
+  if (cashflowPerUnit >= -175) return 1;  // -$150 to -$175/unit
+
+  return 0; // Very negative cashflow (< -$175/unit)
 };
 
 export const calculateHoldARVRatioScore = (arvRatio: number): number => {
@@ -211,6 +218,9 @@ export interface HoldScoreBreakdown {
   cashflowScore: number;
   rentRatioScore: number;
   totalScore: number;
+  cashflowPerUnit: number;
+  rentRatio: number;
+  explanation: string;
 }
 
 export interface FlipScoreBreakdown {
@@ -223,18 +233,32 @@ export interface FlipScoreBreakdown {
 export const getHoldScoreBreakdown = (property: Omit<Property, 'id'>): HoldScoreBreakdown => {
   const rentRatio = calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts);
   const cashflow = calculateCashflow(
-    property.potentialRent, 
-    property.offerPrice, 
+    property.potentialRent,
+    property.offerPrice,
     calculateNewLoan(property.offerPrice, property.rehabCosts, property.arv)
   );
 
-  const cashflowScore = calculateHoldCashflowScore(cashflow, property.units || 1);
+  const units = property.units || 1;
+  const cashflowPerUnit = cashflow / units;
+  const cashflowScore = calculateHoldCashflowScore(cashflow, units);
   const rentRatioScore = calculateHoldRentRatioScore(rentRatio);
+
+  // Generate explanation based on score
+  const getExplanation = (score: number, cfPerUnit: number): string => {
+    if (score === 8) return `Positive cashflow: ${formatCurrency(cfPerUnit)}/unit monthly`;
+    if (score === 7) return `Nearly breaks even: ${formatCurrency(cfPerUnit)}/unit monthly`;
+    if (score >= 5) return `Moderate negative cashflow: ${formatCurrency(cfPerUnit)}/unit monthly`;
+    if (score >= 3) return `Significant negative cashflow: ${formatCurrency(cfPerUnit)}/unit monthly`;
+    return `Severe negative cashflow: ${formatCurrency(cfPerUnit)}/unit monthly`;
+  };
 
   return {
     cashflowScore,
     rentRatioScore,
-    totalScore: calculateHoldScore(property)
+    totalScore: calculateHoldScore(property),
+    cashflowPerUnit,
+    rentRatio,
+    explanation: getExplanation(cashflowScore, cashflowPerUnit)
   };
 };
 

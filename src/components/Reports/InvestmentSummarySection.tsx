@@ -138,86 +138,117 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
                 subtitle="Purchase / ARV"
               />
             </Grid>
-            <Grid item xs={6} sm={4}>
-              <MetricCard
-                title="Home Equity"
-                value={formatCurrency(calculations.homeEquity)}
-                icon={<AccountBalanceIcon />}
-                color={getMetricColor(calculations.homeEquity)}
-                subtitle="Post-refinance equity"
-              />
-            </Grid>
-            <Grid item xs={6} sm={4}>
-              <MetricCard
-                title="Cash-on-Cash Return"
-                value={formatPercentage(calculations.cashOnCashReturn)}
-                icon={<ShowChartIcon />}
-                color={calculations.cashOnCashReturn >= 0.05 ? '#4CAF50' : '#F44336'}
-                subtitle={`Annual: ${formatCurrency(calculations.monthlyCashflow * 12)} / ${formatCurrency(calculations.downPaymentRequired)}`}
-              />
-            </Grid>
-            <Grid item xs={6} sm={4}>
-              <MetricCard
-                title="Cap Rate"
-                value={formatPercentage(calculations.monthlyCashflow * 12 / calculations.purchasePrice)}
-                icon={<ShowChartIcon />}
-                color={(() => {
-                  const capRate = calculations.monthlyCashflow * 12 / calculations.purchasePrice;
-                  if (capRate >= 0.05 && capRate <= 0.10) return '#4CAF50'; // Green: 5-10%
-                  return '#FF9800'; // Orange: outside ideal range
-                })()}
-                subtitle="Net operating income rate"
-              />
-            </Grid>
           </Grid>
         </Grid>
 
-        {/* Property Overview */}
+        {/* Value Breakdown */}
         <Grid item xs={12}>
-          <Box mt={2}>
-            <Typography variant="h6" gutterBottom>
-              Property Overview
+          <Box mt={3} mb={3}>
+            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+              Value Breakdown
             </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">
-                  Purchase Price
-                </Typography>
-                <Typography variant="h6" fontWeight="bold">
-                  {formatCurrency(calculations.purchasePrice)}
-                </Typography>
+            <Grid container spacing={4} justifyContent="center">
+              {/* ARV Ratio Calculation */}
+              <Grid item xs={12} sm={6}>
+                <Card sx={{ p: 3, textAlign: 'center', bgcolor: '#f8f9fa' }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
+                    ARV Ratio
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    {/* Numerator */}
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        Purchase Price
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {formatCurrency(calculations.purchasePrice)}
+                      </Typography>
+                      <Typography variant="body2" sx={{ my: 0.5 }}>+</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        Rehab Costs
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {formatCurrency(calculations.rehabCosts)}
+                      </Typography>
+                      <Typography variant="body2" sx={{ my: 0.5 }}>+</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        Commission
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {formatCurrency(5000)}
+                      </Typography>
+                    </Box>
+                    {/* Division line */}
+                    <Box sx={{ width: '80%', height: '2px', bgcolor: 'divider', my: 1 }} />
+                    {/* Denominator */}
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        After Repair Value (ARV)
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {formatCurrency(calculations.arv)}
+                      </Typography>
+                    </Box>
+                    {/* Result */}
+                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider', width: '100%' }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        Result
+                      </Typography>
+                      <Typography variant="h5" fontWeight="bold" color={calculations.arvRatio <= 0.80 ? '#4CAF50' : '#F44336'}>
+                        {formatPercentage(calculations.arvRatio)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Card>
               </Grid>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">
-                  Rehab Costs
-                </Typography>
-                <Typography variant="h6" fontWeight="bold">
-                  {formatCurrency(calculations.rehabCosts)}
-                </Typography>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">
-                  After Repair Value
-                </Typography>
-                <Typography variant="h6" fontWeight="bold">
-                  {formatCurrency(calculations.arv)}
-                </Typography>
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">
-                  Potential Rent
-                </Typography>
-                <Typography variant="h6" fontWeight="bold">
-                  {formatCurrency(calculations.monthlyIncome)}
-                </Typography>
+
+              {/* Rent Ratio Calculation */}
+              <Grid item xs={12} sm={6}>
+                <Card sx={{ p: 3, textAlign: 'center', bgcolor: '#f8f9fa' }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
+                    Rent Ratio
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    {/* Numerator */}
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        Monthly Rent
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {formatCurrency(calculations.monthlyIncome)}
+                      </Typography>
+                    </Box>
+                    {/* Division line */}
+                    <Box sx={{ width: '80%', height: '2px', bgcolor: 'divider', my: 1 }} />
+                    {/* Denominator */}
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        Purchase Price
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {formatCurrency(calculations.purchasePrice)}
+                      </Typography>
+                      <Typography variant="body2" sx={{ my: 0.5 }}>+</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        Rehab Costs
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {formatCurrency(calculations.rehabCosts)}
+                      </Typography>
+                    </Box>
+                    {/* Result */}
+                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider', width: '100%' }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        Result
+                      </Typography>
+                      <Typography variant="h5" fontWeight="bold" color={calculations.rentRatio >= 0.01 ? '#4CAF50' : '#F44336'}>
+                        {formatPercentage(calculations.rentRatio)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Card>
               </Grid>
             </Grid>
-            {/* Disclaimer */}
-            <Box mt={3}>
-              <Typography variant="body2" sx={{ fontStyle: 'italic', color: '#757575', fontSize: '0.875rem', textAlign: 'center' }}>
-                *These figures are estimates based on available data. Investors should conduct their own due diligence and verify all information independently before making investment decisions.*
-              </Typography>
-            </Box>
           </Box>
         </Grid>
       </Grid>

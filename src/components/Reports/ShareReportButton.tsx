@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Button,
   SxProps,
   Theme,
+  CircularProgress,
 } from '@mui/material';
 import {
   Share as ShareIcon,
 } from '@mui/icons-material';
 import { Property } from '../../types/property';
-import { prepareReportData } from '../../services/investmentReportService';
-import { createShareableReport } from '../../services/reportSharingService';
+import { createShareableReport, generateReportUrl } from '../../services/investmentReportService';
 
 interface ShareReportButtonProps {
   property: Property;
@@ -26,19 +26,27 @@ const ShareReportButton: React.FC<ShareReportButtonProps> = ({
   fullWidth = false,
   sx,
 }) => {
-  const handleShareReport = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleShareReport = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
-      // Prepare report data
-      const reportData = prepareReportData(property);
+      // Create report via backend API
+      const reportId = await createShareableReport(property);
 
-      // Create shareable link
-      const shareableLink = createShareableReport(reportData);
-
-      // Open report in new tab directly
-      window.open(shareableLink.url, '_blank', 'noopener,noreferrer');
-    } catch (error) {
-      console.error('Error generating report:', error);
+      // Generate and open URL
+      const reportUrl = generateReportUrl(reportId);
+      window.open(reportUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create shareable report';
+      console.error('Error generating report:', errorMessage);
+      setError(errorMessage);
       // Could add a toast notification here if needed
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,8 +55,9 @@ const ShareReportButton: React.FC<ShareReportButtonProps> = ({
       variant={variant}
       size={size}
       fullWidth={fullWidth}
-      startIcon={<ShareIcon />}
+      startIcon={loading ? <CircularProgress size={16} /> : <ShareIcon />}
       onClick={handleShareReport}
+      disabled={loading}
       sx={{
         textTransform: 'none',
         py: 0.5,         // Further reduced vertical padding
@@ -57,7 +66,7 @@ const ShareReportButton: React.FC<ShareReportButtonProps> = ({
         ...sx
       }}
     >
-      Share Report
+      {loading ? 'Creating...' : 'Share Report'}
     </Button>
   );
 };

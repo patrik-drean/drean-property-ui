@@ -1,3 +1,18 @@
+/**
+ * @deprecated This service is deprecated and will be removed in a future version.
+ *
+ * Use investmentReportService.ts instead, which provides backend API integration
+ * for creating and retrieving reports. The backend approach enables true cross-browser
+ * and cross-device report sharing, unlike this localStorage-based implementation.
+ *
+ * Migration guide:
+ * - Replace createShareableReport() with createShareableReport() from investmentReportService
+ * - Replace getReportData() with getReportById() from investmentReportService
+ * - Report URLs remain the same format: /#/reports/investment/:reportId
+ *
+ * This file is kept for backward compatibility only.
+ */
+
 import { InvestmentReportData, ShareableReportLink, ReportSharingOptions } from '../types/investmentReport';
 
 // LocalStorage keys

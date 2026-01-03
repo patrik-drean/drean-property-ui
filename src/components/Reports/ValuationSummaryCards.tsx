@@ -13,7 +13,7 @@ const ValuationSummaryCards: React.FC<Props> = ({ rentCastEstimates }) => {
       <Grid item xs={12} md={6}>
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
-            After Repair Value (ARV)
+            Sales Comps
           </Typography>
           <Typography variant="h4" sx={{ mb: 2 }}>
             ${rentCastEstimates.price.toLocaleString()}
@@ -33,7 +33,7 @@ const ValuationSummaryCards: React.FC<Props> = ({ rentCastEstimates }) => {
       <Grid item xs={12} md={6}>
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Monthly Rent Estimate
+            Rent Comps
           </Typography>
           <Typography variant="h4" sx={{ mb: 2 }}>
             ${rentCastEstimates.rent.toLocaleString()}/month

@@ -10,13 +10,9 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { InvestmentReportData } from '../types/investmentReport';
-import { getReportData } from '../services/reportSharingService';
-import { calculateInvestmentMetrics } from '../services/investmentReportService';
+import { getReportById } from '../services/investmentReportService';
 import InvestmentSummarySection from '../components/Reports/InvestmentSummarySection';
-import InvestmentScoresSection from '../components/Reports/InvestmentScoresSection';
 import MarketAnalysisSection from '../components/Reports/MarketAnalysisSection';
-import CashFlowBreakdownSection from '../components/Reports/CashFlowBreakdownSection';
-import FinancingDetailsSection from '../components/Reports/FinancingDetailsSection';
 
 const InvestmentReportPage: React.FC = () => {
   const { reportId } = useParams<{ reportId: string }>();
@@ -32,19 +28,12 @@ const InvestmentReportPage: React.FC = () => {
       }
 
       try {
-        const data = getReportData(reportId);
-        if (!data) {
-          setError('Report not found or has expired');
-        } else {
-          // Recalculate metrics using current formulas to ensure accuracy
-          const updatedCalculations = calculateInvestmentMetrics(data.property);
-          setReportData({
-            ...data,
-            calculations: updatedCalculations
-          });
-        }
+        // Fetch report from backend API
+        const data = await getReportById(reportId);
+        setReportData(data);
       } catch (err) {
-        setError('Failed to load report');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load report';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -124,36 +113,12 @@ const InvestmentReportPage: React.FC = () => {
               />
             </Grid>
 
-            {/* Investment Scores Analysis Section */}
-            <Grid item xs={12}>
-              <InvestmentScoresSection
-                property={property}
-                calculations={calculations}
-              />
-            </Grid>
-
             {/* Market Analysis & Comparable Sales Section */}
             {property.hasRentcastData && (
               <Grid item xs={12}>
                 <MarketAnalysisSection property={property} />
               </Grid>
             )}
-
-            {/* Cash Flow Breakdown Section */}
-            <Grid item xs={12} lg={6}>
-              <CashFlowBreakdownSection
-                property={property}
-                calculations={calculations}
-              />
-            </Grid>
-
-            {/* Financing Details Section */}
-            <Grid item xs={12} lg={6}>
-              <FinancingDetailsSection
-                property={property}
-                calculations={calculations}
-              />
-            </Grid>
           </Grid>
 
           {/* Footer */}

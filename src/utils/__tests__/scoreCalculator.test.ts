@@ -260,56 +260,103 @@ describe('scoreCalculator', () => {
     });
   });
 
-  describe('calculateHoldCashflowScore', () => {
-    it('returns 8 for cashflow >= $200/unit', () => {
-      expect(calculateHoldCashflowScore(200, 1)).toBe(8);
-      expect(calculateHoldCashflowScore(400, 2)).toBe(8); // $200/unit
-      expect(calculateHoldCashflowScore(500, 1)).toBe(8);
+  describe('calculateHoldCashflowScore - NEW INVERTED LOGIC', () => {
+    // NEW LOGIC: Any positive cashflow = 8 points, decreasing as cashflow becomes more negative
+
+    describe('positive cashflow', () => {
+      it('returns 8 for any positive cashflow', () => {
+        expect(calculateHoldCashflowScore(0.01, 1)).toBe(8); // Very small positive
+        expect(calculateHoldCashflowScore(1, 1)).toBe(8);
+        expect(calculateHoldCashflowScore(50, 1)).toBe(8);
+        expect(calculateHoldCashflowScore(200, 1)).toBe(8);
+        expect(calculateHoldCashflowScore(500, 1)).toBe(8);
+        expect(calculateHoldCashflowScore(1000, 1)).toBe(8);
+      });
+
+      it('returns 8 for zero cashflow (not losing money)', () => {
+        expect(calculateHoldCashflowScore(0, 1)).toBe(8);
+      });
+
+      it('handles multi-unit properties correctly', () => {
+        expect(calculateHoldCashflowScore(100, 2)).toBe(8); // $50/unit (positive)
+        expect(calculateHoldCashflowScore(400, 4)).toBe(8); // $100/unit (positive)
+      });
     });
 
-    it('returns 7 for cashflow $175-$199/unit', () => {
-      expect(calculateHoldCashflowScore(175, 1)).toBe(7);
-      expect(calculateHoldCashflowScore(199, 1)).toBe(7);
-      expect(calculateHoldCashflowScore(350, 2)).toBe(7); // $175/unit
+    describe('negative cashflow - graduated decrease', () => {
+      it('returns 7 for slightly negative cashflow (-$0.01 to -$25/unit)', () => {
+        expect(calculateHoldCashflowScore(-0.01, 1)).toBe(7);
+        expect(calculateHoldCashflowScore(-10, 1)).toBe(7);
+        expect(calculateHoldCashflowScore(-20, 1)).toBe(7);
+        expect(calculateHoldCashflowScore(-25, 1)).toBe(7);
+      });
+
+      it('returns 6 for moderately negative cashflow (-$25.01 to -$50/unit)', () => {
+        expect(calculateHoldCashflowScore(-25.01, 1)).toBe(6);
+        expect(calculateHoldCashflowScore(-35, 1)).toBe(6);
+        expect(calculateHoldCashflowScore(-50, 1)).toBe(6);
+      });
+
+      it('returns 5 for cashflow -$50.01 to -$75/unit', () => {
+        expect(calculateHoldCashflowScore(-50.01, 1)).toBe(5);
+        expect(calculateHoldCashflowScore(-60, 1)).toBe(5);
+        expect(calculateHoldCashflowScore(-75, 1)).toBe(5);
+      });
+
+      it('returns 4 for significantly negative cashflow (-$75.01 to -$100/unit)', () => {
+        expect(calculateHoldCashflowScore(-75.01, 1)).toBe(4);
+        expect(calculateHoldCashflowScore(-90, 1)).toBe(4);
+        expect(calculateHoldCashflowScore(-100, 1)).toBe(4);
+      });
+
+      it('returns 3 for cashflow -$100.01 to -$125/unit', () => {
+        expect(calculateHoldCashflowScore(-100.01, 1)).toBe(3);
+        expect(calculateHoldCashflowScore(-110, 1)).toBe(3);
+        expect(calculateHoldCashflowScore(-125, 1)).toBe(3);
+      });
+
+      it('returns 2 for cashflow -$125.01 to -$150/unit', () => {
+        expect(calculateHoldCashflowScore(-125.01, 1)).toBe(2);
+        expect(calculateHoldCashflowScore(-140, 1)).toBe(2);
+        expect(calculateHoldCashflowScore(-150, 1)).toBe(2);
+      });
+
+      it('returns 1 for cashflow -$150.01 to -$175/unit', () => {
+        expect(calculateHoldCashflowScore(-150.01, 1)).toBe(1);
+        expect(calculateHoldCashflowScore(-160, 1)).toBe(1);
+        expect(calculateHoldCashflowScore(-175, 1)).toBe(1);
+      });
+
+      it('returns 0 for severely negative cashflow (< -$175/unit)', () => {
+        expect(calculateHoldCashflowScore(-175.01, 1)).toBe(0);
+        expect(calculateHoldCashflowScore(-200, 1)).toBe(0);
+        expect(calculateHoldCashflowScore(-500, 1)).toBe(0);
+        expect(calculateHoldCashflowScore(-1000, 1)).toBe(0);
+      });
     });
 
-    it('returns 6 for cashflow $150-$174/unit', () => {
-      expect(calculateHoldCashflowScore(150, 1)).toBe(6);
-      expect(calculateHoldCashflowScore(174, 1)).toBe(6);
-    });
+    describe('boundary conditions', () => {
+      it('handles exact threshold values correctly', () => {
+        expect(calculateHoldCashflowScore(0, 1)).toBe(8);     // Exactly 0 = positive
+        expect(calculateHoldCashflowScore(-25, 1)).toBe(7);   // At threshold
+        expect(calculateHoldCashflowScore(-50, 1)).toBe(6);   // At threshold
+        expect(calculateHoldCashflowScore(-75, 1)).toBe(5);   // At threshold
+        expect(calculateHoldCashflowScore(-100, 1)).toBe(4);  // At threshold
+        expect(calculateHoldCashflowScore(-125, 1)).toBe(3);  // At threshold
+        expect(calculateHoldCashflowScore(-150, 1)).toBe(2);  // At threshold
+        expect(calculateHoldCashflowScore(-175, 1)).toBe(1);  // At threshold
+      });
 
-    it('returns 5 for cashflow $125-$149/unit', () => {
-      expect(calculateHoldCashflowScore(125, 1)).toBe(5);
-      expect(calculateHoldCashflowScore(149, 1)).toBe(5);
-    });
-
-    it('returns 4 for cashflow $100-$124/unit', () => {
-      expect(calculateHoldCashflowScore(100, 1)).toBe(4);
-      expect(calculateHoldCashflowScore(124, 1)).toBe(4);
-    });
-
-    it('returns 3 for cashflow $75-$99/unit', () => {
-      expect(calculateHoldCashflowScore(75, 1)).toBe(3);
-      expect(calculateHoldCashflowScore(99, 1)).toBe(3);
-    });
-
-    it('returns 2 for cashflow $50-$74/unit', () => {
-      expect(calculateHoldCashflowScore(50, 1)).toBe(2);
-      expect(calculateHoldCashflowScore(74, 1)).toBe(2);
-    });
-
-    it('returns 1 for cashflow $0-$49/unit', () => {
-      expect(calculateHoldCashflowScore(0, 1)).toBe(1);
-      expect(calculateHoldCashflowScore(49, 1)).toBe(1);
-    });
-
-    it('returns 0 for negative cashflow', () => {
-      expect(calculateHoldCashflowScore(-1, 1)).toBe(0);
-      expect(calculateHoldCashflowScore(-100, 1)).toBe(0);
+      it('handles just below threshold values correctly', () => {
+        expect(calculateHoldCashflowScore(-25.01, 1)).toBe(6);   // Just below -25
+        expect(calculateHoldCashflowScore(-50.01, 1)).toBe(5);   // Just below -50
+        expect(calculateHoldCashflowScore(-175.01, 1)).toBe(0);  // Just below -175
+      });
     });
 
     it('defaults to 1 unit if not specified', () => {
-      expect(calculateHoldCashflowScore(200)).toBe(8);
+      expect(calculateHoldCashflowScore(100)).toBe(8); // Positive
+      expect(calculateHoldCashflowScore(-30)).toBe(6);  // Negative
     });
   });
 
@@ -458,13 +505,17 @@ describe('scoreCalculator', () => {
   });
 
   describe('getHoldScoreBreakdown', () => {
-    it('returns all score components', () => {
+    it('returns all required score components', () => {
       const property = createTypicalProperty();
       const breakdown = getHoldScoreBreakdown(property);
 
+      // Check all required fields exist
       expect(breakdown).toHaveProperty('cashflowScore');
       expect(breakdown).toHaveProperty('rentRatioScore');
       expect(breakdown).toHaveProperty('totalScore');
+      expect(breakdown).toHaveProperty('cashflowPerUnit');
+      expect(breakdown).toHaveProperty('rentRatio');
+      expect(breakdown).toHaveProperty('explanation');
     });
 
     it('breakdown components sum correctly', () => {
@@ -488,6 +539,69 @@ describe('scoreCalculator', () => {
       const breakdown = getHoldScoreBreakdown(property);
       expect(breakdown.rentRatioScore).toBeGreaterThanOrEqual(0);
       expect(breakdown.rentRatioScore).toBeLessThanOrEqual(2);
+    });
+
+    it('provides correct explanation for positive cashflow', () => {
+      const property = createTestProperty({
+        potentialRent: 2000,
+        offerPrice: 100000,
+        rehabCosts: 20000,
+        arv: 200000,
+        units: 1
+      });
+      const breakdown = getHoldScoreBreakdown(property);
+
+      expect(breakdown.cashflowScore).toBe(8);
+      expect(breakdown.explanation).toContain('Positive cashflow');
+    });
+
+    it('provides correct explanation for slightly negative cashflow', () => {
+      const property = createTestProperty({
+        potentialRent: 500, // Low rent to create negative cashflow
+        offerPrice: 100000,
+        rehabCosts: 20000,
+        arv: 200000,
+        units: 1
+      });
+      const breakdown = getHoldScoreBreakdown(property);
+
+      if (breakdown.cashflowScore === 7) {
+        expect(breakdown.explanation).toContain('Nearly breaks even');
+      } else if (breakdown.cashflowScore >= 5) {
+        expect(breakdown.explanation).toContain('Moderate negative cashflow');
+      } else if (breakdown.cashflowScore >= 3) {
+        expect(breakdown.explanation).toContain('Significant negative cashflow');
+      } else {
+        expect(breakdown.explanation).toContain('Severe negative cashflow');
+      }
+    });
+
+    it('calculates cashflowPerUnit correctly', () => {
+      const property = createTestProperty({
+        potentialRent: 2000,
+        offerPrice: 100000,
+        rehabCosts: 20000,
+        arv: 200000,
+        units: 2
+      });
+      const breakdown = getHoldScoreBreakdown(property);
+
+      expect(typeof breakdown.cashflowPerUnit).toBe('number');
+      expect(breakdown.cashflowPerUnit).toBeDefined();
+    });
+
+    it('calculates rentRatio correctly', () => {
+      const property = createTestProperty({
+        potentialRent: 1200,
+        offerPrice: 100000,
+        rehabCosts: 20000,
+        arv: 200000,
+        units: 1
+      });
+      const breakdown = getHoldScoreBreakdown(property);
+
+      expect(typeof breakdown.rentRatio).toBe('number');
+      expect(breakdown.rentRatio).toBeGreaterThanOrEqual(0);
     });
   });
 

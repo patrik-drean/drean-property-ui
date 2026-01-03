@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { Property } from '../types/property';
 import {
   InvestmentReportData,
@@ -20,6 +21,14 @@ import {
   calculatePerfectRentForHoldScore,
   calculatePerfectARVForFlipScore,
 } from '../utils/scoreCalculator';
+
+// API Configuration
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+// Helper function to get auth token
+const getAuthToken = (): string | null => {
+  return localStorage.getItem('authToken');
+};
 
 // Format currency for display
 export const formatCurrency = (value: number): string => {
@@ -220,4 +229,67 @@ export const generateFilename = (address: string): string => {
     .trim();
 
   return `Investment-Summary-${sanitizedAddress}-${today}.pdf`;
+};
+
+// ========== Backend API Integration ==========
+
+// Create shareable report via backend API
+export const createShareableReport = async (property: Property): Promise<string> => {
+  const reportData = prepareReportData(property);
+  const token = getAuthToken();
+
+  try {
+    const response = await axios.post<{ id: string }>(
+      `${API_BASE_URL}/api/investment-reports`,
+      {
+        propertyId: property.id || '',
+        propertyAddress: property.address,
+        reportData: reportData,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    return response.data.id;
+  } catch (error: any) {
+    console.error('Failed to create shareable report:', error);
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      token: token ? 'Token exists' : 'No token found'
+    });
+    throw new Error(error.response?.data?.message || 'Failed to create shareable report. Please try again.');
+  }
+};
+
+// Fetch report from backend API
+export const getReportById = async (reportId: string): Promise<InvestmentReportData> => {
+  try {
+    const response = await axios.get<{
+      id: string;
+      propertyId: string;
+      propertyAddress: string;
+      reportData: InvestmentReportData;
+      createdAt: string;
+      viewCount: number;
+    }>(`${API_BASE_URL}/api/investment-reports/${reportId}`);
+
+    // Return the reportData from the response
+    const reportData = response.data.reportData;
+
+    // Convert generatedAt string back to Date object
+    if (reportData.generatedAt && typeof reportData.generatedAt === 'string') {
+      reportData.generatedAt = new Date(reportData.generatedAt);
+    }
+
+    return reportData;
+  } catch (error) {
+    console.error('Failed to fetch report:', error);
+    throw new Error('Report not found or has expired');
+  }
 };

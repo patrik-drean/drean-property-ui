@@ -10,8 +10,7 @@ import TasksSection from '../components/TasksSection';
 import ContactDialog from '../components/ContactDialog';
 import { MarkdownNoteModal } from '../components/MarkdownNoteModal';
 import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from '../components/shared/PropertyTooltips';
-import { prepareReportData } from '../services/investmentReportService';
-import { createShareableReport } from '../services/reportSharingService';
+import { createShareableReport, generateReportUrl } from '../services/investmentReportService';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -333,19 +332,20 @@ const PropertyDetailsPage: React.FC = () => {
     setReportsMenuAnchor(null);
   };
 
-  const handleInvestmentReport = () => {
+  const handleInvestmentReport = async () => {
     if (!property) return;
     try {
-      // Prepare report data
-      const reportData = prepareReportData(property);
+      // Create report via backend API
+      const reportId = await createShareableReport(property);
 
-      // Create shareable link
-      const shareableLink = createShareableReport(reportData);
+      // Generate report URL
+      const reportUrl = generateReportUrl(reportId);
 
       // Open report in new tab
-      window.open(shareableLink.url, '_blank', 'noopener,noreferrer');
+      window.open(reportUrl, '_blank', 'noopener,noreferrer');
 
       handleReportsMenuClose();
+      handleSnackbar('Investment report created successfully', 'success');
     } catch (error) {
       console.error('Error generating investment report:', error);
       handleSnackbar('Failed to generate investment report', 'error');

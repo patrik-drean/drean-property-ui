@@ -25,18 +25,6 @@ const MarketAnalysisSection: React.FC<Props> = ({ property }) => {
 
       {/* Comparables Table */}
       <ComparablesTable comparables={saleComparables} />
-
-      {/* Market Insights (if comparables exist) */}
-      {saleComparables && saleComparables.length > 0 && (
-        <Box sx={{ mt: 2, p: 2, bgcolor: '#f8f9fa', borderRadius: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            <strong>Market Insights:</strong>
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            ✓ ARV estimate aligns with average comp price - Strong market validation
-          </Typography>
-        </Box>
-      )}
     </Paper>
   );
 };

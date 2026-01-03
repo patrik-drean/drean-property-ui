@@ -173,19 +173,25 @@ describe('SalesFunnelReportComponent', () => {
       });
     });
 
-    it('should format conversion rates with 2 decimals and % sign', async () => {
+    it('should format conversion rates as whole numbers with inline goal', async () => {
       mockedService.getSalesFunnelReport.mockResolvedValue(mockReport);
 
       renderWithTheme(<SalesFunnelReportComponent />);
 
       await waitFor(() => {
-        expect(screen.getByText('80.00%')).toBeInTheDocument();
-        expect(screen.getByText('75.00%')).toBeInTheDocument();
-        expect(screen.getByText('66.67%')).toBeInTheDocument();
+        // Check that percentages are rounded to whole numbers
+        expect(screen.getByText(/80%/)).toBeInTheDocument(); // Contacted
+        expect(screen.getByText(/75%/)).toBeInTheDocument(); // Responded
+        expect(screen.getByText(/67%/)).toBeInTheDocument(); // Converted (66.67 rounded)
+
+        // Check that goals are displayed inline
+        expect(screen.getByText(/70% = Goal/)).toBeInTheDocument(); // Contacted goal
+        expect(screen.getByText(/40% = Goal/)).toBeInTheDocument(); // Responded goal
+        expect(screen.getByText(/33% = Goal/)).toBeInTheDocument(); // Converted goal
       });
     });
 
-    it('should display null conversion rates as "-"', async () => {
+    it('should display null conversion rates as "0%"', async () => {
       mockedService.getSalesFunnelReport.mockResolvedValue(mockReport);
 
       renderWithTheme(<SalesFunnelReportComponent />);
@@ -194,7 +200,7 @@ describe('SalesFunnelReportComponent', () => {
         // First stage (Leads) has null conversion rate
         const rows = screen.getAllByRole('row');
         const leadsRow = rows.find((row) => row.textContent?.includes('Leads'));
-        expect(leadsRow?.textContent).toContain('-');
+        expect(leadsRow?.textContent).toContain('0%');
       });
     });
 

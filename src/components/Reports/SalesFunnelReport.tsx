@@ -58,10 +58,11 @@ export const SalesFunnelReportComponent: React.FC = () => {
   }, [selectedPreset]);
 
   const getConversionRateColor = (stageName: string, rate: number | null): string => {
-    if (rate === null) return theme.palette.text.secondary;
-
     const goal = STAGE_GOALS[stageName];
     if (!goal) return theme.palette.text.secondary;
+
+    // If rate is null (0%), it's below goal so show warning color
+    if (rate === null) return theme.palette.warning.main;
 
     if (rate >= goal) {
       return theme.palette.success.main; // Green when meeting goal
@@ -71,8 +72,14 @@ export const SalesFunnelReportComponent: React.FC = () => {
   };
 
   const formatConversionRate = (rate: number | null): string => {
-    if (rate === null) return '-';
-    return `${rate.toFixed(2)}%`;
+    if (rate === null) return '0%';
+    return `${Math.round(rate)}%`;
+  };
+
+  const formatGoalText = (stageName: string): string | null => {
+    const goal = STAGE_GOALS[stageName];
+    if (!goal) return null;
+    return ` (${goal}% = Goal)`;
   };
 
   const getStageVerb = (stageName: string): string => {
@@ -107,7 +114,7 @@ export const SalesFunnelReportComponent: React.FC = () => {
     }
 
     const verb = getStageVerb(stageName);
-    return `Goal: ${goal}% (For every 150 leads, ${Math.round(expectedCount)} should ${verb})`;
+    return `For every 150 leads ${Math.round(expectedCount)} should ${verb}`;
   };
 
   // Loading state
@@ -201,13 +208,7 @@ export const SalesFunnelReportComponent: React.FC = () => {
                     {stage.stageName}
                   </TableCell>
                   <TableCell align="right">{stage.count}</TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      color: getConversionRateColor(stage.stageName, stage.conversionRateFromPrevious),
-                      fontWeight: 500,
-                    }}
-                  >
+                  <TableCell align="right">
                     <Tooltip
                       title={tooltipContent}
                       arrow
@@ -216,7 +217,24 @@ export const SalesFunnelReportComponent: React.FC = () => {
                       disableHoverListener={!hasGoal}
                     >
                       <span style={{ cursor: hasGoal ? 'help' : 'default' }}>
-                        {formatConversionRate(stage.conversionRateFromPrevious)}
+                        <span
+                          style={{
+                            color: getConversionRateColor(stage.stageName, stage.conversionRateFromPrevious),
+                            fontWeight: 500,
+                          }}
+                        >
+                          {formatConversionRate(stage.conversionRateFromPrevious)}
+                        </span>
+                        {formatGoalText(stage.stageName) && (
+                          <span
+                            style={{
+                              color: theme.palette.text.secondary,
+                              fontWeight: 400,
+                            }}
+                          >
+                            {formatGoalText(stage.stageName)}
+                          </span>
+                        )}
                       </span>
                     </Tooltip>
                   </TableCell>

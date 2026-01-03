@@ -58,49 +58,13 @@ import {
   calculatePerfectRentForHoldScore,
   calculatePerfectARVForFlipScore,
 } from '../utils/scoreCalculator';
+import {
+  StyledTableCell,
+  StyledTableRow,
+  getScoreBackgroundColor,
+} from './properties';
 
-// Styled components for consistent UI elements
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  padding: '6px 8px',
-  fontSize: '0.8125rem',
-  whiteSpace: 'nowrap',
-  '&.header': {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.common.white,
-    fontWeight: 'bold',
-    height: '38px'
-  },
-  '&.metric': {
-    backgroundColor: theme.palette.primary.light,
-    color: theme.palette.common.white,
-  }
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: theme.palette.action.hover,
-  },
-  '&:last-child td, &:last-child th': {
-    border: 0,
-  },
-  '&:hover': {
-    backgroundColor: '#f1f5f9',
-    cursor: 'pointer'
-  },
-  height: '46px'
-}));
-
-// Status color function is now imported from utils/statusColors.ts
-
-// Add new helper function for score background color
-const getScoreBackgroundColor = (score: number): string => {
-  if (score >= 9) return '#4CAF50'; // Green for 9-10
-  if (score >= 7) return '#FFC107'; // Amber for 7-8
-  if (score >= 5) return '#FF9800'; // Orange for 5-6
-  return '#F44336'; // Red for < 5
-};
-
-// Update the getScoreColor function to ensure text contrast
+// Update the getScoreColor function to ensure text contrast (using imported getScoreTextColor)
 const getScoreColor = (score: number): string => {
   if (score >= 9) return '#E8F5E9'; // Light green text for green background
   if (score >= 7) return '#212121'; // Dark text for amber background

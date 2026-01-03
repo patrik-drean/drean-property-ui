@@ -312,6 +312,7 @@ describe('propertyMetricsCalculator', () => {
         {
           id: 'unit-1',
           propertyId: 'prop-1',
+          unitNumber: '1',
           status: 'Vacant',
           rent: 1000,
           notes: '',
@@ -327,6 +328,7 @@ describe('propertyMetricsCalculator', () => {
         {
           id: 'unit-2',
           propertyId: 'prop-1',
+          unitNumber: '2',
           status: 'Occupied',
           rent: 1000,
           notes: '',
@@ -337,6 +339,7 @@ describe('propertyMetricsCalculator', () => {
         {
           id: 'unit-3',
           propertyId: 'prop-1',
+          unitNumber: '3',
           status: 'Vacant',
           rent: 1200,
           notes: '',
@@ -364,6 +367,7 @@ describe('propertyMetricsCalculator', () => {
         {
           id: 'unit-1',
           propertyId: 'prop-1',
+          unitNumber: '1',
           status: 'Occupied',
           rent: 1000,
           notes: '',
@@ -386,6 +390,7 @@ describe('propertyMetricsCalculator', () => {
         {
           id: 'unit-1',
           propertyId: 'prop-1',
+          unitNumber: '1',
           status: 'Behind on Rent',
           rent: 1000,
           notes: '',
@@ -401,6 +406,7 @@ describe('propertyMetricsCalculator', () => {
         {
           id: 'unit-2',
           propertyId: 'prop-1',
+          unitNumber: '2',
           status: 'Occupied',
           rent: 1000,
           notes: '',
@@ -427,6 +433,7 @@ describe('propertyMetricsCalculator', () => {
         {
           id: 'unit-1',
           propertyId: 'prop-1',
+          unitNumber: '1',
           status: 'Behind on Rent',
           rent: 1200,
           notes: '',
@@ -451,6 +458,7 @@ describe('propertyMetricsCalculator', () => {
         {
           id: 'unit-1',
           propertyId: 'prop-1',
+          unitNumber: '1',
           status: 'Occupied',
           rent: 1000,
           notes: '',

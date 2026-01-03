@@ -69,11 +69,12 @@ const mockCashFlowReport = {
     currentRentIncome: 1850,
     currentExpenses: {
       mortgage: 1200,
-      propertyTax: 416,
+      taxes: 416,
       insurance: 130,
       propertyManagement: 222,
-      maintenance: 92,
+      utilities: 0,
       vacancy: 148,
+      capEx: 92,
       other: 0,
       total: 2208
     },
@@ -81,26 +82,31 @@ const mockCashFlowReport = {
     potentialRentIncome: 1800,
     potentialExpenses: {
       mortgage: 1200,
-      propertyTax: 416,
+      taxes: 416,
       insurance: 130,
       propertyManagement: 216,
-      maintenance: 90,
+      utilities: 0,
       vacancy: 144,
+      capEx: 90,
       other: 0,
       total: 2196
     },
     potentialNetCashFlow: -396,
-    isOperational: true
+    isOperational: true,
+    operationalUnits: 1,
+    behindRentUnits: 0,
+    vacantUnits: 0
   }],
   summary: {
     currentTotalRentIncome: 1850,
     currentTotalExpenses: {
       mortgage: 1200,
-      propertyTax: 416,
+      taxes: 416,
       insurance: 130,
       propertyManagement: 222,
-      maintenance: 92,
+      utilities: 0,
       vacancy: 148,
+      capEx: 92,
       other: 0,
       total: 2208
     },
@@ -108,17 +114,21 @@ const mockCashFlowReport = {
     potentialTotalRentIncome: 1800,
     potentialTotalExpenses: {
       mortgage: 1200,
-      propertyTax: 416,
+      taxes: 416,
       insurance: 130,
       propertyManagement: 216,
-      maintenance: 90,
+      utilities: 0,
       vacancy: 144,
+      capEx: 90,
       other: 0,
       total: 2196
     },
     potentialTotalNetCashFlow: -396,
     propertiesCount: 1,
-    operationalPropertiesCount: 1
+    operationalPropertiesCount: 1,
+    totalOperationalUnits: 1,
+    totalBehindRentUnits: 0,
+    totalVacantUnits: 0
   },
   generatedAt: new Date()
 };

@@ -9,18 +9,12 @@ import {
   TableRow,
   Button,
   Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  TextField,
-  DialogActions,
   Tooltip,
   IconButton,
   CircularProgress,
   Snackbar,
   Alert,
   Box,
-  styled,
   Checkbox,
   Chip,
   Pagination,
@@ -44,104 +38,25 @@ import { smsService } from '../services/smsService';
 import { SmsConversation } from '../types/sms';
 import PropertyLeadDialog from './PropertyLeadDialog';
 import { MessageLeadButton } from './messaging/MessageLeadButton';
-
-// Styled components for consistent UI elements
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  padding: '12px 16px',
-  '&.header': {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.common.white,
-    fontWeight: 'bold',
-  },
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  borderLeft: '6px solid transparent',
-  backgroundColor: '#ffffff !important',
-  '&:last-child td, &:last-child th': {
-    border: 0,
-  },
-  '&:hover': {
-    backgroundColor: '#f8f9fa !important',
-  }
-}));
-
-// Action button styling
-const ActionIconButton = styled(IconButton)(({ theme }) => ({
-  backgroundColor: 'rgba(25, 118, 210, 0.08)',
-  '&:hover': { 
-    backgroundColor: 'rgba(25, 118, 210, 0.15)'
-  }
-}));
-
-const DeleteIconButton = styled(IconButton)(({ theme }) => ({
-  backgroundColor: 'rgba(211, 47, 47, 0.08)',
-  '&:hover': { 
-    backgroundColor: 'rgba(211, 47, 47, 0.15)'
-  }
-}));
-
-// Add a new styled component for the converted badge
-const ConvertedBadge = styled(Box)(({ theme }) => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  backgroundColor: theme.palette.success.main,
-  color: theme.palette.common.white,
-  borderRadius: '4px',
-  padding: '2px 6px',
-  fontSize: '0.75rem',
-  fontWeight: 'bold',
-  marginLeft: '8px',
-}));
-
-// Styled component for uncontacted leads
-const NotContactedText = styled(Typography)(({ theme }) => ({
-  color: theme.palette.warning.main,
-  fontWeight: 'bold',
-}));
-
-// Helper function to calculate ARV Guess for a lead
-const calculateARVGuess = (squareFootage: number | null): number => {
-  if (!squareFootage) return 0;
-  return 160 * squareFootage;
-};
-
-// Helper function to calculate lead score based on listing price vs ARV
-const calculateLeadScore = (listingPrice: number, squareFootage: number | null): number => {
-  const arvGuess = calculateARVGuess(squareFootage);
-  if (!arvGuess || arvGuess === 0) return 0;
-
-  const ratio = listingPrice / arvGuess;
-
-  // Calculate score based on ratio thresholds
-  if (ratio >= 0.95) return 1;
-  if (ratio >= 0.90) return 2;
-  if (ratio >= 0.85) return 3;
-  if (ratio >= 0.80) return 4;
-  if (ratio >= 0.75) return 5;
-  if (ratio >= 0.70) return 6;
-  if (ratio >= 0.65) return 7;
-  if (ratio >= 0.60) return 8;
-  if (ratio >= 0.55) return 9;
-  // Anything 50% and under is a 10
-  return 10;
-};
-
-// Helper function to get score background color
-const getScoreBackgroundColor = (score: number): string => {
-  if (score >= 8) return '#4CAF50'; // Green for 8-10
-  if (score >= 5) return '#FFC107'; // Yellow for 5-7
-  if (score >= 1) return '#F44336'; // Red for 1-4
-  return '#9E9E9E'; // Grey for 0 (no data)
-};
-
-// Helper function to get score text color
-const getScoreColor = (score: number): string => {
-  if (score >= 8) return '#E8F5E9'; // Light green text for green background
-  if (score >= 5) return '#212121'; // Dark text for yellow background
-  if (score >= 1) return '#FFEBEE'; // Light red text for red background
-  return '#FFFFFF'; // White text for grey background
-};
+import {
+  StyledTableCell,
+  StyledTableRow,
+  ActionIconButton,
+  DeleteIconButton,
+  ConvertedBadge,
+  NotContactedText,
+} from './leads/leadsStyles';
+import {
+  calculateARVGuess,
+  calculateLeadScore,
+  getScoreBackgroundColor,
+  getScoreColor,
+  hasMetadataContent,
+  formatMetadataValue,
+  sortPropertyLeads,
+  formatCurrency,
+} from './leads/leadsHelpers';
+import { LeadsToolbar } from './leads/LeadsToolbar';
 
 const PropertyLeadsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -213,20 +128,6 @@ const PropertyLeadsPage: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(100);
   const [totalItems, setTotalItems] = useState(0);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatCurrencyInK = (value: number) => {
-    const inK = Math.round(value / 1000);
-    return `$${inK}K`;
-  };
-
   const formatDate = (dateString: string | null) => {
     if (!dateString) {
       return <NotContactedText>Not contacted</NotContactedText>;
@@ -237,54 +138,6 @@ const PropertyLeadsPage: React.FC = () => {
       month: 'short',
       day: 'numeric',
     });
-  };
-
-  // Helper function to check if metadata has content
-  const hasMetadataContent = (metadata: string | undefined): boolean => {
-    if (!metadata || metadata === '{}') return false;
-    try {
-      const parsed = JSON.parse(metadata);
-      return Object.keys(parsed).length > 0;
-    } catch {
-      return false;
-    }
-  };
-
-  // Helper function to check if a metadata key represents a financial value
-  const isFinancialKey = (key: string): boolean => {
-    const lowerKey = key.toLowerCase();
-    return lowerKey.includes('price') ||
-           lowerKey.includes('estimate') ||
-           lowerKey.includes('value') ||
-           lowerKey.includes('arv') ||
-           lowerKey.includes('zestimate') ||
-           lowerKey.includes('rent') ||
-           lowerKey.includes('cost') ||
-           lowerKey.includes('mao');
-  };
-
-  // Helper function to check if a metadata key represents a ratio/percentage
-  const isRatioKey = (key: string): boolean => {
-    const lowerKey = key.toLowerCase();
-    return lowerKey.includes('ratio') ||
-           lowerKey.includes('percent') ||
-           lowerKey.includes('rate');
-  };
-
-  // Helper function to format metadata value based on its key and type
-  const formatMetadataValue = (key: string, value: any): string => {
-    // Check if it's a number
-    if (typeof value === 'number') {
-      // Format as percentage if it's a ratio field
-      if (isRatioKey(key)) {
-        return `${(value * 100).toFixed(1)}%`;
-      }
-      // Format as currency if it's a financial field
-      if (isFinancialKey(key)) {
-        return formatCurrency(value);
-      }
-    }
-    return String(value);
   };
 
   // Helper function to format metadata for tooltip display
@@ -466,59 +319,6 @@ const PropertyLeadsPage: React.FC = () => {
     // Cleanup interval on unmount
     return () => clearInterval(intervalId);
   }, [fetchPropertyLeads]);
-
-  // Add sorting function for property leads - modified to handle archived status
-  const sortPropertyLeads = (leads: PropertyLead[]) => {
-    return [...leads].sort((a, b) => {
-      // First sort by archived status
-      if (a.archived !== b.archived) {
-        return a.archived ? 1 : -1; // Non-archived leads first
-      }
-
-      // Then sort by last contact date (not contacted leads first, then most recent)
-      if (!a.lastContactDate && !b.lastContactDate) {
-        // Both have no contact date (Not Contacted)
-        // Sort by lead score descending (10 -> 1, then null)
-        // Use backend score if available, otherwise calculate client-side (same as display logic)
-        const aScore = (a.leadScore !== null && a.leadScore !== undefined)
-          ? a.leadScore
-          : calculateLeadScore(a.listingPrice, a.squareFootage);
-        const bScore = (b.leadScore !== null && b.leadScore !== undefined)
-          ? b.leadScore
-          : calculateLeadScore(b.listingPrice, b.squareFootage);
-
-        if (aScore !== bScore) {
-          return bScore - aScore; // Descending order (higher scores first)
-        }
-
-        // If scores are equal, sort by created date (most recent first)
-        const createdDateComparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        if (createdDateComparison !== 0) {
-          return createdDateComparison;
-        }
-      } else if (!a.lastContactDate) {
-        return -1; // a has no contact date, put it first
-      } else if (!b.lastContactDate) {
-        return 1; // b has no contact date, put it first
-      } else {
-        // Both have contact dates, sort by most recent first
-        const dateComparison = new Date(b.lastContactDate).getTime() - new Date(a.lastContactDate).getTime();
-        if (dateComparison !== 0) {
-          return dateComparison;
-        }
-      }
-
-      // Then sort by number of units descending (null/undefined units go to the end)
-      const aUnits = a.units || 0;
-      const bUnits = b.units || 0;
-      if (aUnits !== bUnits) {
-        return bUnits - aUnits; // Descending order
-      }
-
-      // Finally sort alphabetically by address ascending
-      return a.address.localeCompare(b.address);
-    });
-  };
 
   // Pagination helper functions - now using memoized version
   const getPaginatedLeads = () => paginatedLeads;
@@ -952,11 +752,6 @@ const PropertyLeadsPage: React.FC = () => {
     });
   };
 
-  // Modify the countConvertedLeads function to include locally tracked conversions
-  const countConvertedLeads = (leads: PropertyLead[]) => {
-    return leads.filter(lead => lead.convertedToProperty || locallyConvertedLeads.has(lead.id)).length;
-  };
-
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -975,91 +770,15 @@ const PropertyLeadsPage: React.FC = () => {
 
   return (
     <>
-      <Box sx={{ 
-        mb: 4, 
-        display: 'flex', 
-        flexDirection: { xs: 'column', sm: 'row' },
-        justifyContent: 'space-between', 
-        alignItems: { xs: 'stretch', sm: 'center' },
-        gap: { xs: 2, sm: 0 }
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-          <Typography variant="h4" component="h1">Property Leads</Typography>
-          {countConvertedLeads(propertyLeads) > 0 && (
-            <Tooltip title="Number of leads converted to properties">
-              <Box sx={{ 
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                backgroundColor: 'success.light',
-                color: 'success.contrastText',
-                borderRadius: '16px',
-                px: 1.5,
-                py: 0.5,
-              }}>
-                <Icons.Transform fontSize="small" sx={{ mr: 0.5 }} />
-                {countConvertedLeads(propertyLeads)} Converted
-              </Box>
-            </Tooltip>
-          )}
-        </Box>
-        <Box sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' },
-          gap: { xs: 1, sm: 1 },
-          justifyContent: { xs: 'stretch', sm: 'flex-end' },
-          width: { xs: '100%', sm: 'auto' }
-        }}>
-          <Button
-            variant="outlined"
-            component={RouterLink}
-            to="/reports?tab=3"
-            startIcon={<Icons.Assessment />}
-            sx={{
-              borderRadius: 2,
-              width: { xs: '100%', sm: 'auto' }
-            }}
-          >
-            View Sales Report
-          </Button>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={handleToggleShowArchived}
-            startIcon={<Icons.Archive />}
-            sx={{
-              borderRadius: 2,
-              width: { xs: '100%', sm: 'auto' }
-            }}
-          >
-            {showArchived ? 'Hide Archived' : 'Archived Leads'}
-          </Button>
-          {selectedLeads.length > 0 && (
-            <Button
-              variant="contained"
-              color="error"
-              startIcon={<Icons.Delete />}
-              onClick={handleBulkDelete}
-              sx={{ 
-                width: { xs: '100%', sm: 'auto' }
-              }}
-            >
-              Delete Selected ({selectedLeads.length})
-            </Button>
-          )}
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Icons.Add />}
-            onClick={handleAddLead}
-            sx={{ 
-              width: { xs: '100%', sm: 'auto' }
-            }}
-          >
-            Add Lead
-          </Button>
-        </Box>
-      </Box>
+      <LeadsToolbar
+        propertyLeads={propertyLeads}
+        selectedLeads={selectedLeads}
+        showArchived={showArchived}
+        locallyConvertedLeads={locallyConvertedLeads}
+        onAddLead={handleAddLead}
+        onToggleShowArchived={handleToggleShowArchived}
+        onBulkDelete={handleBulkDelete}
+      />
 
       {/* Desktop view - Table */}
       <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>

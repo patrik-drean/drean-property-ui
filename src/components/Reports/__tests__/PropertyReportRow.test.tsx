@@ -10,19 +10,36 @@ const mockCashFlowProperty: PropertyCashFlowData = {
   id: '1',
   address: '123 Test St',
   status: 'Operational',
-  rentIncome: 1800,
-  expenses: {
+  currentRentIncome: 1800,
+  currentExpenses: {
     mortgage: 1200,
-    propertyTax: 400,
+    taxes: 400,
     insurance: 130,
     propertyManagement: 216,
-    maintenance: 90,
+    utilities: 0,
     vacancy: 144,
+    capEx: 90,
     other: 0,
     total: 2180
   },
-  netCashFlow: -380,
-  isOperational: true
+  currentNetCashFlow: -380,
+  potentialRentIncome: 1850,
+  potentialExpenses: {
+    mortgage: 1200,
+    taxes: 400,
+    insurance: 130,
+    propertyManagement: 222,
+    utilities: 0,
+    vacancy: 148,
+    capEx: 92,
+    other: 0,
+    total: 2192
+  },
+  potentialNetCashFlow: -342,
+  isOperational: true,
+  operationalUnits: 1,
+  behindRentUnits: 0,
+  vacantUnits: 0
 };
 
 const mockAssetProperty: PropertyAssetData = {
@@ -62,6 +79,7 @@ describe('PropertyReportRow', () => {
         <PropertyCashFlowRow
           property={mockCashFlowProperty}
           onPropertyClick={mockOnPropertyClick}
+          scenario="current"
         />
       );
 
@@ -76,6 +94,7 @@ describe('PropertyReportRow', () => {
         <PropertyCashFlowRow
           property={mockCashFlowProperty}
           onPropertyClick={mockOnPropertyClick}
+          scenario="current"
         />
       );
 
@@ -89,42 +108,62 @@ describe('PropertyReportRow', () => {
       const nonOpProperty: PropertyCashFlowData = {
         ...mockCashFlowProperty,
         status: 'Opportunity',
-        rentIncome: 0,
-        expenses: {
+        currentRentIncome: 0,
+        currentExpenses: {
           mortgage: 0,
-          propertyTax: 0,
+          taxes: 0,
           insurance: 0,
           propertyManagement: 0,
-          maintenance: 0,
+          utilities: 0,
           vacancy: 0,
+          capEx: 0,
           other: 0,
           total: 0
         },
-        netCashFlow: 0,
-        isOperational: false
+        currentNetCashFlow: 0,
+        potentialRentIncome: 0,
+        potentialExpenses: {
+          mortgage: 0,
+          taxes: 0,
+          insurance: 0,
+          propertyManagement: 0,
+          utilities: 0,
+          vacancy: 0,
+          capEx: 0,
+          other: 0,
+          total: 0
+        },
+        potentialNetCashFlow: 0,
+        isOperational: false,
+        operationalUnits: 0,
+        behindRentUnits: 0,
+        vacantUnits: 0
       };
 
       renderWithTheme(
         <PropertyCashFlowRow
           property={nonOpProperty}
           onPropertyClick={mockOnPropertyClick}
+          scenario="current"
         />
       );
 
       expect(screen.getByText('Opportunity')).toBeInTheDocument();
-      expect(screen.getByText('$0')).toBeInTheDocument();
+      // Multiple $0 values exist (rent, expenses, cash flow), so use getAllByText
+      expect(screen.getAllByText('$0').length).toBeGreaterThanOrEqual(1);
     });
 
     it('should show positive cash flow in green', () => {
       const profitableProperty: PropertyCashFlowData = {
         ...mockCashFlowProperty,
-        netCashFlow: 500
+        currentNetCashFlow: 500
       };
 
       renderWithTheme(
         <PropertyCashFlowRow
           property={profitableProperty}
           onPropertyClick={mockOnPropertyClick}
+          scenario="current"
         />
       );
 
@@ -182,7 +221,8 @@ describe('PropertyReportRow', () => {
 
       expect(screen.getByText('Opportunity')).toBeInTheDocument();
       expect(screen.getByText('$0')).toBeInTheDocument(); // loan value
-      expect(screen.getByText('$250,000')).toBeInTheDocument(); // equity
+      // Multiple $250,000 values exist (currentValue and equity), so use getAllByText
+      expect(screen.getAllByText('$250,000').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('100.0%')).toBeInTheDocument();
     });
   });
@@ -193,6 +233,7 @@ describe('PropertyReportRow', () => {
         <PropertyCashFlowRow
           property={mockCashFlowProperty}
           onPropertyClick={mockOnPropertyClick}
+          scenario="current"
         />
       );
 
@@ -238,6 +279,7 @@ describe('PropertyReportRow', () => {
           <PropertyCashFlowRow
             property={testProperty}
             onPropertyClick={mockOnPropertyClick}
+            scenario="current"
           />
         );
 

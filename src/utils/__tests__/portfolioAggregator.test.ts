@@ -38,7 +38,21 @@ const mockOperationalProperty: Property = {
   currentHouseValue: 245000,
   currentLoanValue: 150000,
   propertyUnits: [],
-  monthlyExpenses: null,
+  monthlyExpenses: {
+    id: 'exp-1',
+    propertyId: '1',
+    mortgage: 800,
+    taxes: 200,
+    insurance: 100,
+    propertyManagement: 150,
+    utilities: 50,
+    vacancy: 92,
+    capEx: 92,
+    other: 50,
+    total: 1534,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
   capitalCosts: null
 };
 

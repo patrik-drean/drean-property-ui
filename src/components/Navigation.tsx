@@ -391,13 +391,7 @@ const Navigation: React.FC = () => {
                 <Tooltip title={user.name}>
                   <IconButton
                     onClick={handleUserMenuClick}
-                    sx={{
-                      p: 0.5,
-                      border: '2px solid rgba(255, 255, 255, 0.3)',
-                      '&:hover': {
-                        border: '2px solid rgba(255, 255, 255, 0.5)',
-                      },
-                    }}
+                    sx={{ p: 0.5 }}
                   >
                     <Avatar
                       src={user.pictureUrl || undefined}

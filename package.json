@@ -63,7 +63,7 @@
   },
   "jest": {
     "transformIgnorePatterns": [
-      "node_modules/(?!(axios)/)"
+      "node_modules/(?!(axios|react-markdown|remark-gfm|unified|bail|is-plain-obj|trough|vfile|vfile-message|unist-util-stringify-position|unist-util-position|mdast-util-from-markdown|mdast-util-to-string|micromark|decode-named-character-reference|character-entities|mdast-util-gfm|mdast-util-gfm-autolink-literal|mdast-util-gfm-footnote|mdast-util-gfm-strikethrough|mdast-util-gfm-table|mdast-util-gfm-task-list-item|micromark-extension-gfm|micromark-extension-gfm-autolink-literal|micromark-extension-gfm-footnote|micromark-extension-gfm-strikethrough|micromark-extension-gfm-table|micromark-extension-gfm-tagfilter|micromark-extension-gfm-task-list-item|micromark-util-combine-extensions|micromark-util-decode-numeric-character-reference|micromark-util-decode-string|micromark-util-normalize-identifier|micromark-util-sanitize-uri|micromark-util-character|micromark-util-chunked|micromark-util-classify-character|micromark-util-encode|micromark-util-html-tag-name|micromark-util-resolve-all|micromark-util-subtokenize|micromark-util-symbol|micromark-util-types|unist-util-visit|unist-util-is|unist-util-visit-parents|devlop|hast-util-to-jsx-runtime|hast-util-whitespace|html-url-attributes|property-information|space-separated-tokens|comma-separated-tokens|estree-util-is-identifier-name|ccount|escape-string-regexp|markdown-table|trim-lines|zwitch)/)"
     ],
     "moduleNameMapper": {
       "^axios$": "axios/dist/node/axios.cjs"

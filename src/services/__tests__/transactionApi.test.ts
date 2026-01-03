@@ -1,25 +1,33 @@
-// Mock axios before importing anything
-const mockAxiosInstance = {
-  get: jest.fn(),
-  post: jest.fn(),
-  put: jest.fn(),
-  delete: jest.fn(),
-};
+// Mock axios before importing anything - use inline object to avoid hoisting issues
+jest.mock('axios', () => {
+  const mockAxiosInstance = {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    interceptors: {
+      request: { use: jest.fn() },
+      response: { use: jest.fn() },
+    },
+  };
+  return {
+    __esModule: true,
+    default: {
+      create: jest.fn(() => mockAxiosInstance),
+    },
+  };
+});
 
-jest.mock('axios', () => ({
-  __esModule: true,
-  default: {
-    create: jest.fn(() => mockAxiosInstance),
-  },
-}));
-
+import axios from 'axios';
 import { transactionApi } from '../transactionApi';
 import { Transaction, TransactionCreate, TransactionUpdate } from '../../types/transaction';
 
-const mockGet = mockAxiosInstance.get;
-const mockPost = mockAxiosInstance.post;
-const mockPut = mockAxiosInstance.put;
-const mockDelete = mockAxiosInstance.delete;
+// Get the mock instance after import
+const mockAxiosInstance = (axios.create as jest.Mock)();
+const mockGet = mockAxiosInstance.get as jest.Mock;
+const mockPost = mockAxiosInstance.post as jest.Mock;
+const mockPut = mockAxiosInstance.put as jest.Mock;
+const mockDelete = mockAxiosInstance.delete as jest.Mock;
 
 describe('transactionApi', () => {
   beforeEach(() => {

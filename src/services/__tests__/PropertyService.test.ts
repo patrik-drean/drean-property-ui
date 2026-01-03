@@ -1,15 +1,15 @@
-// Mock axios before importing anything
-jest.mock('axios', () => ({
+// Mock the api module before importing anything
+jest.mock('../api', () => ({
   __esModule: true,
   default: {
     get: jest.fn(),
   },
 }));
 
-import axios from 'axios';
+import api from '../api';
 import PropertyService from '../PropertyService';
 
-const mockGet = axios.get as jest.MockedFunction<typeof axios.get>;
+const mockGet = api.get as jest.MockedFunction<typeof api.get>;
 
 describe('PropertyService', () => {
   beforeEach(() => {
@@ -280,7 +280,7 @@ describe('PropertyService', () => {
 
       await PropertyService.getPropertyById('prop-123');
 
-      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('/api/Properties/prop-123'));
+      expect(mockGet).toHaveBeenCalledWith('/api/Properties/prop-123');
     });
 
     it('should throw error when API call fails', async () => {
@@ -344,6 +344,14 @@ describe('PropertyService', () => {
       expect(properties).toHaveLength(1);
       expect(properties[0].id).toBe('prop-1');
       expect(properties[0].propertyUnits[0].dateOfLastRent).toBe('2025-11-30T00:00:00');
+    });
+
+    it('should call API with correct URL', async () => {
+      mockGet.mockResolvedValue({ data: [] });
+
+      await PropertyService.getAllProperties();
+
+      expect(mockGet).toHaveBeenCalledWith('/api/Properties');
     });
   });
 });

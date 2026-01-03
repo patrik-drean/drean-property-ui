@@ -1,10 +1,5 @@
-import axios from 'axios';
+import api from './api';
 import { Property } from '../types/property';
-// If Property is needed, import from property types:
-// import { Property } from '../types/property';
-
-// Define the base URL from the environment or use a default
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://drean-property-api-production.up.railway.app';
 
 // Define the PropertyDTO from the API
 interface PropertyDTO {
@@ -137,12 +132,12 @@ const mapDTOToProperty = (dto: PropertyDTO): Property => {
   };
 };
 
-// The PropertyService
+// The PropertyService - uses shared api client with auth interceptors
 const PropertyService = {
   // Fetch all properties
   async getAllProperties(): Promise<Property[]> {
     try {
-      const response = await axios.get<PropertyDTO[]>(`${API_BASE_URL}/api/Properties`);
+      const response = await api.get<PropertyDTO[]>('/api/Properties');
       return response.data.map(mapDTOToProperty);
     } catch (error) {
       console.error('Error fetching properties:', error);
@@ -153,7 +148,7 @@ const PropertyService = {
   // Get a specific property by ID
   async getPropertyById(id: string): Promise<Property> {
     try {
-      const response = await axios.get<PropertyDTO>(`${API_BASE_URL}/api/Properties/${id}`);
+      const response = await api.get<PropertyDTO>(`/api/Properties/${id}`);
       return mapDTOToProperty(response.data);
     } catch (error) {
       console.error(`Error fetching property ${id}:`, error);

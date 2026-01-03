@@ -23,11 +23,12 @@ import {
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, PropertyStatus } from '../types/property';
-import { 
-  calculatePerfectRentForHoldScore, 
-  calculatePerfectARVForFlipScore 
+import {
+  calculatePerfectRentForHoldScore,
+  calculatePerfectARVForFlipScore
 } from '../utils/scoreCalculator';
 import { getStatusColor } from '../utils/statusColors';
+import { usePropertyForm } from '../hooks';
 
 // Styled MenuItem for status dropdown
 const StyledMenuItem = styled(MenuItem)<{ statuscolor: string }>(({ statuscolor }) => ({
@@ -59,6 +60,20 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   property,
   isEditing
 }) => {
+  // Use the property form hook for state management
+  const {
+    formData,
+    updateField,
+    updateExpense,
+    updateCapitalCost,
+    addUnit: hookAddUnit,
+    updateUnit: hookUpdateUnit,
+    updateUnitStatus: hookUpdateUnitStatus,
+    removeUnit: hookRemoveUnit,
+    reset,
+    getSubmitData
+  } = usePropertyForm(isEditing ? property || undefined : undefined);
+
   // Determine which sections should be expanded based on status
   const getInitialExpandedSections = (status: PropertyStatus) => {
     const operationalStatuses = ['Selling', 'Needs Tenant', 'Operational'];
@@ -85,40 +100,6 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     );
   };
 
-  // Helper functions for updating nested objects
-  const updateMonthlyExpenses = (field: string, value: number) => {
-    setNewProperty(prev => ({
-      ...prev,
-      monthlyExpenses: {
-        ...prev.monthlyExpenses!,
-        [field]: value,
-        total: field === 'total' ? value : 
-          (field === 'mortgage' ? value : prev.monthlyExpenses!.mortgage) +
-          (field === 'taxes' ? value : prev.monthlyExpenses!.taxes) +
-          (field === 'insurance' ? value : prev.monthlyExpenses!.insurance) +
-          (field === 'propertyManagement' ? value : prev.monthlyExpenses!.propertyManagement) +
-          (field === 'utilities' ? value : prev.monthlyExpenses!.utilities) +
-          (field === 'vacancy' ? value : prev.monthlyExpenses!.vacancy) +
-          (field === 'capEx' ? value : prev.monthlyExpenses!.capEx) +
-          (field === 'other' ? value : prev.monthlyExpenses!.other)
-      }
-    }));
-  };
-
-  const updateCapitalCosts = (field: string, value: number) => {
-    setNewProperty(prev => ({
-      ...prev,
-      capitalCosts: {
-        ...prev.capitalCosts!,
-        [field]: value,
-        total: field === 'total' ? value : 
-          (field === 'closingCosts' ? value : prev.capitalCosts!.closingCosts) +
-          (field === 'upfrontRepairs' ? value : prev.capitalCosts!.upfrontRepairs) +
-          (field === 'downPayment' ? value : prev.capitalCosts!.downPayment) +
-          (field === 'other' ? value : prev.capitalCosts!.other)
-      }
-    }));
-  };
 
   // Validation helpers for unit numbers
   const getUnitNumberError = (unitNumber: string, currentIndex: number): string => {
@@ -134,7 +115,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     }
 
     // Check for duplicates (case-insensitive)
-    const isDuplicate = newProperty.propertyUnits.some((u, idx) =>
+    const isDuplicate = formData.propertyUnits.some((u, idx) =>
       idx !== currentIndex && u.unitNumber.toLowerCase() === unitNumber.trim().toLowerCase()
     );
     if (isDuplicate) {
@@ -145,30 +126,10 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   };
 
   const addUnit = () => {
-    const now = new Date().toISOString();
-    const newUnitIndex = newProperty.propertyUnits.length;
+    const newUnitIndex = formData.propertyUnits.length;
 
-    // Auto-generate next unit number
-    const nextUnitNumber = (newProperty.propertyUnits.length + 1).toString();
-
-    setNewProperty(prev => ({
-      ...prev,
-      propertyUnits: [
-        ...prev.propertyUnits,
-        {
-          id: `temp-${Date.now()}`,
-          propertyId: '',
-          unitNumber: nextUnitNumber,
-          status: 'Vacant',
-          rent: 0,
-          notes: '',
-          leaseDate: null,
-          createdAt: now,
-          updatedAt: now,
-          statusHistory: [{ status: 'Vacant', dateStart: now }]
-        }
-      ]
-    }));
+    // Use the hook to add the unit
+    hookAddUnit();
 
     // Initialize status change date for the new unit (empty)
     setUnitStatusChangeDates(prev => ({
@@ -178,50 +139,16 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   };
 
   const updateUnit = (index: number, field: string, value: string | number) => {
-    setNewProperty(prev => ({
-      ...prev,
-      propertyUnits: prev.propertyUnits.map((unit, i) => 
-        i === index ? { ...unit, [field]: value } : unit
-      )
-    }));
+    hookUpdateUnit(index, field, value);
   };
 
   const updateUnitStatus = (index: number, newStatus: string, statusChangeDate: string) => {
-    // Only proceed if we have a valid date
-    if (!statusChangeDate) {
-      return;
-    }
-    
-    try {
-      const isoDate = new Date(statusChangeDate + 'T00:00:00.000Z').toISOString();
-      
-      setNewProperty(prev => ({
-        ...prev,
-        propertyUnits: prev.propertyUnits.map((unit, i) => {
-          if (i === index) {
-            const newStatusHistory = [...unit.statusHistory];
-            // Add new status entry to history
-            newStatusHistory.push({ status: newStatus, dateStart: isoDate });
-            return { 
-              ...unit, 
-              status: newStatus, 
-              statusHistory: newStatusHistory 
-            };
-          }
-          return unit;
-        })
-      }));
-    } catch (error) {
-      console.error('Invalid date format in updateUnitStatus:', statusChangeDate, error);
-    }
+    hookUpdateUnitStatus(index, newStatus, statusChangeDate);
   };
 
   const removeUnit = (index: number) => {
-    setNewProperty(prev => ({
-      ...prev,
-      propertyUnits: prev.propertyUnits.filter((_, i) => i !== index)
-    }));
-    
+    hookRemoveUnit(index);
+
     // Clean up status change date state
     setUnitStatusChangeDates(prev => {
       const newDates = { ...prev };
@@ -239,65 +166,6 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
       return shiftedDates;
     });
   };
-
-  const [newProperty, setNewProperty] = useState<Omit<Property, 'id'>>({
-    address: '',
-    status: 'Opportunity',
-    propertyLeadId: null,
-    listingPrice: 0,
-    offerPrice: 0,
-    rehabCosts: 0,
-    potentialRent: 0,
-    arv: 0,
-    rentCastEstimates: {
-      price: 0,
-      priceLow: 0,
-      priceHigh: 0,
-      rent: 0,
-      rentLow: 0,
-      rentHigh: 0
-    },
-    todoMetaData: {
-      todoistSectionId: null
-    },
-    hasRentcastData: false,
-    saleComparables: [],
-    notes: '',
-    score: 0,
-    zillowLink: '',
-    squareFootage: null,
-    units: null,
-    actualRent: 0,
-    currentHouseValue: 0,
-    currentLoanValue: null,
-    propertyUnits: [],
-    monthlyExpenses: {
-      id: '',
-      propertyId: '',
-      mortgage: 0,
-      taxes: 0,
-      insurance: 0,
-      propertyManagement: 0,
-      utilities: 0,
-      vacancy: 0,
-      capEx: 0,
-      other: 0,
-      total: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    capitalCosts: {
-      id: '',
-      propertyId: '',
-      closingCosts: 0,
-      upfrontRepairs: 0,
-      downPayment: 0,
-      other: 0,
-      total: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-  });
 
   // Status color function is now imported from utils/statusColors.ts
 
@@ -335,12 +203,12 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
 
   // Calculate perfect values for recommendations
   const getPerfectRentRecommendation = () => {
-    if (newProperty.offerPrice > 0 || newProperty.rehabCosts > 0) {
+    if (formData.offerPrice > 0 || formData.rehabCosts > 0) {
       const perfectRent = calculatePerfectRentForHoldScore(
-        newProperty.offerPrice, 
-        newProperty.rehabCosts, 
-        newProperty.arv || 0, 
-        newProperty.units || 1
+        formData.offerPrice,
+        formData.rehabCosts,
+        formData.arv || 0,
+        formData.units || 1
       );
       return perfectRent;
     }
@@ -348,10 +216,10 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   };
 
   const getPerfectARVRecommendation = () => {
-    if (newProperty.offerPrice > 0 || newProperty.rehabCosts > 0) {
+    if (formData.offerPrice > 0 || formData.rehabCosts > 0) {
       const perfectARV = calculatePerfectARVForFlipScore(
-        newProperty.offerPrice, 
-        newProperty.rehabCosts
+        formData.offerPrice,
+        formData.rehabCosts
       );
       return perfectARV;
     }
@@ -400,27 +268,24 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
 
   const handleZillowLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
-    setNewProperty({ ...newProperty, zillowLink: url });
-    
+    updateField('zillowLink', url);
+
     // Only parse if we're not editing and the URL is a valid Zillow link
     if (!isEditing && url.includes('zillow.com')) {
       const parsedData = parseZillowLink(url);
       if (parsedData) {
-        setNewProperty(prev => ({
-          ...prev,
-          address: parsedData.address,
-          zillowLink: url
-        }));
+        updateField('address', parsedData.address);
       }
     }
   };
 
   const handleSave = async () => {
     try {
-      // Update actual rent before saving
-      const totalRent = newProperty.propertyUnits.reduce((sum, unit) => sum + unit.rent, 0);
+      // Get the form data and calculate actual rent before saving
+      const submitData = getSubmitData();
+      const totalRent = submitData.propertyUnits.reduce((sum, unit) => sum + unit.rent, 0);
       const propertyToSave = {
-        ...newProperty,
+        ...submitData,
         actualRent: totalRent
       };
       await onSave(propertyToSave);
@@ -431,121 +296,17 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   };
 
   const handleClose = () => {
-    setNewProperty({
-      address: '',
-      status: 'Opportunity',
-      propertyLeadId: null,
-      listingPrice: 0,
-      offerPrice: 0,
-      rehabCosts: 0,
-      potentialRent: 0,
-      arv: 0,
-      rentCastEstimates: {
-        price: 0,
-        priceLow: 0,
-        priceHigh: 0,
-        rent: 0,
-        rentLow: 0,
-        rentHigh: 0
-      },
-      todoMetaData: {
-        todoistSectionId: null
-      },
-      hasRentcastData: false,
-      saleComparables: [],
-      notes: '',
-      score: 0,
-      zillowLink: '',
-      squareFootage: null,
-      units: null,
-      actualRent: 0,
-      currentHouseValue: 0,
-      currentLoanValue: null,
-      propertyUnits: [],
-      monthlyExpenses: {
-        id: '',
-        propertyId: '',
-        mortgage: 0,
-        taxes: 0,
-        insurance: 0,
-        propertyManagement: 0,
-        utilities: 0,
-        vacancy: 0,
-        capEx: 0,
-        other: 0,
-        total: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      capitalCosts: {
-        id: '',
-        propertyId: '',
-        closingCosts: 0,
-        upfrontRepairs: 0,
-        downPayment: 0,
-        other: 0,
-        total: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    });
+    reset();
     setExpandedSections(getInitialExpandedSections('Opportunity'));
+    setUnitStatusChangeDates({});
     onClose();
   };
 
   // Update form when property prop changes (for editing)
   useEffect(() => {
     if (property && isEditing) {
-      setNewProperty({
-        address: property.address,
-        status: property.status,
-        propertyLeadId: property.propertyLeadId,
-        listingPrice: property.listingPrice,
-        offerPrice: property.offerPrice,
-        rehabCosts: property.rehabCosts,
-        potentialRent: property.potentialRent,
-        arv: property.arv,
-        rentCastEstimates: property.rentCastEstimates,
-        todoMetaData: property.todoMetaData || { todoistSectionId: null },
-        hasRentcastData: property.hasRentcastData,
-        saleComparables: property.saleComparables || [],
-        notes: property.notes,
-        score: property.score,
-        zillowLink: property.zillowLink,
-        squareFootage: property.squareFootage,
-        units: property.units,
-        actualRent: property.actualRent,
-        currentHouseValue: property.currentHouseValue,
-        currentLoanValue: property.currentLoanValue,
-        propertyUnits: property.propertyUnits,
-        monthlyExpenses: property.monthlyExpenses || {
-          id: '',
-          propertyId: '',
-          mortgage: 0,
-          taxes: 0,
-          insurance: 0,
-          propertyManagement: 0,
-          utilities: 0,
-          vacancy: 0,
-          capEx: 0,
-          other: 0,
-          total: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        capitalCosts: property.capitalCosts || {
-          id: '',
-          propertyId: '',
-          closingCosts: 0,
-          upfrontRepairs: 0,
-          downPayment: 0,
-          other: 0,
-          total: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      });
-      
+      reset(property);
+
       // Initialize status change dates for existing units
       const initialStatusChangeDates: { [key: number]: string } = {};
       property.propertyUnits.forEach((unit, index) => {
@@ -557,15 +318,15 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         // No default date - leave empty if no status history
       });
       setUnitStatusChangeDates(initialStatusChangeDates);
-      
+
       setExpandedSections(getInitialExpandedSections(property.status));
     }
-  }, [property, isEditing]);
+  }, [property, isEditing, reset]);
 
   // Update expanded sections when status changes
   useEffect(() => {
-    setExpandedSections(getInitialExpandedSections(newProperty.status));
-  }, [newProperty.status]);
+    setExpandedSections(getInitialExpandedSections(formData.status));
+  }, [formData.status]);
 
   return (
     <Dialog 
@@ -588,7 +349,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
             <TextField
               fullWidth
               label="Zillow Link"
-              value={newProperty.zillowLink}
+              value={formData.zillowLink}
               onChange={handleZillowLinkChange}
               margin="normal"
               placeholder="Paste Zillow link to auto-fill address and price"
@@ -598,15 +359,15 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
             <TextField
               fullWidth
               label="Address"
-              value={newProperty.address}
-              onChange={(e) => setNewProperty({ ...newProperty, address: e.target.value })}
+              value={formData.address}
+              onChange={(e) => updateField('address', e.target.value)}
               margin="normal"
             />
             <FormControl fullWidth margin="normal">
               <InputLabel>Status</InputLabel>
               <Select
-                value={newProperty.status}
-                onChange={(e) => setNewProperty({ ...newProperty, status: e.target.value as PropertyStatus })}
+                value={formData.status}
+                onChange={(e) => updateField('status', e.target.value as PropertyStatus)}
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Box 
@@ -649,8 +410,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
               label="Notes"
               multiline
               rows={3}
-              value={newProperty.notes}
-              onChange={(e) => setNewProperty({ ...newProperty, notes: e.target.value })}
+              value={formData.notes}
+              onChange={(e) => updateField('notes', e.target.value)}
               margin="normal"
             />
           </Box>
@@ -677,8 +438,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                 <TextField
                   fullWidth
                   label="Listing Price"
-                  value={formatInputCurrency(newProperty.listingPrice)}
-                  onChange={(e) => setNewProperty({ ...newProperty, listingPrice: handleCurrencyInput(e.target.value) })}
+                  value={formatInputCurrency(formData.listingPrice)}
+                  onChange={(e) => updateField('listingPrice', handleCurrencyInput(e.target.value))}
                   margin="normal"
                   InputProps={{
                     startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -687,8 +448,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                 <TextField
                   fullWidth
                   label="Offer Price"
-                  value={formatInputCurrency(newProperty.offerPrice)}
-                  onChange={(e) => setNewProperty({ ...newProperty, offerPrice: handleCurrencyInput(e.target.value) })}
+                  value={formatInputCurrency(formData.offerPrice)}
+                  onChange={(e) => updateField('offerPrice', handleCurrencyInput(e.target.value))}
                   margin="normal"
                   InputProps={{
                     startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -697,8 +458,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                 <TextField
                   fullWidth
                   label="Rehab Costs"
-                  value={formatInputCurrency(newProperty.rehabCosts)}
-                  onChange={(e) => setNewProperty({ ...newProperty, rehabCosts: handleCurrencyInput(e.target.value) })}
+                  value={formatInputCurrency(formData.rehabCosts)}
+                  onChange={(e) => updateField('rehabCosts', handleCurrencyInput(e.target.value))}
                   margin="normal"
                   InputProps={{
                     startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -707,10 +468,10 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                 <TextField
                   fullWidth
                   label="Square Footage"
-                  value={newProperty.squareFootage !== null ? newProperty.squareFootage : ''}
+                  value={formData.squareFootage !== null ? formData.squareFootage : ''}
                   onChange={(e) => {
                     const value = e.target.value.trim() === '' ? null : parseInt(e.target.value, 10);
-                    setNewProperty({ ...newProperty, squareFootage: value });
+                    updateField('squareFootage', value);
                   }}
                   margin="normal"
                   type="number"
@@ -718,10 +479,10 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                 <TextField
                   fullWidth
                   label="Units"
-                  value={newProperty.units !== null ? newProperty.units : ''}
+                  value={formData.units !== null ? formData.units : ''}
                   onChange={(e) => {
                     const value = e.target.value.trim() === '' ? null : parseInt(e.target.value, 10);
-                    setNewProperty({ ...newProperty, units: value });
+                    updateField('units', value);
                   }}
                   margin="normal"
                   type="number"
@@ -753,8 +514,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                 <TextField
                   fullWidth
                   label="Potential Monthly Rent"
-                  value={formatInputCurrency(newProperty.potentialRent)}
-                  onChange={(e) => setNewProperty({ ...newProperty, potentialRent: handleCurrencyInput(e.target.value) })}
+                  value={formatInputCurrency(formData.potentialRent)}
+                  onChange={(e) => updateField('potentialRent', handleCurrencyInput(e.target.value))}
                   margin="normal"
                   InputProps={{
                     startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -804,8 +565,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                 <TextField
                   fullWidth
                   label="ARV"
-                  value={formatInputCurrency(newProperty.arv)}
-                  onChange={(e) => setNewProperty({ ...newProperty, arv: handleCurrencyInput(e.target.value) })}
+                  value={formatInputCurrency(formData.arv)}
+                  onChange={(e) => updateField('arv', handleCurrencyInput(e.target.value))}
                   margin="normal"
                   InputProps={{
                     startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -834,8 +595,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
               <TextField
                 fullWidth
                 label="Property Lead ID"
-                value={newProperty.propertyLeadId || ''}
-                onChange={(e) => setNewProperty({ ...newProperty, propertyLeadId: e.target.value || null })}
+                value={formData.propertyLeadId || ''}
+                onChange={(e) => updateField('propertyLeadId', e.target.value || null)}
                 margin="normal"
                 placeholder="Optional - link to original lead"
               />
@@ -869,8 +630,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Mortgage"
-                    value={formatInputCurrency(newProperty.monthlyExpenses!.mortgage)}
-                    onChange={(e) => updateMonthlyExpenses('mortgage', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.monthlyExpenses?.mortgage || 0)}
+                    onChange={(e) => updateExpense('mortgage', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -879,8 +640,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Taxes"
-                    value={formatInputCurrency(newProperty.monthlyExpenses!.taxes)}
-                    onChange={(e) => updateMonthlyExpenses('taxes', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.monthlyExpenses?.taxes || 0)}
+                    onChange={(e) => updateExpense('taxes', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -889,8 +650,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Insurance"
-                    value={formatInputCurrency(newProperty.monthlyExpenses!.insurance)}
-                    onChange={(e) => updateMonthlyExpenses('insurance', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.monthlyExpenses?.insurance || 0)}
+                    onChange={(e) => updateExpense('insurance', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -899,8 +660,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Property Management"
-                    value={formatInputCurrency(newProperty.monthlyExpenses!.propertyManagement)}
-                    onChange={(e) => updateMonthlyExpenses('propertyManagement', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.monthlyExpenses?.propertyManagement || 0)}
+                    onChange={(e) => updateExpense('propertyManagement', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -909,8 +670,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Utilities"
-                    value={formatInputCurrency(newProperty.monthlyExpenses!.utilities)}
-                    onChange={(e) => updateMonthlyExpenses('utilities', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.monthlyExpenses?.utilities || 0)}
+                    onChange={(e) => updateExpense('utilities', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -919,8 +680,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Vacancy"
-                    value={formatInputCurrency(newProperty.monthlyExpenses!.vacancy)}
-                    onChange={(e) => updateMonthlyExpenses('vacancy', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.monthlyExpenses?.vacancy || 0)}
+                    onChange={(e) => updateExpense('vacancy', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -929,8 +690,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="CapEx"
-                    value={formatInputCurrency(newProperty.monthlyExpenses!.capEx)}
-                    onChange={(e) => updateMonthlyExpenses('capEx', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.monthlyExpenses?.capEx || 0)}
+                    onChange={(e) => updateExpense('capEx', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -939,8 +700,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Other"
-                    value={formatInputCurrency(newProperty.monthlyExpenses!.other)}
-                    onChange={(e) => updateMonthlyExpenses('other', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.monthlyExpenses?.other || 0)}
+                    onChange={(e) => updateExpense('other', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -949,7 +710,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                 </Box>
                 <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
                   <Typography variant="h6" color="error">
-                    Total Monthly Expenses: {formatCurrency(newProperty.monthlyExpenses!.total)}
+                    Total Monthly Expenses: {formatCurrency(formData.monthlyExpenses?.total || 0)}
                   </Typography>
                 </Box>
               </Box>
@@ -958,7 +719,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
               <Box>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    Units ({newProperty.propertyUnits.length})
+                    Units ({formData.propertyUnits.length})
                   </Typography>
                   <Button 
                     variant="outlined" 
@@ -970,7 +731,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   </Button>
                 </Box>
                 
-                {newProperty.propertyUnits.map((unit, index) => (
+                {formData.propertyUnits.map((unit, index) => (
                   <Card key={unit.id} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0' }}>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                       <Typography variant="subtitle2" fontWeight={600}>
@@ -1051,45 +812,43 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                           if (!newDate) {
                             return;
                           }
-                          
+
                           setUnitStatusChangeDates(prev => ({
                             ...prev,
                             [index]: newDate
                           }));
-                          
+
                           // Also update the status history with the new date
                           const currentStatus = unit.status;
-                          
+
                           try {
                             const isoDate = new Date(newDate + 'T00:00:00.000Z').toISOString();
-                            
-                            setNewProperty(prev => ({
-                              ...prev,
-                              propertyUnits: prev.propertyUnits.map((u, i) => {
-                                if (i === index) {
-                                  const newStatusHistory = [...u.statusHistory];
-                                  
-                                  // Update the last status entry with the new date, or add a new one if none exists
-                                  if (newStatusHistory.length > 0) {
-                                    newStatusHistory[newStatusHistory.length - 1] = {
-                                      status: currentStatus,
-                                      dateStart: isoDate
-                                    };
-                                  } else {
-                                    newStatusHistory.push({
-                                      status: currentStatus,
-                                      dateStart: isoDate
-                                    });
-                                  }
-                                  
-                                  return {
-                                    ...u,
-                                    statusHistory: newStatusHistory
+
+                            const updatedUnits = formData.propertyUnits.map((u, i) => {
+                              if (i === index) {
+                                const newStatusHistory = [...u.statusHistory];
+
+                                // Update the last status entry with the new date, or add a new one if none exists
+                                if (newStatusHistory.length > 0) {
+                                  newStatusHistory[newStatusHistory.length - 1] = {
+                                    status: currentStatus,
+                                    dateStart: isoDate
                                   };
+                                } else {
+                                  newStatusHistory.push({
+                                    status: currentStatus,
+                                    dateStart: isoDate
+                                  });
                                 }
-                                return u;
-                              })
-                            }));
+
+                                return {
+                                  ...u,
+                                  statusHistory: newStatusHistory
+                                };
+                              }
+                              return u;
+                            });
+                            updateField('propertyUnits', updatedUnits);
                           } catch (error) {
                             console.error('Invalid date format:', newDate, error);
                           }
@@ -1112,15 +871,15 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   </Card>
                 ))}
                 
-                {newProperty.propertyUnits.length === 0 && (
+                {formData.propertyUnits.length === 0 && (
                   <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
                     No units added yet. Click "Add Unit" to get started.
                   </Typography>
                 )}
-                
+
                 <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
                   <Typography variant="h6" color="success.main">
-                    Total Actual Rent: {formatCurrency(newProperty.actualRent)}
+                    Total Actual Rent: {formatCurrency(formData.actualRent)}
                   </Typography>
                 </Box>
               </Box>
@@ -1151,8 +910,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Current House Value"
-                    value={formatInputCurrency(newProperty.currentHouseValue)}
-                    onChange={(e) => setNewProperty({ ...newProperty, currentHouseValue: handleCurrencyInput(e.target.value) })}
+                    value={formatInputCurrency(formData.currentHouseValue)}
+                    onChange={(e) => updateField('currentHouseValue', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -1161,13 +920,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Current Loan Value"
-                    value={formatInputCurrencyNullable(newProperty.currentLoanValue)}
-                    onChange={(e) => {
-                      setNewProperty({
-                        ...newProperty,
-                        currentLoanValue: handleCurrencyInputNullable(e.target.value)
-                      });
-                    }}
+                    value={formatInputCurrencyNullable(formData.currentLoanValue)}
+                    onChange={(e) => updateField('currentLoanValue', handleCurrencyInputNullable(e.target.value))}
                     margin="normal"
                     placeholder="Optional"
                     InputProps={{
@@ -1183,8 +937,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Closing Costs"
-                    value={formatInputCurrency(newProperty.capitalCosts!.closingCosts)}
-                    onChange={(e) => updateCapitalCosts('closingCosts', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.capitalCosts?.closingCosts || 0)}
+                    onChange={(e) => updateCapitalCost('closingCosts', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -1193,8 +947,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Upfront Repairs"
-                    value={formatInputCurrency(newProperty.capitalCosts!.upfrontRepairs)}
-                    onChange={(e) => updateCapitalCosts('upfrontRepairs', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.capitalCosts?.upfrontRepairs || 0)}
+                    onChange={(e) => updateCapitalCost('upfrontRepairs', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -1203,8 +957,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Down Payment"
-                    value={formatInputCurrency(newProperty.capitalCosts!.downPayment)}
-                    onChange={(e) => updateCapitalCosts('downPayment', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.capitalCosts?.downPayment || 0)}
+                    onChange={(e) => updateCapitalCost('downPayment', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -1213,8 +967,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   <TextField
                     fullWidth
                     label="Other"
-                    value={formatInputCurrency(newProperty.capitalCosts!.other)}
-                    onChange={(e) => updateCapitalCosts('other', handleCurrencyInput(e.target.value))}
+                    value={formatInputCurrency(formData.capitalCosts?.other || 0)}
+                    onChange={(e) => updateCapitalCost('other', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
@@ -1223,7 +977,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                 </Box>
                 <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
                   <Typography variant="h6" color="primary">
-                    Total Capital Costs: {formatCurrency(newProperty.capitalCosts!.total)}
+                    Total Capital Costs: {formatCurrency(formData.capitalCosts?.total || 0)}
                   </Typography>
                 </Box>
               </Box>

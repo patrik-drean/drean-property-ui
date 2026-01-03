@@ -27,10 +27,18 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - handle 401 errors
+// Response interceptor - handle errors and 401 redirects
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log error details for debugging
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message
+    });
+
     if (error.response?.status === 401) {
       // Clear auth state and redirect to login
       localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -234,4 +242,7 @@ export const addContactToProperty = async (contactId: string, propertyId: string
 
 export const removeContactFromProperty = async (contactId: string, propertyId: string): Promise<void> => {
   await api.delete(`/api/Contacts/${contactId}/properties/${propertyId}`);
-}; 
+};
+
+// Export the api instance for direct use
+export default api; 

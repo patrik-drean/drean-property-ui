@@ -38,6 +38,7 @@ import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from './shared/Prop
 import PropertyCardGrid from './shared/PropertyCardGrid';
 import { getStatusColor, getStatusOrder } from '../utils/statusColors';
 import useResponsiveLayout from '../hooks/useResponsiveLayout';
+import { usePropertiesFilters } from '../hooks';
 import { useMessagingPopover } from '../contexts/MessagingPopoverContext';
 import {
   calculateRentRatio,
@@ -117,6 +118,10 @@ const getVacantUnitsCount = (property: Property): number => {
 const PropertiesPage: React.FC = () => {
   const theme = useTheme();
   const { properties, loading, error, refreshProperties, updateProperty, addProperty, removeProperty, isStale } = useProperties();
+
+  // Use the properties filters hook for sorting and filtering
+  const { sortProperties, filterProperties, availableStatuses } = usePropertiesFilters(properties);
+
   const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { MemoryRouter } from 'react-router-dom';
 import PropertyLeadsPage from '../PropertyLeadsPage';
 import * as api from '../../services/api';
 import { smsService } from '../../services/smsService';
@@ -22,20 +23,6 @@ jest.mock('../../contexts/MessagingPopoverContext', () => ({
   }),
   MessagingPopoverProvider: ({ children }: any) => <div>{children}</div>,
 }));
-
-// Mock react-router-dom
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => {
-  const mockReact = require('react');
-  return {
-    Link: mockReact.forwardRef(
-      ({ children, to }: { children: any; to: string }, ref: any) =>
-        mockReact.createElement('a', { href: to, ref }, children)
-    ),
-    useNavigate: () => mockNavigate,
-    BrowserRouter: ({ children }: any) => mockReact.createElement('div', {}, children),
-  };
-}, { virtual: true });
 
 const theme = createTheme();
 
@@ -59,11 +46,15 @@ const mockPropertyLeads = [
   },
 ];
 
-const renderWithTheme = (ui: React.ReactElement) => {
-  return render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
+const renderWithProviders = (ui: React.ReactElement) => {
+  return render(
+    <MemoryRouter>
+      <ThemeProvider theme={theme}>{ui}</ThemeProvider>
+    </MemoryRouter>
+  );
 };
 
-describe('PropertyLeadsPage - Sales Funnel Integration', () => {
+describe('PropertyLeadsPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -72,61 +63,85 @@ describe('PropertyLeadsPage - Sales Funnel Integration', () => {
     (smsService.getConversations as jest.Mock).mockResolvedValue([]);
   });
 
-  it('should render View Sales Report button', async () => {
-    renderWithTheme(<PropertyLeadsPage />);
+  it('should render PropertyLeadsPage with toolbar', async () => {
+    renderWithProviders(<PropertyLeadsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Property Leads')).toBeInTheDocument();
+    });
+  });
+
+  it('should render Add Lead button', async () => {
+    renderWithProviders(<PropertyLeadsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Add Lead')).toBeInTheDocument();
+    });
+  });
+
+  it('should render View Sales Report link in toolbar', async () => {
+    renderWithProviders(<PropertyLeadsPage />);
 
     await waitFor(() => {
       expect(screen.getByText('View Sales Report')).toBeInTheDocument();
     });
   });
 
-  it('should display Assessment icon in View Sales Report button', async () => {
-    renderWithTheme(<PropertyLeadsPage />);
+  it('should render property leads in the table', async () => {
+    renderWithProviders(<PropertyLeadsPage />);
 
     await waitFor(() => {
-      const button = screen.getByRole('button', { name: /View Sales Report/i });
-      expect(button).toBeInTheDocument();
-      // The button should have the Assessment icon
-      const icon = button.querySelector('svg');
-      expect(icon).toBeInTheDocument();
+      // Address may appear multiple times (in table cell and tooltip), so we use getAllByText
+      const elements = screen.getAllByText('123 Test St, City, State');
+      expect(elements.length).toBeGreaterThan(0);
     });
   });
 
-  it('should navigate to /reports?tab=3 when View Sales Report button is clicked', async () => {
-    renderWithTheme(<PropertyLeadsPage />);
+  it('should show loading state initially', () => {
+    renderWithProviders(<PropertyLeadsPage />);
 
-    await waitFor(() => {
-      const button = screen.getByRole('button', { name: /View Sales Report/i });
-      fireEvent.click(button);
-    });
-
-    expect(mockNavigate).toHaveBeenCalledWith('/reports?tab=3');
+    // Loading indicator should be present initially
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
-  it('should position View Sales Report button before Override Message button', async () => {
-    renderWithTheme(<PropertyLeadsPage />);
+  it('should display lead details correctly', async () => {
+    renderWithProviders(<PropertyLeadsPage />);
 
     await waitFor(() => {
-      const buttons = screen.getAllByRole('button');
-      const viewSalesReportIndex = buttons.findIndex(
-        (btn) => btn.textContent === 'View Sales Report'
-      );
-      const overrideMessageIndex = buttons.findIndex(
-        (btn) => btn.textContent === 'Override Message'
-      );
-
-      expect(viewSalesReportIndex).toBeGreaterThan(-1);
-      expect(overrideMessageIndex).toBeGreaterThan(-1);
-      expect(viewSalesReportIndex).toBeLessThan(overrideMessageIndex);
+      // Address may appear multiple times (in table cell and tooltip)
+      const addressElements = screen.getAllByText('123 Test St, City, State');
+      expect(addressElements.length).toBeGreaterThan(0);
+      // Price may also appear multiple times
+      const priceElements = screen.getAllByText(/200,000/);
+      expect(priceElements.length).toBeGreaterThan(0);
     });
   });
 
-  it('should have outlined variant for View Sales Report button', async () => {
-    renderWithTheme(<PropertyLeadsPage />);
+  it('should open add lead dialog when Add Lead button is clicked', async () => {
+    renderWithProviders(<PropertyLeadsPage />);
 
     await waitFor(() => {
-      const button = screen.getByRole('button', { name: /View Sales Report/i });
-      expect(button).toHaveClass('MuiButton-outlined');
+      expect(screen.getByText('Add Lead')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Add Lead'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+  });
+
+  it('should toggle archived leads visibility', async () => {
+    renderWithProviders(<PropertyLeadsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Archived Leads')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Archived Leads'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Hide Archived')).toBeInTheDocument();
     });
   });
 });

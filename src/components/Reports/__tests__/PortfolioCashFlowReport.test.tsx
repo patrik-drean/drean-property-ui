@@ -98,7 +98,10 @@ const mockCashFlowReport: CashFlowReportType = {
     },
     potentialTotalNetCashFlow: -396,
     propertiesCount: 1,
-    operationalPropertiesCount: 1
+    operationalPropertiesCount: 1,
+    totalOperationalUnits: 1,
+    totalBehindRentUnits: 0,
+    totalVacantUnits: 0
   },
   generatedAt: new Date('2023-01-01T12:00:00Z')
 };

@@ -78,6 +78,15 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     severity: 'success',
   });
 
+  // Calculate day of the week in MST timezone
+  const getDayOfWeek = (): string => {
+    const now = new Date();
+    // MST is UTC-7
+    const mstDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Denver' }));
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[mstDate.getDay()];
+  };
+
   const templateVariables: TemplateVariables = {
     name: leadName,
     address: leadAddress,
@@ -85,6 +94,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     phone: phoneNumber,
     discounted_price: calculateDiscountedPrice(leadPrice),
     address_short: extractShortAddress(leadAddress),
+    day_of_the_week: getDayOfWeek(),
   };
 
   const handleTemplateSelect = (body: string) => {

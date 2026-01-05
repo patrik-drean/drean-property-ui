@@ -71,8 +71,8 @@ const PropertyLeadsPage: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
 
-  // Use the leads filters hook for sorting and filtering
-  const { sortLeads, filterLeads, availableTags } = useLeadsFilters(propertyLeads);
+  // Use the leads filters hook for filtering and tags
+  const { filterLeads, availableTags } = useLeadsFilters(propertyLeads);
 
   // Add state for custom message dialog
   const [openMessageDialog, setOpenMessageDialog] = useState(false);
@@ -341,8 +341,8 @@ const PropertyLeadsPage: React.FC = () => {
     setCurrentPage(1); // Reset to first page
   };
 
-  // Performance optimization: Memoize sorted leads using the hook's sortLeads function
-  const sortedLeads = React.useMemo(() => sortLeads(propertyLeads), [sortLeads, propertyLeads]);
+  // Performance optimization: Memoize sorted leads using sortPropertyLeads for proper lead score sorting
+  const sortedLeads = React.useMemo(() => sortPropertyLeads(propertyLeads), [propertyLeads]);
   
   // Performance optimization: Memoize paginated leads
   const paginatedLeads = React.useMemo(() => {

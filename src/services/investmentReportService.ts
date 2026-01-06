@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { Property } from '../types/property';
 import {
   InvestmentReportData,
@@ -21,14 +20,7 @@ import {
   calculatePerfectRentForHoldScore,
   calculatePerfectARVForFlipScore,
 } from '../utils/scoreCalculator';
-
-// API Configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-
-// Helper function to get auth token
-const getAuthToken = (): string | null => {
-  return localStorage.getItem('authToken');
-};
+import api from './api';
 
 // Format currency for display
 export const formatCurrency = (value: number): string => {
@@ -236,21 +228,14 @@ export const generateFilename = (address: string): string => {
 // Create shareable report via backend API
 export const createShareableReport = async (property: Property): Promise<string> => {
   const reportData = prepareReportData(property);
-  const token = getAuthToken();
 
   try {
-    const response = await axios.post<{ id: string }>(
-      `${API_BASE_URL}/api/investment-reports`,
+    const response = await api.post<{ id: string }>(
+      '/api/investment-reports',
       {
         propertyId: property.id || '',
         propertyAddress: property.address,
         reportData: reportData,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
       }
     );
 
@@ -261,7 +246,6 @@ export const createShareableReport = async (property: Property): Promise<string>
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,
-      token: token ? 'Token exists' : 'No token found'
     });
     throw new Error(error.response?.data?.message || 'Failed to create shareable report. Please try again.');
   }
@@ -270,14 +254,14 @@ export const createShareableReport = async (property: Property): Promise<string>
 // Fetch report from backend API
 export const getReportById = async (reportId: string): Promise<InvestmentReportData> => {
   try {
-    const response = await axios.get<{
+    const response = await api.get<{
       id: string;
       propertyId: string;
       propertyAddress: string;
       reportData: InvestmentReportData;
       createdAt: string;
       viewCount: number;
-    }>(`${API_BASE_URL}/api/investment-reports/${reportId}`);
+    }>(`/api/investment-reports/${reportId}`);
 
     // Return the reportData from the response
     const reportData = response.data.reportData;

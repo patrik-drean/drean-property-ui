@@ -170,13 +170,6 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
                       <Typography variant="h6" fontWeight="bold">
                         {formatCurrency(calculations.rehabCosts)}
                       </Typography>
-                      <Typography variant="body2" sx={{ my: 0.5 }}>+</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-                        Commission
-                      </Typography>
-                      <Typography variant="h6" fontWeight="bold">
-                        {formatCurrency(5000)}
-                      </Typography>
                     </Box>
                     {/* Division line */}
                     <Box sx={{ width: '80%', height: '2px', bgcolor: 'divider', my: 1 }} />

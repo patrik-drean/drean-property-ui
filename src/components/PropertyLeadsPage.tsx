@@ -70,6 +70,7 @@ const PropertyLeadsPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Use the leads filters hook for filtering and tags
   const { filterLeads, availableTags } = useLeadsFilters(propertyLeads);
@@ -327,8 +328,6 @@ const PropertyLeadsPage: React.FC = () => {
   // Pagination helper functions - now using memoized version
   const getPaginatedLeads = () => paginatedLeads;
 
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page);
     // Scroll to top when page changes
@@ -341,15 +340,35 @@ const PropertyLeadsPage: React.FC = () => {
     setCurrentPage(1); // Reset to first page
   };
 
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+    setCurrentPage(1);
+  };
+
   // Performance optimization: Memoize sorted leads using sortPropertyLeads for proper lead score sorting
   const sortedLeads = React.useMemo(() => sortPropertyLeads(propertyLeads), [propertyLeads]);
-  
+
+  // Filter leads by search query
+  const filteredLeads = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return sortedLeads;
+    }
+    const query = searchQuery.toLowerCase().trim();
+    return sortedLeads.filter(lead =>
+      lead.address.toLowerCase().includes(query)
+    );
+  }, [sortedLeads, searchQuery]);
+
   // Performance optimization: Memoize paginated leads
   const paginatedLeads = React.useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return sortedLeads.slice(startIndex, endIndex);
-  }, [sortedLeads, currentPage, itemsPerPage]);
+    return filteredLeads.slice(startIndex, endIndex);
+  }, [filteredLeads, currentPage, itemsPerPage]);
+
+  // Use filteredLeads.length for pagination when searching
+  const displayedItemsCount = searchQuery.trim() ? filteredLeads.length : totalItems;
+  const totalPages = Math.ceil(displayedItemsCount / itemsPerPage);
 
   const handleAddLead = () => {
     setIsEditing(false);
@@ -779,6 +798,8 @@ const PropertyLeadsPage: React.FC = () => {
         selectedLeads={selectedLeads}
         showArchived={showArchived}
         locallyConvertedLeads={locallyConvertedLeads}
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
         onAddLead={handleAddLead}
         onToggleShowArchived={handleToggleShowArchived}
         onBulkDelete={handleBulkDelete}
@@ -1621,7 +1642,8 @@ const PropertyLeadsPage: React.FC = () => {
             width: { xs: '100%', sm: 'auto' }
           }}>
             <Typography variant="body2" color="text.secondary">
-              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} leads
+              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, displayedItemsCount)} to {Math.min(currentPage * itemsPerPage, displayedItemsCount)} of {displayedItemsCount} leads
+              {searchQuery.trim() && ` (filtered from ${totalItems})`}
             </Typography>
             <FormControl size="small" sx={{ minWidth: 120 }}>
               <InputLabel>Per page</InputLabel>

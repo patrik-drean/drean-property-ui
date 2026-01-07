@@ -11,6 +11,8 @@ jest.mock('@mui/icons-material', () => ({
   Archive: () => <span data-testid="archive-icon">Archive</span>,
   Assessment: () => <span data-testid="assessment-icon">Assessment</span>,
   Transform: () => <span data-testid="transform-icon">Transform</span>,
+  Search: () => <span data-testid="search-icon">Search</span>,
+  Close: () => <span data-testid="close-icon">Close</span>,
 }));
 
 const createMockLead = (overrides: Partial<PropertyLead> = {}): PropertyLead => ({
@@ -42,6 +44,8 @@ const defaultProps = {
   selectedLeads: [] as string[],
   showArchived: false,
   locallyConvertedLeads: new Set<string>(),
+  searchQuery: '',
+  onSearchChange: jest.fn(),
   onAddLead: jest.fn(),
   onToggleShowArchived: jest.fn(),
   onBulkDelete: jest.fn(),
@@ -121,57 +125,17 @@ describe('LeadsToolbar', () => {
     expect(onBulkDelete).toHaveBeenCalledTimes(1);
   });
 
-  it('should not show converted count when no leads are converted', () => {
-    renderWithRouter(
-      <LeadsToolbar
-        {...defaultProps}
-        propertyLeads={[createMockLead({ id: '1', convertedToProperty: false })]}
-      />
-    );
-    expect(screen.queryByText(/Converted/)).not.toBeInTheDocument();
+  it('should render search input', () => {
+    renderWithRouter(<LeadsToolbar {...defaultProps} />);
+    expect(screen.getByPlaceholderText('Search by address...')).toBeInTheDocument();
   });
 
-  it('should show converted count when leads are converted via convertedToProperty', () => {
-    renderWithRouter(
-      <LeadsToolbar
-        {...defaultProps}
-        propertyLeads={[
-          createMockLead({ id: '1', convertedToProperty: true }),
-          createMockLead({ id: '2', convertedToProperty: false }),
-        ]}
-      />
-    );
-    expect(screen.getByText('1 Converted')).toBeInTheDocument();
-  });
+  it('should call onSearchChange when typing in search', () => {
+    const onSearchChange = jest.fn();
+    renderWithRouter(<LeadsToolbar {...defaultProps} onSearchChange={onSearchChange} />);
 
-  it('should show converted count when leads are locally converted', () => {
-    const locallyConvertedLeads = new Set(['2']);
-    renderWithRouter(
-      <LeadsToolbar
-        {...defaultProps}
-        propertyLeads={[
-          createMockLead({ id: '1', convertedToProperty: false }),
-          createMockLead({ id: '2', convertedToProperty: false }),
-        ]}
-        locallyConvertedLeads={locallyConvertedLeads}
-      />
-    );
-    expect(screen.getByText('1 Converted')).toBeInTheDocument();
-  });
-
-  it('should count both convertedToProperty and locallyConvertedLeads', () => {
-    const locallyConvertedLeads = new Set(['2']);
-    renderWithRouter(
-      <LeadsToolbar
-        {...defaultProps}
-        propertyLeads={[
-          createMockLead({ id: '1', convertedToProperty: true }),
-          createMockLead({ id: '2', convertedToProperty: false }),
-          createMockLead({ id: '3', convertedToProperty: false }),
-        ]}
-        locallyConvertedLeads={locallyConvertedLeads}
-      />
-    );
-    expect(screen.getByText('2 Converted')).toBeInTheDocument();
+    const searchInput = screen.getByPlaceholderText('Search by address...');
+    fireEvent.change(searchInput, { target: { value: 'test' } });
+    expect(onSearchChange).toHaveBeenCalled();
   });
 });

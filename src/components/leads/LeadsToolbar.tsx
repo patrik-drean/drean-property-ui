@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Button, Tooltip } from '@mui/material';
+import { Box, Typography, Button, Tooltip, TextField, InputAdornment } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { PropertyLead } from '../../types/property';
@@ -9,6 +9,8 @@ interface LeadsToolbarProps {
   selectedLeads: string[];
   showArchived: boolean;
   locallyConvertedLeads: Set<string>;
+  searchQuery: string;
+  onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onAddLead: () => void;
   onToggleShowArchived: () => void;
   onBulkDelete: () => void;
@@ -24,6 +26,8 @@ export const LeadsToolbar: React.FC<LeadsToolbarProps> = ({
   selectedLeads,
   showArchived,
   locallyConvertedLeads,
+  searchQuery,
+  onSearchChange,
   onAddLead,
   onToggleShowArchived,
   onBulkDelete,
@@ -34,30 +38,20 @@ export const LeadsToolbar: React.FC<LeadsToolbarProps> = ({
     <Box sx={{
       mb: 4,
       display: 'flex',
-      flexDirection: { xs: 'column', sm: 'row' },
-      justifyContent: 'space-between',
-      alignItems: { xs: 'stretch', sm: 'center' },
-      gap: { xs: 2, sm: 0 }
+      flexDirection: 'column',
+      gap: 2
     }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h4" component="h1">Property Leads</Typography>
-        {convertedCount > 0 && (
-          <Tooltip title="Number of leads converted to properties">
-            <Box sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              backgroundColor: 'success.light',
-              color: 'success.contrastText',
-              borderRadius: '16px',
-              px: 1.5,
-              py: 0.5,
-            }}>
-              <Icons.Transform fontSize="small" sx={{ mr: 0.5 }} />
-              {convertedCount} Converted
-            </Box>
-          </Tooltip>
-        )}
-      </Box>
+      {/* Top row: Title and action buttons */}
+      <Box sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
+        alignItems: { xs: 'stretch', sm: 'center' },
+        gap: { xs: 2, sm: 0 }
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+          <Typography variant="h4" component="h1">Property Leads</Typography>
+        </Box>
       <Box sx={{
         display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
@@ -115,6 +109,36 @@ export const LeadsToolbar: React.FC<LeadsToolbarProps> = ({
           Add Lead
         </Button>
       </Box>
+      </Box>
+
+      {/* Search row */}
+      <TextField
+        placeholder="Search by address..."
+        value={searchQuery}
+        onChange={onSearchChange}
+        size="small"
+        sx={{
+          maxWidth: { xs: '100%', sm: 400 },
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 2,
+          }
+        }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Icons.Search color="action" />
+            </InputAdornment>
+          ),
+          endAdornment: searchQuery && (
+            <InputAdornment position="end">
+              <Icons.Close
+                sx={{ cursor: 'pointer', fontSize: 20 }}
+                onClick={() => onSearchChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
+              />
+            </InputAdornment>
+          ),
+        }}
+      />
     </Box>
   );
 };

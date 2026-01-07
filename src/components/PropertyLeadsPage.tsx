@@ -58,6 +58,7 @@ import {
 } from './leads/leadsHelpers';
 import { LeadsToolbar } from './leads/LeadsToolbar';
 import { useLeadsFilters } from '../hooks';
+import { UsageLimitBanner } from './shared/UsageLimitBanner';
 
 const PropertyLeadsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -804,6 +805,9 @@ const PropertyLeadsPage: React.FC = () => {
         onToggleShowArchived={handleToggleShowArchived}
         onBulkDelete={handleBulkDelete}
       />
+
+      {/* Usage limit warning for free users */}
+      <UsageLimitBanner type="leads" />
 
       {/* Desktop view - Table */}
       <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>

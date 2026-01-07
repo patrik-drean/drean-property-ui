@@ -1,4 +1,3 @@
-import axios from 'axios';
 import {
   SmsConversation,
   ConversationWithMessages,
@@ -9,23 +8,14 @@ import {
   CreateTemplateRequest,
   UpdateTemplateRequest,
 } from '../types/sms';
-
-// Use environment variables if available, otherwise use default local development URL
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+import { axiosInstance } from './api';
 
 export const smsService = {
   /**
    * Get all SMS conversations sorted by last message date
    */
   async getConversations(): Promise<SmsConversation[]> {
-    const response = await api.get<SmsConversation[]>('/api/sms/conversations');
+    const response = await axiosInstance.get<SmsConversation[]>('/api/sms/conversations');
     return response.data;
   },
 
@@ -33,7 +23,7 @@ export const smsService = {
    * Get a specific conversation with its messages
    */
   async getConversation(id: string): Promise<ConversationWithMessages> {
-    const response = await api.get<ConversationWithMessages>(
+    const response = await axiosInstance.get<ConversationWithMessages>(
       `/api/sms/conversations/${id}`
     );
     return response.data;
@@ -44,7 +34,7 @@ export const smsService = {
    */
   async getConversationByPhone(phone: string): Promise<ConversationWithMessages | null> {
     try {
-      const response = await api.get<ConversationWithMessages>(
+      const response = await axiosInstance.get<ConversationWithMessages>(
         `/api/sms/conversations/phone/${encodeURIComponent(phone)}`
       );
       return response.data;
@@ -61,7 +51,7 @@ export const smsService = {
    */
   async getConversationByLead(leadId: string): Promise<ConversationWithMessages | null> {
     try {
-      const response = await api.get<ConversationWithMessages>(
+      const response = await axiosInstance.get<ConversationWithMessages>(
         `/api/sms/conversations/lead/${leadId}`
       );
       return response.data;
@@ -77,7 +67,7 @@ export const smsService = {
    * Send an SMS message
    */
   async sendMessage(request: SendSmsRequest): Promise<SendSmsResponse> {
-    const response = await api.post<SendSmsResponse>(
+    const response = await axiosInstance.post<SendSmsResponse>(
       '/api/sms/send',
       request
     );
@@ -88,7 +78,7 @@ export const smsService = {
    * Get a specific message by ID
    */
   async getMessage(id: string): Promise<SmsMessage> {
-    const response = await api.get<SmsMessage>(`/api/sms/messages/${id}`);
+    const response = await axiosInstance.get<SmsMessage>(`/api/sms/messages/${id}`);
     return response.data;
   },
 
@@ -96,7 +86,7 @@ export const smsService = {
    * Retry sending a failed message
    */
   async retryMessage(id: string): Promise<SendSmsResponse> {
-    const response = await api.post<SendSmsResponse>(`/api/sms/messages/${id}/retry`);
+    const response = await axiosInstance.post<SendSmsResponse>(`/api/sms/messages/${id}/retry`);
     return response.data;
   },
 
@@ -104,14 +94,14 @@ export const smsService = {
    * Mark a conversation as read
    */
   async markConversationRead(conversationId: string): Promise<void> {
-    await api.post(`/api/sms/conversations/${conversationId}/read`);
+    await axiosInstance.post(`/api/sms/conversations/${conversationId}/read`);
   },
 
   /**
    * Mark a conversation as unread
    */
   async markConversationUnread(conversationId: string): Promise<void> {
-    await api.post(`/api/sms/conversations/${conversationId}/unread`);
+    await axiosInstance.post(`/api/sms/conversations/${conversationId}/unread`);
   },
 
   // ============ Template Methods ============
@@ -120,7 +110,7 @@ export const smsService = {
    * Get all SMS templates
    */
   async getTemplates(): Promise<SmsTemplate[]> {
-    const response = await api.get<SmsTemplate[]>('/api/sms/templates');
+    const response = await axiosInstance.get<SmsTemplate[]>('/api/sms/templates');
     return response.data;
   },
 
@@ -128,7 +118,7 @@ export const smsService = {
    * Get a specific template by ID
    */
   async getTemplate(id: string): Promise<SmsTemplate> {
-    const response = await api.get<SmsTemplate>(`/api/sms/templates/${id}`);
+    const response = await axiosInstance.get<SmsTemplate>(`/api/sms/templates/${id}`);
     return response.data;
   },
 
@@ -136,7 +126,7 @@ export const smsService = {
    * Create a new template
    */
   async createTemplate(request: CreateTemplateRequest): Promise<SmsTemplate> {
-    const response = await api.post<SmsTemplate>('/api/sms/templates', request);
+    const response = await axiosInstance.post<SmsTemplate>('/api/sms/templates', request);
     return response.data;
   },
 
@@ -144,7 +134,7 @@ export const smsService = {
    * Update an existing template
    */
   async updateTemplate(id: string, request: UpdateTemplateRequest): Promise<SmsTemplate> {
-    const response = await api.put<SmsTemplate>(`/api/sms/templates/${id}`, request);
+    const response = await axiosInstance.put<SmsTemplate>(`/api/sms/templates/${id}`, request);
     return response.data;
   },
 
@@ -152,6 +142,6 @@ export const smsService = {
    * Delete a template
    */
   async deleteTemplate(id: string): Promise<void> {
-    await api.delete(`/api/sms/templates/${id}`);
+    await axiosInstance.delete(`/api/sms/templates/${id}`);
   },
 };

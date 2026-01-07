@@ -11,6 +11,7 @@ import ContactDialog from '../components/ContactDialog';
 import { MarkdownNoteModal } from '../components/MarkdownNoteModal';
 import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from '../components/shared/PropertyTooltips';
 import { createShareableReport, generateReportUrl } from '../services/investmentReportService';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -28,6 +29,7 @@ import {
 const PropertyDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isPro, createCheckoutSession } = useSubscription();
   const [property, setProperty] = useState<Property | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [links, setLinks] = useState<PropertyLink[]>([]);
@@ -334,6 +336,18 @@ const PropertyDetailsPage: React.FC = () => {
 
   const handleInvestmentReport = async () => {
     if (!property) return;
+
+    // Gate Investment Reports for Pro users only
+    if (!isPro) {
+      handleReportsMenuClose();
+      try {
+        await createCheckoutSession();
+      } catch (error) {
+        handleSnackbar('Investment Reports require a Pro subscription. Upgrade to unlock.', 'error');
+      }
+      return;
+    }
+
     try {
       // Create report via backend API
       const reportId = await createShareableReport(property);
@@ -452,6 +466,14 @@ const PropertyDetailsPage: React.FC = () => {
             <MenuItem onClick={handleInvestmentReport}>
               <Icons.TrendingUp sx={{ mr: 1 }} />
               Investment Report
+              {!isPro && (
+                <Chip
+                  label="PRO"
+                  size="small"
+                  color="primary"
+                  sx={{ ml: 1, height: 18, fontSize: '0.65rem' }}
+                />
+              )}
             </MenuItem>
           </Menu>
         </Box>

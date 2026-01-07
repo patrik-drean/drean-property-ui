@@ -4,8 +4,7 @@
  * Tests route protection including:
  * - Redirecting unauthenticated users to login
  * - Showing loading state while checking auth
- * - Rendering protected content when authenticated as admin
- * - Showing Access Denied page for non-admin users
+ * - Rendering protected content when authenticated
  */
 
 import React from 'react';
@@ -20,9 +19,6 @@ jest.mock('../../contexts/AuthContext', () => ({
 }));
 
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
-
-// Admin user ID that matches the one in ProtectedRoute.tsx
-const ADMIN_USER_ID = 'f414636e-b795-4d4e-9a95-64ebc3f8b9bd';
 
 // Test component for protected content
 const ProtectedContent: React.FC = () => <div>Protected Content</div>;
@@ -103,13 +99,13 @@ describe('ProtectedRoute', () => {
     });
   });
 
-  describe('when authenticated as admin', () => {
-    it('should render protected content', () => {
+  describe('when authenticated', () => {
+    it('should render protected content for any authenticated user', () => {
       mockUseAuth.mockReturnValue({
         user: {
-          id: ADMIN_USER_ID,
-          email: 'admin@example.com',
-          name: 'Admin User',
+          id: 'any-user-id',
+          email: 'user@example.com',
+          name: 'Any User',
           pictureUrl: null,
         },
         token: 'valid-jwt-token',
@@ -128,9 +124,9 @@ describe('ProtectedRoute', () => {
     it('should not show loading spinner', () => {
       mockUseAuth.mockReturnValue({
         user: {
-          id: ADMIN_USER_ID,
-          email: 'admin@example.com',
-          name: 'Admin User',
+          id: 'any-user-id',
+          email: 'user@example.com',
+          name: 'Any User',
           pictureUrl: null,
         },
         token: 'valid-jwt-token',
@@ -146,77 +142,13 @@ describe('ProtectedRoute', () => {
     });
   });
 
-  describe('when authenticated as non-admin', () => {
-    it('should show Access Denied page', () => {
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: 'non-admin-user-id',
-          email: 'user@example.com',
-          name: 'Regular User',
-          pictureUrl: null,
-        },
-        token: 'valid-jwt-token',
-        isAuthenticated: true,
-        isLoading: false,
-        login: jest.fn(),
-        logout: jest.fn(),
-      });
-
-      renderWithRouter();
-
-      expect(screen.getByText('Access Denied')).toBeInTheDocument();
-      expect(screen.getByText("You don't have permission to access PropGuide.")).toBeInTheDocument();
-      expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
-    });
-
-    it('should display user email on Access Denied page', () => {
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: 'non-admin-user-id',
-          email: 'user@example.com',
-          name: 'Regular User',
-          pictureUrl: null,
-        },
-        token: 'valid-jwt-token',
-        isAuthenticated: true,
-        isLoading: false,
-        login: jest.fn(),
-        logout: jest.fn(),
-      });
-
-      renderWithRouter();
-
-      expect(screen.getByText('Signed in as: user@example.com')).toBeInTheDocument();
-    });
-
-    it('should show Sign Out button on Access Denied page', () => {
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: 'non-admin-user-id',
-          email: 'user@example.com',
-          name: 'Regular User',
-          pictureUrl: null,
-        },
-        token: 'valid-jwt-token',
-        isAuthenticated: true,
-        isLoading: false,
-        login: jest.fn(),
-        logout: jest.fn(),
-      });
-
-      renderWithRouter();
-
-      expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
-    });
-  });
-
   describe('nested routes', () => {
-    it('should render nested protected routes when authenticated as admin', () => {
+    it('should render nested protected routes when authenticated', () => {
       mockUseAuth.mockReturnValue({
         user: {
-          id: ADMIN_USER_ID,
-          email: 'admin@example.com',
-          name: 'Admin User',
+          id: 'any-user-id',
+          email: 'user@example.com',
+          name: 'Any User',
           pictureUrl: null,
         },
         token: 'valid-jwt-token',

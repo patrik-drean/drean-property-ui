@@ -40,6 +40,8 @@ import { getStatusColor, getStatusOrder } from '../utils/statusColors';
 import useResponsiveLayout from '../hooks/useResponsiveLayout';
 import { usePropertiesFilters } from '../hooks';
 import { useMessagingPopover } from '../contexts/MessagingPopoverContext';
+import { UsageLimitBanner } from './shared/UsageLimitBanner';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -117,6 +119,7 @@ const getVacantUnitsCount = (property: Property): number => {
 
 const PropertiesPage: React.FC = () => {
   const theme = useTheme();
+  const { isPro, createCheckoutSession } = useSubscription();
   const { properties, loading, error, refreshProperties, updateProperty, addProperty, removeProperty, isStale } = useProperties();
 
   // Use the properties filters hook for sorting and filtering
@@ -381,6 +384,17 @@ const PropertiesPage: React.FC = () => {
   };
 
   const handleUpdateRentcast = async (id: string) => {
+    // Gate RentCast API for Pro users only
+    if (!isPro) {
+      try {
+        await createCheckoutSession();
+      } catch (error) {
+        setSnackbarMessage('RentCast data requires a Pro subscription. Upgrade to unlock.');
+        setSnackbarOpen(true);
+      }
+      return;
+    }
+
     try {
       const updatedProperty = await api.updatePropertyRentcast(id);
       updateProperty(updatedProperty);
@@ -596,6 +610,11 @@ ${property.zillowLink}`;
         px: 1,
         gap: { xs: 2, sm: 0 }
       }}>
+      </Box>
+
+      {/* Usage limit warning for free users */}
+      <Box sx={{ px: 1, mb: 1 }}>
+        <UsageLimitBanner type="properties" />
       </Box>
 
       {/* Desktop Add Property Button - Floating Top Right */}

@@ -6,7 +6,9 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:808
 
 const AUTH_TOKEN_KEY = 'authToken';
 
-const api = axios.create({
+// Export axios instance for use by other services (e.g., smsService)
+// Named 'axiosInstance' to avoid conflict with apiConfig.ts 'api' export
+export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -14,7 +16,7 @@ const api = axios.create({
 });
 
 // Request interceptor - add auth token to requests
-api.interceptors.request.use(
+axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
     if (token && config.headers) {
@@ -28,7 +30,7 @@ api.interceptors.request.use(
 );
 
 // Response interceptor - handle errors and 401 redirects
-api.interceptors.response.use(
+axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     // Log error details for debugging
@@ -50,38 +52,38 @@ api.interceptors.response.use(
 );
 
 export const getProperties = async (showArchived?: boolean): Promise<Property[]> => {
-  const response = await api.get<Property[]>('/api/Properties', {
+  const response = await axiosInstance.get<Property[]>('/api/Properties', {
     params: { showArchived }
   });
   return response.data;
 };
 
 export const getProperty = async (address: string): Promise<Property> => {
-  const response = await api.get<Property>(`/api/Properties/property?address=${encodeURIComponent(address)}`);
+  const response = await axiosInstance.get<Property>(`/api/Properties/property?address=${encodeURIComponent(address)}`);
   return response.data;
 };
 
 export const addProperty = async (property: Omit<Property, 'id'>): Promise<Property> => {
-  const response = await api.post<Property>('/api/Properties', property);
+  const response = await axiosInstance.post<Property>('/api/Properties', property);
   return response.data;
 };
 
 export const updateProperty = async (id: string, property: Omit<Property, 'id'>): Promise<Property> => {
-  const response = await api.put<Property>(`/api/Properties/${id}`, property);
+  const response = await axiosInstance.put<Property>(`/api/Properties/${id}`, property);
   return response.data;
 };
 
 export const archiveProperty = async (id: string): Promise<void> => {
-  await api.put(`/api/Properties/${id}/archive`);
+  await axiosInstance.put(`/api/Properties/${id}/archive`);
 };
 
 export const updatePropertyRentcast = async (id: string): Promise<Property> => {
-  const response = await api.put<Property>(`/api/Properties/${id}/rentcast`);
+  const response = await axiosInstance.put<Property>(`/api/Properties/${id}/rentcast`);
   return response.data;
 };
 
 export const getZillowData = async (url: string): Promise<{ address: string; price: number }> => {
-  const response = await api.get<{ address: string; price: number }>(`/api/Properties/zillow?url=${encodeURIComponent(url)}`);
+  const response = await axiosInstance.get<{ address: string; price: number }>(`/api/Properties/zillow?url=${encodeURIComponent(url)}`);
   return response.data;
 };
 
@@ -90,56 +92,56 @@ export const getArchivedProperties = async (): Promise<Property[]> => {
 };
 
 export const restoreProperty = async (id: string): Promise<void> => {
-  await api.put(`/api/Properties/${id}/restore`);
+  await axiosInstance.put(`/api/Properties/${id}/restore`);
 };
 
 export const getPropertyById = async (id: string): Promise<Property> => {
-  const response = await api.get<Property>(`/api/Properties/${id}`);
+  const response = await axiosInstance.get<Property>(`/api/Properties/${id}`);
   return response.data;
 };
 
 // Property Lead API Methods
 export const getPropertyLeads = async (): Promise<PropertyLead[]> => {
-  const response = await api.get<PropertyLead[]>('/api/PropertyLeads');
+  const response = await axiosInstance.get<PropertyLead[]>('/api/PropertyLeads');
   return response.data;
 };
 
 export const getPropertyLead = async (id: string): Promise<PropertyLead> => {
-  const response = await api.get<PropertyLead>(`/api/PropertyLeads/${id}`);
+  const response = await axiosInstance.get<PropertyLead>(`/api/PropertyLeads/${id}`);
   return response.data;
 };
 
 export const addPropertyLead = async (propertyLead: CreatePropertyLead): Promise<PropertyLead> => {
-  const response = await api.post<PropertyLead>('/api/PropertyLeads', propertyLead);
+  const response = await axiosInstance.post<PropertyLead>('/api/PropertyLeads', propertyLead);
   return response.data;
 };
 
 export const addPropertyLeadsBatch = async (batch: BatchCreatePropertyLeads): Promise<BatchCreateResponse> => {
-  const response = await api.post<BatchCreateResponse>('/api/PropertyLeads/batch', batch);
+  const response = await axiosInstance.post<BatchCreateResponse>('/api/PropertyLeads/batch', batch);
   return response.data;
 };
 
 export const updatePropertyLead = async (id: string, propertyLead: UpdatePropertyLead): Promise<PropertyLead> => {
   console.log(`Sending update for lead ${id}:`, propertyLead);
-  const response = await api.put<PropertyLead>(`/api/PropertyLeads/${id}`, propertyLead);
+  const response = await axiosInstance.put<PropertyLead>(`/api/PropertyLeads/${id}`, propertyLead);
   console.log(`Update response for lead ${id}:`, response.data);
   return response.data;
 };
 
 export const deletePropertyLead = async (id: string): Promise<void> => {
-  await api.delete(`/api/PropertyLeads/${id}`);
+  await axiosInstance.delete(`/api/PropertyLeads/${id}`);
 };
 
 export const archivePropertyLead = async (id: string): Promise<void> => {
-  await api.put(`/api/PropertyLeads/${id}/archive`);
+  await axiosInstance.put(`/api/PropertyLeads/${id}/archive`);
 };
 
 export const convertPropertyLead = async (id: string): Promise<void> => {
-  await api.put(`/api/PropertyLeads/${id}/convert`);
+  await axiosInstance.put(`/api/PropertyLeads/${id}/convert`);
 };
 
 export const getPropertyLeadsWithArchivedStatus = async (showArchived?: boolean): Promise<PropertyLead[]> => {
-  const response = await api.get<PropertyLead[]>('/api/PropertyLeads', {
+  const response = await axiosInstance.get<PropertyLead[]>('/api/PropertyLeads', {
     params: { showArchived }
   });
   return response.data;
@@ -160,7 +162,7 @@ export const getPropertyLeadsPaginated = async (
   if (tags && tags.length > 0) params.tags = tags.join(',');
   if (converted !== undefined) params.converted = converted;
   
-  const response = await api.get<{ data: PropertyLead[]; total: number; page: number; pageSize: number }>('/api/PropertyLeads', {
+  const response = await axiosInstance.get<{ data: PropertyLead[]; total: number; page: number; pageSize: number }>('/api/PropertyLeads', {
     params
   });
   return response.data;
@@ -168,81 +170,81 @@ export const getPropertyLeadsPaginated = async (
 
 // Note API Methods
 export const getNotesByPropertyId = async (propertyId: string): Promise<Note[]> => {
-  const response = await api.get<Note[]>(`/api/Notes/property/${propertyId}`);
+  const response = await axiosInstance.get<Note[]>(`/api/Notes/property/${propertyId}`);
   return response.data;
 };
 
 export const createNote = async (note: CreateNote): Promise<Note> => {
-  const response = await api.post<Note>('/api/Notes', note);
+  const response = await axiosInstance.post<Note>('/api/Notes', note);
   return response.data;
 };
 
 export const updateNote = async (id: string, note: CreateNote): Promise<Note> => {
-  const response = await api.put<Note>(`/api/Notes/${id}`, note);
+  const response = await axiosInstance.put<Note>(`/api/Notes/${id}`, note);
   return response.data;
 };
 
 export const deleteNote = async (id: string): Promise<void> => {
-  await api.delete(`/api/Notes/${id}`);
+  await axiosInstance.delete(`/api/Notes/${id}`);
 };
 
 // Link API Methods
 export const getLinksByPropertyId = async (propertyId: string): Promise<Link[]> => {
-  const response = await api.get<Link[]>(`/api/Links/property/${propertyId}`);
+  const response = await axiosInstance.get<Link[]>(`/api/Links/property/${propertyId}`);
   return response.data;
 };
 
 export const createLink = async (link: CreateLink): Promise<Link> => {
-  const response = await api.post<Link>('/api/Links', link);
+  const response = await axiosInstance.post<Link>('/api/Links', link);
   return response.data;
 };
 
 export const updateLink = async (id: string, link: CreateLink): Promise<Link> => {
-  const response = await api.put<Link>(`/api/Links/${id}`, link);
+  const response = await axiosInstance.put<Link>(`/api/Links/${id}`, link);
   return response.data;
 };
 
 export const deleteLink = async (id: string): Promise<void> => {
-  await api.delete(`/api/Links/${id}`);
+  await axiosInstance.delete(`/api/Links/${id}`);
 };
 
 // Contact API Methods
 export const getContacts = async (): Promise<Contact[]> => {
-  const response = await api.get<Contact[]>('/api/Contacts');
+  const response = await axiosInstance.get<Contact[]>('/api/Contacts');
   return response.data;
 };
 
 export const getContact = async (id: string): Promise<Contact> => {
-  const response = await api.get<Contact>(`/api/Contacts/${id}`);
+  const response = await axiosInstance.get<Contact>(`/api/Contacts/${id}`);
   return response.data;
 };
 
 export const getContactsByPropertyId = async (propertyId: string): Promise<Contact[]> => {
-  const response = await api.get<Contact[]>(`/api/Contacts/property/${propertyId}`);
+  const response = await axiosInstance.get<Contact[]>(`/api/Contacts/property/${propertyId}`);
   return response.data;
 };
 
 export const createContact = async (contact: CreateContact): Promise<Contact> => {
-  const response = await api.post<Contact>('/api/Contacts', contact);
+  const response = await axiosInstance.post<Contact>('/api/Contacts', contact);
   return response.data;
 };
 
 export const updateContact = async (id: string, contact: UpdateContact): Promise<Contact> => {
-  const response = await api.put<Contact>(`/api/Contacts/${id}`, contact);
+  const response = await axiosInstance.put<Contact>(`/api/Contacts/${id}`, contact);
   return response.data;
 };
 
 export const deleteContact = async (id: string): Promise<void> => {
-  await api.delete(`/api/Contacts/${id}`);
+  await axiosInstance.delete(`/api/Contacts/${id}`);
 };
 
 export const addContactToProperty = async (contactId: string, propertyId: string): Promise<void> => {
-  await api.post(`/api/Contacts/${contactId}/properties/${propertyId}`);
+  await axiosInstance.post(`/api/Contacts/${contactId}/properties/${propertyId}`);
 };
 
 export const removeContactFromProperty = async (contactId: string, propertyId: string): Promise<void> => {
-  await api.delete(`/api/Contacts/${contactId}/properties/${propertyId}`);
+  await axiosInstance.delete(`/api/Contacts/${contactId}/properties/${propertyId}`);
 };
 
-// Export the api instance for direct use
-export default api; 
+// Export the axios instance for direct use
+export default axiosInstance; 

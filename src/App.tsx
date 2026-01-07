@@ -7,6 +7,7 @@ import theme from './theme';
 import { AuthProvider } from './contexts/AuthContext';
 import { PropertiesProvider } from './contexts/PropertiesContext';
 import { MessagingPopoverProvider } from './contexts/MessagingPopoverContext';
+import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import { MessagingPopover } from './components/messaging/MessagingPopover';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navigation from './components/Navigation';
@@ -23,6 +24,7 @@ import { TransactionsPage } from './pages/TransactionsPage';
 import { PropertyPLReportPage } from './pages/PropertyPLReportPage';
 import { MessagingPage } from './pages/MessagingPage';
 import { TemplatesPage } from './pages/TemplatesPage';
+import PricingPage from './pages/PricingPage';
 
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 
@@ -50,6 +52,7 @@ const router = createHashRouter(
           <Route path="/team" element={<TeamPage />} />
           <Route path="/messaging" element={<MessagingPage />} />
           <Route path="/messaging/templates" element={<TemplatesPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
         </Route>
       </Route>
     </>
@@ -62,13 +65,15 @@ const App: React.FC = () => {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <PropertiesProvider>
-            <MessagingPopoverProvider>
-              <RouterProvider router={router} />
-              {/* Global messaging popover - persists across navigation */}
-              <MessagingPopover />
-            </MessagingPopoverProvider>
-          </PropertiesProvider>
+          <SubscriptionProvider>
+            <PropertiesProvider>
+              <MessagingPopoverProvider>
+                <RouterProvider router={router} />
+                {/* Global messaging popover - persists across navigation */}
+                <MessagingPopover />
+              </MessagingPopoverProvider>
+            </PropertiesProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </ThemeProvider>
     </GoogleOAuthProvider>

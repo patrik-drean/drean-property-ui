@@ -1446,7 +1446,7 @@ const PropertyLeadsPage: React.FC = () => {
                                     sx={{ mr: 1 }}
                                     onClick={() => handleConvertToProperty(lead)}
                                   >
-                                    <Icons.Transform fontSize="small" />
+                                    <Icons.ArrowCircleUp fontSize="small" />
                                   </ActionIconButton>
                                 </Tooltip>
                               )}

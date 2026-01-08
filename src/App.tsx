@@ -41,7 +41,7 @@ const router = createHashRouter(
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Navigation />}>
-          <Route path="/" element={<Navigate to="/properties" replace />} />
+          <Route path="/" element={<Navigate to="/leads" replace />} />
           <Route path="/properties" element={<PropertiesPage />} />
           <Route path="/properties/:id" element={<PropertyDetailsPage />} />
           <Route path="/reports" element={<ReportsPage />} />

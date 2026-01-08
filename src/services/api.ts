@@ -140,6 +140,29 @@ export const convertPropertyLead = async (id: string): Promise<void> => {
   await axiosInstance.put(`/api/PropertyLeads/${id}/convert`);
 };
 
+// Score Property Lead from Zillow URL
+export interface ScoredPropertyData {
+  address: string;
+  listingPrice: number;
+  zillowLink: string;
+  sqft?: number;
+  units?: number;
+  agentInfo?: {
+    name: string;
+    email: string;
+    phone: string;
+    agency: string;
+  };
+  note?: string;
+  leadScore?: number;
+  metadata?: Record<string, any>;
+}
+
+export const scorePropertyLead = async (zillowUrl: string): Promise<ScoredPropertyData> => {
+  const response = await axiosInstance.post<ScoredPropertyData>('/api/leads/score', { zillowUrl });
+  return response.data;
+};
+
 export const getPropertyLeadsWithArchivedStatus = async (showArchived?: boolean): Promise<PropertyLead[]> => {
   const response = await axiosInstance.get<PropertyLead[]>('/api/PropertyLeads', {
     params: { showArchived }

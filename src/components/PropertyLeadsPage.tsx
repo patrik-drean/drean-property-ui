@@ -22,18 +22,29 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Tabs,
+  Tab,
+  useTheme,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { PropertyLead, CreatePropertyLead } from '../types/property';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
+import { PropertyLead, CreatePropertyLead, Property } from '../types/property';
 import {
   getPropertyLeadsWithArchivedStatus,
   addPropertyLead,
   updatePropertyLead,
   deletePropertyLead,
   addProperty,
-  archivePropertyLead
+  archivePropertyLead,
+  getPropertyLead,
+  archiveProperty,
+  updatePropertyRentcast,
 } from '../services/api';
+import { useProperties } from '../contexts/PropertiesContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { OpportunitiesTable } from './leads';
 import { smsService } from '../services/smsService';
 import { SmsConversation } from '../types/sms';
 import PropertyLeadDialog from './PropertyLeadDialog';
@@ -59,9 +70,51 @@ import {
 import { LeadsToolbar } from './leads/LeadsToolbar';
 import { useLeadsFilters } from '../hooks';
 import { UsageLimitBanner } from './shared/UsageLimitBanner';
+import { useMessagingPopover } from '../contexts/MessagingPopoverContext';
+
+// Tab panel component (same pattern as Reports page)
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+const TabPanel: React.FC<TabPanelProps> = ({ children, value, index, ...other }) => (
+  <div
+    role="tabpanel"
+    hidden={value !== index}
+    id={`leads-tabpanel-${index}`}
+    aria-labelledby={`leads-tab-${index}`}
+    {...other}
+  >
+    {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+  </div>
+);
+
+const a11yProps = (index: number) => ({
+  id: `leads-tab-${index}`,
+  'aria-controls': `leads-tabpanel-${index}`,
+});
 
 const PropertyLeadsPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useTheme();
+  const { openPopover } = useMessagingPopover();
+
+  // Tab state - initialize from URL param, default to 0
+  const searchParams = new URLSearchParams(location.search);
+  const tabParam = searchParams.get('tab');
+  const initialTab = tabParam !== null ? parseInt(tabParam, 10) : 0;
+  const [currentTab, setCurrentTab] = useState(initialTab >= 0 && initialTab <= 1 ? initialTab : 0);
+
+  // Properties context for Opportunities tab
+  const { properties, refreshProperties, isStale: propertiesStale, updateProperty, removeProperty } = useProperties();
+  const { isPro, createCheckoutSession } = useSubscription();
+
+  // Linked leads for Opportunities tooltips (property.propertyLeadId -> PropertyLead)
+  const [linkedLeads, setLinkedLeads] = useState<Map<string, PropertyLead>>(new Map());
+
   const [propertyLeads, setPropertyLeads] = useState<PropertyLead[]>([]);
   const [conversations, setConversations] = useState<SmsConversation[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -133,6 +186,162 @@ const PropertyLeadsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(100);
   const [totalItems, setTotalItems] = useState(0);
+
+  // Tab change handler - updates URL
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    setCurrentTab(newValue);
+    const newSearchParams = new URLSearchParams(window.location.search);
+    newSearchParams.set('tab', newValue.toString());
+    navigate(`/leads?${newSearchParams.toString()}`, { replace: true });
+  };
+
+
+  // Sync tab state with URL changes (browser back/forward)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tabFromUrl = urlParams.get('tab');
+    if (tabFromUrl !== null) {
+      const tabIndex = parseInt(tabFromUrl, 10);
+      if (tabIndex >= 0 && tabIndex <= 1 && tabIndex !== currentTab) {
+        setCurrentTab(tabIndex);
+      }
+    }
+  }, [location.search]);
+
+  // Refresh properties when navigating to Opportunities tab if data is stale
+  useEffect(() => {
+    if (currentTab === 1 && propertiesStale) {
+      refreshProperties();
+    }
+  }, [currentTab, propertiesStale, refreshProperties]);
+
+  // Fetch linked PropertyLeads for Opportunities tooltips
+  useEffect(() => {
+    const fetchLinkedLeads = async () => {
+      const opportunities = properties.filter(p =>
+        ['Opportunity', 'Soft Offer', 'Hard Offer'].includes(p.status)
+      );
+      const leadIds = opportunities
+        .map(p => p.propertyLeadId)
+        .filter((id): id is string => !!id);
+
+      if (leadIds.length === 0) {
+        setLinkedLeads(new Map());
+        return;
+      }
+
+      // Fetch leads in parallel
+      const leads = await Promise.all(
+        leadIds.map(id => getPropertyLead(id).catch(() => null))
+      );
+
+      const leadMap = new Map<string, PropertyLead>();
+      leads.forEach(lead => {
+        if (lead) leadMap.set(lead.id, lead);
+      });
+      setLinkedLeads(leadMap);
+    };
+
+    if (currentTab === 1) {
+      fetchLinkedLeads();
+    }
+  }, [properties, currentTab]);
+
+
+  // Handle message property for Opportunities tab
+  const handleMessageProperty = (property: Property) => {
+    if (!property.propertyLeadId) return;
+    const linkedLead = linkedLeads.get(property.propertyLeadId);
+    if (linkedLead && linkedLead.sellerPhone) {
+      openPopover({
+        phoneNumber: linkedLead.sellerPhone,
+        leadId: linkedLead.id,
+        leadName: linkedLead.sellerPhone,
+        leadAddress: linkedLead.address,
+        leadPrice: linkedLead.listingPrice ? formatCurrency(linkedLead.listingPrice) : undefined,
+      });
+    }
+  };
+
+  // Handle edit opportunity - navigate to Portfolio page
+  const handleEditOpportunity = (property: Property) => {
+    // Navigate to Portfolio page where user can edit the property
+    navigate('/portfolio');
+  };
+
+  // Handle archive opportunity
+  const handleArchiveOpportunity = async (property: Property) => {
+    try {
+      await archiveProperty(property.id);
+      removeProperty(property.id);
+      setSnackbar({
+        open: true,
+        message: 'Property archived successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error archiving property:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to archive property',
+        severity: 'error'
+      });
+    }
+  };
+
+  // Handle update Rentcast data
+  const handleUpdateRentcastData = async (property: Property) => {
+    // Gate RentCast API for Pro users only
+    if (!isPro) {
+      try {
+        await createCheckoutSession();
+      } catch (error) {
+        setSnackbar({
+          open: true,
+          message: 'RentCast data requires a Pro subscription. Upgrade to unlock.',
+          severity: 'error'
+        });
+      }
+      return;
+    }
+
+    try {
+      const updatedProperty = await updatePropertyRentcast(property.id);
+      updateProperty(updatedProperty);
+      setSnackbar({
+        open: true,
+        message: 'RentCast data updated successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error updating Rentcast data:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to update RentCast data',
+        severity: 'error'
+      });
+    }
+  };
+
+  // Handle send to calculator - helper function to calculate new loan percent
+  const calculateNewLoanPercent = (offerPrice: number, rehabCosts: number, arv: number): number => {
+    if (arv === 0) return 0;
+    return (offerPrice + rehabCosts) / arv;
+  };
+
+  const handleSendToCalculator = (property: Property) => {
+    // Calculate new loan percentage for the calculator
+    const newLoanPercent = Math.round(calculateNewLoanPercent(property.offerPrice, property.rehabCosts, property.arv) * 100);
+
+    const params = new URLSearchParams({
+      offerPrice: property.offerPrice.toString(),
+      rehabCosts: property.rehabCosts.toString(),
+      potentialRent: property.potentialRent.toString(),
+      arv: property.arv.toString(),
+      newLoanPercent: newLoanPercent.toString()
+    });
+    navigate(`/calculator?${params.toString()}`);
+  };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) {
@@ -795,22 +1004,30 @@ const PropertyLeadsPage: React.FC = () => {
   return (
     <>
       <LeadsToolbar
-        propertyLeads={propertyLeads}
         selectedLeads={selectedLeads}
-        showArchived={showArchived}
-        locallyConvertedLeads={locallyConvertedLeads}
-        searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
         onAddLead={handleAddLead}
-        onToggleShowArchived={handleToggleShowArchived}
         onBulkDelete={handleBulkDelete}
       />
 
       {/* Usage limit warning for free users */}
       <UsageLimitBanner type="leads" />
 
-      {/* Desktop view - Table */}
-      <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>
+      {/* Tabs Navigation */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Tabs
+          value={currentTab}
+          onChange={handleTabChange}
+          aria-label="leads and opportunities tabs"
+        >
+          <Tab label="Leads" {...a11yProps(0)} />
+          <Tab label="Opportunities" {...a11yProps(1)} />
+        </Tabs>
+      </Box>
+
+      {/* Leads Tab */}
+      <TabPanel value={currentTab} index={0}>
+        {/* Desktop view - Table */}
+        <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>
         <Paper elevation={2} sx={{ position: 'relative' }}>
           {loading && (
             <Box sx={{ 
@@ -857,12 +1074,48 @@ const PropertyLeadsPage: React.FC = () => {
                       />
                     </Tooltip>
                   </StyledTableCell>
-                  <StyledTableCell className="header" sx={{ maxWidth: '280px' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      Address
-                      <Tooltip title="Green highlight and badge indicates leads that have been converted to properties">
-                        <Icons.Info fontSize="small" sx={{ ml: 1, opacity: 0.7 }} />
-                      </Tooltip>
+                  <StyledTableCell className="header" sx={{ maxWidth: '320px' }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        Address
+                        <Tooltip title="Green highlight and badge indicates leads that have been converted to properties">
+                          <Icons.Info fontSize="small" sx={{ ml: 1, opacity: 0.7 }} />
+                        </Tooltip>
+                      </Box>
+                      <TextField
+                        placeholder="Search..."
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'white',
+                            borderRadius: 1,
+                            height: 28,
+                            '& input': {
+                              py: 0.5,
+                              fontSize: '0.8rem',
+                            }
+                          }
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Icons.Search sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            </InputAdornment>
+                          ),
+                          endAdornment: searchQuery && (
+                            <InputAdornment position="end">
+                              <Icons.Close
+                                sx={{ cursor: 'pointer', fontSize: 14, color: 'text.secondary' }}
+                                onClick={() => handleSearchChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
+                              />
+                            </InputAdornment>
+                          ),
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
                     </Box>
                   </StyledTableCell>
                   <StyledTableCell className="header">Units</StyledTableCell>
@@ -1187,7 +1440,7 @@ const PropertyLeadsPage: React.FC = () => {
                           ) : (
                             <>
                               {!lead.convertedToProperty && !locallyConvertedLeads.has(lead.id) && (
-                                <Tooltip title="Convert to Property">
+                                <Tooltip title="Promote to Opportunity">
                                   <ActionIconButton
                                     size="small"
                                     sx={{ mr: 1 }}
@@ -1198,7 +1451,7 @@ const PropertyLeadsPage: React.FC = () => {
                                 </Tooltip>
                               )}
                               {(lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) && (
-                                <Tooltip title="Already Converted to Property">
+                                <Tooltip title="Already Promoted to Opportunity">
                                   <Box 
                                     sx={{ 
                                       display: 'flex', 
@@ -1245,6 +1498,35 @@ const PropertyLeadsPage: React.FC = () => {
 
       {/* Mobile & Tablet view - Cards */}
       <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexDirection: 'column', gap: 1 }}>
+        {/* Mobile Search */}
+        <TextField
+          placeholder="Search by address..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          size="small"
+          fullWidth
+          sx={{
+            mb: 1,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+            }
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Icons.Search color="action" />
+              </InputAdornment>
+            ),
+            endAdornment: searchQuery && (
+              <InputAdornment position="end">
+                <Icons.Close
+                  sx={{ cursor: 'pointer', fontSize: 20 }}
+                  onClick={() => handleSearchChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
+                />
+              </InputAdornment>
+            ),
+          }}
+        />
         {propertyLeads.length === 0 ? (
           <Paper sx={{ p: 3, borderRadius: 2, textAlign: 'center' }}>
             <Typography variant="body1" sx={{ py: 2 }}>
@@ -1582,7 +1864,7 @@ const PropertyLeadsPage: React.FC = () => {
                       ) : (
                         <>
                           {!lead.convertedToProperty && !locallyConvertedLeads.has(lead.id) && (
-                            <Tooltip title="Convert to Property">
+                            <Tooltip title="Promote to Opportunity">
                               <ActionIconButton 
                                 size="small"
                                 onClick={(e) => {
@@ -1627,64 +1909,97 @@ const PropertyLeadsPage: React.FC = () => {
         )}
       </Box>
 
-      {/* Pagination Controls */}
-      {propertyLeads.length > 0 && (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          mt: 3,
-          mb: 2,
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: { xs: 2, sm: 0 }
-        }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 2,
+        {/* Pagination Controls */}
+        {propertyLeads.length > 0 && (
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mt: 3,
+            mb: 2,
             flexDirection: { xs: 'column', sm: 'row' },
-            width: { xs: '100%', sm: 'auto' }
+            gap: { xs: 2, sm: 0 }
           }}>
-            <Typography variant="body2" color="text.secondary">
-              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, displayedItemsCount)} to {Math.min(currentPage * itemsPerPage, displayedItemsCount)} of {displayedItemsCount} leads
-              {searchQuery.trim() && ` (filtered from ${totalItems})`}
-            </Typography>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>Per page</InputLabel>
-              <Select
-                value={itemsPerPage}
-                label="Per page"
-                onChange={handleItemsPerPageChange}
-                disabled={loading}
-              >
-                <MenuItem value={10}>10</MenuItem>
-                <MenuItem value={25}>25</MenuItem>
-                <MenuItem value={50}>50</MenuItem>
-                <MenuItem value={100}>100</MenuItem>
-              </Select>
-            </FormControl>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              flexDirection: { xs: 'column', sm: 'row' },
+              width: { xs: '100%', sm: 'auto' }
+            }}>
+              <Typography variant="body2" color="text.secondary">
+                Showing {Math.min((currentPage - 1) * itemsPerPage + 1, displayedItemsCount)} to {Math.min(currentPage * itemsPerPage, displayedItemsCount)} of {displayedItemsCount} leads
+                {searchQuery.trim() && ` (filtered from ${totalItems})`}
+              </Typography>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>Per page</InputLabel>
+                <Select
+                  value={itemsPerPage}
+                  label="Per page"
+                  onChange={handleItemsPerPageChange}
+                  disabled={loading}
+                >
+                  <MenuItem value={10}>10</MenuItem>
+                  <MenuItem value={25}>25</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                  <MenuItem value={100}>100</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={handlePageChange}
+              color="primary"
+              size="large"
+              showFirstButton
+              showLastButton
+              disabled={loading}
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  borderRadius: 2,
+                },
+                '& .MuiPaginationItem-root.Mui-disabled': {
+                  opacity: 0.5,
+                }
+              }}
+            />
           </Box>
-          
-          <Pagination
-            count={totalPages}
-            page={currentPage}
-            onChange={handlePageChange}
+        )}
+
+        {/* Archived Leads Button - Bottom of Leads tab */}
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          mt: 4,
+          mb: 2
+        }}>
+          <Button
+            variant="outlined"
             color="primary"
-            size="large"
-            showFirstButton
-            showLastButton
-            disabled={loading}
-            sx={{
-              '& .MuiPaginationItem-root': {
-                borderRadius: 2,
-              },
-              '& .MuiPaginationItem-root.Mui-disabled': {
-                opacity: 0.5,
-              }
-            }}
-          />
+            onClick={handleToggleShowArchived}
+            startIcon={<Icons.Archive />}
+            sx={{ borderRadius: 2 }}
+          >
+            {showArchived ? 'Hide Archived' : 'Archived Leads'}
+          </Button>
         </Box>
-      )}
+      </TabPanel>
+
+      {/* Opportunities Tab */}
+      <TabPanel value={currentTab} index={1}>
+        <OpportunitiesTable
+          properties={properties}
+          linkedLeads={linkedLeads}
+          conversations={conversations}
+          onMessageProperty={handleMessageProperty}
+          onEditProperty={handleEditOpportunity}
+          onArchiveProperty={handleArchiveOpportunity}
+          onUpdateRentcast={handleUpdateRentcastData}
+          onSendToCalculator={handleSendToCalculator}
+        />
+      </TabPanel>
 
       {/* Add/Edit Dialog */}
       <PropertyLeadDialog

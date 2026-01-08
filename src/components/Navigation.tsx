@@ -114,17 +114,6 @@ const Navigation: React.FC = () => {
         </Box>
         <Divider />
         <List>
-          <ListItem 
-            button 
-            component={RouterLink} 
-            to="/properties"
-            selected={isActive('/properties')}
-          >
-            <ListItemIcon>
-              <HomeIcon color={isActive('/properties') ? 'primary' : 'inherit'} />
-            </ListItemIcon>
-            <ListItemText primary="Properties" />
-          </ListItem>
           <ListItem
             button
             component={RouterLink}
@@ -135,6 +124,17 @@ const Navigation: React.FC = () => {
               <ListAltIcon color={isActive('/leads') ? 'primary' : 'inherit'} />
             </ListItemIcon>
             <ListItemText primary="Leads" />
+          </ListItem>
+          <ListItem
+            button
+            component={RouterLink}
+            to="/properties"
+            selected={isActive('/properties')}
+          >
+            <ListItemIcon>
+              <HomeIcon color={isActive('/properties') ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Portfolio" />
           </ListItem>
           <ListItem
             button
@@ -277,19 +277,10 @@ const Navigation: React.FC = () => {
             
             {/* Remove the Todos tab from the desktop nav */}
             {!isMobile && (
-              <Stack 
-                direction="row" 
+              <Stack
+                direction="row"
                 spacing={1}
               >
-                <Button
-                  component={RouterLink}
-                  to="/properties"
-                  startIcon={<HomeIcon />}
-                  sx={getNavButtonStyle('/properties')}
-                >
-                  Properties
-                </Button>
-                
                 <Button
                   component={RouterLink}
                   to="/leads"
@@ -297,6 +288,15 @@ const Navigation: React.FC = () => {
                   sx={getNavButtonStyle('/leads')}
                 >
                   Leads
+                </Button>
+
+                <Button
+                  component={RouterLink}
+                  to="/properties"
+                  startIcon={<HomeIcon />}
+                  sx={getNavButtonStyle('/properties')}
+                >
+                  Portfolio
                 </Button>
 
                 <Button

@@ -11,12 +11,16 @@ import {
   Typography,
   IconButton,
   InputAdornment,
-  Tooltip
+  Tooltip,
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { scorePropertyLead } from '../services/api';
 
 interface PropertyLeadDialogProps {
   open: boolean;
@@ -38,6 +42,50 @@ const PropertyLeadDialog: React.FC<PropertyLeadDialogProps> = ({
   formatInputCurrency
 }) => {
   const [formData, setFormData] = useState(initialFormData);
+  const [loadingScore, setLoadingScore] = useState(false);
+  const [scoreError, setScoreError] = useState<string | null>(null);
+
+  // Handle scoring a property from Zillow URL
+  const handleScoreProperty = async () => {
+    if (!formData.zillowLink) {
+      setScoreError('Please enter a Zillow URL first');
+      return;
+    }
+
+    if (!formData.zillowLink.includes('zillow.com')) {
+      setScoreError('Please enter a valid Zillow URL');
+      return;
+    }
+
+    try {
+      setLoadingScore(true);
+      setScoreError(null);
+
+      const data = await scorePropertyLead(formData.zillowLink);
+
+      // Populate form fields with scored data
+      setFormData((prev: any) => ({
+        ...prev,
+        address: data.address || prev.address,
+        listingPrice: data.listingPrice || prev.listingPrice,
+        zillowLink: data.zillowLink || prev.zillowLink,
+        squareFootage: data.sqft || prev.squareFootage,
+        units: data.units || prev.units,
+        sellerPhone: data.agentInfo?.phone || prev.sellerPhone,
+        sellerEmail: data.agentInfo?.email || prev.sellerEmail,
+        notes: data.note || prev.notes,
+        leadScore: data.leadScore || prev.leadScore,
+        metadata: data.metadata ? JSON.stringify(data.metadata) : prev.metadata,
+      }));
+
+    } catch (err: any) {
+      console.error('Error scoring property:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to score property';
+      setScoreError(errorMessage);
+    } finally {
+      setLoadingScore(false);
+    }
+  };
 
   // Helper function to check if a metadata key represents a financial value
   const isFinancialKey = (key: string): boolean => {
@@ -159,6 +207,26 @@ const PropertyLeadDialog: React.FC<PropertyLeadDialogProps> = ({
             margin="normal"
             placeholder="Paste Zillow link to auto-fill address and price"
           />
+
+          {/* Score Property Button */}
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleScoreProperty}
+            disabled={!formData.zillowLink || loadingScore}
+            startIcon={loadingScore ? <CircularProgress size={20} /> : <AutoFixHighIcon />}
+            sx={{ mb: 2, mt: 1 }}
+          >
+            {loadingScore ? 'Scoring...' : 'Score Property'}
+          </Button>
+
+          {/* Score Error Alert */}
+          {scoreError && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setScoreError(null)}>
+              {scoreError}
+            </Alert>
+          )}
+
           <TextField
             label="Address"
             name="address"

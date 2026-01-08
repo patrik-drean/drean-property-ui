@@ -41,6 +41,7 @@ import {
   getPropertyLead,
   archiveProperty,
   updatePropertyRentcast,
+  updateProperty as updatePropertyApi,
 } from '../services/api';
 import { useProperties } from '../contexts/PropertiesContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -48,6 +49,7 @@ import { OpportunitiesTable } from './leads';
 import { smsService } from '../services/smsService';
 import { SmsConversation } from '../types/sms';
 import PropertyLeadDialog from './PropertyLeadDialog';
+import PropertyDialog from './PropertyDialog';
 import { MessageLeadButton } from './messaging/MessageLeadButton';
 import {
   StyledTableCell,
@@ -71,6 +73,7 @@ import { LeadsToolbar } from './leads/LeadsToolbar';
 import { useLeadsFilters } from '../hooks';
 import { UsageLimitBanner } from './shared/UsageLimitBanner';
 import { useMessagingPopover } from '../contexts/MessagingPopoverContext';
+import { calculateHoldScore } from '../utils/scoreCalculator';
 
 // Tab panel component (same pattern as Reports page)
 interface TabPanelProps {
@@ -125,6 +128,10 @@ const PropertyLeadsPage: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // State for property edit dialog (opportunities)
+  const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
 
   // Use the leads filters hook for filtering and tags
   const { filterLeads, availableTags } = useLeadsFilters(propertyLeads);
@@ -263,10 +270,78 @@ const PropertyLeadsPage: React.FC = () => {
     }
   };
 
-  // Handle edit opportunity - navigate to Portfolio page
+  // Handle edit opportunity - open property edit dialog
   const handleEditOpportunity = (property: Property) => {
-    // Navigate to Portfolio page where user can edit the property
-    navigate('/portfolio');
+    setEditingProperty(property);
+    setPropertyDialogOpen(true);
+  };
+
+  // Handle save property from dialog
+  const handleSaveProperty = async (propertyData: Omit<Property, 'id'>) => {
+    try {
+      const propertyWithScore = {
+        ...propertyData,
+        score: calculateHoldScore(propertyData)
+      };
+
+      if (editingProperty) {
+        const propertyToUpdate = {
+          address: propertyWithScore.address,
+          status: propertyWithScore.status,
+          propertyLeadId: propertyWithScore.propertyLeadId,
+          listingPrice: propertyWithScore.listingPrice,
+          offerPrice: propertyWithScore.offerPrice,
+          rehabCosts: propertyWithScore.rehabCosts,
+          potentialRent: propertyWithScore.potentialRent,
+          arv: propertyWithScore.arv,
+          notes: propertyWithScore.notes,
+          score: propertyWithScore.score,
+          zillowLink: propertyWithScore.zillowLink,
+          hasRentcastData: propertyWithScore.hasRentcastData,
+          rentCastEstimates: {
+            price: propertyWithScore.rentCastEstimates.price || 0,
+            priceLow: propertyWithScore.rentCastEstimates.priceLow || 0,
+            priceHigh: propertyWithScore.rentCastEstimates.priceHigh || 0,
+            rent: propertyWithScore.rentCastEstimates.rent || 0,
+            rentLow: propertyWithScore.rentCastEstimates.rentLow || 0,
+            rentHigh: propertyWithScore.rentCastEstimates.rentHigh || 0
+          },
+          todoMetaData: propertyWithScore.todoMetaData || { todoistSectionId: null },
+          saleComparables: propertyWithScore.saleComparables || [],
+          squareFootage: propertyWithScore.squareFootage,
+          units: propertyWithScore.units,
+          actualRent: propertyWithScore.actualRent,
+          currentHouseValue: propertyWithScore.currentHouseValue,
+          currentLoanValue: propertyWithScore.currentLoanValue,
+          propertyUnits: propertyWithScore.propertyUnits,
+          monthlyExpenses: propertyWithScore.monthlyExpenses,
+          capitalCosts: propertyWithScore.capitalCosts
+        };
+
+        const updatedProperty = await updatePropertyApi(editingProperty.id, propertyToUpdate);
+        updateProperty(updatedProperty);
+
+        setSnackbar({
+          open: true,
+          message: 'Property updated successfully',
+          severity: 'success'
+        });
+      }
+    } catch (err: any) {
+      console.error('Error saving property:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to update property',
+        severity: 'error'
+      });
+      throw err;
+    }
+  };
+
+  // Handle close property dialog
+  const handleClosePropertyDialog = () => {
+    setPropertyDialogOpen(false);
+    setEditingProperty(null);
   };
 
   // Handle archive opportunity
@@ -2001,7 +2076,7 @@ const PropertyLeadsPage: React.FC = () => {
         />
       </TabPanel>
 
-      {/* Add/Edit Dialog */}
+      {/* Add/Edit Lead Dialog */}
       <PropertyLeadDialog
         open={openDialog}
         isEditing={isEditing}
@@ -2010,6 +2085,15 @@ const PropertyLeadsPage: React.FC = () => {
         onClose={handleCloseDialog}
         handleCurrencyInput={handleCurrencyInput}
         formatInputCurrency={formatInputCurrency}
+      />
+
+      {/* Edit Property Dialog (for Opportunities) */}
+      <PropertyDialog
+        open={propertyDialogOpen}
+        onClose={handleClosePropertyDialog}
+        onSave={handleSaveProperty}
+        property={editingProperty}
+        isEditing={!!editingProperty}
       />
 
       {/* Success/Error Notification */}

@@ -14,7 +14,7 @@ import React from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { SubscriptionProvider, useSubscription } from '../SubscriptionContext';
 import { AuthProvider } from '../AuthContext';
-import { SubscriptionStatus } from '../../types/subscription';
+import { TrialStatus } from '../../types/subscription';
 
 // Mock fetch
 global.fetch = jest.fn();
@@ -41,42 +41,69 @@ Object.defineProperty(window, 'location', {
 });
 
 describe('SubscriptionContext', () => {
-  const mockFreeSubscription: SubscriptionStatus = {
-    plan: 'free',
+  const mockTrialStatus: TrialStatus = {
+    plan: 'trial',
+    isInTrial: true,
+    isTrialExpired: false,
     hasActiveSubscription: false,
     subscriptionOverride: false,
+    daysRemaining: 45,
+    trialEndDate: '2026-03-15T00:00:00Z',
     currentPeriodEnd: null,
     usage: {
       leadsCreatedToday: 5,
       leadsLimitPerDay: 20,
       totalProperties: 3,
       propertiesLimit: 10,
+      rentCastRequestsToday: 1,
+      rentCastLimitPerDay: 3,
+      aiLeadScoresToday: 10,
+      aiLeadScoresLimitPerDay: 50,
+      messagingAllowed: false,
     },
   };
 
-  const mockProSubscription: SubscriptionStatus = {
+  const mockProSubscription: TrialStatus = {
     plan: 'pro',
+    isInTrial: false,
+    isTrialExpired: false,
     hasActiveSubscription: true,
     subscriptionOverride: false,
+    daysRemaining: 0,
+    trialEndDate: null,
     currentPeriodEnd: '2026-02-01T00:00:00Z',
     usage: {
       leadsCreatedToday: 50,
-      leadsLimitPerDay: 20,
+      leadsLimitPerDay: 2147483647, // int.MaxValue
       totalProperties: 25,
-      propertiesLimit: 10,
+      propertiesLimit: 2147483647,
+      rentCastRequestsToday: 10,
+      rentCastLimitPerDay: 2147483647,
+      aiLeadScoresToday: 100,
+      aiLeadScoresLimitPerDay: 2147483647,
+      messagingAllowed: true,
     },
   };
 
-  const mockOverrideSubscription: SubscriptionStatus = {
+  const mockOverrideSubscription: TrialStatus = {
     plan: 'pro',
+    isInTrial: false,
+    isTrialExpired: false,
     hasActiveSubscription: true,
     subscriptionOverride: true,
+    daysRemaining: 0,
+    trialEndDate: null,
     currentPeriodEnd: null,
     usage: {
       leadsCreatedToday: 100,
-      leadsLimitPerDay: 20,
+      leadsLimitPerDay: 2147483647,
       totalProperties: 50,
-      propertiesLimit: 10,
+      propertiesLimit: 2147483647,
+      rentCastRequestsToday: 20,
+      rentCastLimitPerDay: 2147483647,
+      aiLeadScoresToday: 200,
+      aiLeadScoresLimitPerDay: 2147483647,
+      messagingAllowed: true,
     },
   };
 
@@ -128,7 +155,7 @@ describe('SubscriptionContext', () => {
     it('should provide context when used inside provider', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockFreeSubscription),
+        json: () => Promise.resolve(mockTrialStatus),
       });
 
       const wrapper = createWrapper();
@@ -139,7 +166,7 @@ describe('SubscriptionContext', () => {
       });
 
       expect(result.current).toBeDefined();
-      expect(result.current.subscription).toBeDefined();
+      expect(result.current.trialStatus).toBeDefined();
       expect(result.current.refreshSubscription).toBeInstanceOf(Function);
       expect(result.current.createCheckoutSession).toBeInstanceOf(Function);
       expect(result.current.openCustomerPortal).toBeInstanceOf(Function);
@@ -165,14 +192,14 @@ describe('SubscriptionContext', () => {
       await act(async () => {
         resolvePromise!({
           ok: true,
-          json: () => Promise.resolve(mockFreeSubscription),
+          json: () => Promise.resolve(mockTrialStatus),
         });
       });
 
       expect(result.current.loading).toBe(false);
     });
 
-    it('should set subscription to null when not authenticated', async () => {
+    it('should set trialStatus to null when not authenticated', async () => {
       const wrapper = createUnauthenticatedWrapper();
       const { result } = renderHook(() => useSubscription(), { wrapper });
 
@@ -180,7 +207,7 @@ describe('SubscriptionContext', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      expect(result.current.subscription).toBeNull();
+      expect(result.current.trialStatus).toBeNull();
       expect(global.fetch).not.toHaveBeenCalled();
     });
   });
@@ -189,7 +216,7 @@ describe('SubscriptionContext', () => {
     it('should fetch subscription status on mount when authenticated', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockFreeSubscription),
+        json: () => Promise.resolve(mockTrialStatus),
       });
 
       const wrapper = createWrapper();
@@ -207,10 +234,10 @@ describe('SubscriptionContext', () => {
           },
         })
       );
-      expect(result.current.subscription).toEqual(mockFreeSubscription);
+      expect(result.current.trialStatus).toEqual(mockTrialStatus);
     });
 
-    it('should handle fetch error and fallback to free tier', async () => {
+    it('should handle fetch error and fallback to trial tier', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
@@ -225,23 +252,32 @@ describe('SubscriptionContext', () => {
       });
 
       expect(result.current.error).toBe('Failed to load subscription status');
-      expect(result.current.subscription).toEqual({
-        plan: 'free',
+      expect(result.current.trialStatus).toEqual({
+        plan: 'trial',
+        isInTrial: true,
+        isTrialExpired: false,
         hasActiveSubscription: false,
         subscriptionOverride: false,
+        daysRemaining: 60,
+        trialEndDate: null,
         currentPeriodEnd: null,
         usage: {
           leadsCreatedToday: 0,
           leadsLimitPerDay: 20,
           totalProperties: 0,
           propertiesLimit: 10,
+          rentCastRequestsToday: 0,
+          rentCastLimitPerDay: 3,
+          aiLeadScoresToday: 0,
+          aiLeadScoresLimitPerDay: 50,
+          messagingAllowed: false,
         },
       });
 
       consoleSpy.mockRestore();
     });
 
-    it('should handle network error and fallback to free tier', async () => {
+    it('should handle network error and fallback to trial tier', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
@@ -253,7 +289,8 @@ describe('SubscriptionContext', () => {
       });
 
       expect(result.current.error).toBe('Failed to load subscription status');
-      expect(result.current.subscription?.plan).toBe('free');
+      expect(result.current.trialStatus?.plan).toBe('trial');
+      expect(result.current.trialStatus?.isInTrial).toBe(true);
 
       consoleSpy.mockRestore();
     });
@@ -264,7 +301,7 @@ describe('SubscriptionContext', () => {
       it('should return false for free tier', async () => {
         (global.fetch as jest.Mock).mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve(mockFreeSubscription),
+          json: () => Promise.resolve(mockTrialStatus),
         });
 
         const wrapper = createWrapper();
@@ -314,7 +351,7 @@ describe('SubscriptionContext', () => {
       it('should return true when under limit', async () => {
         (global.fetch as jest.Mock).mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve(mockFreeSubscription),
+          json: () => Promise.resolve(mockTrialStatus),
         });
 
         const wrapper = createWrapper();
@@ -329,9 +366,9 @@ describe('SubscriptionContext', () => {
 
       it('should return false when at limit', async () => {
         const atLimitSubscription: SubscriptionStatus = {
-          ...mockFreeSubscription,
+          ...mockTrialStatus,
           usage: {
-            ...mockFreeSubscription.usage,
+            ...mockTrialStatus.usage,
             leadsCreatedToday: 20,
           },
         };
@@ -373,7 +410,7 @@ describe('SubscriptionContext', () => {
       it('should return true when under limit', async () => {
         (global.fetch as jest.Mock).mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve(mockFreeSubscription),
+          json: () => Promise.resolve(mockTrialStatus),
         });
 
         const wrapper = createWrapper();
@@ -388,9 +425,9 @@ describe('SubscriptionContext', () => {
 
       it('should return false when at limit', async () => {
         const atLimitSubscription: SubscriptionStatus = {
-          ...mockFreeSubscription,
+          ...mockTrialStatus,
           usage: {
-            ...mockFreeSubscription.usage,
+            ...mockTrialStatus.usage,
             totalProperties: 10,
           },
         };
@@ -427,6 +464,354 @@ describe('SubscriptionContext', () => {
         expect(result.current.canCreateProperty).toBe(true);
       });
     });
+
+    describe('isInTrial', () => {
+      it('should return true for trial users', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockTrialStatus),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.isInTrial).toBe(true);
+      });
+
+      it('should return false for pro users', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockProSubscription),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.isInTrial).toBe(false);
+      });
+    });
+
+    describe('isTrialExpired', () => {
+      it('should return false for active trial users', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockTrialStatus),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.isTrialExpired).toBe(false);
+      });
+
+      it('should return true for expired trial users', async () => {
+        const expiredTrialStatus: TrialStatus = {
+          plan: 'expired',
+          isInTrial: false,
+          isTrialExpired: true,
+          hasActiveSubscription: false,
+          subscriptionOverride: false,
+          daysRemaining: 0,
+          trialEndDate: '2026-01-01T00:00:00Z',
+          currentPeriodEnd: null,
+          usage: {
+            ...mockTrialStatus.usage,
+            messagingAllowed: false,
+          },
+        };
+
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(expiredTrialStatus),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.isTrialExpired).toBe(true);
+      });
+    });
+
+    describe('canAccessApp', () => {
+      it('should return true for trial users', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockTrialStatus),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canAccessApp).toBe(true);
+      });
+
+      it('should return true for pro users', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockProSubscription),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canAccessApp).toBe(true);
+      });
+
+      it('should return false for expired trial users', async () => {
+        const expiredTrialStatus: TrialStatus = {
+          plan: 'expired',
+          isInTrial: false,
+          isTrialExpired: true,
+          hasActiveSubscription: false,
+          subscriptionOverride: false,
+          daysRemaining: 0,
+          trialEndDate: '2026-01-01T00:00:00Z',
+          currentPeriodEnd: null,
+          usage: {
+            ...mockTrialStatus.usage,
+            messagingAllowed: false,
+          },
+        };
+
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(expiredTrialStatus),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canAccessApp).toBe(false);
+      });
+    });
+
+    describe('canUseRentCast', () => {
+      it('should return true when under limit', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockTrialStatus),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canUseRentCast).toBe(true);
+      });
+
+      it('should return false when at limit', async () => {
+        const atLimitStatus: TrialStatus = {
+          ...mockTrialStatus,
+          usage: {
+            ...mockTrialStatus.usage,
+            rentCastRequestsToday: 3,
+          },
+        };
+
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(atLimitStatus),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canUseRentCast).toBe(false);
+      });
+
+      it('should return true for pro users regardless of count', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockProSubscription),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canUseRentCast).toBe(true);
+      });
+    });
+
+    describe('canScoreWithAi', () => {
+      it('should return true when under limit', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockTrialStatus),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canScoreWithAi).toBe(true);
+      });
+
+      it('should return false when at limit', async () => {
+        const atLimitStatus: TrialStatus = {
+          ...mockTrialStatus,
+          usage: {
+            ...mockTrialStatus.usage,
+            aiLeadScoresToday: 50,
+          },
+        };
+
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(atLimitStatus),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canScoreWithAi).toBe(false);
+      });
+
+      it('should return true for pro users regardless of count', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockProSubscription),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canScoreWithAi).toBe(true);
+      });
+    });
+
+    describe('canAccessMessaging', () => {
+      it('should return false for trial users', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockTrialStatus),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canAccessMessaging).toBe(false);
+      });
+
+      it('should return true for pro users', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockProSubscription),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canAccessMessaging).toBe(true);
+      });
+
+      it('should return true for subscription override users', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockOverrideSubscription),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.canAccessMessaging).toBe(true);
+      });
+    });
+
+    describe('daysRemaining', () => {
+      it('should return correct days for trial users', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockTrialStatus),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.daysRemaining).toBe(45);
+      });
+
+      it('should return 0 for pro users', async () => {
+        (global.fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockProSubscription),
+        });
+
+        const wrapper = createWrapper();
+        const { result } = renderHook(() => useSubscription(), { wrapper });
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.daysRemaining).toBe(0);
+      });
+    });
   });
 
   describe('createCheckoutSession', () => {
@@ -434,7 +819,7 @@ describe('SubscriptionContext', () => {
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve(mockFreeSubscription),
+          json: () => Promise.resolve(mockTrialStatus),
         })
         .mockResolvedValueOnce({
           ok: true,
@@ -485,7 +870,7 @@ describe('SubscriptionContext', () => {
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve(mockFreeSubscription),
+          json: () => Promise.resolve(mockTrialStatus),
         })
         .mockResolvedValueOnce({
           ok: false,
@@ -593,7 +978,7 @@ describe('SubscriptionContext', () => {
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve(mockFreeSubscription),
+          json: () => Promise.resolve(mockTrialStatus),
         })
         .mockResolvedValueOnce({
           ok: true,

@@ -7,13 +7,13 @@ interface UsageLimitBannerProps {
 }
 
 export const UsageLimitBanner: React.FC<UsageLimitBannerProps> = ({ type }) => {
-  const { subscription, isPro, createCheckoutSession } = useSubscription();
+  const { trialStatus, isPro, createCheckoutSession } = useSubscription();
 
-  if (isPro || !subscription) return null;
+  if (isPro || !trialStatus) return null;
 
   const usage = type === 'leads'
-    ? { current: subscription.usage.leadsCreatedToday, limit: subscription.usage.leadsLimitPerDay, label: 'leads today' }
-    : { current: subscription.usage.totalProperties, limit: subscription.usage.propertiesLimit, label: 'properties' };
+    ? { current: trialStatus.usage.leadsCreatedToday, limit: trialStatus.usage.leadsLimitPerDay, label: 'leads today' }
+    : { current: trialStatus.usage.totalProperties, limit: trialStatus.usage.propertiesLimit, label: 'properties' };
 
   const percentage = (usage.current / usage.limit) * 100;
   const isNearLimit = percentage >= 80;

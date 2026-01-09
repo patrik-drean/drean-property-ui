@@ -7,8 +7,9 @@ import theme from './theme';
 import { AuthProvider } from './contexts/AuthContext';
 import { PropertiesProvider } from './contexts/PropertiesContext';
 import { MessagingPopoverProvider } from './contexts/MessagingPopoverContext';
-import { SubscriptionProvider } from './contexts/SubscriptionContext';
+import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionContext';
 import { MessagingPopover } from './components/messaging/MessagingPopover';
+import { TrialExpiredPaywall } from './components/shared/TrialExpiredPaywall';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navigation from './components/Navigation';
 import LoginPage from './pages/LoginPage';
@@ -25,6 +26,21 @@ import { PropertyPLReportPage } from './pages/PropertyPLReportPage';
 import { MessagingPage } from './pages/MessagingPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import PricingPage from './pages/PricingPage';
+
+// Component to show trial expired paywall when needed
+const PaywallGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isTrialExpired, loading } = useSubscription();
+
+  // Don't show paywall while loading
+  if (loading) return <>{children}</>;
+
+  // Show paywall if trial expired
+  if (isTrialExpired) {
+    return <TrialExpiredPaywall />;
+  }
+
+  return <>{children}</>;
+};
 
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 
@@ -66,13 +82,15 @@ const App: React.FC = () => {
         <CssBaseline />
         <AuthProvider>
           <SubscriptionProvider>
-            <PropertiesProvider>
-              <MessagingPopoverProvider>
-                <RouterProvider router={router} />
-                {/* Global messaging popover - persists across navigation */}
-                <MessagingPopover />
-              </MessagingPopoverProvider>
-            </PropertiesProvider>
+            <PaywallGuard>
+              <PropertiesProvider>
+                <MessagingPopoverProvider>
+                  <RouterProvider router={router} />
+                  {/* Global messaging popover - persists across navigation */}
+                  <MessagingPopover />
+                </MessagingPopoverProvider>
+              </PropertiesProvider>
+            </PaywallGuard>
           </SubscriptionProvider>
         </AuthProvider>
       </ThemeProvider>

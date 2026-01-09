@@ -9,7 +9,7 @@ import { useSubscription } from '../contexts/SubscriptionContext';
 import { FREE_LIMITS, PRO_PRICE } from '../types/subscription';
 
 const PricingPage: React.FC = () => {
-  const { isPro, subscription, loading, createCheckoutSession, openCustomerPortal } = useSubscription();
+  const { isPro, trialStatus, loading, createCheckoutSession, openCustomerPortal, isInTrial, daysRemaining } = useSubscription();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const freeFeatures = [
@@ -176,12 +176,15 @@ const PricingPage: React.FC = () => {
       </Grid>
 
       {/* Current subscription info */}
-      {subscription && (
+      {trialStatus && (
         <Box textAlign="center" mt={4}>
           <Typography variant="body2" color="text.secondary">
-            Current plan: <strong>{subscription.plan.toUpperCase()}</strong>
-            {subscription.currentPeriodEnd && (
-              <> &bull; Renews {new Date(subscription.currentPeriodEnd).toLocaleDateString()}</>
+            Current plan: <strong>{trialStatus.plan.toUpperCase()}</strong>
+            {isInTrial && (
+              <> &bull; {daysRemaining} days remaining in trial</>
+            )}
+            {trialStatus.currentPeriodEnd && (
+              <> &bull; Renews {new Date(trialStatus.currentPeriodEnd).toLocaleDateString()}</>
             )}
           </Typography>
         </Box>

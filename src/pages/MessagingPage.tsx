@@ -23,14 +23,18 @@ import {
 import { ConversationList } from '../components/messaging/ConversationList';
 import { ConversationView } from '../components/messaging/ConversationView';
 import { NewMessageDialog } from '../components/messaging/NewMessageDialog';
+import { MessagingLockedOverlay } from '../components/shared/MessagingLockedOverlay';
 import { smsService } from '../services/smsService';
 import { getPropertyLead } from '../services/api';
 import { SmsConversation, ConversationWithMessages } from '../types/sms';
 import { PropertyLead } from '../types/property';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 const POLL_INTERVAL = 10000; // 10 seconds
 
 export const MessagingPage: React.FC = () => {
+  const { canAccessMessaging, loading: subscriptionLoading } = useSubscription();
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchParams] = useSearchParams();
@@ -233,12 +237,18 @@ export const MessagingPage: React.FC = () => {
     }
   };
 
-  if (loading) {
+  // Show loading while checking subscription
+  if (subscriptionLoading || loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
       </Box>
     );
+  }
+
+  // Show locked overlay if messaging is not available
+  if (!canAccessMessaging) {
+    return <MessagingLockedOverlay />;
   }
 
   const conversationList = (

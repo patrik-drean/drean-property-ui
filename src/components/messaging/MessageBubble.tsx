@@ -70,15 +70,41 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onRetry }
       // Without 'Z', JavaScript interprets as local time instead of UTC
       const utcString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
       const date = new Date(utcString);
+      const now = new Date();
 
-      // Format just the time portion in Mountain Time
-      const formatter = new Intl.DateTimeFormat('en-US', {
+      // Get dates in Mountain Time for comparison
+      const mstOptions = { timeZone: 'America/Denver' };
+      const messageDateStr = date.toLocaleDateString('en-US', mstOptions);
+      const todayStr = now.toLocaleDateString('en-US', mstOptions);
+
+      // Calculate yesterday
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toLocaleDateString('en-US', mstOptions);
+
+      // Format time portion
+      const timeFormatter = new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/Denver',
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
       });
-      return formatter.format(date);
+      const timeStr = timeFormatter.format(date);
+
+      // Return appropriate format based on date
+      if (messageDateStr === todayStr) {
+        return timeStr;
+      } else if (messageDateStr === yesterdayStr) {
+        return `Yesterday ${timeStr}`;
+      } else {
+        // Format as "Jan 9, 3:31 PM" for older messages
+        const dateFormatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/Denver',
+          month: 'short',
+          day: 'numeric',
+        });
+        return `${dateFormatter.format(date)}, ${timeStr}`;
+      }
     } catch (err) {
       console.error('[MessageBubble] Error formatting time:', err);
       return '';

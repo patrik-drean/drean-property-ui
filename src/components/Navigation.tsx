@@ -32,6 +32,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import SmsIcon from '@mui/icons-material/Sms';
 import LogoutIcon from '@mui/icons-material/Logout';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import Logo from './Logo';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -215,6 +216,16 @@ const Navigation: React.FC = () => {
               </Box>
             </Box>
             <List>
+              <ListItem
+                button
+                component="a"
+                href="mailto:team@redlunaproperty.com"
+              >
+                <ListItemIcon>
+                  <HelpOutlineIcon />
+                </ListItemIcon>
+                <ListItemText primary="Feedback" />
+              </ListItem>
               <ListItem button onClick={handleLogout}>
                 <ListItemIcon>
                   <LogoutIcon />
@@ -385,9 +396,21 @@ const Navigation: React.FC = () => {
               </Stack>
             )}
 
+            {/* Feedback Icon */}
+            <Tooltip title="Feedback">
+              <IconButton
+                color="inherit"
+                component="a"
+                href="mailto:team@redlunaproperty.com"
+                sx={{ ml: 1 }}
+              >
+                <HelpOutlineIcon />
+              </IconButton>
+            </Tooltip>
+
             {/* User Menu */}
             {user && (
-              <Box sx={{ ml: 2 }}>
+              <Box sx={{ ml: 1 }}>
                 <Tooltip title={user.name}>
                   <IconButton
                     onClick={handleUserMenuClick}

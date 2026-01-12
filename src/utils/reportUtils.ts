@@ -51,7 +51,8 @@ export function generatePropertyPLReport(
     const transDate = new Date(reportDate);
 
     if (transDate >= startDate && transDate <= endDate) {
-      const monthKey = format(transDate, 'yyyy-MM');
+      // Use date string directly to avoid timezone issues (e.g., 12/1 becoming 11/30)
+      const monthKey = reportDate.substring(0, 7); // Extract 'yyyy-MM' from 'yyyy-MM-dd'
       if (!byMonth.has(monthKey)) {
         byMonth.set(monthKey, []);
       }

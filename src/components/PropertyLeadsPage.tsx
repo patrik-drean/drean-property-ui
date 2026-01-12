@@ -105,11 +105,25 @@ const PropertyLeadsPage: React.FC = () => {
   const theme = useTheme();
   const { openPopover } = useMessagingPopover();
 
-  // Tab state - initialize from URL param, default to 0
+  // Favorite tab state - persisted to localStorage
+  const FAVORITE_TAB_KEY = 'propguide_favorite_leads_tab';
+  const [favoriteTab, setFavoriteTab] = useState<number | null>(() => {
+    const saved = localStorage.getItem(FAVORITE_TAB_KEY);
+    return saved !== null ? parseInt(saved, 10) : null;
+  });
+
+  // Tab state - initialize from URL param, then favorite, then default to 0
   const searchParams = new URLSearchParams(location.search);
   const tabParam = searchParams.get('tab');
-  const initialTab = tabParam !== null ? parseInt(tabParam, 10) : 0;
-  const [currentTab, setCurrentTab] = useState(initialTab >= 0 && initialTab <= 1 ? initialTab : 0);
+  const getInitialTab = () => {
+    if (tabParam !== null) {
+      const parsed = parseInt(tabParam, 10);
+      if (parsed >= 0 && parsed <= 1) return parsed;
+    }
+    if (favoriteTab !== null && favoriteTab >= 0 && favoriteTab <= 1) return favoriteTab;
+    return 0;
+  };
+  const [currentTab, setCurrentTab] = useState(getInitialTab);
 
   // Properties context for Opportunities tab
   const { properties, refreshProperties, isStale: propertiesStale, updateProperty, removeProperty } = useProperties();
@@ -200,6 +214,20 @@ const PropertyLeadsPage: React.FC = () => {
     const newSearchParams = new URLSearchParams(window.location.search);
     newSearchParams.set('tab', newValue.toString());
     navigate(`/leads?${newSearchParams.toString()}`, { replace: true });
+  };
+
+  // Toggle favorite tab
+  const handleToggleFavorite = (tabIndex: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (favoriteTab === tabIndex) {
+      // Unfavorite - remove from localStorage
+      localStorage.removeItem(FAVORITE_TAB_KEY);
+      setFavoriteTab(null);
+    } else {
+      // Set as favorite
+      localStorage.setItem(FAVORITE_TAB_KEY, tabIndex.toString());
+      setFavoriteTab(tabIndex);
+    }
   };
 
 
@@ -1094,8 +1122,48 @@ const PropertyLeadsPage: React.FC = () => {
           onChange={handleTabChange}
           aria-label="leads and opportunities tabs"
         >
-          <Tab label="Leads" {...a11yProps(0)} />
-          <Tab label="Opportunities" {...a11yProps(1)} />
+          <Tab
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                Leads
+                <Tooltip title={favoriteTab === 0 ? "Remove as default tab" : "Set as default tab"}>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleToggleFavorite(0, e)}
+                    sx={{ p: 0.25, ml: 0.5 }}
+                  >
+                    {favoriteTab === 0 ? (
+                      <Icons.Star sx={{ fontSize: 16, color: 'warning.main' }} />
+                    ) : (
+                      <Icons.StarBorder sx={{ fontSize: 16, color: 'action.disabled' }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            }
+            {...a11yProps(0)}
+          />
+          <Tab
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                Opportunities
+                <Tooltip title={favoriteTab === 1 ? "Remove as default tab" : "Set as default tab"}>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleToggleFavorite(1, e)}
+                    sx={{ p: 0.25, ml: 0.5 }}
+                  >
+                    {favoriteTab === 1 ? (
+                      <Icons.Star sx={{ fontSize: 16, color: 'warning.main' }} />
+                    ) : (
+                      <Icons.StarBorder sx={{ fontSize: 16, color: 'action.disabled' }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            }
+            {...a11yProps(1)}
+          />
         </Tabs>
       </Box>
 

@@ -15,6 +15,14 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
+// Mock useSubscription
+jest.mock('../../../contexts/SubscriptionContext', () => ({
+  useSubscription: () => ({
+    isPro: true,
+    createCheckoutSession: jest.fn(),
+  }),
+}));
+
 // Helper to create mock property
 const createMockProperty = (overrides: Partial<Property> = {}): Property => ({
   id: '1',

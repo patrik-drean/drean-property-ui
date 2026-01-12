@@ -40,6 +40,8 @@ import { StyledTableCell, StyledTableRow } from './leadsStyles';
 import { hasMetadataContent, formatMetadataValue } from './leadsHelpers';
 import { CashflowBreakdownTooltip } from '../shared/PropertyTooltips';
 import { useTheme } from '@mui/material';
+import { createShareableReport, generateReportUrl } from '../../services/investmentReportService';
+import { useSubscription } from '../../contexts/SubscriptionContext';
 
 // Status chip component
 interface StatusChipProps extends ChipProps {
@@ -121,6 +123,7 @@ export const OpportunitiesTable: React.FC<OpportunitiesTableProps> = ({
 }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { isPro, createCheckoutSession } = useSubscription();
 
   // Menu state
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -154,6 +157,31 @@ export const OpportunitiesTable: React.FC<OpportunitiesTableProps> = ({
         break;
     }
     handleMenuClose();
+  };
+
+  const handleInvestmentReport = async () => {
+    if (!selectedProperty) return;
+
+    // Gate Investment Reports for Pro users only
+    if (!isPro) {
+      handleMenuClose();
+      try {
+        await createCheckoutSession();
+      } catch (error) {
+        console.error('Error creating checkout session:', error);
+      }
+      return;
+    }
+
+    try {
+      const reportId = await createShareableReport(selectedProperty);
+      const reportUrl = generateReportUrl(reportId);
+      window.open(reportUrl, '_blank', 'noopener,noreferrer');
+      handleMenuClose();
+    } catch (error) {
+      console.error('Error generating investment report:', error);
+      handleMenuClose();
+    }
   };
 
   // Filter for opportunity statuses only
@@ -744,12 +772,6 @@ export const OpportunitiesTable: React.FC<OpportunitiesTableProps> = ({
           </ListItemIcon>
           <ListItemText>Edit Property</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => handleMenuAction('archive')}>
-          <ListItemIcon>
-            <Icons.Archive fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Archive Property</ListItemText>
-        </MenuItem>
         <MenuItem
           onClick={() => handleMenuAction('updateRentcast')}
           disabled={selectedProperty?.hasRentcastData}
@@ -763,11 +785,31 @@ export const OpportunitiesTable: React.FC<OpportunitiesTableProps> = ({
           </ListItemIcon>
           <ListItemText>Update Rentcast Data</ListItemText>
         </MenuItem>
+        <MenuItem onClick={handleInvestmentReport}>
+          <ListItemIcon>
+            <Icons.TrendingUp fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Investment Report</ListItemText>
+          {!isPro && (
+            <Chip
+              label="PRO"
+              size="small"
+              color="primary"
+              sx={{ ml: 1, height: 20, fontSize: '0.65rem' }}
+            />
+          )}
+        </MenuItem>
         <MenuItem onClick={() => handleMenuAction('calculator')}>
           <ListItemIcon>
             <Icons.Calculate fontSize="small" />
           </ListItemIcon>
           <ListItemText>Send to Calculator</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleMenuAction('archive')}>
+          <ListItemIcon>
+            <Icons.Archive fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Archive Property</ListItemText>
         </MenuItem>
       </Menu>
     </TableContainer>

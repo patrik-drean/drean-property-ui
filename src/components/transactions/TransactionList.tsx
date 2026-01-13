@@ -147,7 +147,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, on
         <TableBody>
           {transactions.map((transaction) => (
             <TableRow key={transaction.id}>
-              <TableCell>{format(new Date(transaction.date), 'MMM dd, yyyy')}</TableCell>
+              <TableCell>{format(new Date(transaction.date + 'T00:00:00'), 'MMM dd, yyyy')}</TableCell>
               <TableCell>{transaction.category}</TableCell>
               <TableCell>{transaction.description || transaction.payee || '—'}</TableCell>
               <TableCell>
@@ -207,7 +207,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ propertyId, on
                 {formatCurrency(transaction.amount)}
               </Typography>
               <Typography color="text.secondary">
-                {format(new Date(transaction.date), 'MMM dd, yyyy')}
+                {format(new Date(transaction.date + 'T00:00:00'), 'MMM dd, yyyy')}
               </Typography>
               <Typography variant="body2">
                 {transaction.description || transaction.payee || '—'}

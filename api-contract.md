@@ -4,6 +4,41 @@
 - **Local**: `http://localhost:8080`
 - **Production**: `https://drean-property-api-production.up.railway.app/`
 
+## Authentication
+
+The API supports two authentication methods:
+
+### 1. JWT Bearer Token (Primary - for UI)
+Used by the frontend application for user authentication.
+
+```bash
+curl -X GET "https://drean-property-api-production.up.railway.app/api/Properties" \
+  -H "Authorization: Bearer <jwt-token>"
+```
+
+### 2. Service API Key (For Scripts/Admin Operations)
+Used for service-level access without requiring JWT tokens. Useful for admin scripts, curl commands, and internal operations.
+
+**Header**: `X-API-Key`
+
+**Service API Key**: `a5f82664848c4e361db7ec3675c961ff49f8125ae0e33376cfddf229e2cb65e3`
+
+```bash
+# Example: Get all properties using API key
+curl -X GET "https://drean-property-api-production.up.railway.app/api/Properties" \
+  -H "X-API-Key: a5f82664848c4e361db7ec3675c961ff49f8125ae0e33376cfddf229e2cb65e3"
+
+# Example: Trigger Rentcast update for a property
+curl -X PUT "https://drean-property-api-production.up.railway.app/api/Properties/{id}/rentcast" \
+  -H "X-API-Key: a5f82664848c4e361db7ec3675c961ff49f8125ae0e33376cfddf229e2cb65e3"
+```
+
+**Notes**:
+- API key authenticates as admin user (team@redlunaproperty.com)
+- Works for all authenticated endpoints
+- If invalid API key is provided, falls back to JWT authentication
+- API key usage is logged for audit purposes
+
 ## Endpoints
 
 ### Get All Properties
@@ -974,6 +1009,182 @@ p ix        "updatedAt": "string",
   - `contactId` (string, required): The contact ID
   - `propertyId` (string, required): The property ID
 - **Response**: No content (204)
+
+## Transaction Endpoints
+
+### Get All Transactions
+- **Method**: GET
+- **Endpoint**: `/api/transactions`
+- **Response**: Array of Transaction objects
+```json
+[
+  {
+    "id": "string",
+    "date": "string",
+    "amount": number,
+    "category": "string",
+    "propertyId": "string" | null,
+    "unit": "string" | null,
+    "payee": "string" | null,
+    "description": "string" | null,
+    "overrideDate": "string" | null,
+    "expenseType": "string",
+    "createdAt": "string",
+    "updatedAt": "string"
+  }
+]
+```
+
+### Get Transaction by ID
+- **Method**: GET
+- **Endpoint**: `/api/transactions/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The transaction ID
+- **Response**: Single Transaction object
+```json
+{
+  "id": "string",
+  "date": "string",
+  "amount": number,
+  "category": "string",
+  "propertyId": "string" | null,
+  "unit": "string" | null,
+  "payee": "string" | null,
+  "description": "string" | null,
+  "overrideDate": "string" | null,
+  "expenseType": "string",
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+```
+- **Error Responses**:
+  - 404: Transaction with specified ID not found
+
+### Get Transactions by Property
+- **Method**: GET
+- **Endpoint**: `/api/transactions/property/{propertyId}`
+- **URL Parameters**:
+  - `propertyId` (string, required): The property ID
+- **Response**: Array of Transaction objects for the specified property
+
+### Create Transaction
+- **Method**: POST
+- **Endpoint**: `/api/transactions`
+- **Request Body**: TransactionCreate object
+```json
+{
+  "date": "string",
+  "amount": number,
+  "category": "string",
+  "propertyId": "string" | null,
+  "unit": "string" | null,
+  "payee": "string" | null,
+  "description": "string" | null,
+  "overrideDate": "string" | null,
+  "expenseType": "string" | null
+}
+```
+- **Response**: Created Transaction object with ID
+- **Notes**:
+  - `date` format: ISO 8601 (e.g., "2025-09-15")
+  - `amount`: Positive for income, negative for expenses
+  - `expenseType`: "Operating" or "Capital" (defaults to "Operating" if not provided)
+  - `overrideDate`: Optional date for reporting purposes (different from actual transaction date)
+
+### Update Transaction
+- **Method**: PUT
+- **Endpoint**: `/api/transactions/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The transaction ID
+- **Request Body**: TransactionUpdate object
+```json
+{
+  "date": "string",
+  "amount": number,
+  "category": "string",
+  "propertyId": "string" | null,
+  "unit": "string" | null,
+  "payee": "string" | null,
+  "description": "string" | null,
+  "overrideDate": "string" | null,
+  "expenseType": "string" | null
+}
+```
+- **Response**: Updated Transaction object
+- **Error Responses**:
+  - 404: Transaction with specified ID not found
+
+### Delete Transaction
+- **Method**: DELETE
+- **Endpoint**: `/api/transactions/{id}`
+- **URL Parameters**:
+  - `id` (string, required): The transaction ID
+- **Response**: No content (204)
+- **Error Responses**:
+  - 404: Transaction with specified ID not found
+
+### Get All Transaction Categories
+- **Method**: GET
+- **Endpoint**: `/api/transactions/categories`
+- **Response**: Array of TransactionCategory objects
+```json
+[
+  {
+    "id": "string",
+    "name": "string",
+    "type": "string",
+    "defaultExpenseType": "string" | null,
+    "displayOrder": number
+  }
+]
+```
+- **Notes**:
+  - `type`: "Income" or "Expense"
+  - `defaultExpenseType`: "Operating" or "Capital" (for expense categories)
+  - Categories are sorted by `displayOrder`
+
+### Validate CSV Import
+- **Method**: POST
+- **Endpoint**: `/api/transactions/import/validate`
+- **Request Body**:
+```json
+{
+  "csvText": "string"
+}
+```
+- **Response**: Validation result
+```json
+{
+  "validTransactions": [],
+  "errors": [
+    {
+      "line": number,
+      "message": "string"
+    }
+  ],
+  "validCount": number,
+  "errorCount": number
+}
+```
+- **Notes**:
+  - CSV format: `date,amount,category,property,unit,description,override_date,payee,expense_type`
+  - First row should be headers
+  - Validates data without importing
+
+### Import Transactions from CSV
+- **Method**: POST
+- **Endpoint**: `/api/transactions/import`
+- **Request Body**:
+```json
+{
+  "csvText": "string"
+}
+```
+- **Response**: Array of imported Transaction objects
+- **Notes**:
+  - CSV format: `date,amount,category,property,unit,description,override_date,payee,expense_type`
+  - First row should be headers
+  - Creates transactions for all valid rows
 
 ## Error Responses
 - **400 Bad Request**: Invalid input or validation errors

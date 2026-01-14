@@ -178,17 +178,20 @@ describe('SalesFunnelReportComponent', () => {
 
       renderWithTheme(<SalesFunnelReportComponent />);
 
+      // Wait for table to load first
       await waitFor(() => {
-        // Check that percentages are rounded to whole numbers
-        expect(screen.getByText(/80%/)).toBeInTheDocument(); // Contacted
-        expect(screen.getByText(/75%/)).toBeInTheDocument(); // Responded
-        expect(screen.getByText(/67%/)).toBeInTheDocument(); // Converted (66.67 rounded)
-
-        // Check that goals are displayed inline
-        expect(screen.getByText(/70% = Goal/)).toBeInTheDocument(); // Contacted goal
-        expect(screen.getByText(/40% = Goal/)).toBeInTheDocument(); // Responded goal
-        expect(screen.getByText(/33% = Goal/)).toBeInTheDocument(); // Converted goal
+        expect(screen.getByRole('table')).toBeInTheDocument();
       });
+
+      // Check that percentages are rounded to whole numbers and goals are displayed
+      // The conversion rates and goals are rendered in the table cells
+      const table = screen.getByRole('table');
+      expect(table.textContent).toContain('80%'); // Contacted conversion rate
+      expect(table.textContent).toContain('75%'); // Responded conversion rate
+      expect(table.textContent).toContain('67%'); // Converted (66.67 rounded)
+      expect(table.textContent).toContain('50% = Goal'); // Contacted goal
+      expect(table.textContent).toContain('40% = Goal'); // Responded goal
+      expect(table.textContent).toContain('33% = Goal'); // Converted goal
     });
 
     it('should display null conversion rates as "0%"', async () => {

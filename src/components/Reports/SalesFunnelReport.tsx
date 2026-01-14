@@ -23,7 +23,7 @@ import { SalesFunnelReport, TimeFilterPreset } from '../../types/salesFunnel';
 
 // Stage goals based on target conversion rates
 const STAGE_GOALS: Record<string, number> = {
-  'Contacted': 70,
+  'Contacted': 50,
   'Responded': 40,
   'Converted': 33,
   'Under Contract': 15,
@@ -100,21 +100,29 @@ export const SalesFunnelReportComponent: React.FC = () => {
       return stageName;
     }
 
-    // Calculate cumulative expected count per 150 leads through the funnel
-    let expectedCount = 150;
-    const stageOrder = ['Contacted', 'Responded', 'Converted', 'Under Contract', 'Sold'];
-    const currentStageIndex = stageOrder.indexOf(stageName);
+    const verb = getStageVerb(stageName);
 
-    // Apply conversion rates through the funnel up to current stage
-    for (let i = 0; i <= currentStageIndex; i++) {
-      const stageGoal = STAGE_GOALS[stageOrder[i]];
+    // For Contacted: "For every 200 leads, 100 should be contacted"
+    if (stageName === 'Contacted') {
+      return `For every 200 leads, 100 should ${verb}`;
+    }
+
+    // Calculate cumulative conversion rate from Contacted through to this stage
+    // The funnel order is: Contacted -> Responded -> Converted -> Under Contract -> Sold
+    const funnelOrder = ['Contacted', 'Responded', 'Converted', 'Under Contract', 'Sold'];
+    const stageIndex = funnelOrder.indexOf(stageName);
+
+    // Start from Responded (index 1) and multiply all rates up to and including current stage
+    let cumulativeRate = 1;
+    for (let i = 1; i <= stageIndex; i++) {
+      const stageGoal = STAGE_GOALS[funnelOrder[i]];
       if (stageGoal) {
-        expectedCount = expectedCount * (stageGoal / 100);
+        cumulativeRate *= stageGoal / 100;
       }
     }
 
-    const verb = getStageVerb(stageName);
-    return `For every 150 leads ${Math.round(expectedCount)} should ${verb}`;
+    const expectedCount = Math.round(100 * cumulativeRate);
+    return `For every 100 contacted leads, ${expectedCount} should ${verb}`;
   };
 
   // Loading state

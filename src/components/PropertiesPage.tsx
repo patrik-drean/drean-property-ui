@@ -530,40 +530,55 @@ ${property.zillowLink}`;
       maxWidth: '100vw',
       overflowX: 'hidden'
     }}>
-      <Box sx={{ 
-        display: 'flex', 
+      <Box sx={{
+        mb: 3,
+        display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
-        justifyContent: 'space-between', 
-        alignItems: { xs: 'stretch', sm: 'center' }, 
-        mb: 1,
-        px: 1,
+        justifyContent: 'space-between',
+        alignItems: { xs: 'stretch', sm: 'center' },
         gap: { xs: 2, sm: 0 }
       }}>
+        <Typography variant="h4" component="h1">Portfolio</Typography>
+        <Box sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: { xs: 1, sm: 1 },
+          justifyContent: { xs: 'stretch', sm: 'flex-end' },
+          width: { xs: '100%', sm: 'auto' }
+        }}>
+          <Button
+            variant="outlined"
+            component={RouterLink}
+            to="/reports?tab=0"
+            startIcon={<Icons.Assessment />}
+            sx={{
+              borderRadius: 2,
+              width: { xs: '100%', sm: 'auto' }
+            }}
+          >
+            View P&L Report
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setPropertyDialogOpen(true)}
+            startIcon={<Icons.Add />}
+            sx={{
+              borderRadius: 2,
+              display: { xs: 'none', sm: 'flex' },
+              width: { xs: '100%', sm: 'auto' }
+            }}
+          >
+            Add Property
+          </Button>
+        </Box>
       </Box>
 
       {/* Usage limit warning for free users */}
       <Box sx={{ px: 1, mb: 1 }}>
         <UsageLimitBanner type="properties" />
       </Box>
-
-      {/* Desktop Add Property Button - Floating Top Right */}
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={() => setPropertyDialogOpen(true)}
-        startIcon={<Icons.Add />}
-        sx={{ 
-          borderRadius: 2,
-          position: 'fixed',
-          top: 80, // Below navbar
-          right: 24,
-          zIndex: 1000,
-          display: { xs: 'none', md: 'flex' },
-          boxShadow: theme.shadows[4]
-        }}
-      >
-        Add Property
-      </Button>
 
 
       {/* Mobile FAB */}
@@ -587,24 +602,6 @@ ${property.zillowLink}`;
       </Fab>
       
       {/* Opportunities section moved to Leads page - see /leads?tab=1 */}
-
-      {/* Portfolio Properties */}
-      <Typography
-        variant="h5"
-        sx={{
-          fontWeight: 600,
-          position: 'sticky',
-          top: 0,
-          backgroundColor: theme.palette.background.default,
-          zIndex: 1,
-          py: 1,
-          mb: 2,
-          borderBottom: `1px solid ${theme.palette.divider}`,
-          display: { xs: 'none', sm: 'block' }
-        }}
-      >
-        Portfolio
-      </Typography>
       
       {/* Mobile Card View for Properties Held */}
       <PropertyCardGrid

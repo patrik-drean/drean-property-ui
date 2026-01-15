@@ -122,7 +122,7 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} px={2}>
         <Typography variant="h5">Portfolio P&L Report</Typography>
       </Box>
 

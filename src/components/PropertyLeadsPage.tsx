@@ -1127,17 +1127,26 @@ const PropertyLeadsPage: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 Leads
                 <Tooltip title={favoriteTab === 0 ? "Remove as default tab" : "Set as default tab"}>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleToggleFavorite(0, e)}
-                    sx={{ p: 0.25, ml: 0.5 }}
+                  <Box
+                    component="span"
+                    onClick={(e: React.MouseEvent) => handleToggleFavorite(0, e)}
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      p: 0.25,
+                      ml: 0.5,
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      '&:hover': { backgroundColor: 'action.hover' }
+                    }}
                   >
                     {favoriteTab === 0 ? (
                       <Icons.Star sx={{ fontSize: 16, color: 'warning.main' }} />
                     ) : (
                       <Icons.StarBorder sx={{ fontSize: 16, color: 'action.disabled' }} />
                     )}
-                  </IconButton>
+                  </Box>
                 </Tooltip>
               </Box>
             }
@@ -1148,17 +1157,26 @@ const PropertyLeadsPage: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 Opportunities
                 <Tooltip title={favoriteTab === 1 ? "Remove as default tab" : "Set as default tab"}>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleToggleFavorite(1, e)}
-                    sx={{ p: 0.25, ml: 0.5 }}
+                  <Box
+                    component="span"
+                    onClick={(e: React.MouseEvent) => handleToggleFavorite(1, e)}
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      p: 0.25,
+                      ml: 0.5,
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      '&:hover': { backgroundColor: 'action.hover' }
+                    }}
                   >
                     {favoriteTab === 1 ? (
                       <Icons.Star sx={{ fontSize: 16, color: 'warning.main' }} />
                     ) : (
                       <Icons.StarBorder sx={{ fontSize: 16, color: 'action.disabled' }} />
                     )}
-                  </IconButton>
+                  </Box>
                 </Tooltip>
               </Box>
             }

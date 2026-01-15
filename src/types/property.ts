@@ -7,7 +7,16 @@ export interface RentCastEstimates {
     rent: number;
     rentLow: number;
     rentHigh: number;
+    // Dual estimate ARV fields (optional for backward compatibility)
+    arv?: number;
+    arvPerSqft?: number;
+    asIsValue?: number;
+    asIsValuePerSqft?: number;
+    arvConfidence?: number;
+    arvCompsUsed?: number;
 }
+
+export type CompTier = 'ARV' | 'Mid' | 'As-Is' | 'New Build';
 
 export interface SaleComparable {
     address: string;
@@ -21,6 +30,10 @@ export interface SaleComparable {
     correlation: number;
     daysOnMarket: number | null;
     status: string | null;
+    // ARV analysis fields (optional for backward compatibility)
+    pricePerSqft?: number;
+    tier?: CompTier;
+    percentileRank?: number;
 }
 
 export interface TodoMetaData {

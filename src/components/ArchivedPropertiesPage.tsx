@@ -27,7 +27,7 @@ import {
   calculateHoldScore,
   calculateFlipScore,
 } from '../utils/scoreCalculator';
-import { getStatusColor, getStatusOrder } from '../utils/statusColors';
+import { getStatusColor } from '../utils/statusColors';
 
 // Status color function is now imported from utils/statusColors.ts
 

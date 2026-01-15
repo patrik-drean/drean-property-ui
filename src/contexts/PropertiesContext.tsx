@@ -83,6 +83,7 @@ export const PropertiesProvider: React.FC<PropertiesProviderProps> = ({ children
   // Initial fetch on mount
   useEffect(() => {
     fetchProperties();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value: PropertiesContextType = {

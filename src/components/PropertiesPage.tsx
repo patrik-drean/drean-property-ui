@@ -34,46 +34,19 @@ import { useNavigate } from 'react-router-dom';
 import { useProperties } from '../contexts/PropertiesContext';
 import { Link as RouterLink } from 'react-router-dom';
 import PropertyDialog from './PropertyDialog';
-import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from './shared/PropertyTooltips';
 import PropertyCardGrid from './shared/PropertyCardGrid';
 import { getStatusColor, getStatusOrder } from '../utils/statusColors';
-import useResponsiveLayout from '../hooks/useResponsiveLayout';
-import { usePropertiesFilters } from '../hooks';
 import { useMessagingPopover } from '../contexts/MessagingPopoverContext';
 import { UsageLimitBanner } from './shared/UsageLimitBanner';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import {
-  calculateRentRatio,
-  calculateARVRatio,
-  calculateDownPayment,
-  calculateLoanAmount,
-  calculateCashRemaining,
-  calculateNewLoan,
-  calculateCashToPullOut,
-  calculateHomeEquity,
   calculateNewLoanPercent,
-  calculateMonthlyMortgage,
-  calculateCashflow,
   calculateHoldScore,
-  calculateFlipScore,
-  getHoldScoreBreakdown,
-  getFlipScoreBreakdown,
-  calculatePerfectRentForHoldScore,
-  calculatePerfectARVForFlipScore,
 } from '../utils/scoreCalculator';
 import {
   StyledTableCell,
   StyledTableRow,
-  getScoreBackgroundColor,
 } from './properties';
-
-// Update the getScoreColor function to ensure text contrast (using imported getScoreTextColor)
-const getScoreColor = (score: number): string => {
-  if (score >= 9) return '#E8F5E9'; // Light green text for green background
-  if (score >= 7) return '#212121'; // Dark text for amber background
-  if (score >= 5) return '#212121'; // Dark text for orange background
-  return '#FFEBEE'; // Light red text for red background
-};
 
 // Status chip component
 interface StatusChipProps extends ChipProps {
@@ -122,9 +95,6 @@ const PropertiesPage: React.FC = () => {
   const { isPro, createCheckoutSession } = useSubscription();
   const { properties, loading, error, refreshProperties, updateProperty, addProperty, removeProperty } = useProperties();
 
-  // Use the properties filters hook for sorting and filtering
-  const { sortProperties, filterProperties, availableStatuses } = usePropertiesFilters(properties);
-
   const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -132,7 +102,6 @@ const PropertiesPage: React.FC = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [expandedProperties, setExpandedProperties] = useState<Set<string>>(new Set());
   const [conversations, setConversations] = useState<SmsConversation[]>([]);
   const navigate = useNavigate();
   const { openPopover } = useMessagingPopover();
@@ -178,9 +147,6 @@ const PropertiesPage: React.FC = () => {
     return conversation?.unreadCount || 0;
   };
 
-  // Responsive layout
-  const { useCardLayout } = useResponsiveLayout();
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -197,13 +163,6 @@ const PropertiesPage: React.FC = () => {
       maximumFractionDigits: 1,
     }).format(value);
   };
-
-  const calculateDiscount = (listingPrice: number, offerPrice: number) => {
-    if (!listingPrice) return 0;
-    return (listingPrice - offerPrice) / listingPrice;
-  };
-
-
 
   // Status order function is now imported from utils/statusColors.ts
 
@@ -288,15 +247,6 @@ const PropertiesPage: React.FC = () => {
   if (!unitCounts || typeof unitCounts !== 'object') {
     console.error('unitCounts is not properly initialized');
   }
-
-  // Calculate total units excluding Opportunity, Soft Offer, and Selling
-  const getTotalUnits = () => {
-    return Object.entries(unitCounts)
-      .filter(([status]) => status !== 'Opportunity' && status !== 'Soft Offer' && status !== 'Selling')
-      .reduce((total, [, data]) => total + data.units, 0);
-  };
-
-  const totalUnits = getTotalUnits();
 
   // Properties are now managed by the context
 
@@ -415,12 +365,6 @@ const PropertiesPage: React.FC = () => {
     return '#F44336'; // Red for > 85%
   };
 
-  const getHomeEquityColor = (equity: number) => {
-    if (equity >= 50000) return '#4CAF50'; // Green for >= 50k
-    if (equity >= 25000) return '#FFC107'; // Yellow for >= 25k
-    return '#F44336'; // Red for < 25k
-  };
-  
   // Color for cashflow
   const getCashflowColor = (cashflow: number) => {
     if (cashflow >= 200) return '#4CAF50'; // Green for >= $200
@@ -542,20 +486,6 @@ ${property.zillowLink}`;
     handleMenuClose();
   };
 
-  const handleToggleExpanded = (propertyId: string) => {
-    setExpandedProperties(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(propertyId)) {
-        newSet.delete(propertyId);
-      } else {
-        newSet.add(propertyId);
-      }
-      return newSet;
-    });
-  };
-
-
-  
   // Show loading state
   if (loading && properties.length === 0) {
     return (

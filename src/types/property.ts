@@ -16,7 +16,7 @@ export interface RentCastEstimates {
     arvCompsUsed?: number;
 }
 
-export type CompTier = 'ARV' | 'Mid' | 'As-Is' | 'New Build';
+export type CompTier = 'Quality' | 'Mid' | 'As-Is' | 'New Build';
 
 export interface SaleComparable {
     address: string;

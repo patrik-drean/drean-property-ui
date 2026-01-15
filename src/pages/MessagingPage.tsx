@@ -15,7 +15,6 @@ import {
 import {
   Refresh as RefreshIcon,
   Description as TemplatesIcon,
-  Menu as MenuIcon,
   ArrowBack as ArrowBackIcon,
   Add as AddIcon,
   ForumOutlined as ConversationsIcon,

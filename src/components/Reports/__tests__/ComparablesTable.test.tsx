@@ -272,7 +272,6 @@ describe('ComparablesTable', () => {
       render(<ComparablesTable comparables={mockComparablesWithTiers} />);
 
       expect(screen.getByText(/ARV Average/)).toBeInTheDocument();
-      expect(screen.getByText('Used for ARV')).toBeInTheDocument();
     });
 
     it('should display All Comps Average row', () => {

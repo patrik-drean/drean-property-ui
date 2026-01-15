@@ -148,53 +148,6 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
               Value Breakdown
             </Typography>
             <Grid container spacing={4} justifyContent="center">
-              {/* ARV Ratio Calculation */}
-              <Grid item xs={12} sm={6}>
-                <Card sx={{ p: 3, textAlign: 'center', bgcolor: '#f8f9fa' }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
-                    ARV Ratio
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                    {/* Numerator */}
-                    <Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-                        Purchase Price
-                      </Typography>
-                      <Typography variant="h6" fontWeight="bold">
-                        {formatCurrency(calculations.purchasePrice)}
-                      </Typography>
-                      <Typography variant="body2" sx={{ my: 0.5 }}>+</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-                        Rehab Costs
-                      </Typography>
-                      <Typography variant="h6" fontWeight="bold">
-                        {formatCurrency(calculations.rehabCosts)}
-                      </Typography>
-                    </Box>
-                    {/* Division line */}
-                    <Box sx={{ width: '80%', height: '2px', bgcolor: 'divider', my: 1 }} />
-                    {/* Denominator */}
-                    <Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-                        After Repair Value (ARV)
-                      </Typography>
-                      <Typography variant="h6" fontWeight="bold">
-                        {formatCurrency(calculations.arv)}
-                      </Typography>
-                    </Box>
-                    {/* Result */}
-                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider', width: '100%' }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-                        Result
-                      </Typography>
-                      <Typography variant="h5" fontWeight="bold" color={calculations.arvRatio <= 0.80 ? '#4CAF50' : '#F44336'}>
-                        {formatPercentage(calculations.arvRatio)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Card>
-              </Grid>
-
               {/* Rent Ratio Calculation */}
               <Grid item xs={12} sm={6}>
                 <Card sx={{ p: 3, textAlign: 'center', bgcolor: '#f8f9fa' }}>
@@ -230,12 +183,73 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
                       </Typography>
                     </Box>
                     {/* Result */}
-                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider', width: '100%' }}>
+                    <Box sx={{
+                      mt: 2,
+                      py: 1.5,
+                      px: 2,
+                      width: '100%',
+                      bgcolor: calculations.rentRatio >= 0.01 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                      borderRadius: 1
+                    }}>
                       <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                         Result
                       </Typography>
                       <Typography variant="h5" fontWeight="bold" color={calculations.rentRatio >= 0.01 ? '#4CAF50' : '#F44336'}>
                         {formatPercentage(calculations.rentRatio)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Card>
+              </Grid>
+
+              {/* ARV Ratio Calculation */}
+              <Grid item xs={12} sm={6}>
+                <Card sx={{ p: 3, textAlign: 'center', bgcolor: '#f8f9fa' }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
+                    ARV Ratio
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    {/* Numerator */}
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        Purchase Price
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {formatCurrency(calculations.purchasePrice)}
+                      </Typography>
+                      <Typography variant="body2" sx={{ my: 0.5 }}>+</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        Rehab Costs
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {formatCurrency(calculations.rehabCosts)}
+                      </Typography>
+                    </Box>
+                    {/* Division line */}
+                    <Box sx={{ width: '80%', height: '2px', bgcolor: 'divider', my: 1 }} />
+                    {/* Denominator */}
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        After Repair Value (ARV)
+                      </Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {formatCurrency(calculations.arv)}
+                      </Typography>
+                    </Box>
+                    {/* Result */}
+                    <Box sx={{
+                      mt: 2,
+                      py: 1.5,
+                      px: 2,
+                      width: '100%',
+                      bgcolor: calculations.arvRatio <= 0.80 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                      borderRadius: 1
+                    }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        Result
+                      </Typography>
+                      <Typography variant="h5" fontWeight="bold" color={calculations.arvRatio <= 0.80 ? '#4CAF50' : '#F44336'}>
+                        {formatPercentage(calculations.arvRatio)}
                       </Typography>
                     </Box>
                   </Box>

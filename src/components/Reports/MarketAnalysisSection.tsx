@@ -20,19 +20,29 @@ const MarketAnalysisSection: React.FC<Props> = ({ property }) => {
         Market Analysis & Comparable Sales
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {hasArvData
-          ? 'Dual Estimate Analysis: As-Is Value vs ARV (After Repair Value)'
-          : 'Valuation Summary (85% Confidence Interval)'}
+        Valuation Summary (85% Confidence Interval)
       </Typography>
 
-      {/* Valuation Summary Cards - pass comparables for count display */}
-      <ValuationSummaryCards
-        rentCastEstimates={rentCastEstimates}
-        comparables={saleComparables}
-      />
+      {/* Valuation Summary Cards */}
+      <ValuationSummaryCards rentCastEstimates={rentCastEstimates} />
 
       {/* Comparables Table */}
       <ComparablesTable comparables={saleComparables} />
+
+      {/* Rent Estimate - shown when rent data is available */}
+      {rentCastEstimates.rent > 0 && (
+        <Paper sx={{ p: 3, mt: 3 }}>
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            Rent Estimate
+          </Typography>
+          <Typography variant="h4" sx={{ mb: 1 }}>
+            ${rentCastEstimates.rent.toLocaleString()}/mo
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Range: ${rentCastEstimates.rentLow.toLocaleString()} - ${rentCastEstimates.rentHigh.toLocaleString()}
+          </Typography>
+        </Paper>
+      )}
     </Paper>
   );
 };

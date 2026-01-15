@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography, Box } from '@mui/material';
+import { Typography } from '@mui/material';
 import { Property } from '../../types/property';
 import {
   calculateDownPayment,
@@ -9,7 +9,6 @@ import {
   calculateCashToPullOut,
   calculateCashRemaining,
   calculateMonthlyMortgage,
-  calculateCashflow,
 } from '../../utils/scoreCalculator';
 
 interface PropertyTooltipsProps {

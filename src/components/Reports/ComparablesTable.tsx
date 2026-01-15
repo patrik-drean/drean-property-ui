@@ -20,7 +20,7 @@ interface Props {
 
 const getTierColor = (tier?: CompTier): 'success' | 'warning' | 'info' | 'default' => {
   switch (tier) {
-    case 'ARV':
+    case 'Quality':
       return 'success';
     case 'As-Is':
       return 'warning';
@@ -28,19 +28,6 @@ const getTierColor = (tier?: CompTier): 'success' | 'warning' | 'info' | 'defaul
       return 'info';
     default:
       return 'default';
-  }
-};
-
-const getTierBgColor = (tier?: CompTier): string => {
-  switch (tier) {
-    case 'ARV':
-      return 'rgba(76, 175, 80, 0.08)';
-    case 'As-Is':
-      return 'rgba(255, 152, 0, 0.08)';
-    case 'New Build':
-      return 'rgba(33, 150, 243, 0.08)';
-    default:
-      return 'inherit';
   }
 };
 
@@ -66,14 +53,34 @@ const ComparablesTable: React.FC<Props> = ({ comparables }) => {
     : 0;
   const avgDistance = comparables.reduce((sum, c) => sum + c.distance, 0) / comparables.length;
 
-  // Calculate ARV comps averages
-  const arvComps = comparables.filter(c => c.tier === 'ARV');
-  const arvAvgPrice = arvComps.length > 0
-    ? arvComps.reduce((sum, c) => sum + c.price, 0) / arvComps.length
+  // Calculate Quality comps averages
+  const qualityComps = comparables.filter(c => c.tier === 'Quality');
+  const qualityAvgPrice = qualityComps.length > 0
+    ? qualityComps.reduce((sum, c) => sum + c.price, 0) / qualityComps.length
     : 0;
-  const arvCompsWithSqft = arvComps.filter(c => c.squareFootage && c.squareFootage > 0);
-  const arvAvgPpsf = arvCompsWithSqft.length > 0
-    ? arvCompsWithSqft.reduce((sum, c) => sum + (c.price / c.squareFootage!), 0) / arvCompsWithSqft.length
+  const qualityCompsWithSqft = qualityComps.filter(c => c.squareFootage && c.squareFootage > 0);
+  const qualityAvgPpsf = qualityCompsWithSqft.length > 0
+    ? qualityCompsWithSqft.reduce((sum, c) => sum + (c.price / c.squareFootage!), 0) / qualityCompsWithSqft.length
+    : 0;
+
+  // Calculate Mid comps averages
+  const midComps = comparables.filter(c => c.tier === 'Mid');
+  const midAvgPrice = midComps.length > 0
+    ? midComps.reduce((sum, c) => sum + c.price, 0) / midComps.length
+    : 0;
+  const midCompsWithSqft = midComps.filter(c => c.squareFootage && c.squareFootage > 0);
+  const midAvgPpsf = midCompsWithSqft.length > 0
+    ? midCompsWithSqft.reduce((sum, c) => sum + (c.price / c.squareFootage!), 0) / midCompsWithSqft.length
+    : 0;
+
+  // Calculate As-Is comps averages
+  const asIsComps = comparables.filter(c => c.tier === 'As-Is');
+  const asIsAvgPrice = asIsComps.length > 0
+    ? asIsComps.reduce((sum, c) => sum + c.price, 0) / asIsComps.length
+    : 0;
+  const asIsCompsWithSqft = asIsComps.filter(c => c.squareFootage && c.squareFootage > 0);
+  const asIsAvgPpsf = asIsCompsWithSqft.length > 0
+    ? asIsCompsWithSqft.reduce((sum, c) => sum + (c.price / c.squareFootage!), 0) / asIsCompsWithSqft.length
     : 0;
 
   return (
@@ -84,7 +91,7 @@ const ComparablesTable: React.FC<Props> = ({ comparables }) => {
         </Typography>
         {hasTierData && (
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Chip label="ARV" size="small" color="success" variant="outlined" />
+            <Chip label="Quality" size="small" color="success" variant="outlined" />
             <Chip label="Mid" size="small" variant="outlined" />
             <Chip label="As-Is" size="small" color="warning" variant="outlined" />
             <Chip label="New Build" size="small" color="info" variant="outlined" />
@@ -105,12 +112,7 @@ const ComparablesTable: React.FC<Props> = ({ comparables }) => {
         </TableHead>
         <TableBody>
           {comparables.map((comp, idx) => (
-            <TableRow
-              key={idx}
-              sx={{
-                bgcolor: hasTierData ? getTierBgColor(comp.tier) : 'inherit',
-              }}
-            >
+            <TableRow key={idx}>
               <TableCell>
                 <MuiLink
                   href={getZillowUrl(comp.address)}
@@ -143,7 +145,7 @@ const ComparablesTable: React.FC<Props> = ({ comparables }) => {
                     label={comp.tier || 'Mid'}
                     size="small"
                     color={getTierColor(comp.tier)}
-                    variant={comp.tier === 'ARV' ? 'filled' : 'outlined'}
+                    variant="outlined"
                     sx={{ fontSize: '0.7rem', height: 22 }}
                   />
                 </TableCell>
@@ -151,25 +153,67 @@ const ComparablesTable: React.FC<Props> = ({ comparables }) => {
             </TableRow>
           ))}
 
-          {/* ARV Average Row - only show if we have tier data and ARV comps */}
-          {hasTierData && arvComps.length > 0 && (
+          {/* Quality Average Row - only show if we have tier data and Quality comps */}
+          {hasTierData && qualityComps.length > 0 && (
             <TableRow
               sx={{
-                bgcolor: 'success.light',
-                '& td': { fontWeight: 'bold', color: 'success.contrastText' },
+                '& td': { fontWeight: 'bold' },
               }}
             >
-              <TableCell>ARV Average ({arvComps.length} comps)</TableCell>
+              <TableCell>Quality Average ({qualityComps.length} comps)</TableCell>
               <TableCell align="right">
-                ${arvAvgPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                ${qualityAvgPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </TableCell>
-              <TableCell align="right">${arvAvgPpsf.toFixed(0)}</TableCell>
+              <TableCell align="right">${qualityAvgPpsf.toFixed(0)}</TableCell>
               <TableCell>-</TableCell>
               <TableCell align="right">-</TableCell>
               <TableCell align="right">-</TableCell>
               <TableCell align="center">
                 <Typography variant="caption" sx={{ color: 'inherit' }}>
-                  Used for ARV
+                </Typography>
+              </TableCell>
+            </TableRow>
+          )}
+
+          {/* Mid Average Row - only show if we have tier data and Mid comps */}
+          {hasTierData && midComps.length > 0 && (
+            <TableRow
+              sx={{
+                '& td': { fontWeight: 'bold' },
+              }}
+            >
+              <TableCell>Mid Average ({midComps.length} comps)</TableCell>
+              <TableCell align="right">
+                ${midAvgPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </TableCell>
+              <TableCell align="right">${midAvgPpsf.toFixed(0)}</TableCell>
+              <TableCell>-</TableCell>
+              <TableCell align="right">-</TableCell>
+              <TableCell align="right">-</TableCell>
+              <TableCell align="center">
+                <Typography variant="caption" sx={{ color: 'inherit' }}>
+                </Typography>
+              </TableCell>
+            </TableRow>
+          )}
+
+          {/* As-Is Average Row - only show if we have tier data and As-Is comps */}
+          {hasTierData && asIsComps.length > 0 && (
+            <TableRow
+              sx={{
+                '& td': { fontWeight: 'bold' },
+              }}
+            >
+              <TableCell>As-Is Average ({asIsComps.length} comps)</TableCell>
+              <TableCell align="right">
+                ${asIsAvgPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </TableCell>
+              <TableCell align="right">${asIsAvgPpsf.toFixed(0)}</TableCell>
+              <TableCell>-</TableCell>
+              <TableCell align="right">-</TableCell>
+              <TableCell align="right">-</TableCell>
+              <TableCell align="center">
+                <Typography variant="caption" sx={{ color: 'inherit' }}>
                 </Typography>
               </TableCell>
             </TableRow>
@@ -184,11 +228,10 @@ const ComparablesTable: React.FC<Props> = ({ comparables }) => {
             <TableCell align="right">${avgPricePerSqft.toFixed(0)}</TableCell>
             <TableCell>-</TableCell>
             <TableCell align="right">-</TableCell>
-            <TableCell align="right">{avgDistance.toFixed(2)}</TableCell>
+            <TableCell align="right">-</TableCell>
             {hasTierData && (
               <TableCell align="center">
                 <Typography variant="caption" color="text.secondary">
-                  Used for As-Is
                 </Typography>
               </TableCell>
             )}

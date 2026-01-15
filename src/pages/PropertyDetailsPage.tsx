@@ -367,6 +367,44 @@ const PropertyDetailsPage: React.FC = () => {
     }
   };
 
+  const handleRegenerateReport = async () => {
+    if (!property) return;
+
+    // Gate for Pro users only
+    if (!isPro) {
+      handleReportsMenuClose();
+      try {
+        await createCheckoutSession();
+      } catch (error) {
+        handleSnackbar('Investment Reports require a Pro subscription. Upgrade to unlock.', 'error');
+      }
+      return;
+    }
+
+    try {
+      handleReportsMenuClose();
+      handleSnackbar('Regenerating report with latest data...', 'success');
+
+      // Fetch fresh property data from API
+      const freshProperty = await getPropertyById(property.id);
+
+      // Update local state with fresh data
+      setProperty(freshProperty);
+
+      // Create new report with fresh data
+      const reportId = await createShareableReport(freshProperty);
+      const reportUrl = generateReportUrl(reportId);
+
+      // Open report in new tab
+      window.open(reportUrl, '_blank', 'noopener,noreferrer');
+
+      handleSnackbar('Report regenerated with latest data', 'success');
+    } catch (error) {
+      console.error('Error regenerating investment report:', error);
+      handleSnackbar('Failed to regenerate report', 'error');
+    }
+  };
+
   const handleAccordionChange = (section: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpandedSections(prev =>
       isExpanded
@@ -463,9 +501,12 @@ const PropertyDetailsPage: React.FC = () => {
               <Icons.Assessment sx={{ mr: 1 }} />
               P&L Report
             </MenuItem>
-            <MenuItem onClick={handleInvestmentReport}>
-              <Icons.TrendingUp sx={{ mr: 1 }} />
-              Investment Report
+            {/* Investment Report Section */}
+            <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center' }}>
+              <Icons.TrendingUp sx={{ mr: 1, fontSize: 18, color: 'text.secondary' }} />
+              <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                Investment Report
+              </Typography>
               {!isPro && (
                 <Chip
                   label="PRO"
@@ -474,7 +515,17 @@ const PropertyDetailsPage: React.FC = () => {
                   sx={{ ml: 1, height: 18, fontSize: '0.65rem' }}
                 />
               )}
+            </Box>
+            <MenuItem onClick={handleInvestmentReport} sx={{ pl: 5 }}>
+              <Icons.Visibility sx={{ mr: 1, fontSize: 18 }} />
+              View Report
             </MenuItem>
+            <Tooltip title="Fetch latest property data and generate a fresh report" placement="right">
+              <MenuItem onClick={handleRegenerateReport} sx={{ pl: 5 }}>
+                <Icons.Refresh sx={{ mr: 1, fontSize: 18 }} />
+                Regenerate
+              </MenuItem>
+            </Tooltip>
           </Menu>
         </Box>
       </Box>

@@ -27,6 +27,10 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
   property,
   calculations,
 }) => {
+  // Round rent ratio to 1 decimal place (as displayed) for color comparison
+  // This ensures 0.96875% displays as "1.0%" AND shows green
+  const displayedRentRatioPercent = Math.round(calculations.rentRatio * 100 * 10) / 10;
+  const isRentRatioGood = displayedRentRatioPercent >= 1.0;
   // Score Card for stacked layout
   const ScoreCard: React.FC<{ score: number; label: string; maxScore: number }> = ({
     score,
@@ -116,7 +120,7 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
                 title="Rent Ratio"
                 value={formatPercentage(calculations.rentRatio)}
                 icon={<TrendingUpIcon />}
-                color={calculations.rentRatio >= 0.01 ? '#4CAF50' : '#F44336'}
+                color={isRentRatioGood ? '#4CAF50' : '#F44336'}
                 subtitle="Monthly rent / Purchase price"
               />
             </Grid>
@@ -188,13 +192,13 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
                       py: 1.5,
                       px: 2,
                       width: '100%',
-                      bgcolor: calculations.rentRatio >= 0.01 ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                      bgcolor: isRentRatioGood ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
                       borderRadius: 1
                     }}>
                       <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                         Result
                       </Typography>
-                      <Typography variant="h5" fontWeight="bold" color={calculations.rentRatio >= 0.01 ? '#4CAF50' : '#F44336'}>
+                      <Typography variant="h5" fontWeight="bold" color={isRentRatioGood ? '#4CAF50' : '#F44336'}>
                         {formatPercentage(calculations.rentRatio)}
                       </Typography>
                     </Box>

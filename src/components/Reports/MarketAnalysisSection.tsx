@@ -24,7 +24,11 @@ const MarketAnalysisSection: React.FC<Props> = ({ property }) => {
       </Typography>
 
       {/* Valuation Summary Cards */}
-      <ValuationSummaryCards rentCastEstimates={rentCastEstimates} />
+      <ValuationSummaryCards
+        rentCastEstimates={rentCastEstimates}
+        saleComparables={saleComparables}
+        squareFootage={property.squareFootage}
+      />
 
       {/* Comparables Table */}
       <ComparablesTable comparables={saleComparables} />

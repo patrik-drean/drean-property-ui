@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, Link as RouterLink } from 'react-router-dom';
+import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Box, Typography, Paper, Button, Chip, Card, TextField, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, IconButton, Tooltip, Link as MuiLink, Divider, Snackbar, Alert, Avatar, Select, MenuItem, FormControl, InputLabel, Accordion, AccordionSummary, AccordionDetails, Menu } from '@mui/material';
 import * as Icons from '@mui/icons-material';
 import { Property, Note, Link as PropertyLink, CreateNote, CreateLink, Contact } from '../types/property';
@@ -28,6 +28,7 @@ import {
 
 const PropertyDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { isPro, createCheckoutSession } = useSubscription();
   const [property, setProperty] = useState<Property | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -420,8 +421,7 @@ const PropertyDetailsPage: React.FC = () => {
       <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} mb={2} gap={2}>
         <Box display="flex" alignItems="center" gap={2}>
           <IconButton
-            component={RouterLink}
-            to="/properties"
+            onClick={() => navigate(-1)}
             sx={{ mr: 1 }}
           >
             <Icons.ArrowBack />

@@ -458,6 +458,21 @@ const PropertyLeadsPage: React.FC = () => {
     });
   };
 
+  // Helper function to format created date in MST for tooltip
+  const formatCreatedDateMST = (dateString: string | null | undefined): string => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      timeZone: 'America/Denver',
+      month: 'numeric',
+      day: 'numeric',
+      year: '2-digit',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).replace(',', '');
+  };
+
   // Helper function to format metadata for tooltip display
   const formatMetadataForTooltip = (metadata: string | undefined) => {
     if (!hasMetadataContent(metadata)) return null;
@@ -1417,7 +1432,11 @@ const PropertyLeadsPage: React.FC = () => {
                       </TableCell>
                       <TableCell sx={{ minWidth: '150px' }} onClick={(e) => e.stopPropagation()}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {formatDate(lead.lastContactDate)}
+                          <Tooltip title={`Created ${formatCreatedDateMST(lead.createdAt)}`} arrow placement="top">
+                            <Box component="span" sx={{ cursor: 'help' }}>
+                              {formatDate(lead.lastContactDate)}
+                            </Box>
+                          </Tooltip>
                           <Tooltip title="Mark as Contacted Today">
                             <ActionIconButton
                               size="small"
@@ -1462,11 +1481,6 @@ const PropertyLeadsPage: React.FC = () => {
                                   <Typography variant="body2">
                                     Ratio: {((lead.listingPrice / arvGuess) * 100).toFixed(1)}%
                                   </Typography>
-                                  {hasBackendScore && (
-                                    <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', opacity: 0.8 }}>
-                                      (Backend calculated)
-                                    </Typography>
-                                  )}
                                 </>
                               }
                               arrow
@@ -1493,55 +1507,7 @@ const PropertyLeadsPage: React.FC = () => {
                         })()}
                       </TableCell>
                       <TableCell>
-                        {lead.squareFootage !== null ? (
-                          <Tooltip
-                            title={
-                              <Box sx={{ textAlign: 'left' }}>
-                                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                  Rules of Thumb
-                                </Typography>
-                                <Typography variant="body2">
-                                  ARV Guess: {formatCurrency(160 * lead.squareFootage)}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Rent Guess: {formatCurrency(1.1 * lead.squareFootage)}
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1, mb: 0.5 }}>
-                                  Rehab
-                                </Typography>
-                                <Typography variant="body2">
-                                  Light: {formatCurrency(20 * lead.squareFootage)}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Medium: {formatCurrency(40 * lead.squareFootage)}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Heavy: {formatCurrency(75 * lead.squareFootage)}
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1, mb: 0.5 }}>
-                                  MAO
-                                </Typography>
-                                <Typography variant="body2">
-                                  Light: {formatCurrency((160 * lead.squareFootage * 0.7) - (20 * lead.squareFootage))}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Medium: {formatCurrency((160 * lead.squareFootage * 0.7) - (40 * lead.squareFootage))}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Heavy: {formatCurrency((160 * lead.squareFootage * 0.7) - (75 * lead.squareFootage))}
-                                </Typography>
-                              </Box>
-                            }
-                            arrow
-                            placement="top"
-                          >
-                            <Box component="span" sx={{ cursor: 'help' }}>
-                              {lead.squareFootage.toLocaleString()}
-                            </Box>
-                          </Tooltip>
-                        ) : (
-                          ''
-                        )}
+                        {lead.squareFootage !== null ? lead.squareFootage.toLocaleString() : ''}
                       </TableCell>
                       <TableCell>
                         <Box sx={{

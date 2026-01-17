@@ -4,10 +4,7 @@ import {
   Box,
   Typography,
   Button,
-  Card,
-  CardContent,
-  CardActions,
-  Grid,
+  Paper,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -18,15 +15,115 @@ import {
   Alert,
   CircularProgress,
   Breadcrumbs,
+  Snackbar,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
+  DragIndicator as DragIndicatorIcon,
 } from '@mui/icons-material';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { smsService } from '../services/smsService';
 import { SmsTemplate } from '../types/sms';
+
+interface SortableTemplateRowProps {
+  template: SmsTemplate;
+  onEdit: (template: SmsTemplate) => void;
+  onDelete: (id: string) => void;
+}
+
+const SortableTemplateRow: React.FC<SortableTemplateRowProps> = ({
+  template,
+  onEdit,
+  onDelete,
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: template.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <Paper
+      ref={setNodeRef}
+      style={style}
+      sx={{
+        p: 2,
+        mb: 1,
+        border: '1px solid',
+        borderColor: 'divider',
+        '&:hover': { borderColor: 'primary.light' },
+      }}
+    >
+      {/* Row Header: Drag Handle + Name + Actions */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+        <IconButton
+          {...attributes}
+          {...listeners}
+          size="small"
+          sx={{
+            cursor: 'grab',
+            mr: 1,
+            color: 'text.secondary',
+            '&:active': { cursor: 'grabbing' },
+          }}
+        >
+          <DragIndicatorIcon />
+        </IconButton>
+        <Typography variant="subtitle1" fontWeight="medium" sx={{ flexGrow: 1 }}>
+          {template.name}
+        </Typography>
+        <IconButton size="small" onClick={() => onEdit(template)} title="Edit template">
+          <EditIcon fontSize="small" />
+        </IconButton>
+        <IconButton size="small" color="error" onClick={() => onDelete(template.id)} title="Delete template">
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </Box>
+
+      {/* Template Body Preview */}
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{
+          ml: 5,
+          fontFamily: 'monospace',
+          fontSize: '0.85rem',
+          whiteSpace: 'pre-wrap',
+        }}
+      >
+        {template.body}
+      </Typography>
+    </Paper>
+  );
+};
 
 export const TemplatesPage: React.FC = () => {
   const [templates, setTemplates] = useState<SmsTemplate[]>([]);
@@ -37,6 +134,18 @@ export const TemplatesPage: React.FC = () => {
   const [formData, setFormData] = useState({ name: '', body: '' });
   const [saving, setSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const fetchTemplates = async () => {
     try {
@@ -55,6 +164,32 @@ export const TemplatesPage: React.FC = () => {
   useEffect(() => {
     fetchTemplates();
   }, []);
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = templates.findIndex((t) => t.id === active.id);
+      const newIndex = templates.findIndex((t) => t.id === over.id);
+
+      // Optimistic update
+      const newTemplates = arrayMove(templates, oldIndex, newIndex);
+      const previousTemplates = templates;
+      setTemplates(newTemplates);
+
+      try {
+        await smsService.reorderTemplates(newTemplates.map((t) => t.id));
+      } catch (err) {
+        // Revert on failure
+        setTemplates(previousTemplates);
+        setSnackbar({
+          open: true,
+          message: 'Failed to save template order',
+          severity: 'error',
+        });
+      }
+    }
+  };
 
   const handleOpenDialog = (template?: SmsTemplate) => {
     if (template) {
@@ -157,88 +292,49 @@ export const TemplatesPage: React.FC = () => {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Create reusable message templates with placeholders like {'{{name}}'}, {'{{address}}'},{' '}
         {'{{price}}'}. Placeholders will be automatically filled when you use the template.
+        Drag templates to reorder them.
       </Typography>
 
-      <Grid container spacing={2}>
-        {templates.map((template) => (
-          <Grid item xs={12} md={6} lg={4} key={template.id}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <CardContent sx={{ flex: 1 }}>
-                <Typography variant="h6" gutterBottom>
-                  {template.name}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    whiteSpace: 'pre-wrap',
-                    backgroundColor: '#f5f5f5',
-                    p: 1.5,
-                    borderRadius: 1,
-                    mb: 2,
-                    minHeight: 80,
-                    fontFamily: 'monospace',
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  {template.body}
-                </Typography>
-                {template.placeholders.length > 0 && (
-                  <Box display="flex" gap={0.5} flexWrap="wrap">
-                    {template.placeholders.map((p) => (
-                      <Chip
-                        key={p}
-                        label={`{{${p}}}`}
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                      />
-                    ))}
-                  </Box>
-                )}
-              </CardContent>
-              <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
-                <IconButton
-                  onClick={() => handleOpenDialog(template)}
-                  size="small"
-                  title="Edit template"
-                >
-                  <EditIcon />
-                </IconButton>
-                <IconButton
-                  onClick={() => setDeleteConfirmId(template.id)}
-                  color="error"
-                  size="small"
-                  title="Delete template"
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-
-        {templates.length === 0 && (
-          <Grid item xs={12}>
-            <Box
-              textAlign="center"
-              py={6}
-              px={2}
-              sx={{ backgroundColor: '#f9f9f9', borderRadius: 2 }}
-            >
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                No templates yet
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Create your first template to speed up your messaging
-              </Typography>
-              <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
-                Create Template
-              </Button>
+      {templates.length > 0 ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={templates.map((t) => t.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <Box sx={{ maxWidth: 800 }}>
+              {templates.map((template) => (
+                <SortableTemplateRow
+                  key={template.id}
+                  template={template}
+                  onEdit={handleOpenDialog}
+                  onDelete={setDeleteConfirmId}
+                />
+              ))}
             </Box>
-          </Grid>
-        )}
-      </Grid>
+          </SortableContext>
+        </DndContext>
+      ) : (
+        <Box
+          textAlign="center"
+          py={6}
+          px={2}
+          sx={{ backgroundColor: '#f9f9f9', borderRadius: 2 }}
+        >
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No templates yet
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Create your first template to speed up your messaging
+          </Typography>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
+            Create Template
+          </Button>
+        </Box>
+      )}
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
@@ -305,6 +401,21 @@ export const TemplatesPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for reorder errors */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

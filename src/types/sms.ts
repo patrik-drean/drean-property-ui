@@ -53,6 +53,7 @@ export interface SmsTemplate {
   name: string;
   body: string;
   placeholders: string[];
+  order: number;
   createdAt: string;
   updatedAt: string;
 }

@@ -144,4 +144,11 @@ export const smsService = {
   async deleteTemplate(id: string): Promise<void> {
     await axiosInstance.delete(`/api/sms/templates/${id}`);
   },
+
+  /**
+   * Reorder templates by providing an array of template IDs in the desired order
+   */
+  async reorderTemplates(templateIds: string[]): Promise<void> {
+    await axiosInstance.put('/api/sms/templates/reorder', { templateIds });
+  },
 };

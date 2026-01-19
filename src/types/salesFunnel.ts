@@ -18,4 +18,9 @@ export interface SalesFunnelReport {
   endDate: string | null;
   totalLeads: number;
   generatedAt: string;
+  // Time-based engagement metrics
+  averageTimeToFirstContactHours: number | null;
+  timeToFirstContactLeadCount: number;
+  averageResponseTimeHours: number | null;
+  responseTimeLeadCount: number;
 }

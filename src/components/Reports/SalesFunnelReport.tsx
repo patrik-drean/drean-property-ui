@@ -14,6 +14,9 @@ import {
   IconButton,
   useTheme,
   Tooltip,
+  Card,
+  CardContent,
+  Grid,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { TimeFilterSelector } from './TimeFilterSelector';
@@ -252,6 +255,47 @@ export const SalesFunnelReportComponent: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Engagement Metrics Section */}
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" gutterBottom>
+          Engagement Metrics
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Tooltip title={`Based on ${report.timeToFirstContactLeadCount} leads`}>
+              <Card sx={{ cursor: 'help' }}>
+                <CardContent>
+                  <Typography color="textSecondary" gutterBottom>
+                    Average Time From Lead Creation to First Contact
+                  </Typography>
+                  <Typography variant="h4">
+                    {report.averageTimeToFirstContactHours !== null
+                      ? `${report.averageTimeToFirstContactHours.toFixed(1)} hrs`
+                      : 'N/A'}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Tooltip>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Tooltip title={`Based on ${report.responseTimeLeadCount} leads`}>
+              <Card sx={{ cursor: 'help' }}>
+                <CardContent>
+                  <Typography color="textSecondary" gutterBottom>
+                    Our Average First Response Time
+                  </Typography>
+                  <Typography variant="h4">
+                    {report.averageResponseTimeHours !== null
+                      ? `${report.averageResponseTimeHours.toFixed(1)} hrs`
+                      : 'N/A'}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Tooltip>
+          </Grid>
+        </Grid>
+      </Box>
     </Box>
   );
 };

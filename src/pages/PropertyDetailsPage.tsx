@@ -12,6 +12,7 @@ import { MarkdownNoteModal } from '../components/MarkdownNoteModal';
 import { FinancingDetailsTooltip, CashflowBreakdownTooltip } from '../components/shared/PropertyTooltips';
 import { createShareableReport, generateReportUrl } from '../services/investmentReportService';
 import { useSubscription } from '../contexts/SubscriptionContext';
+import { downloadMarkdownReport } from '../utils/markdownReportGenerator';
 import {
   calculateRentRatio,
   calculateARVRatio,
@@ -413,6 +414,13 @@ const PropertyDetailsPage: React.FC = () => {
     );
   };
 
+  const handleAIMarkdownReport = () => {
+    if (!property) return;
+    downloadMarkdownReport(property);
+    handleReportsMenuClose();
+    handleSnackbar('AI Markdown Report downloaded', 'success');
+  };
+
   if (loading) return <Box p={4}><Typography>Loading...</Typography></Box>;
   if (!property) return <Box p={4}><Typography>Property not found.</Typography></Box>;
 
@@ -525,6 +533,11 @@ const PropertyDetailsPage: React.FC = () => {
                 Regenerate
               </MenuItem>
             </Tooltip>
+            <Divider sx={{ my: 1 }} />
+            <MenuItem onClick={handleAIMarkdownReport}>
+              <Icons.Code sx={{ mr: 1 }} />
+              AI Markdown Report
+            </MenuItem>
           </Menu>
         </Box>
       </Box>

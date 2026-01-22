@@ -7,3 +7,4 @@ export * from './timezone';
 export * from './timeFilterUtils';
 export * from './propertyMetricsCalculator';
 export * from './zillowLinks';
+export * from './markdownReportGenerator';

@@ -19,6 +19,7 @@ import {
   Grid,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import DownloadIcon from '@mui/icons-material/Download';
 import { TimeFilterSelector } from './TimeFilterSelector';
 import { salesFunnelService } from '../../services/salesFunnelService';
 import { calculateDateRange } from '../../utils/timeFilterUtils';
@@ -59,6 +60,11 @@ export const SalesFunnelReportComponent: React.FC = () => {
   useEffect(() => {
     loadReport();
   }, [selectedPreset]);
+
+  const handleDownloadCsv = async () => {
+    const { startDate, endDate } = calculateDateRange(selectedPreset);
+    await salesFunnelService.exportLeadsCsv(startDate, endDate);
+  };
 
   const getConversionRateColor = (stageName: string, rate: number | null): string => {
     const goal = STAGE_GOALS[stageName];
@@ -177,9 +183,16 @@ export const SalesFunnelReportComponent: React.FC = () => {
         <Typography variant="h5" component="h2">
           Sales Funnel Analysis
         </Typography>
-        <IconButton onClick={loadReport} aria-label="refresh report">
-          <RefreshIcon />
-        </IconButton>
+        <Box display="flex" gap={1}>
+          <Tooltip title="Download CSV">
+            <IconButton onClick={handleDownloadCsv} aria-label="download csv">
+              <DownloadIcon />
+            </IconButton>
+          </Tooltip>
+          <IconButton onClick={loadReport} aria-label="refresh report">
+            <RefreshIcon />
+          </IconButton>
+        </Box>
       </Box>
 
       <TimeFilterSelector

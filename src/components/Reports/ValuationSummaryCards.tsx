@@ -22,9 +22,9 @@ const ValuationSummaryCards: React.FC<Props> = ({ rentCastEstimates, saleCompara
     ? midComps.reduce((sum, c) => sum + (c.price / c.squareFootage!), 0) / midComps.length
     : 0;
 
-  // Calculate ARV from Quality + Mid tier comps (matches backend logic)
+  // Calculate ARV from Quality + Mid + As-Is tier comps
   const arvComps = saleComparables.filter(
-    c => (c.tier === 'Quality' || c.tier === 'Mid') && c.squareFootage && c.squareFootage > 0
+    c => (c.tier === 'Quality' || c.tier === 'Mid' || c.tier === 'As-Is') && c.squareFootage && c.squareFootage > 0
   );
   const arvAvgPpsf = arvComps.length > 0
     ? arvComps.reduce((sum, c) => sum + (c.price / c.squareFootage!), 0) / arvComps.length
@@ -38,10 +38,16 @@ const ValuationSummaryCards: React.FC<Props> = ({ rentCastEstimates, saleCompara
 
   const hasArvData = arv > 0;
 
-  // Calculate range estimates
+  // Calculate range estimates (low = Mid + As-Is average, high = Quality)
   const qualityEstimate = sqft > 0 ? qualityAvgPpsf * sqft : 0;
-  const midEstimate = sqft > 0 ? midAvgPpsf * sqft : 0;
-  const hasRangeData = qualityEstimate > 0 && midEstimate > 0;
+  const lowRangeComps = saleComparables.filter(
+    c => (c.tier === 'Mid' || c.tier === 'As-Is') && c.squareFootage && c.squareFootage > 0
+  );
+  const lowRangeAvgPpsf = lowRangeComps.length > 0
+    ? lowRangeComps.reduce((sum, c) => sum + (c.price / c.squareFootage!), 0) / lowRangeComps.length
+    : 0;
+  const lowEstimate = sqft > 0 ? lowRangeAvgPpsf * sqft : 0;
+  const hasRangeData = qualityEstimate > 0 && lowEstimate > 0;
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -58,10 +64,10 @@ const ValuationSummaryCards: React.FC<Props> = ({ rentCastEstimates, saleCompara
             ${arvPerSqft.toLocaleString(undefined, { maximumFractionDigits: 0 })}/sqft
           </Typography>
 
-          {/* Range: Mid to Quality estimates */}
+          {/* Range: Mid+As-Is (low) to Quality (high) */}
           {hasRangeData && (
             <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
-              Range: ${Math.round(midEstimate / 1000)}K - ${Math.round(qualityEstimate / 1000)}K
+              Range: ${Math.round(lowEstimate / 1000)}K - ${Math.round(qualityEstimate / 1000)}K
             </Typography>
           )}
         </Paper>

@@ -1,7 +1,19 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import ValuationSummaryCards from '../ValuationSummaryCards';
 import { RentCastEstimates, SaleComparable } from '../../../types/property';
+
+// Helper to create a valid SaleComparable with required fields
+const createComp = (overrides: Partial<SaleComparable> & Pick<SaleComparable, 'address' | 'price' | 'distance'>): SaleComparable => ({
+  bedrooms: 3,
+  bathrooms: 2,
+  squareFootage: 1500,
+  lotSize: null,
+  yearBuilt: null,
+  correlation: 0.9,
+  daysOnMarket: null,
+  status: null,
+  ...overrides,
+});
 
 describe('ValuationSummaryCards', () => {
   // Backward-compatible mode: no ARV data
@@ -32,12 +44,12 @@ describe('ValuationSummaryCards', () => {
 
   // Mock comparables for testing tier-based calculations
   const mockComparables: SaleComparable[] = [
-    { id: '1', address: '123 Quality St', price: 300000, squareFootage: 1500, tier: 'Quality', bedrooms: 3, bathrooms: 2, distance: 0.5 },
-    { id: '2', address: '456 Quality Ave', price: 280000, squareFootage: 1400, tier: 'Quality', bedrooms: 3, bathrooms: 2, distance: 0.7 },
-    { id: '3', address: '789 Mid Rd', price: 250000, squareFootage: 1450, tier: 'Mid', bedrooms: 3, bathrooms: 2, distance: 0.6 },
-    { id: '4', address: '321 Mid Ln', price: 240000, squareFootage: 1400, tier: 'Mid', bedrooms: 3, bathrooms: 2, distance: 0.8 },
-    { id: '5', address: '654 AsIs Blvd', price: 200000, squareFootage: 1400, tier: 'As-Is', bedrooms: 3, bathrooms: 2, distance: 0.9 },
-    { id: '6', address: '987 AsIs Way', price: 180000, squareFootage: 1350, tier: 'As-Is', bedrooms: 3, bathrooms: 2, distance: 1.0 },
+    createComp({ address: '123 Quality St', price: 300000, squareFootage: 1500, tier: 'Quality', distance: 0.5 }),
+    createComp({ address: '456 Quality Ave', price: 280000, squareFootage: 1400, tier: 'Quality', distance: 0.7 }),
+    createComp({ address: '789 Mid Rd', price: 250000, squareFootage: 1450, tier: 'Mid', distance: 0.6 }),
+    createComp({ address: '321 Mid Ln', price: 240000, squareFootage: 1400, tier: 'Mid', distance: 0.8 }),
+    createComp({ address: '654 AsIs Blvd', price: 200000, squareFootage: 1400, tier: 'As-Is', distance: 0.9 }),
+    createComp({ address: '987 AsIs Way', price: 180000, squareFootage: 1350, tier: 'As-Is', distance: 1.0 }),
   ];
 
   describe('Backward Compatible Mode (No ARV Data)', () => {
@@ -160,9 +172,9 @@ describe('ValuationSummaryCards', () => {
       // Average: (200 + 180 + 160) / 3 = $180/sqft
       // ARV for 1000 sqft = $180,000
       const simpleComps: SaleComparable[] = [
-        { id: '1', address: '1 Quality', price: 200000, squareFootage: 1000, tier: 'Quality', bedrooms: 3, bathrooms: 2, distance: 0.5 },
-        { id: '2', address: '2 Mid', price: 180000, squareFootage: 1000, tier: 'Mid', bedrooms: 3, bathrooms: 2, distance: 0.6 },
-        { id: '3', address: '3 AsIs', price: 160000, squareFootage: 1000, tier: 'As-Is', bedrooms: 3, bathrooms: 2, distance: 0.7 },
+        createComp({ address: '1 Quality', price: 200000, squareFootage: 1000, tier: 'Quality', distance: 0.5 }),
+        createComp({ address: '2 Mid', price: 180000, squareFootage: 1000, tier: 'Mid', distance: 0.6 }),
+        createComp({ address: '3 AsIs', price: 160000, squareFootage: 1000, tier: 'As-Is', distance: 0.7 }),
       ];
 
       render(
@@ -182,9 +194,9 @@ describe('ValuationSummaryCards', () => {
       // Quality: $200/sqft -> high estimate = $200,000
       // Mid: $180/sqft, As-Is: $160/sqft -> avg = $170/sqft -> low estimate = $170,000
       const simpleComps: SaleComparable[] = [
-        { id: '1', address: '1 Quality', price: 200000, squareFootage: 1000, tier: 'Quality', bedrooms: 3, bathrooms: 2, distance: 0.5 },
-        { id: '2', address: '2 Mid', price: 180000, squareFootage: 1000, tier: 'Mid', bedrooms: 3, bathrooms: 2, distance: 0.6 },
-        { id: '3', address: '3 AsIs', price: 160000, squareFootage: 1000, tier: 'As-Is', bedrooms: 3, bathrooms: 2, distance: 0.7 },
+        createComp({ address: '1 Quality', price: 200000, squareFootage: 1000, tier: 'Quality', distance: 0.5 }),
+        createComp({ address: '2 Mid', price: 180000, squareFootage: 1000, tier: 'Mid', distance: 0.6 }),
+        createComp({ address: '3 AsIs', price: 160000, squareFootage: 1000, tier: 'As-Is', distance: 0.7 }),
       ];
 
       render(
@@ -216,8 +228,8 @@ describe('ValuationSummaryCards', () => {
 
     it('should handle large ARV values', () => {
       const largeComps: SaleComparable[] = [
-        { id: '1', address: '123 Luxury St', price: 1800000, squareFootage: 3000, tier: 'Quality', bedrooms: 5, bathrooms: 4, distance: 0.5 },
-        { id: '2', address: '456 Premium Ave', price: 1700000, squareFootage: 2800, tier: 'Mid', bedrooms: 5, bathrooms: 4, distance: 0.7 },
+        createComp({ address: '123 Luxury St', price: 1800000, squareFootage: 3000, tier: 'Quality', bedrooms: 5, bathrooms: 4, distance: 0.5 }),
+        createComp({ address: '456 Premium Ave', price: 1700000, squareFootage: 2800, tier: 'Mid', bedrooms: 5, bathrooms: 4, distance: 0.7 }),
       ];
 
       render(
@@ -284,8 +296,8 @@ describe('ValuationSummaryCards', () => {
 
     it('should not show range when no Quality comps available', () => {
       const noQualityComps: SaleComparable[] = [
-        { id: '1', address: '123 Mid St', price: 250000, squareFootage: 1500, tier: 'Mid', bedrooms: 3, bathrooms: 2, distance: 0.5 },
-        { id: '2', address: '456 AsIs Ave', price: 200000, squareFootage: 1400, tier: 'As-Is', bedrooms: 3, bathrooms: 2, distance: 0.7 },
+        createComp({ address: '123 Mid St', price: 250000, squareFootage: 1500, tier: 'Mid', distance: 0.5 }),
+        createComp({ address: '456 AsIs Ave', price: 200000, squareFootage: 1400, tier: 'As-Is', distance: 0.7 }),
       ];
 
       render(
@@ -302,8 +314,8 @@ describe('ValuationSummaryCards', () => {
 
     it('should not show range when no Mid or As-Is comps available', () => {
       const onlyQualityComps: SaleComparable[] = [
-        { id: '1', address: '123 Quality St', price: 300000, squareFootage: 1500, tier: 'Quality', bedrooms: 3, bathrooms: 2, distance: 0.5 },
-        { id: '2', address: '456 Quality Ave', price: 280000, squareFootage: 1400, tier: 'Quality', bedrooms: 3, bathrooms: 2, distance: 0.7 },
+        createComp({ address: '123 Quality St', price: 300000, squareFootage: 1500, tier: 'Quality', distance: 0.5 }),
+        createComp({ address: '456 Quality Ave', price: 280000, squareFootage: 1400, tier: 'Quality', distance: 0.7 }),
       ];
 
       render(

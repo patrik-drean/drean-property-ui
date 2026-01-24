@@ -104,7 +104,7 @@ function generateHeader(property: Property): string {
     header += `**Zillow**: ${property.zillowLink}\n`;
   }
 
-  header += '\n---\n\n';
+  header += '\n';
 
   return header;
 }

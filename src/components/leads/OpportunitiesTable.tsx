@@ -41,6 +41,7 @@ import { hasMetadataContent, formatMetadataValue } from './leadsHelpers';
 import { CashflowBreakdownTooltip } from '../shared/PropertyTooltips';
 import { useTheme } from '@mui/material';
 import { createShareableReport, generateReportUrl } from '../../services/investmentReportService';
+import { downloadMarkdownReport } from '../../utils/markdownReportGenerator';
 import { useSubscription } from '../../contexts/SubscriptionContext';
 
 // Status chip component
@@ -182,6 +183,15 @@ export const OpportunitiesTable: React.FC<OpportunitiesTableProps> = ({
       console.error('Error generating investment report:', error);
       handleMenuClose();
     }
+  };
+
+  const handleAIMarkdownReport = () => {
+    if (!selectedProperty) return;
+    const linkedLead = selectedProperty.propertyLeadId
+      ? linkedLeads.get(selectedProperty.propertyLeadId)
+      : undefined;
+    downloadMarkdownReport(selectedProperty, linkedLead);
+    handleMenuClose();
   };
 
   // Filter for opportunity statuses only
@@ -798,6 +808,12 @@ export const OpportunitiesTable: React.FC<OpportunitiesTableProps> = ({
               sx={{ ml: 1, height: 20, fontSize: '0.65rem' }}
             />
           )}
+        </MenuItem>
+        <MenuItem onClick={handleAIMarkdownReport}>
+          <ListItemIcon>
+            <Icons.Code fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>AI Markdown Report</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleMenuAction('calculator')}>
           <ListItemIcon>

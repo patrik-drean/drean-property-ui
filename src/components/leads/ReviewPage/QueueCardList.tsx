@@ -9,8 +9,6 @@ interface QueueCardListProps {
   selectedCardId: string | null;
   queueType: QueueType;
   onCardSelect: (id: string) => void;
-  onSendTemplate: (lead: QueueLead) => void;
-  onCustomMessage: (lead: QueueLead) => void;
   onViewDetails: (lead: QueueLead) => void;
   onDone: (lead: QueueLead) => void;
   onSkip: (lead: QueueLead) => void;
@@ -51,8 +49,6 @@ export const QueueCardList: React.FC<QueueCardListProps> = ({
   selectedCardId,
   queueType,
   onCardSelect,
-  onSendTemplate,
-  onCustomMessage,
   onViewDetails,
   onDone,
   onSkip,
@@ -110,8 +106,6 @@ export const QueueCardList: React.FC<QueueCardListProps> = ({
           lead={lead}
           isSelected={selectedCardId === lead.id}
           onSelect={() => onCardSelect(lead.id)}
-          onSendTemplate={() => onSendTemplate(lead)}
-          onCustomMessage={() => onCustomMessage(lead)}
           onViewDetails={() => onViewDetails(lead)}
           onDone={() => onDone(lead)}
           onSkip={() => onSkip(lead)}

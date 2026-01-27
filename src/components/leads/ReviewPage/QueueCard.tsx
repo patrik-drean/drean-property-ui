@@ -1,8 +1,6 @@
 import React from 'react';
 import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material';
 import {
-  Send as SendIcon,
-  Edit as EditIcon,
   OpenInNew as OpenIcon,
   CheckCircle as DoneIcon,
   SkipNext as SkipIcon,
@@ -18,8 +16,6 @@ interface QueueCardProps {
   lead: QueueLead;
   isSelected: boolean;
   onSelect: () => void;
-  onSendTemplate: () => void;
-  onCustomMessage: () => void;
   onViewDetails: () => void;
   onDone: () => void;
   onSkip: () => void;
@@ -33,8 +29,6 @@ export const QueueCard: React.FC<QueueCardProps> = ({
   lead,
   isSelected,
   onSelect,
-  onSendTemplate,
-  onCustomMessage,
   onViewDetails,
   onDone,
   onSkip,
@@ -155,14 +149,12 @@ export const QueueCard: React.FC<QueueCardProps> = ({
 
       {/* Actions */}
       <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-        {/* Primary actions */}
         <Button
           variant="contained"
           size="small"
-          startIcon={<SendIcon />}
           onClick={(e) => {
             e.stopPropagation();
-            onSendTemplate();
+            onViewDetails();
           }}
           sx={{
             flex: 1,
@@ -175,49 +167,7 @@ export const QueueCard: React.FC<QueueCardProps> = ({
             '&:hover': { bgcolor: '#2ea043' },
           }}
         >
-          Send Template
-        </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<EditIcon />}
-          onClick={(e) => {
-            e.stopPropagation();
-            onCustomMessage();
-          }}
-          sx={{
-            flex: 1,
-            borderColor: '#30363d',
-            color: '#f0f6fc',
-            textTransform: 'none',
-            fontWeight: 500,
-            fontSize: '0.8rem',
-            py: 0.75,
-            '&:hover': { borderColor: '#8b949e', bgcolor: 'rgba(255,255,255,0.05)' },
-          }}
-        >
-          Custom
-        </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewDetails();
-          }}
-          sx={{
-            borderColor: '#30363d',
-            color: '#f0f6fc',
-            textTransform: 'none',
-            fontWeight: 500,
-            fontSize: '0.8rem',
-            py: 0.75,
-            minWidth: 'auto',
-            px: 1.5,
-            '&:hover': { borderColor: '#8b949e', bgcolor: 'rgba(255,255,255,0.05)' },
-          }}
-        >
-          Details
+          View Details
         </Button>
       </Box>
 

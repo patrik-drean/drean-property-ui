@@ -151,17 +151,6 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   };
 
   // Action handlers for individual cards
-  const handleSendTemplate = (lead: QueueLead) => {
-    // TODO: Open template selection modal
-    showSnackbar(`Template sent to ${lead.address}! (mock)`, 'success');
-    markAsDone(lead.id);
-  };
-
-  const handleCustomMessage = (lead: QueueLead) => {
-    // TODO: Open custom message composer
-    showSnackbar(`Opening message composer for ${lead.address} (mock)`, 'info');
-  };
-
   const handleViewDetails = (lead: QueueLead) => {
     setSelectedCardId(lead.id);
     setDetailPanelOpen(true);
@@ -236,9 +225,9 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
       sx={{
         bgcolor: '#0d1117',
         minHeight: 'calc(100vh - 64px)',
-        // Negative margins to extend bg to edges, compensating for Navigation Container padding
+        // Negative margins to extend bg to edges, compensating for Navigation Container padding + Toolbar mb
         mx: { xs: -1, sm: -2, md: -3 },
-        mt: -2,
+        mt: { xs: -3, sm: -4, md: -5 },
         p: { xs: 2, sm: 3 },
         pb: '100px', // Space for fixed footer
       }}
@@ -257,8 +246,6 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
           selectedCardId={selectedCardId}
           queueType={selectedQueue}
           onCardSelect={(id) => setSelectedCardId(id)}
-          onSendTemplate={handleSendTemplate}
-          onCustomMessage={handleCustomMessage}
           onViewDetails={handleViewDetails}
           onDone={handleCardDone}
           onSkip={handleCardSkip}

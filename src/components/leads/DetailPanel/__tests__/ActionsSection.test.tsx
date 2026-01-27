@@ -125,26 +125,6 @@ describe('ActionsSection', () => {
 
       expect(screen.getByText('Archive Lead')).toBeInTheDocument();
     });
-
-    it('should display Promote to Opportunity button for eligible leads', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      expect(screen.getByText('Promote to Opportunity')).toBeInTheDocument();
-    });
-
-    it('should not display Promote button for Under Contract leads', () => {
-      const underContractLead = { ...mockLead, status: 'UnderContract' as const };
-      render(<ActionsSection lead={underContractLead} {...mockHandlers} />);
-
-      expect(screen.queryByText('Promote to Opportunity')).not.toBeInTheDocument();
-    });
-
-    it('should not display Promote button for Closed leads', () => {
-      const closedLead = { ...mockLead, status: 'Closed' as const };
-      render(<ActionsSection lead={closedLead} {...mockHandlers} />);
-
-      expect(screen.queryByText('Promote to Opportunity')).not.toBeInTheDocument();
-    });
   });
 
   describe('action button clicks', () => {
@@ -167,13 +147,6 @@ describe('ActionsSection', () => {
 
       fireEvent.click(screen.getByText('Archive Lead'));
       expect(mockHandlers.onAction).toHaveBeenCalledWith('archive');
-    });
-
-    it('should call onAction with promote when Promote to Opportunity is clicked', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      fireEvent.click(screen.getByText('Promote to Opportunity'));
-      expect(mockHandlers.onAction).toHaveBeenCalledWith('promote');
     });
   });
 

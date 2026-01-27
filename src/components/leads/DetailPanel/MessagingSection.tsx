@@ -129,7 +129,7 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
       </Box>
 
       {/* Quick Compose */}
-      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+      <Box sx={{ mb: 2 }}>
         <TextField
           fullWidth
           placeholder="Type a message..."
@@ -138,9 +138,10 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
           onKeyDown={handleKeyDown}
           size="small"
           multiline
-          maxRows={3}
+          rows={4}
           id="message-input"
           sx={{
+            mb: 1,
             '& .MuiOutlinedInput-root': {
               bgcolor: '#21262d',
               fontSize: '0.85rem',
@@ -153,19 +154,21 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
           }}
         />
         <Button
+          fullWidth
           variant="contained"
           onClick={handleSend}
           disabled={!message.trim()}
+          startIcon={<SendIcon />}
           sx={{
             bgcolor: '#4ade80',
             color: '#0d1117',
-            minWidth: 48,
-            px: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
             '&:hover': { bgcolor: '#86efac' },
             '&.Mui-disabled': { bgcolor: '#21262d', color: '#484f58' },
           }}
         >
-          <SendIcon fontSize="small" />
+          Send Message
         </Button>
       </Box>
 

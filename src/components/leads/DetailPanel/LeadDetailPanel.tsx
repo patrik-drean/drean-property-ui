@@ -216,6 +216,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
                 lead={lead}
                 onEditArv={() => onAction?.('editArv')}
                 onEditRehab={() => onAction?.('editRehab')}
+                onEditRent={() => onAction?.('editRent')}
               />
             </Grid>
 

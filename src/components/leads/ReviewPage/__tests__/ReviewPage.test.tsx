@@ -76,33 +76,11 @@ describe('ReviewPage', () => {
 
       // Wait for cards to render (mock data generates leads)
       await waitFor(() => {
-        // Find actual button elements with "Send Template" text
-        const sendButtons = screen.getAllByRole('button').filter(
-          (btn) => btn.tagName === 'BUTTON' && btn.textContent?.includes('Send Template')
+        // Find actual button elements with "View Details" text
+        const detailButtons = screen.getAllByRole('button').filter(
+          (btn) => btn.tagName === 'BUTTON' && btn.textContent?.includes('View Details')
         );
-        expect(sendButtons.length).toBeGreaterThan(0);
-      });
-    });
-
-    it('should show snackbar when Send Template is clicked', async () => {
-      render(<ReviewPage />);
-
-      // Wait for cards to render
-      await waitFor(() => {
-        const sendButtons = screen.getAllByRole('button').filter(
-          (btn) => btn.tagName === 'BUTTON' && btn.textContent?.includes('Send Template')
-        );
-        expect(sendButtons.length).toBeGreaterThan(0);
-      });
-
-      const sendButtons = screen.getAllByRole('button').filter(
-        (btn) => btn.tagName === 'BUTTON' && btn.textContent?.includes('Send Template')
-      );
-      fireEvent.click(sendButtons[0]);
-
-      // Should show success snackbar
-      await waitFor(() => {
-        expect(screen.getByText(/Template sent/i)).toBeInTheDocument();
+        expect(detailButtons.length).toBeGreaterThan(0);
       });
     });
 
@@ -156,7 +134,7 @@ describe('ReviewPage', () => {
   });
 
   describe('detail panel', () => {
-    it('should render Details buttons that can be clicked', async () => {
+    it('should render View Details buttons that can be clicked', async () => {
       render(<ReviewPage />);
 
       // First switch to "all" tab which will always have leads
@@ -165,14 +143,14 @@ describe('ReviewPage', () => {
 
       await waitFor(() => {
         const detailButtons = screen.getAllByRole('button').filter(
-          (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'Details'
+          (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'View Details'
         );
         expect(detailButtons.length).toBeGreaterThan(0);
       });
 
-      // Verify Details button exists and is clickable
+      // Verify View Details button exists and is clickable
       const detailButton = screen.getAllByRole('button').filter(
-        (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'Details'
+        (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'View Details'
       )[0];
       expect(detailButton).toBeInTheDocument();
 
@@ -180,7 +158,7 @@ describe('ReviewPage', () => {
       fireEvent.click(detailButton);
     });
 
-    it('should call LeadDetailPanel with lead when details is clicked', async () => {
+    it('should call LeadDetailPanel with lead when View Details is clicked', async () => {
       // The LeadDetailPanel mock is called, verifying integration
       const { LeadDetailPanel } = jest.requireMock('../../DetailPanel');
 
@@ -192,13 +170,13 @@ describe('ReviewPage', () => {
 
       await waitFor(() => {
         const detailButtons = screen.getAllByRole('button').filter(
-          (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'Details'
+          (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'View Details'
         );
         expect(detailButtons.length).toBeGreaterThan(0);
       });
 
       const detailButton = screen.getAllByRole('button').filter(
-        (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'Details'
+        (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'View Details'
       )[0];
       fireEvent.click(detailButton);
 

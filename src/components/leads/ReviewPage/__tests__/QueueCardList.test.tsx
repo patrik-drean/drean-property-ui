@@ -36,8 +36,6 @@ describe('QueueCardList', () => {
 
   const mockHandlers = {
     onCardSelect: jest.fn(),
-    onSendTemplate: jest.fn(),
-    onCustomMessage: jest.fn(),
     onViewDetails: jest.fn(),
     onDone: jest.fn(),
     onSkip: jest.fn(),
@@ -176,50 +174,6 @@ describe('QueueCardList', () => {
       expect(mockHandlers.onCardSelect).toHaveBeenCalledWith('test-lead-1');
     });
 
-    it('should call onSendTemplate with lead when button is clicked', () => {
-      const lead = createMockLead({ id: 'test-lead-1', address: 'Test Address' });
-
-      render(
-        <QueueCardList
-          leads={[lead]}
-          selectedCardId={null}
-          queueType="action_now"
-          {...mockHandlers}
-        />
-      );
-
-      // Use getAllByRole and filter to actual button elements (not role="button" containers)
-      const sendButtons = screen.getAllByRole('button').filter(
-        (btn) => btn.tagName === 'BUTTON' && btn.textContent?.includes('Send Template')
-      );
-      expect(sendButtons.length).toBe(1);
-      fireEvent.click(sendButtons[0]);
-
-      expect(mockHandlers.onSendTemplate).toHaveBeenCalledWith(lead);
-    });
-
-    it('should call onCustomMessage with lead when button is clicked', () => {
-      const lead = createMockLead({ id: 'test-lead-1' });
-
-      render(
-        <QueueCardList
-          leads={[lead]}
-          selectedCardId={null}
-          queueType="action_now"
-          {...mockHandlers}
-        />
-      );
-
-      // Find the actual button element containing "Custom"
-      const customButtons = screen.getAllByRole('button').filter(
-        (btn) => btn.tagName === 'BUTTON' && btn.textContent?.includes('Custom')
-      );
-      expect(customButtons.length).toBe(1);
-      fireEvent.click(customButtons[0]);
-
-      expect(mockHandlers.onCustomMessage).toHaveBeenCalledWith(lead);
-    });
-
     it('should call onViewDetails with lead when button is clicked', () => {
       const lead = createMockLead({ id: 'test-lead-1' });
 
@@ -232,9 +186,9 @@ describe('QueueCardList', () => {
         />
       );
 
-      // Find the actual button element containing "Details"
+      // Find the actual button element containing "View Details"
       const detailButtons = screen.getAllByRole('button').filter(
-        (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'Details'
+        (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'View Details'
       );
       expect(detailButtons.length).toBe(1);
       fireEvent.click(detailButtons[0]);

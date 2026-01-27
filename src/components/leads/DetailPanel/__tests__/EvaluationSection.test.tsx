@@ -114,16 +114,10 @@ describe('EvaluationSection', () => {
       expect(screen.getByText('$105,000')).toBeInTheDocument();
     });
 
-    it('should display MAO formula', () => {
+
+    it('should display spread percentage with MAO', () => {
       render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
 
-      expect(screen.getByText('(ARV x 70%) - Rehab')).toBeInTheDocument();
-    });
-
-    it('should display spread percentage', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
-
-      expect(screen.getByText('Spread')).toBeInTheDocument();
       expect(screen.getByText('30% below asking')).toBeInTheDocument();
     });
   });

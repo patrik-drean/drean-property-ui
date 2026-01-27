@@ -41,8 +41,6 @@ describe('QueueCard', () => {
 
   const mockHandlers = {
     onSelect: jest.fn(),
-    onSendTemplate: jest.fn(),
-    onCustomMessage: jest.fn(),
     onViewDetails: jest.fn(),
     onDone: jest.fn(),
     onSkip: jest.fn(),
@@ -107,49 +105,17 @@ describe('QueueCard', () => {
   });
 
   describe('primary action buttons', () => {
-    it('should render Send Template button', () => {
+    it('should render View Details button', () => {
       render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
 
-      const sendButton = findButtonByText('Send Template');
-      expect(sendButton).toBeDefined();
-    });
-
-    it('should render Custom button', () => {
-      render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
-
-      const customButton = findButtonByText('Custom');
-      expect(customButton).toBeDefined();
-    });
-
-    it('should render Details button', () => {
-      render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
-
-      const detailsButton = findButtonByText('Details');
+      const detailsButton = findButtonByText('View Details');
       expect(detailsButton).toBeDefined();
     });
 
-    it('should call onSendTemplate when Send Template is clicked', () => {
+    it('should call onViewDetails when View Details is clicked', () => {
       render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
 
-      const sendButton = findButtonByText('Send Template');
-      expect(sendButton).toBeDefined();
-      fireEvent.click(sendButton!);
-      expect(mockHandlers.onSendTemplate).toHaveBeenCalledTimes(1);
-    });
-
-    it('should call onCustomMessage when Custom is clicked', () => {
-      render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
-
-      const customButton = findButtonByText('Custom');
-      expect(customButton).toBeDefined();
-      fireEvent.click(customButton!);
-      expect(mockHandlers.onCustomMessage).toHaveBeenCalledTimes(1);
-    });
-
-    it('should call onViewDetails when Details is clicked', () => {
-      render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
-
-      const detailsButton = findButtonByText('Details');
+      const detailsButton = findButtonByText('View Details');
       expect(detailsButton).toBeDefined();
       fireEvent.click(detailsButton!);
       expect(mockHandlers.onViewDetails).toHaveBeenCalledTimes(1);
@@ -214,8 +180,8 @@ describe('QueueCard', () => {
     it('should not call onSelect for action button clicks', () => {
       render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
 
-      const sendButton = findButtonByText('Send Template');
-      fireEvent.click(sendButton!);
+      const detailsButton = findButtonByText('View Details');
+      fireEvent.click(detailsButton!);
 
       // onSelect should not be called when clicking action buttons
       expect(mockHandlers.onSelect).not.toHaveBeenCalled();

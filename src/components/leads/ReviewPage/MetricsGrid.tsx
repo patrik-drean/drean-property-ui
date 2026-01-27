@@ -67,9 +67,9 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({
   const getSpreadColor = (spread: number | null): string => {
     if (spread === null) return '#8b949e';
     // Lower spread = better deal (listing price closer to MAO)
-    if (spread <= 5) return '#4ade80';   // Excellent - green
-    if (spread <= 15) return '#fbbf24';  // Good - yellow
-    if (spread <= 25) return '#f97316';  // Moderate - orange
+    if (spread <= 15) return '#4ade80';   // Excellent - green
+    if (spread <= 25) return '#fbbf24';  // Good - yellow
+    if (spread <= 35) return '#f97316';  // Moderate - orange
     return '#f87171';                     // High spread - red
   };
 

@@ -14,7 +14,6 @@ import {
   CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
   Archive as ArchiveIcon,
-  ArrowUpward as ArrowUpwardIcon,
 } from '@mui/icons-material';
 import { QueueLead, LeadQueueStatus } from '../../../types/queue';
 import { SectionCard } from './SectionCard';
@@ -164,26 +163,6 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
         >
           Archive Lead
         </Button>
-        {lead.status !== 'UnderContract' && lead.status !== 'Closed' && (
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<ArrowUpwardIcon />}
-            onClick={() => onAction?.('promote')}
-            sx={{
-              borderColor: '#4ade80',
-              color: '#4ade80',
-              textTransform: 'none',
-              fontWeight: 500,
-              fontSize: '0.85rem',
-              '&:hover': {
-                bgcolor: 'rgba(74, 222, 128, 0.1)',
-              },
-            }}
-          >
-            Promote to Opportunity
-          </Button>
-        )}
       </Stack>
 
       {/* Notes Section */}

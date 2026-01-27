@@ -214,9 +214,10 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
             <Grid item xs={12} md={6}>
               <EvaluationSection
                 lead={lead}
-                onEditArv={() => onAction?.('editArv')}
-                onEditRehab={() => onAction?.('editRehab')}
-                onEditRent={() => onAction?.('editRent')}
+                onEvaluationChange={(data) => {
+                  // Handle evaluation changes - could trigger API update
+                  console.log('Evaluation updated:', data);
+                }}
               />
             </Grid>
 

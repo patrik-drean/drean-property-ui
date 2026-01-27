@@ -18,19 +18,19 @@ describe('useKeyboardShortcuts', () => {
   });
 
   describe('keyboard shortcuts', () => {
-    it('should call onNext when "j" key is pressed', () => {
-      const handlers = createMockHandlers();
-      renderHook(() => useKeyboardShortcuts(handlers));
-
-      fireEvent.keyDown(window, { key: 'j' });
-      expect(handlers.onNext).toHaveBeenCalledTimes(1);
-    });
-
-    it('should call onPrev when "k" key is pressed', () => {
+    it('should call onNext when "k" key is pressed', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers));
 
       fireEvent.keyDown(window, { key: 'k' });
+      expect(handlers.onNext).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call onPrev when "j" key is pressed', () => {
+      const handlers = createMockHandlers();
+      renderHook(() => useKeyboardShortcuts(handlers));
+
+      fireEvent.keyDown(window, { key: 'j' });
       expect(handlers.onPrev).toHaveBeenCalledTimes(1);
     });
 
@@ -78,10 +78,10 @@ describe('useKeyboardShortcuts', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers));
 
-      fireEvent.keyDown(window, { key: 'J' });
+      fireEvent.keyDown(window, { key: 'K' });
       expect(handlers.onNext).toHaveBeenCalledTimes(1);
 
-      fireEvent.keyDown(window, { key: 'K' });
+      fireEvent.keyDown(window, { key: 'J' });
       expect(handlers.onPrev).toHaveBeenCalledTimes(1);
     });
   });
@@ -132,7 +132,7 @@ describe('useKeyboardShortcuts', () => {
       renderHook(() => useKeyboardShortcuts(handlers));
 
       // Verify the hook is active and responds to normal keydown
-      fireEvent.keyDown(window, { key: 'j' });
+      fireEvent.keyDown(window, { key: 'k' });
       expect(handlers.onNext).toHaveBeenCalledTimes(1);
     });
   });
@@ -181,7 +181,7 @@ describe('useKeyboardShortcuts', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers));
 
-      fireEvent.keyDown(window, { key: 'j' });
+      fireEvent.keyDown(window, { key: 'k' });
       expect(handlers.onNext).toHaveBeenCalledTimes(1);
     });
 
@@ -189,7 +189,7 @@ describe('useKeyboardShortcuts', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers, true));
 
-      fireEvent.keyDown(window, { key: 'j' });
+      fireEvent.keyDown(window, { key: 'k' });
       expect(handlers.onNext).toHaveBeenCalledTimes(1);
     });
   });

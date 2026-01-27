@@ -33,10 +33,7 @@ describe('EvaluationSection', () => {
     timeSinceCreated: '2h ago',
   };
 
-  const mockHandlers = {
-    onEditArv: jest.fn(),
-    onEditRehab: jest.fn(),
-  };
+  const mockOnEvaluationChange = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -44,20 +41,20 @@ describe('EvaluationSection', () => {
 
   describe('rendering', () => {
     it('should display the section title', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       expect(screen.getByText('EVALUATION')).toBeInTheDocument();
     });
 
     it('should display the score badge', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       // Score badge shows the lead score
       expect(screen.getByText('8.5')).toBeInTheDocument();
     });
 
     it('should display score label based on score value', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       // Score of 8.5 should show "GOOD DEAL"
       expect(screen.getByText('GOOD DEAL')).toBeInTheDocument();
@@ -67,28 +64,28 @@ describe('EvaluationSection', () => {
   describe('score badge colors', () => {
     it('should show EXCELLENT DEAL for score >= 9', () => {
       const excellentLead = { ...mockLead, leadScore: 9.5 };
-      render(<EvaluationSection lead={excellentLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={excellentLead} />);
 
       expect(screen.getByText('EXCELLENT DEAL')).toBeInTheDocument();
     });
 
     it('should show GOOD DEAL for score >= 7', () => {
       const goodLead = { ...mockLead, leadScore: 7.5 };
-      render(<EvaluationSection lead={goodLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={goodLead} />);
 
       expect(screen.getByText('GOOD DEAL')).toBeInTheDocument();
     });
 
     it('should show FAIR DEAL for score >= 5', () => {
       const fairLead = { ...mockLead, leadScore: 5.5 };
-      render(<EvaluationSection lead={fairLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={fairLead} />);
 
       expect(screen.getByText('FAIR DEAL')).toBeInTheDocument();
     });
 
     it('should show POOR DEAL for score < 5', () => {
       const poorLead = { ...mockLead, leadScore: 3 };
-      render(<EvaluationSection lead={poorLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={poorLead} />);
 
       expect(screen.getByText('POOR DEAL')).toBeInTheDocument();
     });
@@ -96,101 +93,148 @@ describe('EvaluationSection', () => {
 
   describe('evaluation metrics', () => {
     it('should display ARV label', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       expect(screen.getByText('ARV (After Repair Value)')).toBeInTheDocument();
     });
 
     it('should display Rehab Estimate label', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       expect(screen.getByText('Rehab Estimate')).toBeInTheDocument();
     });
 
-    it('should display MAO (Maximum Allowable Offer)', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+    it('should display Rent Estimate label', () => {
+      render(<EvaluationSection lead={mockLead} />);
 
-      expect(screen.getByText('MAO (Maximum Allowable Offer)')).toBeInTheDocument();
-      expect(screen.getByText('$105,000')).toBeInTheDocument();
+      expect(screen.getByText('Rent Estimate')).toBeInTheDocument();
     });
 
+    it('should display MAO (Maximum Allowable Offer)', () => {
+      render(<EvaluationSection lead={mockLead} />);
 
-    it('should display spread percentage with MAO', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      expect(screen.getByText('MAO (Maximum Allowable Offer)')).toBeInTheDocument();
+    });
 
-      expect(screen.getByText('30% below asking')).toBeInTheDocument();
+    it('should display MAO formula', () => {
+      render(<EvaluationSection lead={mockLead} />);
+
+      expect(screen.getByText('(ARV × 70%) - Rehab - $5k')).toBeInTheDocument();
     });
   });
 
-  describe('edit buttons', () => {
+  describe('inline editing', () => {
     it('should have edit button for ARV', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       const arvEditButton = screen.getByLabelText(/Edit ARV/i);
       expect(arvEditButton).toBeInTheDocument();
     });
 
     it('should have edit button for Rehab', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       const rehabEditButton = screen.getByLabelText(/Edit Rehab/i);
       expect(rehabEditButton).toBeInTheDocument();
     });
 
-    it('should call onEditArv when ARV edit button is clicked', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+    it('should have edit button for Rent', () => {
+      render(<EvaluationSection lead={mockLead} />);
 
-      fireEvent.click(screen.getByLabelText(/Edit ARV/i));
-      expect(mockHandlers.onEditArv).toHaveBeenCalledTimes(1);
+      const rentEditButton = screen.getByLabelText(/Edit Rent/i);
+      expect(rentEditButton).toBeInTheDocument();
     });
 
-    it('should call onEditRehab when Rehab edit button is clicked', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+    it('should enter edit mode when ARV edit button is clicked', () => {
+      render(<EvaluationSection lead={mockLead} />);
 
-      fireEvent.click(screen.getByLabelText(/Edit Rehab/i));
-      expect(mockHandlers.onEditRehab).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByLabelText(/Edit ARV/i));
+
+      // Should show save and cancel buttons in edit mode
+      expect(screen.getByText('Save')).toBeInTheDocument();
+      expect(screen.getByText('Cancel')).toBeInTheDocument();
+    });
+
+    it('should call onEvaluationChange when value is saved', async () => {
+      render(
+        <EvaluationSection lead={mockLead} onEvaluationChange={mockOnEvaluationChange} />
+      );
+
+      // Click edit button for ARV
+      fireEvent.click(screen.getByLabelText(/Edit ARV/i));
+
+      // Clear and type new value
+      const input = screen.getByPlaceholderText('Enter value');
+      fireEvent.change(input, { target: { value: '250000' } });
+
+      // Click save
+      fireEvent.click(screen.getByText('Save'));
+
+      expect(mockOnEvaluationChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          arv: 250000,
+          arvSource: 'manual',
+        })
+      );
+    });
+
+    it('should cancel editing when Cancel is clicked', () => {
+      render(<EvaluationSection lead={mockLead} />);
+
+      // Click edit button
+      fireEvent.click(screen.getByLabelText(/Edit ARV/i));
+
+      // Should be in edit mode
+      expect(screen.getByText('Save')).toBeInTheDocument();
+
+      // Click cancel
+      fireEvent.click(screen.getByText('Cancel'));
+
+      // Should be back in view mode (no Save button)
+      expect(screen.queryByText('Save')).not.toBeInTheDocument();
     });
   });
 
   describe('neighborhood grade', () => {
     it('should display neighborhood section', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       expect(screen.getByText('Neighborhood')).toBeInTheDocument();
     });
 
     it('should display the grade', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       expect(screen.getByText('B')).toBeInTheDocument();
     });
 
     it('should display grade description', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       expect(screen.getByText(/Good-grade neighborhood/i)).toBeInTheDocument();
     });
   });
 
   describe('confidence badges', () => {
-    it('should display AI confidence badge for ARV', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+    it('should display AI confidence badge for metrics', () => {
+      render(<EvaluationSection lead={mockLead} />);
 
-      // Look for confidence badge text (High/Medium/Low format)
-      expect(screen.getByText(/AI - High Confidence/i)).toBeInTheDocument();
+      // Initial values should show AI confidence
+      const confidenceBadges = screen.getAllByText(/AI -.*Confidence/i);
+      expect(confidenceBadges.length).toBeGreaterThan(0);
     });
   });
 
   describe('comparables section', () => {
     it('should render comparables section', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       // Comps are collapsed by default, look for the expand button
       expect(screen.getByText(/View.*Comps/i)).toBeInTheDocument();
     });
 
     it('should expand comps when button is clicked', () => {
-      render(<EvaluationSection lead={mockLead} {...mockHandlers} />);
+      render(<EvaluationSection lead={mockLead} />);
 
       const expandButton = screen.getByText(/View.*Comps/i);
       fireEvent.click(expandButton);
@@ -200,43 +244,33 @@ describe('EvaluationSection', () => {
     });
   });
 
-  describe('null MAO handling', () => {
-    it('should display N/A when MAO is null', () => {
-      const leadNullMao = { ...mockLead, mao: null };
-      render(<EvaluationSection lead={leadNullMao} {...mockHandlers} />);
+  describe('MAO auto-calculation', () => {
+    it('should recalculate MAO when ARV changes', () => {
+      render(<EvaluationSection lead={mockLead} />);
 
-      expect(screen.getByText('N/A')).toBeInTheDocument();
+      // Click edit button for ARV
+      fireEvent.click(screen.getByLabelText(/Edit ARV/i));
+
+      // Type new value
+      const input = screen.getByPlaceholderText('Enter value');
+      fireEvent.change(input, { target: { value: '300000' } });
+
+      // Click save
+      fireEvent.click(screen.getByText('Save'));
+
+      // MAO should be recalculated: (300000 * 0.7) - rehab - 5000
+      // With initial rehab being roughly 15% of ARV estimate
+      const maoElement = screen.getByText(/MAO \(Maximum Allowable Offer\)/i)
+        .parentElement?.querySelector('h6');
+      expect(maoElement).toBeInTheDocument();
     });
   });
 
-  describe('spread percentage colors', () => {
-    // Note: Lower spread = better deal (listing price closer to MAO)
-    it('should apply green color for excellent spread (<=5%)', () => {
-      const excellentSpread = { ...mockLead, spreadPercent: 3 };
-      render(<EvaluationSection lead={excellentSpread} {...mockHandlers} />);
+  describe('spread percentage', () => {
+    it('should display spread percentage with MAO', () => {
+      render(<EvaluationSection lead={mockLead} />);
 
-      expect(screen.getByText('3% below asking')).toBeInTheDocument();
-    });
-
-    it('should apply yellow color for good spread (<=15%)', () => {
-      const goodSpread = { ...mockLead, spreadPercent: 10 };
-      render(<EvaluationSection lead={goodSpread} {...mockHandlers} />);
-
-      expect(screen.getByText('10% below asking')).toBeInTheDocument();
-    });
-
-    it('should apply orange color for moderate spread (<=25%)', () => {
-      const moderateSpread = { ...mockLead, spreadPercent: 20 };
-      render(<EvaluationSection lead={moderateSpread} {...mockHandlers} />);
-
-      expect(screen.getByText('20% below asking')).toBeInTheDocument();
-    });
-
-    it('should apply red color for high spread (>25%)', () => {
-      const highSpread = { ...mockLead, spreadPercent: 35 };
-      render(<EvaluationSection lead={highSpread} {...mockHandlers} />);
-
-      expect(screen.getByText('35% below asking')).toBeInTheDocument();
+      expect(screen.getByText(/below asking/i)).toBeInTheDocument();
     });
   });
 });

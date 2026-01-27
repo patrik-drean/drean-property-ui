@@ -4,3 +4,6 @@ export { LeadsToolbar } from './LeadsToolbar';
 export { OpportunitiesTable } from './OpportunitiesTable';
 export { AnimatedScoreDisplay, getScoreColor, getScoreLabel, getScoreTextColor } from './AnimatedScoreDisplay';
 export { ScoreResultsCard } from './ScoreResultsCard';
+
+// Detail Panel components (TASK-081)
+export * from './DetailPanel';

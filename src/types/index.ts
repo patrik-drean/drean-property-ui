@@ -16,3 +16,4 @@ export * from './transaction';
 export * from './todoist';
 export * from './messagingPopover';
 export * from './salesFunnel';
+export * from './queue';

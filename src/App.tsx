@@ -17,6 +17,7 @@ import PropertiesPage from './components/PropertiesPage';
 import ArchivedPropertiesPage from './components/ArchivedPropertiesPage';
 import Calculator from './components/Calculator';
 import PropertyLeadsPage from './components/PropertyLeadsPage';
+import { ReviewPage } from './components/leads/ReviewPage';
 import PropertyDetailsPage from './pages/PropertyDetailsPage';
 import InvestmentReportPage from './pages/InvestmentReportPage';
 import TeamPage from './components/TeamPage';
@@ -64,7 +65,8 @@ const router = createHashRouter(
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/archived" element={<ArchivedPropertiesPage />} />
           <Route path="/calculator" element={<Calculator />} />
-          <Route path="/leads" element={<PropertyLeadsPage />} />
+          <Route path="/leads" element={<ReviewPage />} />
+          <Route path="/leads/classic" element={<PropertyLeadsPage />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/messaging" element={<MessagingPage />} />
           <Route path="/messaging/templates" element={<TemplatesPage />} />

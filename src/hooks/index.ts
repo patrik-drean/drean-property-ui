@@ -6,3 +6,4 @@ export * from './useMockLeadData';
 export * from './useKeyboardShortcuts';
 export * from './useLeadEvents';
 export * from './useMessageEvents';
+export * from './useLeadQueue';

@@ -8,6 +8,15 @@ import { EvaluationSection } from './EvaluationSection';
 import { MessagingSection } from './MessagingSection';
 import { ActionsSection } from './ActionsSection';
 
+export interface EvaluationUpdate {
+  arv?: number;
+  arvNote?: string;
+  rehabEstimate?: number;
+  rehabNote?: string;
+  rentEstimate?: number;
+  rentNote?: string;
+}
+
 interface LeadDetailPanelProps {
   open: boolean;
   lead: QueueLead | null;
@@ -23,6 +32,7 @@ interface LeadDetailPanelProps {
   onAction?: (action: string) => void;
   onNotesChange?: (notes: string) => void;
   onRetry?: () => void;
+  onEvaluationSave?: (leadId: string, updates: EvaluationUpdate) => Promise<void>;
 }
 
 /**
@@ -63,6 +73,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
   onAction,
   onNotesChange,
   onRetry,
+  onEvaluationSave,
 }) => {
   // Keyboard shortcuts for panel navigation
   const handleKeyDown = useCallback(
@@ -215,8 +226,23 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
               <EvaluationSection
                 lead={lead}
                 onEvaluationChange={(data) => {
-                  // Handle evaluation changes - could trigger API update
-                  console.log('Evaluation updated:', data);
+                  // Call API to save evaluation changes
+                  if (onEvaluationSave && lead) {
+                    const updates: EvaluationUpdate = {};
+                    if (data.arv !== undefined) {
+                      updates.arv = data.arv;
+                      updates.arvNote = data.arvNote;
+                    }
+                    if (data.rehab !== undefined) {
+                      updates.rehabEstimate = data.rehab;
+                      updates.rehabNote = data.rehabNote;
+                    }
+                    if (data.rent !== undefined) {
+                      updates.rentEstimate = data.rent;
+                      updates.rentNote = data.rentNote;
+                    }
+                    onEvaluationSave(lead.id, updates);
+                  }
                 }}
               />
             </Grid>

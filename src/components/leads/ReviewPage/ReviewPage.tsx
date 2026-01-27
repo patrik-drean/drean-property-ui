@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Box, Snackbar, Alert } from '@mui/material';
-import { QueueType, QueueLead, LeadQueueStatus } from '../../../types/queue';
-import { useMockLeadData, filterLeadsByQueue, sortLeadsByPriority } from '../../../hooks/useMockLeadData';
+import { Box, Snackbar, Alert, CircularProgress, Typography } from '@mui/material';
+import { QueueLead, LeadQueueStatus } from '../../../types/queue';
+import { useLeadQueue } from '../../../hooks/useLeadQueue';
+import { filterLeadsByQueue, sortLeadsByPriority } from '../../../hooks/useMockLeadData';
 import { useKeyboardShortcuts } from '../../../hooks/useKeyboardShortcuts';
 import { PageHeader } from './PageHeader';
 import { QueueTabs } from './QueueTabs';
 import { QueueCardList } from './QueueCardList';
-import { ProgressFooter } from './ProgressFooter';
 import { LeadDetailPanel } from '../DetailPanel';
 
 interface ReviewPageProps {}
@@ -18,12 +18,10 @@ interface ReviewPageProps {}
  * - Queue tabs for different lead categories (Action Now, Follow-Up, Negotiating, All)
  * - Lead cards with priority badges, metrics, and quick actions
  * - Keyboard navigation (j/k for next/prev, Enter for details, t for template)
- * - Progress tracking for daily goals
- *
- * Note: Currently uses mocked data. Backend integration comes in a later task.
+ * - Real-time updates via WebSocket
+ * - Optimistic UI updates with error rollback
  */
 export const ReviewPage: React.FC<ReviewPageProps> = () => {
-  const [selectedQueue, setSelectedQueue] = useState<QueueType>('action_now');
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{
@@ -32,9 +30,30 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     severity: 'success' | 'info' | 'warning' | 'error';
   }>({ open: false, message: '', severity: 'info' });
 
-  // Mock data hook - will be replaced with real API calls later
-  const { leads, queueCounts, todayProgress, markAsDone, markAsSkip, archiveLead } =
-    useMockLeadData();
+  // Snackbar helper
+  const showSnackbar = useCallback((
+    message: string,
+    severity: 'success' | 'info' | 'warning' | 'error'
+  ) => {
+    setSnackbar({ open: true, message, severity });
+  }, []);
+
+  // Real API hook with WebSocket integration
+  const {
+    leads,
+    queueCounts,
+    selectedQueue,
+    loading,
+    error,
+    changeQueue,
+    markAsDone,
+    markAsSkip,
+    archiveLead,
+    updateEvaluation,
+  } = useLeadQueue({
+    initialQueueType: 'action_now',
+    onNotification: showSnackbar,
+  });
 
   // Filter and sort leads for the selected queue
   const filteredLeads = useMemo(() => {
@@ -105,26 +124,26 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
       // TODO: Implement template sending with backend
       showSnackbar('Template sent! (mock)', 'success');
     }
-  }, [selectedCardId]);
+  }, [selectedCardId, showSnackbar]);
 
   const handleDone = useCallback(() => {
     if (selectedCardId) {
       markAsDone(selectedCardId);
-      showSnackbar('Marked as done', 'success');
+      // Notification is shown by the hook via onNotification callback
     }
   }, [selectedCardId, markAsDone]);
 
   const handleSkip = useCallback(() => {
     if (selectedCardId) {
       markAsSkip(selectedCardId);
-      showSnackbar('Skipped for tomorrow', 'info');
+      // Notification is shown by the hook via onNotification callback
     }
   }, [selectedCardId, markAsSkip]);
 
   const handleArchive = useCallback(() => {
     if (selectedCardId) {
       archiveLead(selectedCardId);
-      showSnackbar('Lead archived', 'info');
+      // Notification is shown by the hook via onNotification callback
     }
   }, [selectedCardId, archiveLead]);
 
@@ -141,14 +160,6 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     },
     !detailPanelOpen
   );
-
-  // Snackbar helper
-  const showSnackbar = (
-    message: string,
-    severity: 'success' | 'info' | 'warning' | 'error'
-  ) => {
-    setSnackbar({ open: true, message, severity });
-  };
 
   // Action handlers for individual cards
   const handleViewDetails = (lead: QueueLead) => {
@@ -175,7 +186,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
       case 'markContacted':
         if (selectedCardId) {
           markAsDone(selectedCardId);
-          showSnackbar('Marked as contacted', 'success');
+          // Notification shown by hook via onNotification callback
         }
         break;
       case 'scheduleFollowUp':
@@ -184,7 +195,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
       case 'archive':
         if (selectedCardId) {
           archiveLead(selectedCardId);
-          showSnackbar('Lead archived', 'info');
+          // Notification shown by hook via onNotification callback
           setDetailPanelOpen(false);
         }
         break;
@@ -193,7 +204,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         break;
       case 'editArv':
       case 'editRehab':
-        showSnackbar('Inline editing coming in TASK-082', 'info');
+        // Inline editing is now implemented in EvaluationSection
         break;
       default:
         showSnackbar(`Action: ${action}`, 'info');
@@ -207,17 +218,17 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
 
   const handleCardDone = (lead: QueueLead) => {
     markAsDone(lead.id);
-    showSnackbar('Marked as done', 'success');
+    // Notification shown by hook via onNotification callback
   };
 
   const handleCardSkip = (lead: QueueLead) => {
     markAsSkip(lead.id);
-    showSnackbar('Skipped for tomorrow', 'info');
+    // Notification shown by hook via onNotification callback
   };
 
   const handleCardArchive = (lead: QueueLead) => {
     archiveLead(lead.id);
-    showSnackbar('Lead archived', 'info');
+    // Notification shown by hook via onNotification callback
   };
 
   return (
@@ -229,31 +240,76 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         mx: { xs: -1, sm: -2, md: -3 },
         mt: { xs: -3, sm: -4, md: -5 },
         p: { xs: 2, sm: 3 },
-        pb: '100px', // Space for fixed footer
       }}
     >
       <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
-        <PageHeader todayProgress={todayProgress} />
+        <PageHeader />
 
         <QueueTabs
           selectedQueue={selectedQueue}
-          onQueueChange={setSelectedQueue}
+          onQueueChange={changeQueue}
           counts={queueCounts}
         />
 
-        <QueueCardList
-          leads={filteredLeads}
-          selectedCardId={selectedCardId}
-          queueType={selectedQueue}
-          onCardSelect={(id) => setSelectedCardId(id)}
-          onViewDetails={handleViewDetails}
-          onDone={handleCardDone}
-          onSkip={handleCardSkip}
-          onArchive={handleCardArchive}
-        />
-      </Box>
+        {/* Loading State */}
+        {loading && (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              py: 8,
+            }}
+          >
+            <CircularProgress sx={{ color: '#58a6ff', mb: 2 }} />
+            <Typography sx={{ color: '#8b949e' }}>Loading leads...</Typography>
+          </Box>
+        )}
 
-      <ProgressFooter progress={todayProgress} isConnected={true} />
+        {/* Error State */}
+        {error && !loading && (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              py: 8,
+            }}
+          >
+            <Typography sx={{ color: '#f87171', mb: 2 }}>{error}</Typography>
+            <Typography
+              component="button"
+              onClick={() => window.location.reload()}
+              sx={{
+                color: '#58a6ff',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                fontSize: '0.875rem',
+              }}
+            >
+              Try again
+            </Typography>
+          </Box>
+        )}
+
+        {/* Lead Cards */}
+        {!loading && !error && (
+          <QueueCardList
+            leads={filteredLeads}
+            selectedCardId={selectedCardId}
+            queueType={selectedQueue}
+            onCardSelect={(id) => setSelectedCardId(id)}
+            onViewDetails={handleViewDetails}
+            onDone={handleCardDone}
+            onSkip={handleCardSkip}
+            onArchive={handleCardArchive}
+          />
+        )}
+      </Box>
 
       {/* Lead Detail Panel */}
       <LeadDetailPanel
@@ -268,6 +324,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         onStatusChange={handleStatusChange}
         onAction={handlePanelAction}
         onNotesChange={handleNotesChange}
+        onEvaluationSave={updateEvaluation}
       />
 
       {/* Feedback snackbar */}
@@ -276,7 +333,6 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         autoHideDuration={3000}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        sx={{ mb: 8 }} // Above the fixed footer
       >
         <Alert
           onClose={() => setSnackbar((s) => ({ ...s, open: false }))}

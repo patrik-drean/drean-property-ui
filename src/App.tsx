@@ -8,6 +8,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { PropertiesProvider } from './contexts/PropertiesContext';
 import { MessagingPopoverProvider } from './contexts/MessagingPopoverContext';
 import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionContext';
+import { WebSocketProvider } from './contexts/WebSocketContext';
 import { MessagingPopover } from './components/messaging/MessagingPopover';
 import { TrialExpiredPaywall } from './components/shared/TrialExpiredPaywall';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -84,15 +85,17 @@ const App: React.FC = () => {
         <CssBaseline />
         <AuthProvider>
           <SubscriptionProvider>
-            <PaywallGuard>
-              <PropertiesProvider>
-                <MessagingPopoverProvider>
-                  <RouterProvider router={router} />
-                  {/* Global messaging popover - persists across navigation */}
-                  <MessagingPopover />
-                </MessagingPopoverProvider>
-              </PropertiesProvider>
-            </PaywallGuard>
+            <WebSocketProvider>
+              <PaywallGuard>
+                <PropertiesProvider>
+                  <MessagingPopoverProvider>
+                    <RouterProvider router={router} />
+                    {/* Global messaging popover - persists across navigation */}
+                    <MessagingPopover />
+                  </MessagingPopoverProvider>
+                </PropertiesProvider>
+              </PaywallGuard>
+            </WebSocketProvider>
           </SubscriptionProvider>
         </AuthProvider>
       </ThemeProvider>

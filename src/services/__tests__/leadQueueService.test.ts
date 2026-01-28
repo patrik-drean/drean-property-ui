@@ -5,16 +5,20 @@ import {
   UpdateEvaluationRequest,
   UpdateEvaluationResponse,
   QueueType,
+  IngestLeadRequest,
+  IngestLeadResponse,
 } from '../leadQueueService';
 
 // Mock axios module
 const mockGet = jest.fn();
 const mockPut = jest.fn();
+const mockPost = jest.fn();
 
 jest.mock('../api', () => ({
   axiosInstance: {
     get: (...args: any[]) => mockGet(...args),
     put: (...args: any[]) => mockPut(...args),
+    post: (...args: any[]) => mockPost(...args),
   },
 }));
 
@@ -323,6 +327,282 @@ describe('leadQueueService', () => {
 
       await expect(leadQueueService.archiveLead('lead-1')).rejects.toEqual({
         response: { status: 403 },
+      });
+    });
+  });
+
+  describe('ingestLead', () => {
+    const mockIngestResponse: IngestLeadResponse = {
+      lead: {
+        id: 'lead-new-1',
+        address: '123 Test St, Austin, TX 78701',
+        listingPrice: 250000,
+        score: 8,
+        mao: 175000,
+        status: 'New',
+        createdAt: '2025-01-28T10:00:00Z',
+      },
+      evaluation: {
+        score: 8,
+        mao: 175000,
+        maoSpreadPercent: 30,
+        isDisqualified: false,
+        tier: 'quick',
+      },
+      autoSmsTriggered: false,
+      correlationId: 'abc123def',
+      wasConsolidated: false,
+    };
+
+    const mockConsolidatedResponse: IngestLeadResponse = {
+      ...mockIngestResponse,
+      wasConsolidated: true,
+      consolidation: {
+        oldPrice: 275000,
+        newPrice: 250000,
+        priceChangePercent: -9.1,
+        isPriceDropped: true,
+        oldScore: 6,
+        newScore: 8,
+      },
+    };
+
+    it('should ingest lead with required fields only', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St, Austin, TX 78701',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(mockPost).toHaveBeenCalledWith('/api/leads/ingest', {
+        address: '123 Test St, Austin, TX 78701',
+        listingPrice: 250000,
+        sendFirstMessage: false,
+        source: 'manual',
+      });
+      expect(result).toEqual(mockIngestResponse);
+    });
+
+    it('should ingest lead with all optional fields', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+        city: 'Austin',
+        state: 'TX',
+        zipCode: '78701',
+        squareFootage: 1500,
+        yearBuilt: 1985,
+        bedrooms: 3,
+        bathrooms: 2,
+        units: 1,
+        zillowLink: 'https://zillow.com/homedetails/123',
+        sellerPhone: '555-123-4567',
+        sellerEmail: 'seller@example.com',
+        agentName: 'John Agent',
+        agentPhone: '555-987-6543',
+        source: 'zillow-scraper',
+        sendFirstMessage: false,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      await leadQueueService.ingestLead(request);
+
+      expect(mockPost).toHaveBeenCalledWith('/api/leads/ingest', request);
+    });
+
+    it('should default sendFirstMessage to false when not specified', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      await leadQueueService.ingestLead(request);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/leads/ingest',
+        expect.objectContaining({ sendFirstMessage: false })
+      );
+    });
+
+    it('should default source to "manual" when not specified', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      await leadQueueService.ingestLead(request);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/leads/ingest',
+        expect.objectContaining({ source: 'manual' })
+      );
+    });
+
+    it('should use provided source when specified', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+        source: 'lambda-scraper',
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      await leadQueueService.ingestLead(request);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/leads/ingest',
+        expect.objectContaining({ source: 'lambda-scraper' })
+      );
+    });
+
+    it('should return evaluation summary with score and MAO', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.evaluation.score).toBe(8);
+      expect(result.evaluation.mao).toBe(175000);
+      expect(result.evaluation.maoSpreadPercent).toBe(30);
+      expect(result.evaluation.tier).toBe('quick');
+    });
+
+    it('should handle consolidated lead response (duplicate detection)', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockConsolidatedResponse });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.wasConsolidated).toBe(true);
+      expect(result.consolidation).toBeDefined();
+      expect(result.consolidation?.isPriceDropped).toBe(true);
+      expect(result.consolidation?.priceChangePercent).toBe(-9.1);
+    });
+
+    it('should handle auto-SMS triggered response', async () => {
+      const responseWithSms: IngestLeadResponse = {
+        ...mockIngestResponse,
+        autoSmsTriggered: true,
+      };
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+        sendFirstMessage: true,
+      };
+      mockPost.mockResolvedValue({ data: responseWithSms });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.autoSmsTriggered).toBe(true);
+    });
+
+    it('should handle auto-SMS error response', async () => {
+      const responseWithSmsError: IngestLeadResponse = {
+        ...mockIngestResponse,
+        autoSmsTriggered: false,
+        autoSmsError: 'Failed to send SMS: invalid phone number',
+      };
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+        sendFirstMessage: true,
+      };
+      mockPost.mockResolvedValue({ data: responseWithSmsError });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.autoSmsTriggered).toBe(false);
+      expect(result.autoSmsError).toBe('Failed to send SMS: invalid phone number');
+    });
+
+    it('should handle disqualified lead response', async () => {
+      const disqualifiedResponse: IngestLeadResponse = {
+        ...mockIngestResponse,
+        evaluation: {
+          ...mockIngestResponse.evaluation,
+          score: 3,
+          isDisqualified: true,
+          disqualifyReason: 'Price too high relative to ARV',
+        },
+      };
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 500000,
+      };
+      mockPost.mockResolvedValue({ data: disqualifiedResponse });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.evaluation.isDisqualified).toBe(true);
+      expect(result.evaluation.disqualifyReason).toBe('Price too high relative to ARV');
+    });
+
+    it('should return correlation ID for tracking', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.correlationId).toBe('abc123def');
+    });
+
+    it('should throw error when API request fails', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockRejectedValue(new Error('Network error'));
+
+      await expect(leadQueueService.ingestLead(request)).rejects.toThrow('Network error');
+    });
+
+    it('should throw error for unauthorized access', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockRejectedValue({ response: { status: 401 } });
+
+      await expect(leadQueueService.ingestLead(request)).rejects.toEqual({
+        response: { status: 401 },
+      });
+    });
+
+    it('should throw error for validation failure', async () => {
+      const request: IngestLeadRequest = {
+        address: '',
+        listingPrice: 0,
+      };
+      mockPost.mockRejectedValue({
+        response: { status: 400, data: { detail: 'Address is required' } },
+      });
+
+      await expect(leadQueueService.ingestLead(request)).rejects.toEqual({
+        response: { status: 400, data: { detail: 'Address is required' } },
+      });
+    });
+
+    it('should throw error for server error', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockRejectedValue({ response: { status: 500 } });
+
+      await expect(leadQueueService.ingestLead(request)).rejects.toEqual({
+        response: { status: 500 },
       });
     });
   });

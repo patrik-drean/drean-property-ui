@@ -185,6 +185,7 @@ export const QueueCard: React.FC<QueueCardProps> = ({
         <Tooltip title="Mark as done (d)">
           <IconButton
             size="small"
+            data-testid="done-button"
             onClick={(e) => {
               e.stopPropagation();
               onDone();
@@ -200,6 +201,7 @@ export const QueueCard: React.FC<QueueCardProps> = ({
         <Tooltip title="Skip for now (s)">
           <IconButton
             size="small"
+            data-testid="skip-button"
             onClick={(e) => {
               e.stopPropagation();
               onSkip();
@@ -215,6 +217,7 @@ export const QueueCard: React.FC<QueueCardProps> = ({
         <Tooltip title="Archive (a)">
           <IconButton
             size="small"
+            data-testid="archive-button"
             onClick={(e) => {
               e.stopPropagation();
               onArchive();

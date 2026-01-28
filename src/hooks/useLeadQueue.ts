@@ -262,10 +262,14 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
   const changeQueue = useCallback((queue: QueueType) => {
     setSelectedQueue(queue);
     setPage(1);
+    // Show loading state when changing queues to prevent stale data flash
+    setLoading(true);
   }, []);
 
   const changePage = useCallback((newPage: number) => {
     setPage(newPage);
+    // Show loading state when changing pages to prevent stale data flash
+    setLoading(true);
   }, []);
 
   // Lead actions with optimistic updates

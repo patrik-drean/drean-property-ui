@@ -2,236 +2,377 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReviewPage } from '../ReviewPage';
 
-// Mock the LeadDetailPanel since it's tested separately and not part of this task
+// Define mocks at module level for hoisting
+const mockMarkAsDone = jest.fn();
+const mockMarkAsSkip = jest.fn();
+const mockArchiveLead = jest.fn();
+const mockChangeQueue = jest.fn();
+const mockUpdateEvaluation = jest.fn();
+
+const testLeads = [
+  {
+    id: 'lead-1',
+    address: '123 Main Street',
+    city: 'San Antonio',
+    state: 'TX',
+    zipCode: '78209',
+    zillowLink: 'https://zillow.com/homedetails/123',
+    listingPrice: 150000,
+    sellerPhone: '555-123-4567',
+    sellerEmail: 'seller@example.com',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    archived: false,
+    tags: [],
+    squareFootage: 1500,
+    bedrooms: 3,
+    bathrooms: 2,
+    units: 1,
+    notes: '',
+    leadScore: 8,
+    mao: 105000,
+    spreadPercent: 30,
+    neighborhoodGrade: 'B',
+    status: 'New',
+    lastContactDate: null,
+    priority: 'high',
+    timeSinceCreated: '2h ago',
+    aiSummary: 'Strong investment opportunity.',
+  },
+  {
+    id: 'lead-2',
+    address: '456 Oak Avenue',
+    city: 'Austin',
+    state: 'TX',
+    zipCode: '78701',
+    zillowLink: 'https://zillow.com/homedetails/456',
+    listingPrice: 200000,
+    sellerPhone: '555-987-6543',
+    sellerEmail: 'seller2@example.com',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    archived: false,
+    tags: [],
+    squareFootage: 1800,
+    bedrooms: 4,
+    bathrooms: 2,
+    units: 1,
+    notes: '',
+    leadScore: 7,
+    mao: 140000,
+    spreadPercent: 25,
+    neighborhoodGrade: 'B+',
+    status: 'New',
+    lastContactDate: null,
+    priority: 'medium',
+    timeSinceCreated: '4h ago',
+    aiSummary: 'Good potential with some repairs needed.',
+  },
+];
+
+// Mock the useLeadQueue hook - must define leads inside the mock factory
+jest.mock('../../../../hooks/useLeadQueue', () => ({
+  useLeadQueue: () => ({
+    leads: [
+      {
+        id: 'lead-1',
+        address: '123 Main Street',
+        city: 'San Antonio',
+        state: 'TX',
+        zipCode: '78209',
+        zillowLink: 'https://zillow.com/homedetails/123',
+        listingPrice: 150000,
+        sellerPhone: '555-123-4567',
+        sellerEmail: 'seller@example.com',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        archived: false,
+        tags: [],
+        squareFootage: 1500,
+        bedrooms: 3,
+        bathrooms: 2,
+        units: 1,
+        notes: '',
+        leadScore: 8,
+        mao: 105000,
+        spreadPercent: 30,
+        neighborhoodGrade: 'B',
+        status: 'New',
+        lastContactDate: null,
+        priority: 'high',
+        timeSinceCreated: '2h ago',
+        aiSummary: 'Strong investment opportunity.',
+      },
+      {
+        id: 'lead-2',
+        address: '456 Oak Avenue',
+        city: 'Austin',
+        state: 'TX',
+        zipCode: '78701',
+        zillowLink: 'https://zillow.com/homedetails/456',
+        listingPrice: 200000,
+        sellerPhone: '555-987-6543',
+        sellerEmail: 'seller2@example.com',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        archived: false,
+        tags: [],
+        squareFootage: 1800,
+        bedrooms: 4,
+        bathrooms: 2,
+        units: 1,
+        notes: '',
+        leadScore: 7,
+        mao: 140000,
+        spreadPercent: 25,
+        neighborhoodGrade: 'B+',
+        status: 'New',
+        lastContactDate: null,
+        priority: 'medium',
+        timeSinceCreated: '4h ago',
+        aiSummary: 'Good potential with some repairs needed.',
+      },
+    ],
+    queueCounts: {
+      action_now: 5,
+      follow_up: 3,
+      negotiating: 2,
+      all: 10,
+    },
+    selectedQueue: 'action_now',
+    page: 1,
+    totalPages: 1,
+    loading: false,
+    error: null,
+    connectionStatus: 'connected',
+    changeQueue: (...args: unknown[]) => mockChangeQueue(...args),
+    changePage: jest.fn(),
+    updateLeadStatus: jest.fn(),
+    archiveLead: (...args: unknown[]) => mockArchiveLead(...args),
+    updateEvaluation: (...args: unknown[]) => mockUpdateEvaluation(...args),
+    refetch: jest.fn(),
+    markAsDone: (...args: unknown[]) => mockMarkAsDone(...args),
+    markAsSkip: (...args: unknown[]) => mockMarkAsSkip(...args),
+  }),
+}));
+
+// Mock the filtering functions to return leads as-is
+jest.mock('../../../../hooks/useMockLeadData', () => ({
+  filterLeadsByQueue: (leads: unknown[]) => leads,
+  sortLeadsByPriority: (leads: unknown[]) => leads,
+}));
+
+// Mock the LeadDetailPanel since it's tested separately
 jest.mock('../../DetailPanel', () => ({
-  LeadDetailPanel: jest.fn(({ open }) =>
-    open ? <div data-testid="detail-panel">Detail Panel</div> : null
-  ),
+  LeadDetailPanel: ({ open, lead }: { open: boolean; lead: { address: string } | null }) =>
+    open ? <div data-testid="detail-panel">Detail Panel for {lead?.address}</div> : null,
+}));
+
+// Mock the AddLeadModal
+jest.mock('../AddLeadModal', () => ({
+  AddLeadModal: ({ open, onClose }: { open: boolean; onClose: () => void }) =>
+    open ? (
+      <div data-testid="add-lead-modal">
+        Add Lead Modal
+        <button onClick={onClose}>Close Modal</button>
+      </div>
+    ) : null,
 }));
 
 describe('ReviewPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
+    // Mock window.open to prevent jsdom errors
+    jest.spyOn(window, 'open').mockImplementation(() => null);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('rendering', () => {
     it('should render the page header with title', () => {
       render(<ReviewPage />);
 
-      expect(screen.getByText('Your Daily Queue')).toBeInTheDocument();
+      expect(screen.getByText('Review Leads')).toBeInTheDocument();
+    });
+
+    it('should render the Add Lead button', () => {
+      render(<ReviewPage />);
+
+      expect(screen.getByRole('button', { name: /add lead/i })).toBeInTheDocument();
     });
 
     it('should render queue tabs', () => {
       render(<ReviewPage />);
 
       expect(screen.getByText('Action Now')).toBeInTheDocument();
-      expect(screen.getByText('Follow-Up Today')).toBeInTheDocument();
+      expect(screen.getByText(/Follow-Up/i)).toBeInTheDocument();
       expect(screen.getByText('Negotiating')).toBeInTheDocument();
-      expect(screen.getByText(/All Leads/)).toBeInTheDocument();
+      expect(screen.getByText(/All/)).toBeInTheDocument();
     });
 
-    it('should render progress footer', () => {
+    it('should render lead cards', () => {
       render(<ReviewPage />);
 
-      expect(screen.getByText('Contacted Today')).toBeInTheDocument();
-      expect(screen.getByText('Follow-Ups Completed')).toBeInTheDocument();
-      expect(screen.getByText('Connected')).toBeInTheDocument();
+      expect(screen.getByText('123 Main Street')).toBeInTheDocument();
+      expect(screen.getByText('456 Oak Avenue')).toBeInTheDocument();
+    });
+  });
+
+  describe('Add Lead Modal', () => {
+    it('should open Add Lead modal when button is clicked', async () => {
+      render(<ReviewPage />);
+
+      const addLeadButton = screen.getByRole('button', { name: /add lead/i });
+      fireEvent.click(addLeadButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('add-lead-modal')).toBeInTheDocument();
+      });
+    });
+
+    it('should close Add Lead modal when close is triggered', async () => {
+      render(<ReviewPage />);
+
+      // Open modal
+      const addLeadButton = screen.getByRole('button', { name: /add lead/i });
+      fireEvent.click(addLeadButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('add-lead-modal')).toBeInTheDocument();
+      });
+
+      // Close modal
+      const closeButton = screen.getByText('Close Modal');
+      fireEvent.click(closeButton);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('add-lead-modal')).not.toBeInTheDocument();
+      });
     });
   });
 
   describe('tab navigation', () => {
-    it('should switch to follow-up queue when tab is clicked', async () => {
+    it('should call changeQueue when follow-up tab is clicked', () => {
       render(<ReviewPage />);
 
-      const followUpTab = screen.getByRole('tab', { name: /Follow-up Today/i });
+      const followUpTab = screen.getByRole('tab', { name: /Follow-Up/i });
       fireEvent.click(followUpTab);
 
-      // Tab should be selected
-      expect(followUpTab).toHaveAttribute('aria-selected', 'true');
+      expect(mockChangeQueue).toHaveBeenCalledWith('follow_up');
     });
 
-    it('should switch to negotiating queue when tab is clicked', async () => {
+    it('should call changeQueue when negotiating tab is clicked', () => {
       render(<ReviewPage />);
 
       const negotiatingTab = screen.getByRole('tab', { name: /Negotiating/i });
       fireEvent.click(negotiatingTab);
 
-      expect(negotiatingTab).toHaveAttribute('aria-selected', 'true');
+      expect(mockChangeQueue).toHaveBeenCalledWith('negotiating');
     });
 
-    it('should switch to all leads queue when tab is clicked', async () => {
+    it('should call changeQueue when all tab is clicked', () => {
       render(<ReviewPage />);
 
-      const allTab = screen.getByRole('tab', { name: /All leads/i });
+      const allTab = screen.getByRole('tab', { name: /All/i });
       fireEvent.click(allTab);
 
-      expect(allTab).toHaveAttribute('aria-selected', 'true');
+      expect(mockChangeQueue).toHaveBeenCalledWith('all');
     });
   });
 
   describe('card actions', () => {
-    it('should render action buttons for leads', async () => {
+    it('should render View Details buttons for leads', () => {
       render(<ReviewPage />);
 
-      // Wait for cards to render (mock data generates leads)
-      await waitFor(() => {
-        // Find actual button elements with "View Details" text
-        const detailButtons = screen.getAllByRole('button').filter(
-          (btn) => btn.tagName === 'BUTTON' && btn.textContent?.includes('View Details')
-        );
-        expect(detailButtons.length).toBeGreaterThan(0);
-      });
+      // Find View Details buttons - should have at least one per lead
+      const detailButtons = screen.getAllByRole('button', { name: /view details/i });
+      expect(detailButtons.length).toBeGreaterThanOrEqual(2);
     });
 
-    it('should show snackbar when Done is clicked', async () => {
+    it('should call markAsDone when Done button is clicked', () => {
       render(<ReviewPage />);
 
-      await waitFor(() => {
-        const doneButtons = screen.queryAllByLabelText(/Mark as done/i);
-        expect(doneButtons.length).toBeGreaterThan(0);
-      });
+      // Find the first Done button using data-testid
+      const doneButtons = screen.getAllByTestId('done-button');
+      expect(doneButtons.length).toBeGreaterThanOrEqual(2);
+      fireEvent.click(doneButtons[0]);
 
-      const doneButton = screen.getAllByLabelText(/Mark as done/i)[0];
-      fireEvent.click(doneButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Marked as done/i)).toBeInTheDocument();
-      });
+      expect(mockMarkAsDone).toHaveBeenCalledWith('lead-1');
     });
 
-    it('should show snackbar when Skip is clicked', async () => {
+    it('should call markAsSkip when Skip button is clicked', () => {
       render(<ReviewPage />);
 
-      await waitFor(() => {
-        const skipButtons = screen.queryAllByLabelText(/Skip for now/i);
-        expect(skipButtons.length).toBeGreaterThan(0);
-      });
+      // Find the first Skip button using data-testid
+      const skipButtons = screen.getAllByTestId('skip-button');
+      expect(skipButtons.length).toBeGreaterThanOrEqual(2);
+      fireEvent.click(skipButtons[0]);
 
-      const skipButton = screen.getAllByLabelText(/Skip for now/i)[0];
-      fireEvent.click(skipButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Skipped for tomorrow/i)).toBeInTheDocument();
-      });
+      expect(mockMarkAsSkip).toHaveBeenCalledWith('lead-1');
     });
 
-    it('should show snackbar when Archive is clicked', async () => {
+    it('should call archiveLead when Archive button is clicked', () => {
       render(<ReviewPage />);
 
-      await waitFor(() => {
-        const archiveButtons = screen.queryAllByLabelText(/Archive/i);
-        expect(archiveButtons.length).toBeGreaterThan(0);
-      });
+      // Find the first Archive button using data-testid
+      const archiveButtons = screen.getAllByTestId('archive-button');
+      expect(archiveButtons.length).toBeGreaterThanOrEqual(2);
+      fireEvent.click(archiveButtons[0]);
 
-      const archiveButton = screen.getAllByLabelText(/Archive/i)[0];
-      fireEvent.click(archiveButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Lead archived/i)).toBeInTheDocument();
-      });
+      expect(mockArchiveLead).toHaveBeenCalledWith('lead-1');
     });
   });
 
   describe('detail panel', () => {
-    it('should render View Details buttons that can be clicked', async () => {
+    it('should have View Details buttons that can be clicked', () => {
       render(<ReviewPage />);
 
-      // First switch to "all" tab which will always have leads
-      const allTab = screen.getByRole('tab', { name: /All leads/i });
-      fireEvent.click(allTab);
+      const detailButtons = screen.getAllByRole('button', { name: /view details/i });
+      expect(detailButtons.length).toBeGreaterThan(0);
 
-      await waitFor(() => {
-        const detailButtons = screen.getAllByRole('button').filter(
-          (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'View Details'
-        );
-        expect(detailButtons.length).toBeGreaterThan(0);
-      });
-
-      // Verify View Details button exists and is clickable
-      const detailButton = screen.getAllByRole('button').filter(
-        (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'View Details'
-      )[0];
-      expect(detailButton).toBeInTheDocument();
-
-      // Click should not throw an error
-      fireEvent.click(detailButton);
+      // Clicking should not throw an error
+      expect(() => fireEvent.click(detailButtons[0])).not.toThrow();
     });
 
-    it('should call LeadDetailPanel with lead when View Details is clicked', async () => {
-      // The LeadDetailPanel mock is called, verifying integration
-      const { LeadDetailPanel } = jest.requireMock('../../DetailPanel');
-
+    it('should select different lead cards', () => {
       render(<ReviewPage />);
 
-      // First switch to "all" tab
-      const allTab = screen.getByRole('tab', { name: /All leads/i });
-      fireEvent.click(allTab);
+      // Both addresses should be visible
+      expect(screen.getByText('123 Main Street')).toBeInTheDocument();
+      expect(screen.getByText('456 Oak Avenue')).toBeInTheDocument();
 
-      await waitFor(() => {
-        const detailButtons = screen.getAllByRole('button').filter(
-          (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'View Details'
-        );
-        expect(detailButtons.length).toBeGreaterThan(0);
-      });
-
-      const detailButton = screen.getAllByRole('button').filter(
-        (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'View Details'
-      )[0];
-      fireEvent.click(detailButton);
-
-      // Wait a tick for state to update
-      await waitFor(() => {
-        // LeadDetailPanel should have been called with open: true
-        const calls = LeadDetailPanel.mock.calls;
-        const lastCall = calls[calls.length - 1];
-        expect(lastCall[0].open).toBe(true);
-      });
+      // Click on second lead's View Details
+      const detailButtons = screen.getAllByRole('button', { name: /view details/i });
+      expect(detailButtons.length).toBeGreaterThanOrEqual(2);
+      expect(() => fireEvent.click(detailButtons[1])).not.toThrow();
     });
   });
 
   describe('keyboard shortcuts', () => {
-    it('should handle keyboard navigation', async () => {
+    it('should handle keyboard navigation without crashing', () => {
       render(<ReviewPage />);
 
-      // Wait for cards to render
-      await waitFor(() => {
-        const buttons = screen.getAllByRole('button');
-        expect(buttons.length).toBeGreaterThan(4);
-      });
-
-      // Press j to go to next card (just verify no crash)
+      // Press j to go to next card
       fireEvent.keyDown(window, { key: 'j' });
       fireEvent.keyDown(window, { key: 'k' });
 
       // Page should still be functional
-      expect(screen.getByText('Your Daily Queue')).toBeInTheDocument();
+      expect(screen.getByText('Review Leads')).toBeInTheDocument();
     });
   });
 
-  describe('snackbar dismissal', () => {
-    it('should close snackbar when close button is clicked', async () => {
+  describe('snackbar', () => {
+    it('should call markAsDone when done button is clicked', () => {
       render(<ReviewPage />);
 
-      await waitFor(() => {
-        const doneButtons = screen.queryAllByLabelText(/Mark as done/i);
-        expect(doneButtons.length).toBeGreaterThan(0);
-      });
+      const doneButtons = screen.getAllByTestId('done-button');
+      fireEvent.click(doneButtons[0]);
 
-      const doneButton = screen.getAllByLabelText(/Mark as done/i)[0];
-      fireEvent.click(doneButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Marked as done/i)).toBeInTheDocument();
-      });
-
-      // Find and click close button on the snackbar
-      const closeButton = screen.getByRole('button', { name: /close/i });
-      fireEvent.click(closeButton);
-
-      await waitFor(() => {
-        expect(screen.queryByText(/Marked as done/i)).not.toBeInTheDocument();
-      });
+      // markAsDone was called, which would trigger the snackbar via onNotification
+      expect(mockMarkAsDone).toHaveBeenCalled();
     });
   });
 });

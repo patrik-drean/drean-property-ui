@@ -2,12 +2,14 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Box, Snackbar, Alert, CircularProgress, Typography } from '@mui/material';
 import { QueueLead, LeadQueueStatus } from '../../../types/queue';
 import { useLeadQueue } from '../../../hooks/useLeadQueue';
-import { filterLeadsByQueue, sortLeadsByPriority } from '../../../hooks/useMockLeadData';
+import { sortLeadsByPriority } from '../../../hooks/useMockLeadData';
 import { useKeyboardShortcuts } from '../../../hooks/useKeyboardShortcuts';
 import { PageHeader } from './PageHeader';
 import { QueueTabs } from './QueueTabs';
 import { QueueCardList } from './QueueCardList';
 import { LeadDetailPanel } from '../DetailPanel';
+import { AddLeadModal } from './AddLeadModal';
+import { IngestLeadResponse } from '../../../services/leadQueueService';
 
 interface ReviewPageProps {}
 
@@ -24,6 +26,7 @@ interface ReviewPageProps {}
 export const ReviewPage: React.FC<ReviewPageProps> = () => {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -55,11 +58,10 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     onNotification: showSnackbar,
   });
 
-  // Filter and sort leads for the selected queue
+  // Sort leads by priority (backend already filters by queue type)
   const filteredLeads = useMemo(() => {
-    const filtered = filterLeadsByQueue(leads, selectedQueue);
-    return sortLeadsByPriority(filtered);
-  }, [leads, selectedQueue]);
+    return sortLeadsByPriority(leads);
+  }, [leads]);
 
   // Find the index of the currently selected card
   const selectedCardIndex = useMemo(() => {
@@ -231,6 +233,19 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     // Notification shown by hook via onNotification callback
   };
 
+  // Handle successful lead addition
+  const handleAddLeadSuccess = useCallback((response: IngestLeadResponse) => {
+    if (response.wasConsolidated) {
+      const priceInfo = response.consolidation?.isPriceDropped
+        ? ` (Price dropped ${Math.abs(response.consolidation.priceChangePercent || 0).toFixed(1)}%)`
+        : '';
+      showSnackbar(`Lead merged with existing record${priceInfo}`, 'info');
+    } else {
+      showSnackbar(`Lead added with score ${response.evaluation.score}`, 'success');
+    }
+    // The lead will appear in the queue via WebSocket update or next fetch
+  }, [showSnackbar]);
+
   return (
     <Box
       sx={{
@@ -243,7 +258,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
       }}
     >
       <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
-        <PageHeader />
+        <PageHeader onAddLead={() => setAddModalOpen(true)} />
 
         <QueueTabs
           selectedQueue={selectedQueue}
@@ -325,6 +340,13 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         onAction={handlePanelAction}
         onNotesChange={handleNotesChange}
         onEvaluationSave={updateEvaluation}
+      />
+
+      {/* Add Lead Modal */}
+      <AddLeadModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSuccess={handleAddLeadSuccess}
       />
 
       {/* Feedback snackbar */}

@@ -7,3 +7,4 @@ export { ProgressFooter } from './ProgressFooter';
 export { PriorityBadge } from './PriorityBadge';
 export { MetricsGrid } from './MetricsGrid';
 export { AiSuggestionPreview } from './AiSuggestionPreview';
+export { AddLeadModal } from './AddLeadModal';

@@ -99,6 +99,65 @@ export interface UpdateEvaluationResponse {
   updatedAt: string;
 }
 
+// Lead Ingestion types
+export interface IngestLeadRequest {
+  address: string;
+  listingPrice: number;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  squareFootage?: number;
+  yearBuilt?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  units?: number;
+  zillowLink?: string;
+  sellerPhone?: string;
+  sellerEmail?: string;
+  agentName?: string;
+  agentPhone?: string;
+  source?: string;
+  sendFirstMessage?: boolean;
+}
+
+export interface LeadDto {
+  id: string;
+  address: string;
+  listingPrice: number;
+  score?: number;
+  mao?: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface EvaluationSummary {
+  score: number;
+  mao: number;
+  maoSpreadPercent: number;
+  isDisqualified: boolean;
+  disqualifyReason?: string;
+  tier: string;
+}
+
+export interface ConsolidationInfo {
+  oldPrice?: number;
+  newPrice?: number;
+  priceChangePercent?: number;
+  isPriceDropped: boolean;
+  oldScore?: number;
+  newScore?: number;
+}
+
+export interface IngestLeadResponse {
+  lead: LeadDto;
+  evaluation: EvaluationSummary;
+  autoSmsTriggered: boolean;
+  autoSmsError?: string;
+  correlationId: string;
+  wasConsolidated: boolean;
+  consolidation?: ConsolidationInfo;
+}
+
 /**
  * Lead Queue Service
  * Provides API functions for the Review Page queue operations.
@@ -158,6 +217,23 @@ export const leadQueueService = {
    */
   async archiveLead(leadId: string): Promise<void> {
     await axiosInstance.put(`/api/PropertyLeads/${leadId}/archive`);
+  },
+
+  /**
+   * Ingest a new lead with automatic evaluation.
+   * Handles duplicate detection via normalized address - duplicates are consolidated.
+   * @param request The lead data to ingest
+   */
+  async ingestLead(request: IngestLeadRequest): Promise<IngestLeadResponse> {
+    const response = await axiosInstance.post<IngestLeadResponse>(
+      '/api/leads/ingest',
+      {
+        ...request,
+        sendFirstMessage: request.sendFirstMessage ?? false,
+        source: request.source ?? 'manual',
+      }
+    );
+    return response.data;
   },
 };
 

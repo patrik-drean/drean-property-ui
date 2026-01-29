@@ -103,7 +103,7 @@ const Navigation: React.FC = () => {
       onClose={toggleDrawer}
     >
       <Box
-        sx={{ width: 250 }}
+        sx={{ width: 250, bgcolor: '#161b22' }}
         role="presentation"
         onClick={toggleDrawer}
       >
@@ -111,9 +111,9 @@ const Navigation: React.FC = () => {
           <Box sx={{ marginRight: '4px', display: 'flex', alignItems: 'center' }}>
             <Logo width={40} height={27} />
           </Box>
-          <Typography variant="h6" fontWeight="bold" sx={{ lineHeight: 1 }}>PropGuide AI</Typography>
+          <Typography variant="h6" fontWeight="bold" sx={{ lineHeight: 1, color: '#f0f6fc' }}>PropGuide AI</Typography>
         </Box>
-        <Divider />
+        <Divider sx={{ borderColor: '#30363d' }} />
         <List>
           <ListItem
             button
@@ -195,7 +195,7 @@ const Navigation: React.FC = () => {
         </List>
         {user && (
           <>
-            <Divider />
+            <Divider sx={{ borderColor: '#30363d' }} />
             <Box sx={{ p: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <Avatar
@@ -206,10 +206,10 @@ const Navigation: React.FC = () => {
                   {user.name.charAt(0).toUpperCase()}
                 </Avatar>
                 <Box>
-                  <Typography variant="body2" fontWeight={600}>
+                  <Typography variant="body2" fontWeight={600} sx={{ color: '#f0f6fc' }}>
                     {user.name}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" sx={{ color: '#8b949e' }}>
                     {user.email}
                   </Typography>
                 </Box>
@@ -464,14 +464,15 @@ const Navigation: React.FC = () => {
       
       {/* Toolbar placeholder to push content below appbar */}
       <Toolbar sx={{ height: '64px', mb: 2 }} />
-      
+
       {/* Content container with scrolling capabilities */}
-      <Container maxWidth={false} sx={{ 
-        flexGrow: 1, 
-        p: { xs: 1, sm: 2, md: 3 }, 
+      <Container maxWidth={false} sx={{
+        flexGrow: 1,
+        p: { xs: 1, sm: 2, md: 3 },
         height: 'calc(100vh - 64px)',
         overflowY: 'auto',
-        overflowX: 'hidden'
+        overflowX: 'hidden',
+        bgcolor: '#0d1117',
       }}>
         <Outlet />
       </Container>

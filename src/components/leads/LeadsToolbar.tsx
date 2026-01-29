@@ -1,7 +1,7 @@
 import React from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, Chip } from '@mui/material';
 import * as Icons from '@mui/icons-material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 interface LeadsToolbarProps {
   selectedLeads: string[];
@@ -14,6 +14,8 @@ export const LeadsToolbar: React.FC<LeadsToolbarProps> = ({
   onAddLead,
   onBulkDelete,
 }) => {
+  const navigate = useNavigate();
+
   return (
     <Box sx={{
       mb: 3,
@@ -25,6 +27,17 @@ export const LeadsToolbar: React.FC<LeadsToolbarProps> = ({
     }}>
       <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h4" component="h1">Property Leads</Typography>
+        {/* Temporary: Classic indicator chip - remove after migration */}
+        <Chip
+          label="Classic"
+          size="small"
+          sx={{
+            backgroundColor: 'rgba(251, 191, 36, 0.15)',
+            color: '#fbbf24',
+            fontWeight: 500,
+            fontSize: '0.7rem',
+          }}
+        />
       </Box>
       <Box sx={{
         display: 'flex',
@@ -34,6 +47,19 @@ export const LeadsToolbar: React.FC<LeadsToolbarProps> = ({
         justifyContent: { xs: 'stretch', sm: 'flex-end' },
         width: { xs: '100%', sm: 'auto' }
       }}>
+        {/* Temporary: Switch to New View button - remove after migration */}
+        <Button
+          variant="outlined"
+          color="secondary"
+          startIcon={<Icons.AutoAwesome />}
+          onClick={() => navigate('/leads')}
+          sx={{
+            borderRadius: 2,
+            width: { xs: '100%', sm: 'auto' },
+          }}
+        >
+          Try New View
+        </Button>
         <Button
           variant="outlined"
           component={RouterLink}

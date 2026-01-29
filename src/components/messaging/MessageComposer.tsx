@@ -154,7 +154,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   };
 
   return (
-    <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0', backgroundColor: 'white' }}>
+    <Box sx={{ p: 2, borderTop: '1px solid #30363d', backgroundColor: '#161b22' }}>
       <Box sx={{ mb: 1 }}>
         <TemplatePicker
           variables={templateVariables}
@@ -176,7 +176,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           error={isOverLimit}
           helperText={
             message.length > 0 ? (
-              <Box component="span" sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Box component="span" sx={{ display: 'flex', justifyContent: 'space-between', color: '#8b949e' }}>
                 <span>{message.length} / {MAX_TOTAL_LENGTH}</span>
                 {segments > 1 && <span>({segments} segments)</span>}
               </Box>
@@ -185,6 +185,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           sx={{
             '& .MuiOutlinedInput-root': {
               borderRadius: 2,
+              bgcolor: '#0d1117',
             },
           }}
         />
@@ -193,10 +194,10 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           onClick={handleSend}
           disabled={!message.trim() || sending || isOverLimit}
           sx={{
-            backgroundColor: 'primary.main',
-            color: 'white',
-            '&:hover': { backgroundColor: 'primary.dark' },
-            '&.Mui-disabled': { backgroundColor: 'action.disabledBackground' },
+            backgroundColor: '#4ade80',
+            color: '#0d1117',
+            '&:hover': { backgroundColor: '#22c55e' },
+            '&.Mui-disabled': { backgroundColor: '#21262d', color: '#8b949e' },
           }}
         >
           {sending ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}

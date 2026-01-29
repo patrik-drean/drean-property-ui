@@ -213,12 +213,12 @@ export const ReportsPage: React.FC = () => {
   }, [location.search, currentTab]);
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3, px: 2 }}>
+    <Container maxWidth="xl" sx={{ py: 3, px: 2, bgcolor: '#0d1117', minHeight: '100%' }}>
       {/* Page header */}
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
         <Box display="flex" alignItems="center">
-          <AssessmentIcon color="primary" sx={{ mr: 1, fontSize: 32 }} />
-          <Typography variant="h4" component="h1" fontWeight="bold">
+          <AssessmentIcon sx={{ mr: 1, fontSize: 32, color: '#4ade80' }} />
+          <Typography variant="h4" component="h1" fontWeight="bold" sx={{ color: '#f0f6fc' }}>
             Portfolio Reports
           </Typography>
         </Box>
@@ -251,8 +251,8 @@ export const ReportsPage: React.FC = () => {
       {/* Loading state */}
       {loading && (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-          <CircularProgress size={40} />
-          <Typography variant="h6" ml={2}>
+          <CircularProgress size={40} sx={{ color: '#4ade80' }} />
+          <Typography variant="h6" ml={2} sx={{ color: '#8b949e' }}>
             Loading portfolio reports...
           </Typography>
         </Box>
@@ -275,12 +275,12 @@ export const ReportsPage: React.FC = () => {
 
       {/* No properties state */}
       {!loading && properties.length === 0 && (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <HomeIcon color="disabled" sx={{ fontSize: 64, mb: 2 }} />
-          <Typography variant="h5" color="text.secondary" mb={2}>
+        <Paper sx={{ p: 4, textAlign: 'center', bgcolor: '#161b22' }}>
+          <HomeIcon sx={{ fontSize: 64, mb: 2, color: '#8b949e' }} />
+          <Typography variant="h5" sx={{ color: '#8b949e', mb: 2 }}>
             No Properties Found
           </Typography>
-          <Typography variant="body1" color="text.secondary" mb={3}>
+          <Typography variant="body1" sx={{ color: '#8b949e', mb: 3 }}>
             Add some properties to your portfolio to see detailed reports and analysis.
           </Typography>
           <Button
@@ -288,6 +288,7 @@ export const ReportsPage: React.FC = () => {
             component={RouterLink}
             to="/properties"
             startIcon={<HomeIcon />}
+            sx={{ bgcolor: '#4ade80', color: '#0d1117', '&:hover': { bgcolor: '#22c55e' } }}
           >
             Go to Properties
           </Button>
@@ -296,19 +297,19 @@ export const ReportsPage: React.FC = () => {
 
       {/* Reports content */}
       {!loading && properties.length > 0 && (
-        <Paper sx={{ width: '100%' }}>
+        <Paper sx={{ width: '100%', bgcolor: '#161b22' }}>
           {/* Refresh indicator */}
           {refreshing && (
             <Box display="flex" alignItems="center" justifyContent="center" p={2}>
-              <CircularProgress size={20} />
-              <Typography variant="body2" ml={1}>
+              <CircularProgress size={20} sx={{ color: '#4ade80' }} />
+              <Typography variant="body2" ml={1} sx={{ color: '#8b949e' }}>
                 Refreshing reports...
               </Typography>
             </Box>
           )}
 
           {/* Tabs */}
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Box sx={{ borderBottom: 1, borderColor: '#30363d' }}>
             <Tabs
               value={currentTab}
               onChange={handleTabChange}

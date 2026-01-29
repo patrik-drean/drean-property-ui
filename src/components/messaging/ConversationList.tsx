@@ -99,9 +99,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#161b22' }}>
       {/* Search */}
-      <Box sx={{ p: 1, borderBottom: '1px solid #e0e0e0' }}>
+      <Box sx={{ p: 1, borderBottom: '1px solid #30363d' }}>
         <TextField
           fullWidth
           size="small"
@@ -111,17 +111,22 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
+                <SearchIcon fontSize="small" sx={{ color: '#8b949e' }} />
               </InputAdornment>
             ),
+          }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              bgcolor: '#0d1117',
+            },
           }}
         />
       </Box>
 
       {/* Conversation List */}
-      <List sx={{ flex: 1, overflow: 'auto', py: 0 }}>
+      <List sx={{ flex: 1, overflow: 'auto', py: 0, bgcolor: '#161b22' }}>
         {filteredConversations.length === 0 ? (
-          <Box p={2} textAlign="center" color="text.secondary">
+          <Box p={2} textAlign="center" sx={{ color: '#8b949e' }}>
             <Typography variant="body2">
               {search ? 'No matching conversations' : 'No conversations yet'}
             </Typography>
@@ -134,9 +139,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               onClick={() => onSelect(conv)}
               onContextMenu={(e) => handleContextMenu(e, conv.id)}
               sx={{
-                borderBottom: '1px solid #f0f0f0',
+                borderBottom: '1px solid #21262d',
                 '&.Mui-selected': {
-                  backgroundColor: 'action.selected',
+                  backgroundColor: '#21262d',
+                },
+                '&:hover': {
+                  backgroundColor: '#21262d',
                 },
               }}
             >
@@ -146,7 +154,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   color="primary"
                   invisible={conv.unreadCount === 0}
                 >
-                  <Avatar>
+                  <Avatar sx={{ bgcolor: '#30363d', color: '#8b949e' }}>
                     <PersonIcon />
                   </Avatar>
                 </Badge>
@@ -158,11 +166,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                       variant="body1"
                       fontWeight={conv.unreadCount > 0 ? 600 : 400}
                       noWrap
-                      sx={{ maxWidth: isMobile ? 120 : 150 }}
+                      sx={{ maxWidth: isMobile ? 120 : 150, color: '#f0f6fc' }}
                     >
                       {conv.displayName || conv.phoneNumber}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: '#8b949e' }}>
                       {formatTime(conv.lastMessageAt)}
                     </Typography>
                   </Box>
@@ -170,9 +178,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 secondary={
                   <Typography
                     variant="body2"
-                    color="text.secondary"
                     noWrap
                     fontWeight={conv.unreadCount > 0 ? 500 : 400}
+                    sx={{ color: '#8b949e' }}
                   >
                     {conv.lastMessagePreview || 'No messages'}
                   </Typography>
@@ -185,10 +193,10 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   onClick={(e) => handleMarkUnreadDirect(e, conv.id)}
                   sx={{
                     ml: 1,
-                    color: 'text.secondary',
+                    color: '#8b949e',
                     '&:hover': {
-                      color: 'primary.main',
-                      backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                      color: '#4ade80',
+                      backgroundColor: 'rgba(74, 222, 128, 0.15)',
                     },
                   }}
                   aria-label="Mark as unread"

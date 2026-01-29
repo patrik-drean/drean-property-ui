@@ -8,6 +8,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { PropertiesProvider } from './contexts/PropertiesContext';
 import { MessagingPopoverProvider } from './contexts/MessagingPopoverContext';
 import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionContext';
+import { WebSocketProvider } from './contexts/WebSocketContext';
 import { MessagingPopover } from './components/messaging/MessagingPopover';
 import { TrialExpiredPaywall } from './components/shared/TrialExpiredPaywall';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -17,6 +18,7 @@ import PropertiesPage from './components/PropertiesPage';
 import ArchivedPropertiesPage from './components/ArchivedPropertiesPage';
 import Calculator from './components/Calculator';
 import PropertyLeadsPage from './components/PropertyLeadsPage';
+import { ReviewPage } from './components/leads/ReviewPage';
 import PropertyDetailsPage from './pages/PropertyDetailsPage';
 import InvestmentReportPage from './pages/InvestmentReportPage';
 import TeamPage from './components/TeamPage';
@@ -64,7 +66,8 @@ const router = createHashRouter(
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/archived" element={<ArchivedPropertiesPage />} />
           <Route path="/calculator" element={<Calculator />} />
-          <Route path="/leads" element={<PropertyLeadsPage />} />
+          <Route path="/leads" element={<ReviewPage />} />
+          <Route path="/leads/classic" element={<PropertyLeadsPage />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/messaging" element={<MessagingPage />} />
           <Route path="/messaging/templates" element={<TemplatesPage />} />
@@ -82,15 +85,17 @@ const App: React.FC = () => {
         <CssBaseline />
         <AuthProvider>
           <SubscriptionProvider>
-            <PaywallGuard>
-              <PropertiesProvider>
-                <MessagingPopoverProvider>
-                  <RouterProvider router={router} />
-                  {/* Global messaging popover - persists across navigation */}
-                  <MessagingPopover />
-                </MessagingPopoverProvider>
-              </PropertiesProvider>
-            </PaywallGuard>
+            <WebSocketProvider>
+              <PaywallGuard>
+                <PropertiesProvider>
+                  <MessagingPopoverProvider>
+                    <RouterProvider router={router} />
+                    {/* Global messaging popover - persists across navigation */}
+                    <MessagingPopover />
+                  </MessagingPopoverProvider>
+                </PropertiesProvider>
+              </PaywallGuard>
+            </WebSocketProvider>
           </SubscriptionProvider>
         </AuthProvider>
       </ThemeProvider>

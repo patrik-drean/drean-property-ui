@@ -163,8 +163,8 @@ export const PortfolioCashFlowReport: React.FC<PortfolioCashFlowReportProps> = (
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-        <Typography variant="h6" ml={2}>
+        <CircularProgress sx={{ color: '#4ade80' }} />
+        <Typography variant="h6" ml={2} sx={{ color: '#8b949e' }}>
           Generating cash flow report...
         </Typography>
       </Box>

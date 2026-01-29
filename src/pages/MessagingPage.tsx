@@ -240,7 +240,7 @@ export const MessagingPage: React.FC = () => {
   if (subscriptionLoading || loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+        <CircularProgress sx={{ color: '#4ade80' }} />
       </Box>
     );
   }
@@ -330,9 +330,10 @@ export const MessagingPage: React.FC = () => {
         sx={{
           flex: 1,
           display: 'flex',
-          border: '1px solid #e0e0e0',
+          border: '1px solid #30363d',
           borderRadius: 1,
           overflow: 'hidden',
+          bgcolor: '#0d1117',
         }}
       >
         {/* Desktop: Conversation List */}
@@ -340,8 +341,9 @@ export const MessagingPage: React.FC = () => {
           <Box
             sx={{
               width: 320,
-              borderRight: '1px solid #e0e0e0',
+              borderRight: '1px solid #30363d',
               overflow: 'auto',
+              bgcolor: '#161b22',
             }}
           >
             {conversationList}
@@ -354,14 +356,14 @@ export const MessagingPage: React.FC = () => {
             anchor="left"
             open={mobileDrawerOpen}
             onClose={() => setMobileDrawerOpen(false)}
-            PaperProps={{ sx: { width: '80%', maxWidth: 320 } }}
+            PaperProps={{ sx: { width: '80%', maxWidth: 320, bgcolor: '#161b22' } }}
           >
-            <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
+            <Box sx={{ p: 2, borderBottom: '1px solid #30363d' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <IconButton onClick={() => setMobileDrawerOpen(false)} edge="start">
                   <ArrowBackIcon />
                 </IconButton>
-                <Typography variant="h6">Conversations</Typography>
+                <Typography variant="h6" sx={{ color: '#f0f6fc' }}>Conversations</Typography>
               </Box>
             </Box>
             {conversationList}
@@ -369,7 +371,7 @@ export const MessagingPage: React.FC = () => {
         )}
 
         {/* Conversation View */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: '#0d1117' }}>
           {selectedConversation ? (
             <ConversationView
               conversation={selectedConversation}
@@ -386,8 +388,7 @@ export const MessagingPage: React.FC = () => {
               justifyContent="center"
               alignItems="center"
               flex={1}
-              color="text.secondary"
-              sx={{ p: 2, textAlign: 'center' }}
+              sx={{ p: 2, textAlign: 'center', color: '#8b949e' }}
             >
               <Typography>
                 {isMobile

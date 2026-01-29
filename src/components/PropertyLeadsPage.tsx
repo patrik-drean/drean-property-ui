@@ -213,7 +213,7 @@ const PropertyLeadsPage: React.FC = () => {
     setCurrentTab(newValue);
     const newSearchParams = new URLSearchParams(window.location.search);
     newSearchParams.set('tab', newValue.toString());
-    navigate(`/leads?${newSearchParams.toString()}`, { replace: true });
+    navigate(`/leads/classic?${newSearchParams.toString()}`, { replace: true });
   };
 
   // Toggle favorite tab

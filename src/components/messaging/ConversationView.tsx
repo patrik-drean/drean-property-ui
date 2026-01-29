@@ -61,12 +61,13 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#0d1117' }}>
       {/* Header */}
       <Box
         sx={{
           p: 2,
-          borderBottom: '1px solid #e0e0e0',
+          borderBottom: '1px solid #30363d',
+          bgcolor: '#161b22',
           display: 'flex',
           alignItems: 'center',
           gap: 2,
@@ -80,9 +81,10 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
               rel="noopener noreferrer"
               size="small"
               sx={{
-                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                backgroundColor: 'rgba(96, 165, 250, 0.15)',
+                color: '#60a5fa',
                 '&:hover': {
-                  backgroundColor: 'rgba(25, 118, 210, 0.15)'
+                  backgroundColor: 'rgba(96, 165, 250, 0.25)'
                 }
               }}
             >
@@ -91,12 +93,12 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
           </Tooltip>
         )}
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h6">
+          <Typography variant="h6" sx={{ color: '#f0f6fc' }}>
             {conv.displayName || conv.phoneNumber}
           </Typography>
           <Box display="flex" alignItems="center" gap={1}>
-            <PhoneIcon fontSize="small" color="action" />
-            <Typography variant="body2" color="text.secondary">
+            <PhoneIcon fontSize="small" sx={{ color: '#8b949e' }} />
+            <Typography variant="body2" sx={{ color: '#8b949e' }}>
               {conv.phoneNumber}
             </Typography>
             {conv.contactId && (
@@ -120,9 +122,10 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
               onClick={handleMarkAsUnread}
               size="small"
               sx={{
-                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                backgroundColor: 'rgba(96, 165, 250, 0.15)',
+                color: '#60a5fa',
                 '&:hover': {
-                  backgroundColor: 'rgba(25, 118, 210, 0.15)'
+                  backgroundColor: 'rgba(96, 165, 250, 0.25)'
                 }
               }}
               aria-label="Mark conversation as unread"
@@ -139,7 +142,7 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
           flex: 1,
           overflow: 'auto',
           p: 2,
-          backgroundColor: '#f5f5f5',
+          backgroundColor: '#0d1117',
         }}
       >
         {messages.length === 0 ? (
@@ -148,7 +151,7 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
             justifyContent="center"
             alignItems="center"
             height="100%"
-            color="text.secondary"
+            sx={{ color: '#8b949e' }}
           >
             <Typography>No messages yet. Send the first message!</Typography>
           </Box>

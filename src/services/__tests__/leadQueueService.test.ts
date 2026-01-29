@@ -1,0 +1,609 @@
+import {
+  LeadQueueResponse,
+  LeadQueueItem,
+  QueueCounts,
+  UpdateEvaluationRequest,
+  UpdateEvaluationResponse,
+  QueueType,
+  IngestLeadRequest,
+  IngestLeadResponse,
+} from '../leadQueueService';
+
+// Mock axios module
+const mockGet = jest.fn();
+const mockPut = jest.fn();
+const mockPost = jest.fn();
+
+jest.mock('../api', () => ({
+  axiosInstance: {
+    get: (...args: any[]) => mockGet(...args),
+    put: (...args: any[]) => mockPut(...args),
+    post: (...args: any[]) => mockPost(...args),
+  },
+}));
+
+// Import service AFTER setting up mocks
+import { leadQueueService } from '../leadQueueService';
+
+// Test fixtures
+const mockLeadQueueItem: LeadQueueItem = {
+  id: 'lead-1',
+  address: '123 Main St',
+  city: 'Austin',
+  state: 'TX',
+  zipCode: '78701',
+  listingPrice: 250000,
+  score: 85,
+  priority: 'high',
+  priorityScore: 92,
+  status: 'New',
+  createdAt: '2025-01-15T10:00:00Z',
+  timeAgo: '2 hours ago',
+  metrics: {
+    arv: 320000,
+    arvConfidence: 85,
+    arvSource: 'ai',
+    rehabEstimate: 45000,
+    rehabConfidence: 72,
+    rehabSource: 'ai',
+    mao: 179000,
+    spreadPercent: 28,
+    neighborhoodGrade: 'B+',
+  },
+  property: {
+    beds: 3,
+    baths: 2,
+    sqft: 1850,
+    yearBuilt: 1985,
+    daysOnMarket: 15,
+  },
+  contact: {
+    sellerPhone: '+15551234567',
+    sellerEmail: 'seller@example.com',
+    agentName: 'Jane Agent',
+  },
+  suggestedTemplate: {
+    name: 'Initial Outreach',
+    preview: 'Hi, I noticed your property at...',
+  },
+  zillowLink: 'https://zillow.com/123-main-st',
+  followUpDue: false,
+};
+
+const mockQueueCounts: QueueCounts = {
+  actionNow: 5,
+  followUp: 12,
+  negotiating: 3,
+  all: 20,
+};
+
+const mockQueueResponse: LeadQueueResponse = {
+  leads: [mockLeadQueueItem],
+  queueCounts: mockQueueCounts,
+  pagination: {
+    page: 1,
+    pageSize: 20,
+    totalItems: 1,
+    totalPages: 1,
+  },
+};
+
+describe('leadQueueService', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('getQueue', () => {
+    it('should fetch queue with default parameters', async () => {
+      mockGet.mockResolvedValue({ data: mockQueueResponse });
+
+      const result = await leadQueueService.getQueue();
+
+      expect(mockGet).toHaveBeenCalledWith('/api/leads/queue?type=all&page=1&pageSize=20');
+      expect(result).toEqual(mockQueueResponse);
+      expect(result.leads).toHaveLength(1);
+    });
+
+    it('should fetch queue with custom queue type', async () => {
+      mockGet.mockResolvedValue({ data: mockQueueResponse });
+
+      await leadQueueService.getQueue('action_now');
+
+      expect(mockGet).toHaveBeenCalledWith('/api/leads/queue?type=action_now&page=1&pageSize=20');
+    });
+
+    it('should fetch queue with custom pagination', async () => {
+      mockGet.mockResolvedValue({ data: mockQueueResponse });
+
+      await leadQueueService.getQueue('all', 2, 50);
+
+      expect(mockGet).toHaveBeenCalledWith('/api/leads/queue?type=all&page=2&pageSize=50');
+    });
+
+    it('should support all queue types', async () => {
+      mockGet.mockResolvedValue({ data: mockQueueResponse });
+
+      const queueTypes: QueueType[] = ['action_now', 'follow_up', 'negotiating', 'all'];
+
+      for (const type of queueTypes) {
+        await leadQueueService.getQueue(type);
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining(`type=${type}`));
+      }
+    });
+
+    it('should return empty leads array when no leads exist', async () => {
+      const emptyResponse: LeadQueueResponse = {
+        leads: [],
+        queueCounts: { actionNow: 0, followUp: 0, negotiating: 0, all: 0 },
+        pagination: { page: 1, pageSize: 20, totalItems: 0, totalPages: 0 },
+      };
+      mockGet.mockResolvedValue({ data: emptyResponse });
+
+      const result = await leadQueueService.getQueue();
+
+      expect(result.leads).toEqual([]);
+      expect(result.queueCounts.all).toBe(0);
+    });
+
+    it('should throw error when API request fails', async () => {
+      mockGet.mockRejectedValue(new Error('Network error'));
+
+      await expect(leadQueueService.getQueue()).rejects.toThrow('Network error');
+    });
+
+    it('should throw error for unauthorized access', async () => {
+      mockGet.mockRejectedValue({ response: { status: 401 } });
+
+      await expect(leadQueueService.getQueue()).rejects.toEqual({
+        response: { status: 401 },
+      });
+    });
+  });
+
+  describe('updateEvaluation', () => {
+    const mockEvaluationResponse: UpdateEvaluationResponse = {
+      id: 'lead-1',
+      metrics: {
+        arv: 350000,
+        arvConfidence: undefined,
+        arvSource: 'manual',
+        arvNote: 'Updated based on recent comps',
+        rehabEstimate: 50000,
+        rehabConfidence: undefined,
+        rehabSource: 'manual',
+        mao: 195000,
+        spreadPercent: 22,
+        neighborhoodGrade: 'B+',
+      },
+      updatedAt: '2025-01-16T10:00:00Z',
+    };
+
+    it('should update evaluation with ARV only', async () => {
+      const request: UpdateEvaluationRequest = {
+        arv: 350000,
+        arvNote: 'Updated based on recent comps',
+      };
+      mockPut.mockResolvedValue({ data: mockEvaluationResponse });
+
+      const result = await leadQueueService.updateEvaluation('lead-1', request);
+
+      expect(mockPut).toHaveBeenCalledWith('/api/leads/lead-1/evaluation', request);
+      expect(result.metrics.arv).toBe(350000);
+      expect(result.metrics.arvSource).toBe('manual');
+    });
+
+    it('should update evaluation with rehab estimate only', async () => {
+      const request: UpdateEvaluationRequest = {
+        rehabEstimate: 50000,
+        rehabNote: 'Needs new roof and HVAC',
+      };
+      mockPut.mockResolvedValue({ data: mockEvaluationResponse });
+
+      await leadQueueService.updateEvaluation('lead-1', request);
+
+      expect(mockPut).toHaveBeenCalledWith('/api/leads/lead-1/evaluation', request);
+    });
+
+    it('should update evaluation with rent estimate', async () => {
+      const request: UpdateEvaluationRequest = {
+        rentEstimate: 2500,
+        rentNote: 'Based on local market',
+      };
+      mockPut.mockResolvedValue({ data: mockEvaluationResponse });
+
+      await leadQueueService.updateEvaluation('lead-1', request);
+
+      expect(mockPut).toHaveBeenCalledWith('/api/leads/lead-1/evaluation', request);
+    });
+
+    it('should update multiple evaluation fields at once', async () => {
+      const request: UpdateEvaluationRequest = {
+        arv: 350000,
+        arvNote: 'Updated ARV',
+        rehabEstimate: 50000,
+        rehabNote: 'Updated rehab',
+        rentEstimate: 2500,
+        rentNote: 'Updated rent',
+      };
+      mockPut.mockResolvedValue({ data: mockEvaluationResponse });
+
+      await leadQueueService.updateEvaluation('lead-1', request);
+
+      expect(mockPut).toHaveBeenCalledWith('/api/leads/lead-1/evaluation', request);
+    });
+
+    it('should return server-calculated MAO and spread', async () => {
+      const request: UpdateEvaluationRequest = { arv: 350000 };
+      mockPut.mockResolvedValue({ data: mockEvaluationResponse });
+
+      const result = await leadQueueService.updateEvaluation('lead-1', request);
+
+      // Server should recalculate these values
+      expect(result.metrics.mao).toBe(195000);
+      expect(result.metrics.spreadPercent).toBe(22);
+    });
+
+    it('should throw error when lead not found', async () => {
+      const request: UpdateEvaluationRequest = { arv: 350000 };
+      mockPut.mockRejectedValue({ response: { status: 404 } });
+
+      await expect(leadQueueService.updateEvaluation('invalid-id', request)).rejects.toEqual({
+        response: { status: 404 },
+      });
+    });
+
+    it('should throw error when API request fails', async () => {
+      const request: UpdateEvaluationRequest = { arv: 350000 };
+      mockPut.mockRejectedValue(new Error('Network error'));
+
+      await expect(leadQueueService.updateEvaluation('lead-1', request)).rejects.toThrow(
+        'Network error'
+      );
+    });
+  });
+
+  describe('updateStatus', () => {
+    it('should update lead status successfully', async () => {
+      mockPut.mockResolvedValue({});
+
+      await leadQueueService.updateStatus('lead-1', 'Contacted');
+
+      expect(mockPut).toHaveBeenCalledWith('/api/PropertyLeads/lead-1', { status: 'Contacted' });
+    });
+
+    it('should support various status values', async () => {
+      mockPut.mockResolvedValue({});
+
+      const statuses = ['New', 'Contacted', 'Negotiating', 'Closed', 'Lost'];
+
+      for (const status of statuses) {
+        await leadQueueService.updateStatus('lead-1', status);
+        expect(mockPut).toHaveBeenCalledWith('/api/PropertyLeads/lead-1', { status });
+      }
+    });
+
+    it('should throw error when lead not found', async () => {
+      mockPut.mockRejectedValue({ response: { status: 404 } });
+
+      await expect(leadQueueService.updateStatus('invalid-id', 'Contacted')).rejects.toEqual({
+        response: { status: 404 },
+      });
+    });
+
+    it('should throw error when API request fails', async () => {
+      mockPut.mockRejectedValue(new Error('Network error'));
+
+      await expect(leadQueueService.updateStatus('lead-1', 'Contacted')).rejects.toThrow(
+        'Network error'
+      );
+    });
+  });
+
+  describe('archiveLead', () => {
+    it('should archive lead successfully', async () => {
+      mockPut.mockResolvedValue({});
+
+      await leadQueueService.archiveLead('lead-1');
+
+      expect(mockPut).toHaveBeenCalledWith('/api/PropertyLeads/lead-1/archive');
+    });
+
+    it('should throw error when lead not found', async () => {
+      mockPut.mockRejectedValue({ response: { status: 404 } });
+
+      await expect(leadQueueService.archiveLead('invalid-id')).rejects.toEqual({
+        response: { status: 404 },
+      });
+    });
+
+    it('should throw error when API request fails', async () => {
+      mockPut.mockRejectedValue(new Error('Network error'));
+
+      await expect(leadQueueService.archiveLead('lead-1')).rejects.toThrow('Network error');
+    });
+
+    it('should throw error for unauthorized access', async () => {
+      mockPut.mockRejectedValue({ response: { status: 403 } });
+
+      await expect(leadQueueService.archiveLead('lead-1')).rejects.toEqual({
+        response: { status: 403 },
+      });
+    });
+  });
+
+  describe('ingestLead', () => {
+    const mockIngestResponse: IngestLeadResponse = {
+      lead: {
+        id: 'lead-new-1',
+        address: '123 Test St, Austin, TX 78701',
+        listingPrice: 250000,
+        score: 8,
+        mao: 175000,
+        status: 'New',
+        createdAt: '2025-01-28T10:00:00Z',
+      },
+      evaluation: {
+        score: 8,
+        mao: 175000,
+        maoSpreadPercent: 30,
+        isDisqualified: false,
+        tier: 'quick',
+      },
+      autoSmsTriggered: false,
+      correlationId: 'abc123def',
+      wasConsolidated: false,
+    };
+
+    const mockConsolidatedResponse: IngestLeadResponse = {
+      ...mockIngestResponse,
+      wasConsolidated: true,
+      consolidation: {
+        oldPrice: 275000,
+        newPrice: 250000,
+        priceChangePercent: -9.1,
+        isPriceDropped: true,
+        oldScore: 6,
+        newScore: 8,
+      },
+    };
+
+    it('should ingest lead with required fields only', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St, Austin, TX 78701',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(mockPost).toHaveBeenCalledWith('/api/leads/ingest', {
+        address: '123 Test St, Austin, TX 78701',
+        listingPrice: 250000,
+        sendFirstMessage: false,
+        source: 'manual',
+      });
+      expect(result).toEqual(mockIngestResponse);
+    });
+
+    it('should ingest lead with all optional fields', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+        city: 'Austin',
+        state: 'TX',
+        zipCode: '78701',
+        squareFootage: 1500,
+        yearBuilt: 1985,
+        bedrooms: 3,
+        bathrooms: 2,
+        units: 1,
+        zillowLink: 'https://zillow.com/homedetails/123',
+        sellerPhone: '555-123-4567',
+        sellerEmail: 'seller@example.com',
+        agentName: 'John Agent',
+        agentPhone: '555-987-6543',
+        source: 'zillow-scraper',
+        sendFirstMessage: false,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      await leadQueueService.ingestLead(request);
+
+      expect(mockPost).toHaveBeenCalledWith('/api/leads/ingest', request);
+    });
+
+    it('should default sendFirstMessage to false when not specified', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      await leadQueueService.ingestLead(request);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/leads/ingest',
+        expect.objectContaining({ sendFirstMessage: false })
+      );
+    });
+
+    it('should default source to "manual" when not specified', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      await leadQueueService.ingestLead(request);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/leads/ingest',
+        expect.objectContaining({ source: 'manual' })
+      );
+    });
+
+    it('should use provided source when specified', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+        source: 'lambda-scraper',
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      await leadQueueService.ingestLead(request);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/leads/ingest',
+        expect.objectContaining({ source: 'lambda-scraper' })
+      );
+    });
+
+    it('should return evaluation summary with score and MAO', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.evaluation.score).toBe(8);
+      expect(result.evaluation.mao).toBe(175000);
+      expect(result.evaluation.maoSpreadPercent).toBe(30);
+      expect(result.evaluation.tier).toBe('quick');
+    });
+
+    it('should handle consolidated lead response (duplicate detection)', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockConsolidatedResponse });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.wasConsolidated).toBe(true);
+      expect(result.consolidation).toBeDefined();
+      expect(result.consolidation?.isPriceDropped).toBe(true);
+      expect(result.consolidation?.priceChangePercent).toBe(-9.1);
+    });
+
+    it('should handle auto-SMS triggered response', async () => {
+      const responseWithSms: IngestLeadResponse = {
+        ...mockIngestResponse,
+        autoSmsTriggered: true,
+      };
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+        sendFirstMessage: true,
+      };
+      mockPost.mockResolvedValue({ data: responseWithSms });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.autoSmsTriggered).toBe(true);
+    });
+
+    it('should handle auto-SMS error response', async () => {
+      const responseWithSmsError: IngestLeadResponse = {
+        ...mockIngestResponse,
+        autoSmsTriggered: false,
+        autoSmsError: 'Failed to send SMS: invalid phone number',
+      };
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+        sendFirstMessage: true,
+      };
+      mockPost.mockResolvedValue({ data: responseWithSmsError });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.autoSmsTriggered).toBe(false);
+      expect(result.autoSmsError).toBe('Failed to send SMS: invalid phone number');
+    });
+
+    it('should handle disqualified lead response', async () => {
+      const disqualifiedResponse: IngestLeadResponse = {
+        ...mockIngestResponse,
+        evaluation: {
+          ...mockIngestResponse.evaluation,
+          score: 3,
+          isDisqualified: true,
+          disqualifyReason: 'Price too high relative to ARV',
+        },
+      };
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 500000,
+      };
+      mockPost.mockResolvedValue({ data: disqualifiedResponse });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.evaluation.isDisqualified).toBe(true);
+      expect(result.evaluation.disqualifyReason).toBe('Price too high relative to ARV');
+    });
+
+    it('should return correlation ID for tracking', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      const result = await leadQueueService.ingestLead(request);
+
+      expect(result.correlationId).toBe('abc123def');
+    });
+
+    it('should throw error when API request fails', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockRejectedValue(new Error('Network error'));
+
+      await expect(leadQueueService.ingestLead(request)).rejects.toThrow('Network error');
+    });
+
+    it('should throw error for unauthorized access', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockRejectedValue({ response: { status: 401 } });
+
+      await expect(leadQueueService.ingestLead(request)).rejects.toEqual({
+        response: { status: 401 },
+      });
+    });
+
+    it('should throw error for validation failure', async () => {
+      const request: IngestLeadRequest = {
+        address: '',
+        listingPrice: 0,
+      };
+      mockPost.mockRejectedValue({
+        response: { status: 400, data: { detail: 'Address is required' } },
+      });
+
+      await expect(leadQueueService.ingestLead(request)).rejects.toEqual({
+        response: { status: 400, data: { detail: 'Address is required' } },
+      });
+    });
+
+    it('should throw error for server error', async () => {
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+      };
+      mockPost.mockRejectedValue({ response: { status: 500 } });
+
+      await expect(leadQueueService.ingestLead(request)).rejects.toEqual({
+        response: { status: 500 },
+      });
+    });
+  });
+});

@@ -1,25 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { getScoreColor, getScoreLabel } from '../../types/queue';
 
-// Score color mapping based on ranges (matches lead table)
-export const getScoreColor = (score: number): string => {
-  if (score >= 8) return '#10b981'; // emerald - Excellent (8-10)
-  if (score >= 5) return '#eab308'; // yellow - Average (5-7)
-  if (score >= 1) return '#ef4444'; // red - Below Target (1-4)
-  return '#6b7280'; // gray - Not Scored
-};
+// Re-export for backward compatibility with components that import from here
+export { getScoreColor, getScoreLabel };
 
-export const getScoreLabel = (score: number): string => {
-  if (score >= 8) return 'Excellent Deal';
-  if (score >= 5) return 'Average';
-  if (score >= 1) return 'Below Target';
-  return 'Not Scored';
-};
-
+// Text color helper - unique to this component for contrast on colored backgrounds
 export const getScoreTextColor = (score: number): string => {
-  // Yellow needs dark text for readability
-  if (score >= 5 && score < 8) return '#000000';
+  // Yellow and light green need dark text for readability
+  if (score >= 5 && score < 9) return '#000000';
   return '#ffffff';
 };
 

@@ -159,8 +159,14 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
   // Ref to track if this is the initial fetch
   const isInitialFetch = useRef(true);
 
+  // Ref to track the current request to avoid race conditions
+  const requestIdRef = useRef(0);
+
   // Fetch queue data
   const fetchQueue = useCallback(async () => {
+    // Increment request ID to track this specific request
+    const currentRequestId = ++requestIdRef.current;
+
     try {
       if (isInitialFetch.current) {
         setLoading(true);
@@ -169,19 +175,31 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
 
       const response = await leadQueueService.getQueue(selectedQueue, page, pageSize);
 
+      // Only update state if this is still the current request (avoid race conditions)
+      if (currentRequestId !== requestIdRef.current) {
+        return; // A newer request was made, ignore this stale response
+      }
+
       setLeads(response.leads.map(mapToQueueLead));
       setQueueCounts(transformQueueCounts(response.queueCounts));
       setTotalPages(response.pagination.totalPages);
 
       isInitialFetch.current = false;
     } catch (err) {
+      // Only handle errors if this is still the current request
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
       console.error('Failed to fetch lead queue:', err);
       setError('Failed to load leads. Please try again.');
       if (!isInitialFetch.current) {
         notify('Failed to load leads', 'error');
       }
     } finally {
-      setLoading(false);
+      // Only update loading if this is still the current request
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [selectedQueue, page, pageSize, notify]);
 

@@ -181,6 +181,43 @@ const handleCurrencyInput = (value: string): number => {
   return parseInt(cleaned, 10) || 0;
 };
 
+// Parse city, state, and zip from full address string
+// Handles formats like "123 Main St, San Antonio, TX 78227" or "123 Main St, San Antonio, TX"
+const parseAddressComponents = (address: string): { city: string; state: string; zipCode: string } => {
+  const result = { city: '', state: '', zipCode: '' };
+
+  if (!address) return result;
+
+  // Try to extract ZIP code (5 digits at end, optionally with -4 extension)
+  const zipMatch = address.match(/\b(\d{5})(?:-\d{4})?\s*$/);
+  if (zipMatch) {
+    result.zipCode = zipMatch[1];
+  }
+
+  // Split by comma to get parts
+  const parts = address.split(',').map(p => p.trim());
+
+  if (parts.length >= 2) {
+    // Last part should be "State ZIP" or just "State"
+    const lastPart = parts[parts.length - 1];
+    // Match state abbreviation (2 uppercase letters) with optional zip
+    const stateMatch = lastPart.match(/^([A-Z]{2})\s*(\d{5})?/);
+    if (stateMatch) {
+      result.state = stateMatch[1];
+      if (stateMatch[2] && !result.zipCode) {
+        result.zipCode = stateMatch[2];
+      }
+    }
+
+    // Second to last part should be the city
+    if (parts.length >= 2) {
+      result.city = parts[parts.length - 2];
+    }
+  }
+
+  return result;
+};
+
 export const AddLeadModal: React.FC<AddLeadModalProps> = ({
   open,
   onClose,
@@ -235,6 +272,17 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
       const results = extractScoreResults(data);
       setScoreResults(results);
 
+      // Parse address components as fallback if API doesn't provide them
+      const addressComponents = parseAddressComponents(data.address || '');
+
+      // Also check metadata for city/state/zip (Lambda may include these there)
+      const metaCity = data.metadata?.city;
+      const metaState = data.metadata?.state;
+      const metaZipCode = data.metadata?.zipcode || data.metadata?.zipCode;
+      const metaYearBuilt = data.metadata?.yearBuilt;
+      const metaBedrooms = data.metadata?.beds || data.metadata?.bedrooms;
+      const metaBathrooms = data.metadata?.baths || data.metadata?.bathrooms;
+
       // Populate form fields with scored data
       setFormData((prev) => ({
         ...prev,
@@ -242,7 +290,14 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
         listingPrice: data.listingPrice || prev.listingPrice,
         zillowLink: data.zillowLink || prev.zillowLink,
         squareFootage: data.sqft || prev.squareFootage,
+        yearBuilt: data.yearBuilt || metaYearBuilt || prev.yearBuilt,
+        bedrooms: data.bedrooms || metaBedrooms || prev.bedrooms,
+        bathrooms: data.bathrooms || metaBathrooms || prev.bathrooms,
         units: data.units || prev.units,
+        // Use API data first, then metadata, then parsed from address
+        city: data.city || metaCity || addressComponents.city || prev.city,
+        state: data.state || metaState || addressComponents.state || prev.state,
+        zipCode: data.zipCode || metaZipCode || addressComponents.zipCode || prev.zipCode,
         agentPhone: data.agentInfo?.phone || prev.agentPhone,
         agentName: data.agentInfo?.name || prev.agentName,
         sellerEmail: data.agentInfo?.email || prev.sellerEmail,

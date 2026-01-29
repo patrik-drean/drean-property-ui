@@ -147,6 +147,12 @@ export interface ScoredPropertyData {
   zillowLink: string;
   sqft?: number;
   units?: number;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  yearBuilt?: number;
+  bedrooms?: number;
+  bathrooms?: number;
   agentInfo?: {
     name: string;
     email: string;

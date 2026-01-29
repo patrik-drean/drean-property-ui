@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { getScoreColor, getScoreLabel } from '../../../types/queue';
 
 interface ScoreBadgeProps {
   score: number;
@@ -12,28 +13,15 @@ interface ScoreBadgeProps {
  *
  * Features:
  * - Animated SVG ring that fills based on score percentage
- * - Color-coded based on score (green, yellow, blue, red)
+ * - Color-coded based on MAO spread scoring (uses centralized helpers)
  * - Three size variants for different contexts
- * - Optional label underneath (e.g., "EXCELLENT DEAL")
+ * - Optional label underneath (e.g., "Amazing", "Great", etc.)
  */
 export const ScoreBadge: React.FC<ScoreBadgeProps> = ({
   score,
   size = 'medium',
   showLabel = true,
 }) => {
-  const getScoreColor = (score: number): string => {
-    if (score >= 9) return '#4ade80'; // Excellent - Green
-    if (score >= 7) return '#fbbf24'; // Good - Yellow
-    if (score >= 5) return '#60a5fa'; // Fair - Blue
-    return '#f87171'; // Poor - Red
-  };
-
-  const getScoreLabel = (score: number): string => {
-    if (score >= 9) return 'EXCELLENT DEAL';
-    if (score >= 7) return 'GOOD DEAL';
-    if (score >= 5) return 'FAIR DEAL';
-    return 'POOR DEAL';
-  };
 
   const sizes = {
     small: { ring: 48, stroke: 4, fontSize: '1rem' },

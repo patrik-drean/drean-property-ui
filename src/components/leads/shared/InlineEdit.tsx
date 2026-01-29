@@ -8,7 +8,7 @@ import {
   Stack,
 } from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
-import { ConfidenceBadge, ConfidenceSource } from './ConfidenceBadge';
+import { ConfidenceBadge, ConfidenceSource, ConfidenceLevel } from './ConfidenceBadge';
 import { InfoAlert } from './InfoAlert';
 
 interface InlineEditProps {
@@ -16,8 +16,8 @@ interface InlineEditProps {
   label: string;
   /** Current value */
   value: number | string;
-  /** AI confidence percentage (0-100) */
-  confidence?: number;
+  /** Confidence level or percentage (0-100) for legacy support */
+  confidence?: ConfidenceLevel | number;
   /** Source of the value: ai, manual, or rentcast */
   source?: ConfidenceSource;
   /** Optional note explaining the value */
@@ -34,6 +34,8 @@ interface InlineEditProps {
   disabled?: boolean;
   /** Optional info message shown during editing */
   infoMessage?: string;
+  /** Format value with commas during editing (for currency inputs) */
+  formatWithCommas?: boolean;
 }
 
 /**
@@ -58,6 +60,7 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
   validate,
   disabled = false,
   infoMessage = 'MAO will recalculate automatically',
+  formatWithCommas = false,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(String(value));
@@ -65,12 +68,25 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Helper to format number with commas
+  const formatNumberWithCommas = (val: string | number): string => {
+    const numStr = String(val).replace(/[^0-9.-]/g, '');
+    const num = parseFloat(numStr);
+    if (isNaN(num)) return String(val);
+    return num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  };
+
+  // Helper to strip commas from formatted value
+  const stripCommas = (val: string): string => {
+    return val.replace(/,/g, '');
+  };
+
   // Reset edit value when external value changes
   useEffect(() => {
     if (!editing) {
-      setEditValue(String(value));
+      setEditValue(formatWithCommas ? formatNumberWithCommas(value) : String(value));
     }
-  }, [value, editing]);
+  }, [value, editing, formatWithCommas]);
 
   // Focus input when entering edit mode
   useEffect(() => {
@@ -81,7 +97,9 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
   }, [editing]);
 
   const handleSave = () => {
-    const parsedValue = parseValue(editValue);
+    // Strip commas before parsing if formatWithCommas is enabled
+    const valueToparse = formatWithCommas ? stripCommas(editValue) : editValue;
+    const parsedValue = parseValue(valueToparse);
     if (validate) {
       const validationError = validate(parsedValue);
       if (validationError) {
@@ -97,7 +115,7 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
 
   const handleCancel = () => {
     setEditing(false);
-    setEditValue(String(value));
+    setEditValue(formatWithCommas ? formatNumberWithCommas(value) : String(value));
     setEditNote('');
     setError(null);
   };
@@ -114,7 +132,8 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
   const handleStartEdit = () => {
     if (!disabled) {
       setEditing(true);
-      setEditValue(String(value));
+      const initialValue = formatWithCommas ? formatNumberWithCommas(value) : String(value);
+      setEditValue(initialValue);
     }
   };
 
@@ -138,7 +157,18 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
           inputRef={inputRef}
           value={editValue}
           onChange={(e) => {
-            setEditValue(e.target.value);
+            const newValue = e.target.value;
+            if (formatWithCommas) {
+              // Strip non-numeric chars (except commas for display), then reformat
+              const stripped = newValue.replace(/[^0-9]/g, '');
+              if (stripped === '') {
+                setEditValue('');
+              } else {
+                setEditValue(parseInt(stripped, 10).toLocaleString('en-US'));
+              }
+            } else {
+              setEditValue(newValue);
+            }
             setError(null);
           }}
           onKeyDown={handleKeyDown}
@@ -242,17 +272,7 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
         {formatValue(value)}
       </Typography>
 
-      <ConfidenceBadge confidence={confidence} source={source} />
-
-      {note && (
-        <Typography
-          variant="caption"
-          display="block"
-          sx={{ mt: 0.5, color: '#8b949e', fontStyle: 'italic' }}
-        >
-          Note: &quot;{note}&quot;
-        </Typography>
-      )}
+      <ConfidenceBadge confidence={confidence} source={source} note={note} />
     </Box>
   );
 };

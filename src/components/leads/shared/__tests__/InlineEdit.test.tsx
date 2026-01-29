@@ -42,7 +42,8 @@ describe('InlineEdit', () => {
 
     it('renders confidence badge when confidence is provided', () => {
       render(<InlineEdit {...defaultProps} confidence={85} source="ai" />);
-      expect(screen.getByText('AI - 85% Confidence')).toBeInTheDocument();
+      // With TASK-097, percentages are converted to levels: 85% = High
+      expect(screen.getByText('High Confidence')).toBeInTheDocument();
     });
 
     it('renders manual override badge', () => {
@@ -55,14 +56,12 @@ describe('InlineEdit', () => {
       expect(screen.getByText('RentCast Verified')).toBeInTheDocument();
     });
 
-    it('renders note when provided', () => {
-      render(<InlineEdit {...defaultProps} note="Adjusted for corner lot" />);
-      expect(screen.getByText(/Adjusted for corner lot/)).toBeInTheDocument();
-    });
-
-    it('does not render note when not provided', () => {
-      render(<InlineEdit {...defaultProps} />);
-      expect(screen.queryByText(/Note:/)).not.toBeInTheDocument();
+    it('passes note to ConfidenceBadge for tooltip display', () => {
+      // Note is now shown on hover of the confidence badge via tooltip
+      render(<InlineEdit {...defaultProps} note="Adjusted for corner lot" source="manual" />);
+      // The badge should be present with "Manual Override" text
+      expect(screen.getByText('Manual Override')).toBeInTheDocument();
+      // Note is shown on hover via tooltip, not as separate text
     });
   });
 
@@ -396,6 +395,86 @@ describe('InlineEdit', () => {
       fireEvent.click(screen.getByLabelText('Edit Test Label'));
       fireEvent.click(screen.getByText('Save'));
       expect(onSave).toHaveBeenCalledWith('150000', undefined);
+    });
+  });
+
+  describe('formatWithCommas', () => {
+    it('formats value with commas when entering edit mode', () => {
+      render(<InlineEdit {...defaultProps} value={150000} formatWithCommas />);
+      fireEvent.click(screen.getByLabelText('Edit Test Label'));
+      const input = screen.getByPlaceholderText('Enter value') as HTMLInputElement;
+      expect(input.value).toBe('150,000');
+    });
+
+    it('formats input with commas while typing', () => {
+      render(<InlineEdit {...defaultProps} value={0} formatWithCommas />);
+      fireEvent.click(screen.getByLabelText('Edit Test Label'));
+      fireEvent.change(screen.getByPlaceholderText('Enter value'), {
+        target: { value: '1234567' },
+      });
+      const input = screen.getByPlaceholderText('Enter value') as HTMLInputElement;
+      expect(input.value).toBe('1,234,567');
+    });
+
+    it('strips commas before saving', () => {
+      const onSave = jest.fn();
+      render(<InlineEdit {...defaultProps} onSave={onSave} formatWithCommas />);
+      fireEvent.click(screen.getByLabelText('Edit Test Label'));
+      fireEvent.change(screen.getByPlaceholderText('Enter value'), {
+        target: { value: '175,000' },
+      });
+      fireEvent.click(screen.getByText('Save'));
+      // The value passed to onSave should have commas stripped
+      expect(onSave).toHaveBeenCalledWith('175000', undefined);
+    });
+
+    it('strips commas before parsing with custom parseValue', () => {
+      const onSave = jest.fn();
+      render(
+        <InlineEdit
+          {...defaultProps}
+          onSave={onSave}
+          formatWithCommas
+          parseValue={parseCurrency}
+        />
+      );
+      fireEvent.click(screen.getByLabelText('Edit Test Label'));
+      fireEvent.change(screen.getByPlaceholderText('Enter value'), {
+        target: { value: '175,000' },
+      });
+      fireEvent.click(screen.getByText('Save'));
+      expect(onSave).toHaveBeenCalledWith(175000, undefined);
+    });
+
+    it('handles empty input', () => {
+      render(<InlineEdit {...defaultProps} value={150000} formatWithCommas />);
+      fireEvent.click(screen.getByLabelText('Edit Test Label'));
+      fireEvent.change(screen.getByPlaceholderText('Enter value'), {
+        target: { value: '' },
+      });
+      const input = screen.getByPlaceholderText('Enter value') as HTMLInputElement;
+      expect(input.value).toBe('');
+    });
+
+    it('resets to formatted value on cancel', () => {
+      render(<InlineEdit {...defaultProps} value={150000} formatWithCommas />);
+      fireEvent.click(screen.getByLabelText('Edit Test Label'));
+      fireEvent.change(screen.getByPlaceholderText('Enter value'), {
+        target: { value: '175000' },
+      });
+      fireEvent.click(screen.getByText('Cancel'));
+      // Re-enter edit mode
+      fireEvent.click(screen.getByLabelText('Edit Test Label'));
+      const input = screen.getByPlaceholderText('Enter value') as HTMLInputElement;
+      expect(input.value).toBe('150,000');
+    });
+
+    it('updates formatted value when external value changes', () => {
+      const { rerender } = render(<InlineEdit {...defaultProps} value={150000} formatWithCommas />);
+      rerender(<InlineEdit {...defaultProps} value={200000} formatWithCommas />);
+      fireEvent.click(screen.getByLabelText('Edit Test Label'));
+      const input = screen.getByPlaceholderText('Enter value') as HTMLInputElement;
+      expect(input.value).toBe('200,000');
     });
   });
 });

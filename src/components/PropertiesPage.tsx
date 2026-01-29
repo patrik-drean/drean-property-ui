@@ -638,16 +638,17 @@ ${property.zillowLink}`;
       
       {/* Desktop view - Operational Properties Table */}
       <Box sx={{ display: { xs: 'none', lg: 'block' }, width: '100%' }}>
-        <TableContainer 
-          component={Paper} 
-          elevation={0} 
-          sx={{ 
-            borderRadius: 2, 
+        <TableContainer
+          component={Paper}
+          elevation={0}
+          sx={{
+            borderRadius: 2,
             mb: 2,
             overflow: 'visible',
             width: '100%',
-            border: '1px solid #e0e0e0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            border: '1px solid #30363d',
+            bgcolor: '#0d1117',
+            boxShadow: 'none',
             '& .MuiTable-root': {
               borderCollapse: 'collapse',
             },
@@ -839,12 +840,14 @@ ${property.zillowLink}`;
                             onClick={(e) => handleMenuOpen(e, property)}
                             size="small"
                             sx={{
-                              backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                              backgroundColor: '#21262d',
                               padding: 2,
                               width: '20px',
                               height: '20px',
+                              color: '#8b949e',
                               '&:hover': {
-                                backgroundColor: 'rgba(25, 118, 210, 0.2)'
+                                backgroundColor: '#30363d',
+                                color: '#f0f6fc'
                               }
                             }}
                           >

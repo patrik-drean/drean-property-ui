@@ -33,6 +33,8 @@ interface LeadDetailPanelProps {
   onNotesChange?: (notes: string) => void;
   onRetry?: () => void;
   onEvaluationSave?: (leadId: string, updates: EvaluationUpdate) => Promise<void>;
+  onDeletePermanently?: () => Promise<void>;
+  deleteLoading?: boolean;
 }
 
 /**
@@ -74,6 +76,8 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
   onNotesChange,
   onRetry,
   onEvaluationSave,
+  onDeletePermanently,
+  deleteLoading = false,
 }) => {
   // Keyboard shortcuts for panel navigation
   const handleKeyDown = useCallback(
@@ -264,6 +268,8 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
                 onStatusChange={onStatusChange}
                 onAction={onAction}
                 onNotesChange={onNotesChange}
+                onDeletePermanently={onDeletePermanently}
+                deleteLoading={deleteLoading}
               />
             </Grid>
           </Grid>

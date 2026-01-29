@@ -2,6 +2,9 @@ import {
   getPriorityStyles,
   getNeighborhoodGradeColor,
   getScoreColor,
+  getScoreLabel,
+  getSpreadColor,
+  calculateScoreFromSpread,
   formatTimeSince,
   Priority,
 } from '../queue';
@@ -88,26 +91,36 @@ describe('Queue Helper Functions', () => {
   });
 
   describe('getScoreColor', () => {
-    it('should return green for scores >= 8', () => {
-      expect(getScoreColor(8)).toBe('#4ade80');
+    // Updated thresholds based on simplified MAO Spread scoring:
+    // 9-10: Amazing (Green #4ade80)
+    // 7-8: Great (Light Green #86efac)
+    // 5-6: Good (Yellow #fbbf24)
+    // 3-4: Fair (Orange #fb923c)
+    // 1-2: Poor (Red #f87171)
+
+    it('should return bright green for scores >= 9 (Amazing)', () => {
       expect(getScoreColor(9)).toBe('#4ade80');
       expect(getScoreColor(10)).toBe('#4ade80');
     });
 
-    it('should return yellow for scores 6-7', () => {
+    it('should return light green for scores 7-8 (Great)', () => {
+      expect(getScoreColor(7)).toBe('#86efac');
+      expect(getScoreColor(8)).toBe('#86efac');
+    });
+
+    it('should return yellow for scores 5-6 (Good)', () => {
+      expect(getScoreColor(5)).toBe('#fbbf24');
       expect(getScoreColor(6)).toBe('#fbbf24');
-      expect(getScoreColor(7)).toBe('#fbbf24');
     });
 
-    it('should return orange for scores 4-5', () => {
-      expect(getScoreColor(4)).toBe('#f97316');
-      expect(getScoreColor(5)).toBe('#f97316');
+    it('should return orange for scores 3-4 (Fair)', () => {
+      expect(getScoreColor(3)).toBe('#fb923c');
+      expect(getScoreColor(4)).toBe('#fb923c');
     });
 
-    it('should return red for scores < 4', () => {
+    it('should return red for scores 1-2 (Poor)', () => {
       expect(getScoreColor(1)).toBe('#f87171');
       expect(getScoreColor(2)).toBe('#f87171');
-      expect(getScoreColor(3)).toBe('#f87171');
     });
 
     it('should return gray for null', () => {
@@ -116,6 +129,148 @@ describe('Queue Helper Functions', () => {
 
     it('should return gray for undefined', () => {
       expect(getScoreColor(undefined)).toBe('#8b949e');
+    });
+  });
+
+  describe('getScoreLabel', () => {
+    it('should return "Amazing" for scores >= 9', () => {
+      expect(getScoreLabel(9)).toBe('Amazing');
+      expect(getScoreLabel(10)).toBe('Amazing');
+    });
+
+    it('should return "Great" for scores 7-8', () => {
+      expect(getScoreLabel(7)).toBe('Great');
+      expect(getScoreLabel(8)).toBe('Great');
+    });
+
+    it('should return "Good" for scores 5-6', () => {
+      expect(getScoreLabel(5)).toBe('Good');
+      expect(getScoreLabel(6)).toBe('Good');
+    });
+
+    it('should return "Fair" for scores 3-4', () => {
+      expect(getScoreLabel(3)).toBe('Fair');
+      expect(getScoreLabel(4)).toBe('Fair');
+    });
+
+    it('should return "Poor" for scores 1-2', () => {
+      expect(getScoreLabel(1)).toBe('Poor');
+      expect(getScoreLabel(2)).toBe('Poor');
+    });
+
+    it('should return "Unknown" for null', () => {
+      expect(getScoreLabel(null)).toBe('Unknown');
+    });
+
+    it('should return "Unknown" for undefined', () => {
+      expect(getScoreLabel(undefined)).toBe('Unknown');
+    });
+  });
+
+  describe('getSpreadColor', () => {
+    // Lower spread = better deal (listing price closer to MAO)
+    // ≤15%: bright green, ≤25%: light green, ≤40%: yellow, ≤60%: orange, >60%: red
+
+    it('should return bright green for spreads <= 15% (Amazing/Great)', () => {
+      expect(getSpreadColor(10)).toBe('#4ade80');
+      expect(getSpreadColor(15)).toBe('#4ade80');
+    });
+
+    it('should return light green for spreads 16-25% (Good)', () => {
+      expect(getSpreadColor(16)).toBe('#86efac');
+      expect(getSpreadColor(25)).toBe('#86efac');
+    });
+
+    it('should return yellow for spreads 26-40% (Fair)', () => {
+      expect(getSpreadColor(26)).toBe('#fbbf24');
+      expect(getSpreadColor(40)).toBe('#fbbf24');
+    });
+
+    it('should return orange for spreads 41-60% (Moderate)', () => {
+      expect(getSpreadColor(41)).toBe('#fb923c');
+      expect(getSpreadColor(60)).toBe('#fb923c');
+    });
+
+    it('should return red for spreads > 60% (High)', () => {
+      expect(getSpreadColor(61)).toBe('#f87171');
+      expect(getSpreadColor(100)).toBe('#f87171');
+    });
+
+    it('should return gray for null', () => {
+      expect(getSpreadColor(null)).toBe('#8b949e');
+    });
+
+    it('should return gray for undefined', () => {
+      expect(getSpreadColor(undefined)).toBe('#8b949e');
+    });
+  });
+
+  describe('calculateScoreFromSpread', () => {
+    // Matches backend CompositeLeadScorer algorithm from TASK-098
+    // Lower spread = better deal = higher score
+
+    it('should return 10 for negative spread (listing below MAO)', () => {
+      expect(calculateScoreFromSpread(-10)).toBe(10);
+      expect(calculateScoreFromSpread(-5)).toBe(10);
+      expect(calculateScoreFromSpread(0)).toBe(10);
+    });
+
+    it('should return 10 for spread <= 10%', () => {
+      expect(calculateScoreFromSpread(5)).toBe(10);
+      expect(calculateScoreFromSpread(10)).toBe(10);
+    });
+
+    it('should return 9 for spread 11-15%', () => {
+      expect(calculateScoreFromSpread(11)).toBe(9);
+      expect(calculateScoreFromSpread(15)).toBe(9);
+    });
+
+    it('should return 8 for spread 16-20%', () => {
+      expect(calculateScoreFromSpread(16)).toBe(8);
+      expect(calculateScoreFromSpread(20)).toBe(8);
+    });
+
+    it('should return 7 for spread 21-25%', () => {
+      expect(calculateScoreFromSpread(21)).toBe(7);
+      expect(calculateScoreFromSpread(25)).toBe(7);
+    });
+
+    it('should return 6 for spread 26-30%', () => {
+      expect(calculateScoreFromSpread(26)).toBe(6);
+      expect(calculateScoreFromSpread(30)).toBe(6);
+    });
+
+    it('should return 5 for spread 31-40%', () => {
+      expect(calculateScoreFromSpread(31)).toBe(5);
+      expect(calculateScoreFromSpread(40)).toBe(5);
+    });
+
+    it('should return 4 for spread 41-50%', () => {
+      expect(calculateScoreFromSpread(41)).toBe(4);
+      expect(calculateScoreFromSpread(50)).toBe(4);
+    });
+
+    it('should return 3 for spread 51-60%', () => {
+      expect(calculateScoreFromSpread(51)).toBe(3);
+      expect(calculateScoreFromSpread(60)).toBe(3);
+    });
+
+    it('should return 2 for spread 61-75%', () => {
+      expect(calculateScoreFromSpread(61)).toBe(2);
+      expect(calculateScoreFromSpread(75)).toBe(2);
+    });
+
+    it('should return 1 for spread > 75%', () => {
+      expect(calculateScoreFromSpread(76)).toBe(1);
+      expect(calculateScoreFromSpread(100)).toBe(1);
+    });
+
+    it('should return 5 for null', () => {
+      expect(calculateScoreFromSpread(null)).toBe(5);
+    });
+
+    it('should return 5 for undefined', () => {
+      expect(calculateScoreFromSpread(undefined)).toBe(5);
     });
   });
 

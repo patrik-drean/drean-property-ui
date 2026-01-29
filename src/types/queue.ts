@@ -98,12 +98,55 @@ export const getNeighborhoodGradeColor = (grade: string | null | undefined): str
 };
 
 // Helper to get score color
+// Based on simplified MAO Spread scoring:
+// 9-10: Amazing (Green), 7-8: Great (Light Green), 5-6: Good (Yellow), 3-4: Fair (Orange), 1-2: Poor (Red)
 export const getScoreColor = (score: number | null | undefined): string => {
   if (score === null || score === undefined) return '#8b949e';
-  if (score >= 8) return '#4ade80';
-  if (score >= 6) return '#fbbf24';
-  if (score >= 4) return '#f97316';
-  return '#f87171';
+  if (score >= 9) return '#4ade80';  // Amazing - bright green
+  if (score >= 7) return '#86efac';  // Great - light green
+  if (score >= 5) return '#fbbf24';  // Good - yellow
+  if (score >= 3) return '#fb923c';  // Fair - orange
+  return '#f87171';                   // Poor - red
+};
+
+// Helper to get score label based on MAO spread thresholds
+export const getScoreLabel = (score: number | null | undefined): string => {
+  if (score === null || score === undefined) return 'Unknown';
+  if (score >= 9) return 'Amazing';
+  if (score >= 7) return 'Great';
+  if (score >= 5) return 'Good';
+  if (score >= 3) return 'Fair';
+  return 'Poor';
+};
+
+// Helper to get spread color (lower spread = better deal, aligned with MAO spread scoring)
+// Thresholds correspond to score boundaries from simplified scoring algorithm
+export const getSpreadColor = (spread: number | null | undefined): string => {
+  if (spread === null || spread === undefined) return '#8b949e';
+  if (spread <= 15) return '#4ade80';   // Amazing/Great spread - bright green
+  if (spread <= 25) return '#86efac';   // Good spread - light green
+  if (spread <= 40) return '#fbbf24';   // Fair spread - yellow
+  if (spread <= 60) return '#fb923c';   // Moderate spread - orange
+  return '#f87171';                      // High spread - red
+};
+
+// Calculate score from MAO spread percentage (matches backend CompositeLeadScorer algorithm)
+// Spread = (ListingPrice - MAO) / ListingPrice × 100%
+// Lower spread = better deal = higher score
+export const calculateScoreFromSpread = (spread: number | null | undefined): number => {
+  if (spread === null || spread === undefined) return 5; // Neutral score when no data
+
+  // Negative spread means listing is below MAO - excellent deal
+  if (spread <= 10) return 10;  // ≤10% spread - amazing
+  if (spread <= 15) return 9;   // ≤15% spread - amazing
+  if (spread <= 20) return 8;   // ≤20% spread - great
+  if (spread <= 25) return 7;   // ≤25% spread - great
+  if (spread <= 30) return 6;   // ≤30% spread - good
+  if (spread <= 40) return 5;   // ≤40% spread - good
+  if (spread <= 50) return 4;   // ≤50% spread - fair
+  if (spread <= 60) return 3;   // ≤60% spread - fair
+  if (spread <= 75) return 2;   // ≤75% spread - poor
+  return 1;                      // >75% spread - poor
 };
 
 // Helper to format time since (Mountain Time aware)

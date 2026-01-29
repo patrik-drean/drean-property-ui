@@ -1,6 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Box, Typography, Stack } from '@mui/material';
-import { QueueLead } from '../../../types/queue';
+import {
+  Box,
+  Typography,
+  Stack,
+  IconButton,
+  Tooltip,
+  CircularProgress,
+  Alert,
+} from '@mui/material';
+import { Sync as SyncIcon } from '@mui/icons-material';
+import { QueueLead, getSpreadColor, calculateScoreFromSpread } from '../../../types/queue';
 import { SectionCard } from './SectionCard';
 import { ScoreBadge } from './ScoreBadge';
 import { GradeBadge } from './GradeBadge';
@@ -11,7 +20,12 @@ import {
   parseCurrency,
   validateCurrency,
 } from '../../../utils/currencyUtils';
-import { LeadMetrics } from '../../../services/leadQueueService';
+import {
+  LeadMetrics,
+  leadQueueService,
+  ComparableSale,
+  RentCastArvResult,
+} from '../../../services/leadQueueService';
 
 interface EvaluationData {
   arv: number;
@@ -28,14 +42,17 @@ interface EvaluationData {
   rentNote?: string;
 }
 
-// Extended QueueLead with _metrics from useLeadQueue
+// Extended QueueLead with _metrics and _comparables from useLeadQueue
 interface QueueLeadWithMetrics extends QueueLead {
   _metrics?: LeadMetrics;
+  _comparables?: ComparableSale[];
 }
 
 interface EvaluationSectionProps {
   lead: QueueLeadWithMetrics;
   onEvaluationChange?: (data: Partial<EvaluationData>) => void;
+  /** Callback when RentCast data is fetched successfully */
+  onRentCastSuccess?: (result: RentCastArvResult) => void;
 }
 
 /**
@@ -43,21 +60,30 @@ interface EvaluationSectionProps {
  *
  * Displays:
  * - Score badge (circular ring)
- * - ARV with inline editing and confidence
+ * - ARV with inline editing, confidence, and RentCast refresh trigger
  * - Rehab estimate with inline editing and confidence
  * - Rent estimate with inline editing and confidence
  * - MAO (auto-calculated, read-only)
  * - Spread percentage with color coding
  * - Neighborhood grade
- * - Expandable comps list
+ * - Expandable comps list (from RentCast or placeholder)
  */
 export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
   lead,
   onEvaluationChange,
+  onRentCastSuccess,
 }) => {
   // Get metrics from lead._metrics (populated by useLeadQueue from API response)
   const metrics = lead._metrics;
   const listingPrice = lead.listingPrice;
+
+  // RentCast loading and error state
+  const [loadingRentCast, setLoadingRentCast] = useState(false);
+  const [rentCastError, setRentCastError] = useState<string | null>(null);
+
+  // Comparables state - from API or fallback
+  const [comparables, setComparables] = useState<Comparable[]>([]);
+  const [compsVerified, setCompsVerified] = useState(false);
 
   // Helper to get initial evaluation data from lead metrics
   const getInitialEvaluation = (): EvaluationData => {
@@ -103,14 +129,113 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
     };
   };
 
+  // Convert ComparableSale to Comparable for display
+  const mapComparableSaleToComparable = (sale: ComparableSale): Comparable => ({
+    id: sale.id,
+    address: sale.address,
+    salePrice: sale.salePrice,
+    pricePerSqft: sale.pricePerSqft,
+    saleDate: sale.saleDate,
+    distanceMiles: sale.distanceMiles,
+    zillowUrl: sale.zillowUrl,
+    squareFeet: sale.squareFeet,
+    bedrooms: sale.bedrooms,
+    bathrooms: sale.bathrooms,
+    city: sale.city,
+    state: sale.state,
+    propertyType: sale.propertyType,
+  });
+
   // Local state for evaluation values - initialized from lead metrics
   const [evaluation, setEvaluation] = useState<EvaluationData>(getInitialEvaluation);
 
   // Reset evaluation state when lead changes (navigating between leads)
   useEffect(() => {
     setEvaluation(getInitialEvaluation());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    setRentCastError(null);
+
+    // Initialize comps from lead data or use placeholder
+    if (lead._comparables && lead._comparables.length > 0) {
+      setComparables(lead._comparables.map(mapComparableSaleToComparable));
+      setCompsVerified(metrics?.arvSource === 'rentcast');
+    } else {
+      // Placeholder comps when no RentCast data
+      setComparables(generatePlaceholderComps(getInitialEvaluation().arv));
+      setCompsVerified(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lead.id, metrics?.arv, metrics?.rehabEstimate, metrics?.rentEstimate]);
+
+  // Generate placeholder comps based on ARV
+  const generatePlaceholderComps = (arv: number): Comparable[] => [
+    {
+      address: '123 Oak St',
+      salePrice: arv - 5000,
+      pricePerSqft: 115,
+      saleDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      distanceMiles: 0.3,
+    },
+    {
+      address: '456 Elm Ave',
+      salePrice: arv + 3000,
+      pricePerSqft: 118,
+      saleDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+      distanceMiles: 0.5,
+    },
+    {
+      address: '789 Pine Dr',
+      salePrice: arv - 2000,
+      pricePerSqft: 112,
+      saleDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+      distanceMiles: 0.7,
+    },
+  ];
+
+  // Handle RentCast refresh click
+  const handleRentCastRefresh = async () => {
+    setLoadingRentCast(true);
+    setRentCastError(null);
+
+    try {
+      const result = await leadQueueService.getRentCastArv(lead.id);
+
+      // Update local evaluation state with RentCast ARV
+      const updates = {
+        arv: result.arv,
+        arvSource: 'rentcast' as ConfidenceSource,
+        arvConfidence: result.arvConfidence,
+        arvNote: undefined,
+      };
+      setEvaluation((prev) => ({ ...prev, ...updates }));
+
+      // Update comparables
+      if (result.comparables && result.comparables.length > 0) {
+        setComparables(result.comparables.map(mapComparableSaleToComparable));
+        setCompsVerified(true);
+      }
+
+      // Notify parent of changes
+      onEvaluationChange?.(updates);
+      onRentCastSuccess?.(result);
+    } catch (error: unknown) {
+      // Handle specific error types
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 429) {
+          setRentCastError('Daily RentCast limit reached. Try again tomorrow.');
+        } else if (axiosError.response?.status === 404) {
+          setRentCastError('Property not found in RentCast database.');
+        } else {
+          setRentCastError('Failed to fetch RentCast data. Please try again.');
+        }
+      } else {
+        setRentCastError('Failed to fetch RentCast data. Please try again.');
+      }
+      console.error('RentCast API error:', error);
+    } finally {
+      setLoadingRentCast(false);
+    }
+  };
 
   // Calculate MAO based on current values
   // MAO = (ARV × 70%) - Rehab - $5k (wholesale fee)
@@ -119,18 +244,26 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
   }, [evaluation.arv, evaluation.rehab]);
 
   // Calculate spread (difference between listing and MAO as percentage)
+  // Positive spread = listing above MAO, Negative spread = listing below MAO (great deal)
   const calculatedSpread = useMemo(() => {
     if (listingPrice === 0) return 0;
     return Math.round(((listingPrice - calculatedMao) / listingPrice) * 100);
   }, [listingPrice, calculatedMao]);
 
-  const getSpreadColor = (spread: number): string => {
-    // Lower spread = better deal (listing price closer to MAO)
-    if (spread <= 15) return '#4ade80'; // Excellent - green
-    if (spread <= 25) return '#fbbf24'; // Good - yellow
-    if (spread <= 35) return '#f97316'; // Moderate - orange
-    return '#f87171'; // High spread - red
-  };
+  // Calculate score based on spread (recalculates when ARV/rehab changes)
+  const calculatedScore = useMemo(() => {
+    return calculateScoreFromSpread(calculatedSpread);
+  }, [calculatedSpread]);
+
+  // Format spread text based on whether it's positive or negative
+  const spreadText = useMemo(() => {
+    if (calculatedSpread < 0) {
+      // Negative spread = listing is below MAO (excellent deal)
+      return `${Math.abs(calculatedSpread)}% below MAO!`;
+    }
+    // Positive spread = MAO is below asking price (need to negotiate down)
+    return `${calculatedSpread}% below asking`;
+  }, [calculatedSpread]);
 
   const handleArvSave = (value: number | string, note?: string) => {
     const newArv = typeof value === 'number' ? value : parseCurrency(String(value));
@@ -168,52 +301,75 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
     onEvaluationChange?.(updates);
   };
 
-  // Mock comparables data for demo
-  const mockComps: Comparable[] = [
-    {
-      address: '123 Oak St',
-      salePrice: evaluation.arv - 5000,
-      pricePerSqft: 115,
-      saleDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      distanceMiles: 0.3,
-    },
-    {
-      address: '456 Elm Ave',
-      salePrice: evaluation.arv + 3000,
-      pricePerSqft: 118,
-      saleDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-      distanceMiles: 0.5,
-    },
-    {
-      address: '789 Pine Dr',
-      salePrice: evaluation.arv - 2000,
-      pricePerSqft: 112,
-      saleDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-      distanceMiles: 0.7,
-    },
-  ];
-
   return (
     <SectionCard title="EVALUATION">
-      {/* Score Badge (circular ring) */}
+      {/* Score Badge (circular ring) - uses calculated score based on current ARV/rehab */}
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-        <ScoreBadge score={lead.leadScore ?? 0} size="large" />
+        <ScoreBadge score={calculatedScore} size="large" />
       </Box>
+
+      {/* RentCast Error Alert */}
+      {rentCastError && (
+        <Alert
+          severity="error"
+          onClose={() => setRentCastError(null)}
+          sx={{
+            mb: 2,
+            bgcolor: 'rgba(248, 113, 113, 0.1)',
+            color: '#f87171',
+            '& .MuiAlert-icon': { color: '#f87171' },
+          }}
+        >
+          {rentCastError}
+        </Alert>
+      )}
 
       {/* Editable Metrics */}
       <Stack spacing={0}>
-        {/* ARV */}
-        <InlineEdit
-          label="ARV (After Repair Value)"
-          value={evaluation.arv}
-          confidence={evaluation.arvConfidence}
-          source={evaluation.arvSource}
-          note={evaluation.arvNote}
-          formatValue={(v) => formatCurrency(Number(v))}
-          parseValue={parseCurrency}
-          validate={(v) => validateCurrency(Number(v), 10000, 5000000)}
-          onSave={handleArvSave}
-        />
+        {/* ARV with RentCast trigger */}
+        <Box sx={{ position: 'relative' }}>
+          <InlineEdit
+            label="ARV (After Repair Value)"
+            value={evaluation.arv}
+            confidence={evaluation.arvConfidence}
+            source={evaluation.arvSource}
+            note={evaluation.arvNote}
+            formatValue={(v) => formatCurrency(Number(v))}
+            parseValue={parseCurrency}
+            validate={(v) => validateCurrency(Number(v), 10000, 5000000)}
+            onSave={handleArvSave}
+            formatWithCommas
+          />
+
+          {/* RentCast Refresh Button - positioned next to label */}
+          <Tooltip title="Get RentCast ARV & Comps (~$1 API call)">
+            <IconButton
+              onClick={handleRentCastRefresh}
+              disabled={loadingRentCast}
+              size="small"
+              aria-label="Get RentCast ARV"
+              sx={{
+                position: 'absolute',
+                top: 0,
+                right: 28, // Position next to edit button
+                color: '#a78bfa',
+                p: 0.5,
+                '&:hover': {
+                  bgcolor: 'rgba(167, 139, 250, 0.1)',
+                },
+                '&.Mui-disabled': {
+                  color: '#4a5568',
+                },
+              }}
+            >
+              {loadingRentCast ? (
+                <CircularProgress size={16} sx={{ color: '#a78bfa' }} />
+              ) : (
+                <SyncIcon sx={{ fontSize: 16 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+        </Box>
 
         {/* Rehab Estimate */}
         <InlineEdit
@@ -226,6 +382,7 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
           parseValue={parseCurrency}
           validate={(v) => validateCurrency(Number(v), 0, 500000)}
           onSave={handleRehabSave}
+          formatWithCommas
         />
 
         {/* Rent Estimate */}
@@ -240,6 +397,7 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
           validate={(v) => validateCurrency(Number(v), 0, 50000)}
           onSave={handleRentSave}
           infoMessage="Used for rental income projections"
+          formatWithCommas
         />
 
         {/* MAO with Spread (read-only, auto-calculated) */}
@@ -259,7 +417,7 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
                 fontSize: '0.8rem',
               }}
             >
-              {calculatedSpread}% below asking
+              {spreadText}
             </Typography>
           </Box>
           <Typography
@@ -280,7 +438,7 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
       </Stack>
 
       {/* Expandable Comps */}
-      <ComparablesSection comps={mockComps} />
+      <ComparablesSection comps={comparables} isVerified={compsVerified} />
     </SectionCard>
   );
 };

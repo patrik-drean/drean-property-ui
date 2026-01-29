@@ -5,27 +5,33 @@ export const StyledTableCell = styled(TableCell)(({ theme }) => ({
   padding: '6px 8px',
   fontSize: '0.8125rem',
   whiteSpace: 'nowrap',
+  color: '#f0f6fc',
+  borderBottom: '1px solid #30363d',
   '&.header': {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.common.white,
-    fontWeight: 'bold',
-    height: '38px'
+    backgroundColor: '#161b22',
+    color: '#8b949e',
+    fontWeight: 600,
+    height: '38px',
+    fontSize: '0.75rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
   },
   '&.metric': {
-    backgroundColor: theme.palette.primary.light,
-    color: theme.palette.common.white,
+    backgroundColor: '#21262d',
+    color: '#f0f6fc',
   }
 }));
 
 export const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  backgroundColor: '#0d1117',
   '&:nth-of-type(odd)': {
-    backgroundColor: theme.palette.action.hover,
+    backgroundColor: '#161b22',
   },
   '&:last-child td, &:last-child th': {
     border: 0,
   },
   '&:hover': {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#21262d !important',
     cursor: 'pointer'
   },
   height: '46px'

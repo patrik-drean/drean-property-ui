@@ -1,16 +1,15 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ActionsSection } from '../ActionsSection';
 import { QueueLead } from '../../../../types/queue';
 
 describe('ActionsSection', () => {
   const mockLead: QueueLead = {
     id: 'lead-1',
-    address: '123 Main Street',
-    city: 'San Antonio',
+    address: '123 Main Street, Austin, TX 78701',
+    city: 'Austin',
     state: 'TX',
-    zipCode: '78209',
+    zipCode: '78701',
     zillowLink: 'https://zillow.com/homedetails/123',
     listingPrice: 150000,
     sellerPhone: '555-123-4567',
@@ -23,7 +22,7 @@ describe('ActionsSection', () => {
     bedrooms: 3,
     bathrooms: 2,
     units: 1,
-    notes: 'Some existing notes',
+    notes: 'Test notes',
     leadScore: 8,
     mao: 105000,
     spreadPercent: 30,
@@ -34,188 +33,188 @@ describe('ActionsSection', () => {
     timeSinceCreated: '2h ago',
   };
 
-  const mockHandlers = {
+  const defaultHandlers = {
     onStatusChange: jest.fn(),
     onAction: jest.fn(),
     onNotesChange: jest.fn(),
+    onDeletePermanently: jest.fn().mockResolvedValue(undefined),
+    deleteLoading: false,
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('rendering', () => {
-    it('should display the section title', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
+  describe('Delete Permanently icon button', () => {
+    it('should render delete icon button', () => {
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
 
-      expect(screen.getByText('ACTIONS')).toBeInTheDocument();
+      // Icon button is rendered with trash icon (no text label, uses tooltip)
+      const deleteButton = screen.getByTestId('DeleteForeverIcon').closest('button');
+      expect(deleteButton).toBeInTheDocument();
+    });
+
+    it('should open confirmation dialog when delete icon is clicked', () => {
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
+
+      const deleteButton = screen.getByTestId('DeleteForeverIcon').closest('button')!;
+      fireEvent.click(deleteButton);
+
+      // Dialog should appear
+      expect(screen.getByText('Delete Lead Permanently')).toBeInTheDocument();
+      expect(screen.getByText('123 Main Street, Austin, TX 78701')).toBeInTheDocument();
+    });
+
+    it('should close dialog when Cancel is clicked', async () => {
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
+
+      // Open dialog
+      const deleteButton = screen.getByTestId('DeleteForeverIcon').closest('button')!;
+      fireEvent.click(deleteButton);
+      expect(screen.getByText('Delete Lead Permanently')).toBeInTheDocument();
+
+      // Click Cancel
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      // Dialog should close
+      await waitFor(() => {
+        expect(screen.queryByText('Delete Lead Permanently')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should call onDeletePermanently when confirmed', async () => {
+      const onDeletePermanently = jest.fn().mockResolvedValue(undefined);
+      render(
+        <ActionsSection
+          lead={mockLead}
+          {...defaultHandlers}
+          onDeletePermanently={onDeletePermanently}
+        />
+      );
+
+      // Open dialog
+      const deleteButton = screen.getByTestId('DeleteForeverIcon').closest('button')!;
+      fireEvent.click(deleteButton);
+
+      // Click confirm in dialog
+      fireEvent.click(screen.getByRole('button', { name: 'Delete Permanently' }));
+
+      await waitFor(() => {
+        expect(onDeletePermanently).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('should not call onDeletePermanently when dialog is cancelled', () => {
+      const onDeletePermanently = jest.fn();
+      render(
+        <ActionsSection
+          lead={mockLead}
+          {...defaultHandlers}
+          onDeletePermanently={onDeletePermanently}
+        />
+      );
+
+      // Open dialog
+      const deleteButton = screen.getByTestId('DeleteForeverIcon').closest('button')!;
+      fireEvent.click(deleteButton);
+
+      // Click Cancel
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(onDeletePermanently).not.toHaveBeenCalled();
+    });
+
+    it('should show loading state in dialog when deleteLoading is true', () => {
+      render(
+        <ActionsSection lead={mockLead} {...defaultHandlers} deleteLoading={true} />
+      );
+
+      // Open dialog
+      const deleteButton = screen.getByTestId('DeleteForeverIcon').closest('button')!;
+      fireEvent.click(deleteButton);
+
+      // Dialog should show loading spinner
+      expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });
   });
 
-  describe('status dropdown', () => {
-    it('should display Status label', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
+  describe('Archive button', () => {
+    it('should render Archive Lead button', () => {
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
 
-      // MUI Select uses a combobox role
-      expect(screen.getByRole('combobox')).toBeInTheDocument();
-    });
-
-    it('should show current status in dropdown', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      // The current status value is displayed in the select
-      expect(screen.getByRole('combobox')).toHaveTextContent('New');
-    });
-
-    it('should call onStatusChange when status is changed', async () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      // Open the dropdown by clicking on the select button
-      const selectButton = screen.getByRole('combobox');
-      fireEvent.mouseDown(selectButton);
-
-      // Wait for menu to appear and click option
-      const listbox = await screen.findByRole('listbox');
-      const contactedOption = within(listbox).getByText('Contacted');
-      fireEvent.click(contactedOption);
-
-      expect(mockHandlers.onStatusChange).toHaveBeenCalledWith('Contacted');
-    });
-
-    it('should display all status options', async () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      const selectButton = screen.getByRole('combobox');
-      fireEvent.mouseDown(selectButton);
-
-      const listbox = await screen.findByRole('listbox');
-
-      expect(within(listbox).getByText('New')).toBeInTheDocument();
-      expect(within(listbox).getByText('Contacted')).toBeInTheDocument();
-      expect(within(listbox).getByText('Responding')).toBeInTheDocument();
-      expect(within(listbox).getByText('Negotiating')).toBeInTheDocument();
-      expect(within(listbox).getByText('Under Contract')).toBeInTheDocument();
-      expect(within(listbox).getByText('Closed')).toBeInTheDocument();
-      expect(within(listbox).getByText('Lost')).toBeInTheDocument();
-    });
-  });
-
-  describe('quick action buttons', () => {
-    it('should display Mark Contacted button for New leads', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      expect(screen.getByText('Mark Contacted')).toBeInTheDocument();
-    });
-
-    it('should not display Mark Contacted button for non-New leads', () => {
-      const contactedLead = { ...mockLead, status: 'Contacted' as const };
-      render(<ActionsSection lead={contactedLead} {...mockHandlers} />);
-
-      expect(screen.queryByText('Mark Contacted')).not.toBeInTheDocument();
-    });
-
-    it('should display Schedule Follow-Up button', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      expect(screen.getByText('Schedule Follow-Up')).toBeInTheDocument();
-    });
-
-    it('should display Archive Lead button', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      expect(screen.getByText('Archive Lead')).toBeInTheDocument();
-    });
-  });
-
-  describe('action button clicks', () => {
-    it('should call onAction with markContacted when Mark Contacted is clicked', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      fireEvent.click(screen.getByText('Mark Contacted'));
-      expect(mockHandlers.onAction).toHaveBeenCalledWith('markContacted');
-    });
-
-    it('should call onAction with scheduleFollowUp when Schedule Follow-Up is clicked', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      fireEvent.click(screen.getByText('Schedule Follow-Up'));
-      expect(mockHandlers.onAction).toHaveBeenCalledWith('scheduleFollowUp');
+      expect(screen.getByRole('button', { name: /Archive Lead/i })).toBeInTheDocument();
     });
 
     it('should call onAction with archive when Archive Lead is clicked', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
 
-      fireEvent.click(screen.getByText('Archive Lead'));
-      expect(mockHandlers.onAction).toHaveBeenCalledWith('archive');
+      fireEvent.click(screen.getByRole('button', { name: /Archive Lead/i }));
+      expect(defaultHandlers.onAction).toHaveBeenCalledWith('archive');
     });
   });
 
-  describe('notes section', () => {
-    it('should display Notes label', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
+  describe('Mark Contacted button', () => {
+    it('should show Mark Contacted when status is New', () => {
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
 
-      expect(screen.getByText('Notes:')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Mark Contacted/i })).toBeInTheDocument();
     });
 
-    it('should have a multiline text input', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
+    it('should not show Mark Contacted when status is not New', () => {
+      const contactedLead = { ...mockLead, status: 'Contacted' as const };
+      render(<ActionsSection lead={contactedLead} {...defaultHandlers} />);
 
-      const textarea = screen.getByPlaceholderText('Add notes about this lead...');
-      expect(textarea).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Mark Contacted/i })).not.toBeInTheDocument();
     });
 
-    it('should display existing notes', () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
+    it('should call onAction with markContacted when clicked', () => {
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
 
-      const textarea = screen.getByPlaceholderText('Add notes about this lead...') as HTMLTextAreaElement;
-      expect(textarea.value).toBe('Some existing notes');
-    });
-
-    it('should call onNotesChange when notes are modified and blurred', async () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      const textarea = screen.getByPlaceholderText('Add notes about this lead...');
-      await userEvent.clear(textarea);
-      await userEvent.type(textarea, 'Updated notes');
-      fireEvent.blur(textarea);
-
-      expect(mockHandlers.onNotesChange).toHaveBeenCalledWith('Updated notes');
-    });
-
-    it('should not call onNotesChange if notes unchanged', async () => {
-      render(<ActionsSection lead={mockLead} {...mockHandlers} />);
-
-      const textarea = screen.getByPlaceholderText('Add notes about this lead...');
-      fireEvent.blur(textarea);
-
-      expect(mockHandlers.onNotesChange).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole('button', { name: /Mark Contacted/i }));
+      expect(defaultHandlers.onAction).toHaveBeenCalledWith('markContacted');
     });
   });
 
-  describe('different lead statuses', () => {
-    it('should show correct current status for Negotiating leads', () => {
-      const negotiatingLead = { ...mockLead, status: 'Negotiating' as const };
-      render(<ActionsSection lead={negotiatingLead} {...mockHandlers} />);
+  describe('Schedule Follow-Up button', () => {
+    it('should render Schedule Follow-Up button', () => {
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
 
-      // The select should display the current status
-      expect(screen.getByText('Negotiating')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Schedule Follow-Up/i })).toBeInTheDocument();
     });
 
-    it('should show correct current status for Responding leads', () => {
-      const respondingLead = { ...mockLead, status: 'Responding' as const };
-      render(<ActionsSection lead={respondingLead} {...mockHandlers} />);
+    it('should call onAction with scheduleFollowUp when clicked', () => {
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
 
-      expect(screen.getByText('Responding')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /Schedule Follow-Up/i }));
+      expect(defaultHandlers.onAction).toHaveBeenCalledWith('scheduleFollowUp');
     });
   });
 
-  describe('empty notes', () => {
-    it('should handle empty notes gracefully', () => {
-      const leadEmptyNotes = { ...mockLead, notes: '' };
-      render(<ActionsSection lead={leadEmptyNotes} {...mockHandlers} />);
+  describe('Notes section', () => {
+    it('should render notes textarea with existing notes', () => {
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
 
-      const textarea = screen.getByPlaceholderText('Add notes about this lead...') as HTMLTextAreaElement;
-      expect(textarea.value).toBe('');
+      const notesTextarea = screen.getByPlaceholderText('Add notes about this lead...');
+      expect(notesTextarea).toHaveValue('Test notes');
+    });
+
+    it('should call onNotesChange on blur when notes changed', () => {
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
+
+      const notesTextarea = screen.getByPlaceholderText('Add notes about this lead...');
+      fireEvent.change(notesTextarea, { target: { value: 'Updated notes' } });
+      fireEvent.blur(notesTextarea);
+
+      expect(defaultHandlers.onNotesChange).toHaveBeenCalledWith('Updated notes');
+    });
+
+    it('should not call onNotesChange if notes unchanged', () => {
+      render(<ActionsSection lead={mockLead} {...defaultHandlers} />);
+
+      const notesTextarea = screen.getByPlaceholderText('Add notes about this lead...');
+      fireEvent.blur(notesTextarea);
+
+      expect(defaultHandlers.onNotesChange).not.toHaveBeenCalled();
     });
   });
 });

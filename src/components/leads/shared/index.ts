@@ -1,4 +1,5 @@
 export { InlineEdit } from './InlineEdit';
-export { ConfidenceBadge } from './ConfidenceBadge';
-export type { ConfidenceSource } from './ConfidenceBadge';
+export { ConfidenceBadge, percentageToLevel } from './ConfidenceBadge';
+export type { ConfidenceSource, ConfidenceLevel } from './ConfidenceBadge';
 export { InfoAlert } from './InfoAlert';
+export { DeleteConfirmationDialog } from './DeleteConfirmationDialog';

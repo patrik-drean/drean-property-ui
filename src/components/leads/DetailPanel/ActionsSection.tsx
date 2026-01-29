@@ -9,20 +9,26 @@ import {
   Button,
   Stack,
   TextField,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
   Archive as ArchiveIcon,
+  DeleteForever as DeleteForeverIcon,
 } from '@mui/icons-material';
 import { QueueLead, LeadQueueStatus } from '../../../types/queue';
 import { SectionCard } from './SectionCard';
+import { DeleteConfirmationDialog } from '../shared';
 
 interface ActionsSectionProps {
   lead: QueueLead;
   onStatusChange?: (status: LeadQueueStatus) => void;
   onAction?: (action: string) => void;
   onNotesChange?: (notes: string) => void;
+  onDeletePermanently?: () => Promise<void>;
+  deleteLoading?: boolean;
 }
 
 // Status options for the dropdown
@@ -49,8 +55,18 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
   onStatusChange,
   onAction,
   onNotesChange,
+  onDeletePermanently,
+  deleteLoading = false,
 }) => {
   const [notes, setNotes] = useState(lead.notes || '');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const handleDeleteConfirm = async () => {
+    if (onDeletePermanently) {
+      await onDeletePermanently();
+      setDeleteDialogOpen(false);
+    }
+  };
 
   const handleNotesBlur = () => {
     if (notes !== lead.notes && onNotesChange) {
@@ -143,27 +159,52 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
         >
           Schedule Follow-Up
         </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<ArchiveIcon />}
-          onClick={() => onAction?.('archive')}
-          sx={{
-            borderColor: '#30363d',
-            color: '#8b949e',
-            textTransform: 'none',
-            fontWeight: 500,
-            fontSize: '0.85rem',
-            '&:hover': {
-              borderColor: '#f87171',
-              color: '#f87171',
-              bgcolor: 'rgba(248, 113, 113, 0.1)',
-            },
-          }}
-        >
-          Archive Lead
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<ArchiveIcon />}
+            onClick={() => onAction?.('archive')}
+            sx={{
+              borderColor: '#30363d',
+              color: '#8b949e',
+              textTransform: 'none',
+              fontWeight: 500,
+              fontSize: '0.85rem',
+              '&:hover': {
+                borderColor: '#8b949e',
+                bgcolor: 'rgba(139, 148, 158, 0.1)',
+              },
+            }}
+          >
+            Archive Lead
+          </Button>
+          <Tooltip title="Delete Permanently" arrow>
+            <IconButton
+              onClick={() => setDeleteDialogOpen(true)}
+              size="small"
+              sx={{
+                color: '#6e7681',
+                '&:hover': {
+                  color: '#f87171',
+                  bgcolor: 'rgba(248, 113, 113, 0.1)',
+                },
+              }}
+            >
+              <DeleteForeverIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Stack>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        leadAddress={lead.address}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteDialogOpen(false)}
+        loading={deleteLoading}
+      />
 
       {/* Notes Section */}
       <Box>

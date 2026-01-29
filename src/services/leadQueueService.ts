@@ -99,6 +99,33 @@ export interface UpdateEvaluationResponse {
   updatedAt: string;
 }
 
+// RentCast API types
+export interface ComparableSale {
+  id: string;
+  address: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  salePrice: number;
+  pricePerSqft: number;
+  squareFeet?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  saleDate: string;
+  distanceMiles: number;
+  zillowUrl?: string;
+  propertyType?: string;
+}
+
+export interface RentCastArvResult {
+  arv: number;
+  arvSource: 'rentcast';
+  arvConfidence: number;
+  comparables: ComparableSale[];
+  requestsRemaining: number;
+  updatedAt: string;
+}
+
 // Lead Ingestion types
 export interface IngestLeadRequest {
   address: string;
@@ -220,6 +247,15 @@ export const leadQueueService = {
   },
 
   /**
+   * Permanently delete a lead (hard delete).
+   * This action cannot be undone. All associated messages, reminders, and notes will be deleted.
+   * @param leadId The lead ID to delete
+   */
+  async deleteLeadPermanently(leadId: string): Promise<void> {
+    await axiosInstance.delete(`/api/leads/${leadId}`);
+  },
+
+  /**
    * Ingest a new lead with automatic evaluation.
    * Handles duplicate detection via normalized address - duplicates are consolidated.
    * @param request The lead data to ingest
@@ -232,6 +268,19 @@ export const leadQueueService = {
         sendFirstMessage: request.sendFirstMessage ?? false,
         source: request.source ?? 'manual',
       }
+    );
+    return response.data;
+  },
+
+  /**
+   * Fetch RentCast ARV and comparable sales for a lead.
+   * This triggers a paid RentCast API call (~$1/request).
+   * Updates the lead's ARV value and stores comparables.
+   * @param leadId The lead ID to fetch RentCast data for
+   */
+  async getRentCastArv(leadId: string): Promise<RentCastArvResult> {
+    const response = await axiosInstance.post<RentCastArvResult>(
+      `/api/leads/${leadId}/rentcast-arv`
     );
     return response.data;
   },

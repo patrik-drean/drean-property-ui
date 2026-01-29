@@ -1,24 +1,40 @@
 import React, { useState } from 'react';
-import { Box, Button, Collapse } from '@mui/material';
+import { Box, Button, Collapse, Link, Typography } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
 
 export interface Comparable {
+  id?: string;
   address: string;
   salePrice: number;
   pricePerSqft: number;
   saleDate: string;
   distanceMiles: number;
-  zillowLink?: string;
+  zillowUrl?: string;
+  // Enhanced fields from RentCast
+  squareFeet?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  city?: string;
+  state?: string;
+  propertyType?: string;
 }
 
 interface ComparablesSectionProps {
   comps: Comparable[];
+  /** Whether comps are from RentCast (verified) vs mock data */
+  isVerified?: boolean;
 }
 
 /**
  * ComparablesSection - Expandable table showing comparable sales
+ *
+ * Supports both basic comps (address, price, sqft, date, distance)
+ * and enhanced RentCast comps (with beds/baths, Zillow links).
  */
-export const ComparablesSection: React.FC<ComparablesSectionProps> = ({ comps }) => {
+export const ComparablesSection: React.FC<ComparablesSectionProps> = ({
+  comps,
+  isVerified = false,
+}) => {
   const [expanded, setExpanded] = useState(false);
 
   const formatCurrency = (value: number): string => {
@@ -53,8 +69,30 @@ export const ComparablesSection: React.FC<ComparablesSectionProps> = ({ comps })
     }
   };
 
+  // Format beds/baths display
+  const formatBedsBaths = (beds?: number, baths?: number): string | null => {
+    if (beds === undefined && baths === undefined) return null;
+    const bedsStr = beds !== undefined ? `${beds}bd` : '';
+    const bathsStr = baths !== undefined ? `${baths}ba` : '';
+    return [bedsStr, bathsStr].filter(Boolean).join('/');
+  };
+
+  // Show "No Comps Available" when empty
   if (comps.length === 0) {
-    return null;
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Typography
+          variant="caption"
+          sx={{
+            color: '#8b949e',
+            fontSize: '0.8rem',
+            fontStyle: 'italic',
+          }}
+        >
+          No Comps Available
+        </Typography>
+      </Box>
+    );
   }
 
   return (
@@ -64,7 +102,7 @@ export const ComparablesSection: React.FC<ComparablesSectionProps> = ({ comps })
         onClick={() => setExpanded(!expanded)}
         endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
         sx={{
-          color: '#4ade80',
+          color: isVerified ? '#a78bfa' : '#4ade80',
           textTransform: 'none',
           fontWeight: 500,
           fontSize: '0.8rem',
@@ -72,7 +110,7 @@ export const ComparablesSection: React.FC<ComparablesSectionProps> = ({ comps })
           '&:hover': { bgcolor: 'transparent' },
         }}
       >
-        View {comps.length} Comps
+        View {comps.length} Comps {isVerified && '(RentCast)'}
       </Button>
 
       <Collapse in={expanded}>
@@ -85,37 +123,67 @@ export const ComparablesSection: React.FC<ComparablesSectionProps> = ({ comps })
             overflow: 'hidden',
           }}
         >
-          {comps.map((comp, index) => (
-            <Box
-              key={index}
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                px: 1.5,
-                py: 1,
-                borderBottom: index < comps.length - 1 ? '1px solid #30363d' : 'none',
-                '&:hover': { bgcolor: '#161b22' },
-              }}
-            >
-              <Box sx={{ flex: 1, minWidth: 0, mr: 2 }}>
-                <Box sx={{ color: '#f0f6fc', fontSize: '0.75rem', fontWeight: 500 }}>
-                  {comp.address}
+          {comps.map((comp, index) => {
+            const bedsBaths = formatBedsBaths(comp.bedrooms, comp.bathrooms);
+
+            return (
+              <Box
+                key={comp.id || index}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  px: 1.5,
+                  py: 1,
+                  borderBottom: index < comps.length - 1 ? '1px solid #30363d' : 'none',
+                  '&:hover': { bgcolor: '#161b22' },
+                }}
+              >
+                {/* Left side: Address, Date, Beds/Baths */}
+                <Box sx={{ flex: 1, minWidth: 0, mr: 2 }}>
+                  <Box sx={{ color: '#f0f6fc', fontSize: '0.75rem', fontWeight: 500 }}>
+                    {comp.zillowUrl ? (
+                      <Link
+                        href={comp.zillowUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          color: '#60a5fa',
+                          textDecoration: 'none',
+                          '&:hover': { textDecoration: 'underline' },
+                        }}
+                      >
+                        {comp.address}
+                      </Link>
+                    ) : (
+                      comp.address
+                    )}
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1, color: '#8b949e', fontSize: '0.65rem' }}>
+                    <span>{formatDate(comp.saleDate)}</span>
+                    {bedsBaths && (
+                      <>
+                        <span>•</span>
+                        <span>{bedsBaths}</span>
+                      </>
+                    )}
+                    <span>•</span>
+                    <span>{comp.distanceMiles.toFixed(1)} mi</span>
+                  </Box>
                 </Box>
-                <Box sx={{ color: '#8b949e', fontSize: '0.65rem' }}>
-                  {formatDate(comp.saleDate)}
+
+                {/* Right side: Price, $/sqft */}
+                <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                  <Box sx={{ color: '#f0f6fc', fontSize: '0.75rem', fontWeight: 500 }}>
+                    {formatCurrency(comp.salePrice)}
+                  </Box>
+                  <Box sx={{ color: '#4ade80', fontSize: '0.65rem' }}>
+                    ${comp.pricePerSqft}/sqft
+                  </Box>
                 </Box>
               </Box>
-              <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                <Box sx={{ color: '#f0f6fc', fontSize: '0.75rem', fontWeight: 500 }}>
-                  {formatCurrency(comp.salePrice)}
-                </Box>
-                <Box sx={{ color: '#4ade80', fontSize: '0.65rem' }}>
-                  ${comp.pricePerSqft}/sqft
-                </Box>
-              </Box>
-            </Box>
-          ))}
+            );
+          })}
         </Box>
       </Collapse>
     </Box>

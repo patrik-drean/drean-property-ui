@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Tooltip } from '@mui/material';
-import { getScoreColor, getNeighborhoodGradeColor } from '../../../types/queue';
+import { getScoreColor, getNeighborhoodGradeColor, getSpreadColor } from '../../../types/queue';
 
 interface MetricsGridProps {
   score: number | null;
@@ -61,16 +61,7 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({
 
   const formatSpread = (value: number | null) => {
     if (value === null) return '-';
-    return `${value}%`;
-  };
-
-  const getSpreadColor = (spread: number | null): string => {
-    if (spread === null) return '#8b949e';
-    // Lower spread = better deal (listing price closer to MAO)
-    if (spread <= 15) return '#4ade80';   // Excellent - green
-    if (spread <= 25) return '#fbbf24';  // Good - yellow
-    if (spread <= 35) return '#f97316';  // Moderate - orange
-    return '#f87171';                     // High spread - red
+    return `${Math.round(value)}%`;  // Round to whole number
   };
 
   return (

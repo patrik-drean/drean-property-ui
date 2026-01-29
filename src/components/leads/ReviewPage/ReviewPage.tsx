@@ -32,6 +32,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     message: string;
     severity: 'success' | 'info' | 'warning' | 'error';
   }>({ open: false, message: '', severity: 'info' });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Snackbar helper
   const showSnackbar = useCallback((
@@ -52,6 +53,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     markAsDone,
     markAsSkip,
     archiveLead,
+    deleteLeadPermanently,
     updateEvaluation,
   } = useLeadQueue({
     initialQueueType: 'action_now',
@@ -233,6 +235,20 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     // Notification shown by hook via onNotification callback
   };
 
+  // Handle permanent delete from detail panel
+  const handleDeletePermanently = useCallback(async () => {
+    if (!selectedCardId) return;
+    setDeleteLoading(true);
+    try {
+      await deleteLeadPermanently(selectedCardId);
+      setDetailPanelOpen(false);
+    } catch {
+      // Error is handled by hook, loading state needs to be reset
+    } finally {
+      setDeleteLoading(false);
+    }
+  }, [selectedCardId, deleteLeadPermanently]);
+
   // Handle successful lead addition
   const handleAddLeadSuccess = useCallback((response: IngestLeadResponse) => {
     if (response.wasConsolidated) {
@@ -340,6 +356,8 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         onAction={handlePanelAction}
         onNotesChange={handleNotesChange}
         onEvaluationSave={updateEvaluation}
+        onDeletePermanently={handleDeletePermanently}
+        deleteLoading={deleteLoading}
       />
 
       {/* Add Lead Modal */}

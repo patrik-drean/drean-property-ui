@@ -41,6 +41,7 @@ interface UseLeadQueueReturn {
   changePage: (page: number) => void;
   updateLeadStatus: (leadId: string, status: string) => Promise<void>;
   archiveLead: (leadId: string) => Promise<void>;
+  deleteLeadPermanently: (leadId: string) => Promise<void>;
   updateEvaluation: (leadId: string, updates: UpdateEvaluationRequest) => Promise<void>;
   refetch: () => Promise<void>;
   markAsDone: (leadId: string) => void;
@@ -336,6 +337,29 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
     [leads, queueCounts, notify]
   );
 
+  const deleteLeadPermanently = useCallback(
+    async (leadId: string) => {
+      const previousLeads = leads;
+      const previousCounts = queueCounts;
+
+      // Optimistic update
+      setLeads((prev) => prev.filter((l) => l.id !== leadId));
+      setQueueCounts((prev) => ({ ...prev, all: Math.max(0, prev.all - 1) }));
+
+      try {
+        await leadQueueService.deleteLeadPermanently(leadId);
+        notify('Lead permanently deleted', 'success');
+      } catch (err) {
+        // Rollback
+        setLeads(previousLeads);
+        setQueueCounts(previousCounts);
+        notify('Failed to delete lead', 'error');
+        throw err; // Re-throw so the dialog can handle loading state
+      }
+    },
+    [leads, queueCounts, notify]
+  );
+
   const updateEvaluation = useCallback(
     async (leadId: string, updates: UpdateEvaluationRequest) => {
       const previousLeads = leads;
@@ -431,6 +455,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
     changePage,
     updateLeadStatus,
     archiveLead,
+    deleteLeadPermanently,
     updateEvaluation,
     refetch: fetchQueue,
     markAsDone,

@@ -106,18 +106,48 @@ export const getScoreColor = (score: number | null | undefined): string => {
   return '#f87171';
 };
 
-// Helper to format time since
+// Helper to format time since (Mountain Time aware)
 export const formatTimeSince = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
+  try {
+    // Ensure the timestamp is treated as UTC by appending 'Z' if not present
+    const utcString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+    const date = new Date(utcString);
+    const now = new Date();
 
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
+    // Validate date
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid timestamp:', dateString);
+      return dateString;
+    }
+
+    // Calculate difference in days in Mountain Time for accurate "Yesterday" logic
+    const mtDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/Denver' }));
+    const mtNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Denver' }));
+
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+
+    // For "Yesterday" comparison, use Mountain Time dates
+    const mtDateDay = new Date(mtDate.getFullYear(), mtDate.getMonth(), mtDate.getDate());
+    const mtNowDay = new Date(mtNow.getFullYear(), mtNow.getMonth(), mtNow.getDate());
+    const diffDays = Math.floor((mtNowDay.getTime() - mtDateDay.getTime()) / 86400000);
+
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24 && diffDays === 0) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    // For older dates, format in Mountain Time
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Denver',
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    return formatter.format(date);
+  } catch (error) {
+    console.error('Error formatting time since:', error);
+    return dateString;
+  }
 };

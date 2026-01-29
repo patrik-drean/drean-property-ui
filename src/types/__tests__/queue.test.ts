@@ -120,8 +120,16 @@ describe('Queue Helper Functions', () => {
   });
 
   describe('formatTimeSince', () => {
+    // NOTE: formatTimeSince uses Mountain Time (America/Denver) for day boundary calculations.
+    // UTC times are converted to Mountain Time to determine "Yesterday", etc.
+    // MST = UTC-7, MDT = UTC-6
+    // Example: 2024-01-15T12:00:00Z = Jan 15 5:00 AM MST
+    //          2024-01-15T00:00:00Z = Jan 14 5:00 PM MST (previous day!)
+
     beforeEach(() => {
       jest.useFakeTimers();
+      // Set system time to noon UTC on Jan 15, 2024
+      // In MST: Jan 15, 5:00 AM
       jest.setSystemTime(new Date('2024-01-15T12:00:00Z'));
     });
 
@@ -137,17 +145,25 @@ describe('Queue Helper Functions', () => {
       expect(formatTimeSince(date5MinAgo)).toBe('5m ago');
     });
 
-    it('should return hours ago for times < 24 hours', () => {
+    it('should return hours ago for times earlier same day in Mountain Time', () => {
+      // 2 hours ago: 10:00 UTC = 3:00 AM MST (same day as 12:00 UTC = 5:00 AM MST)
       const date2HoursAgo = new Date('2024-01-15T10:00:00Z').toISOString();
       expect(formatTimeSince(date2HoursAgo)).toBe('2h ago');
 
-      const date12HoursAgo = new Date('2024-01-15T00:00:00Z').toISOString();
-      expect(formatTimeSince(date12HoursAgo)).toBe('12h ago');
+      // 5 hours ago: 07:00 UTC = 12:00 AM MST (midnight on Jan 15 MST, same day)
+      const date5HoursAgo = new Date('2024-01-15T07:00:00Z').toISOString();
+      expect(formatTimeSince(date5HoursAgo)).toBe('5h ago');
     });
 
-    it('should return "Yesterday" for times 1 day ago', () => {
+    it('should return "Yesterday" for times on previous day in Mountain Time', () => {
+      // 12:00 UTC on Jan 14 = 5:00 AM MST on Jan 14 (yesterday in Mountain Time)
       const dateYesterday = new Date('2024-01-14T12:00:00Z').toISOString();
       expect(formatTimeSince(dateYesterday)).toBe('Yesterday');
+
+      // Midnight UTC on Jan 15 = 5:00 PM MST on Jan 14 (yesterday in Mountain Time!)
+      // This is the edge case where UTC and Mountain Time differ
+      const dateMidnightUTC = new Date('2024-01-15T00:00:00Z').toISOString();
+      expect(formatTimeSince(dateMidnightUTC)).toBe('Yesterday');
     });
 
     it('should return days ago for times 2-6 days ago', () => {
@@ -165,6 +181,17 @@ describe('Queue Helper Functions', () => {
       expect(result).not.toContain('d ago');
       expect(result).not.toContain('h ago');
       expect(result).not.toContain('m ago');
+    });
+
+    it('should handle invalid date strings gracefully', () => {
+      const result = formatTimeSince('invalid-date');
+      expect(result).toBe('invalid-date'); // Returns original string
+    });
+
+    it('should handle dates without Z suffix', () => {
+      // Function should append Z if not present
+      const dateWithoutZ = '2024-01-15T11:30:00';
+      expect(formatTimeSince(dateWithoutZ)).toBe('30m ago');
     });
   });
 });

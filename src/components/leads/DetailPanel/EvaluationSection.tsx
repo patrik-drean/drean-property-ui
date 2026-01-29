@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Box, Typography, Stack } from '@mui/material';
 import { QueueLead } from '../../../types/queue';
 import { SectionCard } from './SectionCard';
@@ -11,6 +11,7 @@ import {
   parseCurrency,
   validateCurrency,
 } from '../../../utils/currencyUtils';
+import { LeadMetrics } from '../../../services/leadQueueService';
 
 interface EvaluationData {
   arv: number;
@@ -27,8 +28,13 @@ interface EvaluationData {
   rentNote?: string;
 }
 
+// Extended QueueLead with _metrics from useLeadQueue
+interface QueueLeadWithMetrics extends QueueLead {
+  _metrics?: LeadMetrics;
+}
+
 interface EvaluationSectionProps {
-  lead: QueueLead;
+  lead: QueueLeadWithMetrics;
   onEvaluationChange?: (data: Partial<EvaluationData>) => void;
 }
 
@@ -49,32 +55,62 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
   lead,
   onEvaluationChange,
 }) => {
-  // Get initial values from lead or calculate estimates
-  const mao = lead.mao ?? null;
+  // Get metrics from lead._metrics (populated by useLeadQueue from API response)
+  const metrics = lead._metrics;
   const listingPrice = lead.listingPrice;
 
-  // Calculate initial estimates (these would come from evaluation API in production)
-  const initialArv = mao ? Math.round(mao / 0.55) : Math.round(listingPrice * 1.2);
-  const initialRehab = mao
-    ? Math.round(initialArv * 0.15)
-    : Math.round(listingPrice * 0.15);
-  const initialRent = Math.round(initialArv * 0.008);
+  // Helper to get initial evaluation data from lead metrics
+  const getInitialEvaluation = (): EvaluationData => {
+    // Use actual metrics from the lead if available
+    if (metrics) {
+      return {
+        arv: metrics.arv ?? Math.round(listingPrice * 1.2),
+        arvConfidence: metrics.arvConfidence,
+        arvSource: (metrics.arvSource as ConfidenceSource) ?? 'ai',
+        arvNote: metrics.arvNote,
+        rehab: metrics.rehabEstimate ?? Math.round(listingPrice * 0.15),
+        rehabConfidence: metrics.rehabConfidence,
+        rehabSource: (metrics.rehabSource as ConfidenceSource) ?? 'ai',
+        rehabNote: metrics.rehabNote,
+        rent: metrics.rentEstimate ?? Math.round((metrics.arv ?? listingPrice) * 0.008),
+        rentConfidence: metrics.rentConfidence,
+        rentSource: (metrics.rentSource as ConfidenceSource) ?? 'ai',
+        rentNote: metrics.rentNote,
+      };
+    }
 
-  // Local state for evaluation values
-  const [evaluation, setEvaluation] = useState<EvaluationData>({
-    arv: initialArv,
-    arvConfidence: 85,
-    arvSource: 'ai',
-    arvNote: undefined,
-    rehab: initialRehab,
-    rehabConfidence: 72,
-    rehabSource: 'ai',
-    rehabNote: undefined,
-    rent: initialRent,
-    rentConfidence: 78,
-    rentSource: 'ai',
-    rentNote: undefined,
-  });
+    // Fallback calculation if no metrics available (shouldn't happen in production)
+    const mao = lead.mao ?? null;
+    const fallbackArv = mao ? Math.round(mao / 0.55) : Math.round(listingPrice * 1.2);
+    const fallbackRehab = mao
+      ? Math.round(fallbackArv * 0.15)
+      : Math.round(listingPrice * 0.15);
+    const fallbackRent = Math.round(fallbackArv * 0.008);
+
+    return {
+      arv: fallbackArv,
+      arvConfidence: undefined,
+      arvSource: 'ai',
+      arvNote: undefined,
+      rehab: fallbackRehab,
+      rehabConfidence: undefined,
+      rehabSource: 'ai',
+      rehabNote: undefined,
+      rent: fallbackRent,
+      rentConfidence: undefined,
+      rentSource: 'ai',
+      rentNote: undefined,
+    };
+  };
+
+  // Local state for evaluation values - initialized from lead metrics
+  const [evaluation, setEvaluation] = useState<EvaluationData>(getInitialEvaluation);
+
+  // Reset evaluation state when lead changes (navigating between leads)
+  useEffect(() => {
+    setEvaluation(getInitialEvaluation());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead.id, metrics?.arv, metrics?.rehabEstimate, metrics?.rentEstimate]);
 
   // Calculate MAO based on current values
   // MAO = (ARV × 70%) - Rehab - $5k (wholesale fee)

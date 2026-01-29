@@ -340,21 +340,37 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
     async (leadId: string, updates: UpdateEvaluationRequest) => {
       const previousLeads = leads;
 
-      // Optimistic update - update the metrics
+      // Optimistic update - update the metrics including notes
       setLeads((prev) =>
         prev.map((l) => {
           if (l.id !== leadId) return l;
 
           // Merge updates into existing metrics
           const existingMetrics = (l as any)._metrics || {};
+          const updatedMetrics = { ...existingMetrics };
+
+          if (updates.arv !== undefined) {
+            updatedMetrics.arv = updates.arv;
+            updatedMetrics.arvSource = 'manual';
+            updatedMetrics.arvNote = updates.arvNote;
+            updatedMetrics.arvConfidence = undefined; // Clear confidence for manual overrides
+          }
+          if (updates.rehabEstimate !== undefined) {
+            updatedMetrics.rehabEstimate = updates.rehabEstimate;
+            updatedMetrics.rehabSource = 'manual';
+            updatedMetrics.rehabNote = updates.rehabNote;
+            updatedMetrics.rehabConfidence = undefined;
+          }
+          if (updates.rentEstimate !== undefined) {
+            updatedMetrics.rentEstimate = updates.rentEstimate;
+            updatedMetrics.rentSource = 'manual';
+            updatedMetrics.rentNote = updates.rentNote;
+            updatedMetrics.rentConfidence = undefined;
+          }
+
           return {
             ...l,
-            _metrics: {
-              ...existingMetrics,
-              ...(updates.arv !== undefined && { arv: updates.arv, arvSource: 'manual' }),
-              ...(updates.rehabEstimate !== undefined && { rehabEstimate: updates.rehabEstimate, rehabSource: 'manual' }),
-              ...(updates.rentEstimate !== undefined && { rentEstimate: updates.rentEstimate, rentSource: 'manual' }),
-            },
+            _metrics: updatedMetrics,
           };
         })
       );
@@ -362,7 +378,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
       try {
         const result = await leadQueueService.updateEvaluation(leadId, updates);
 
-        // Update with server-calculated values (MAO, spread)
+        // Update with server-calculated values (MAO, spread) and full metrics
         setLeads((prev) =>
           prev.map((l) =>
             l.id === leadId

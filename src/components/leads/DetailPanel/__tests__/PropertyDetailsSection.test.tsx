@@ -158,5 +158,47 @@ describe('PropertyDetailsSection', () => {
 
       expect(screen.getByText('0 days')).toBeInTheDocument();
     });
+
+    it('should handle createdAt timestamps without Z suffix', () => {
+      // Test that timestamps without Z are handled correctly (treated as UTC)
+      const fiveDaysAgo = new Date();
+      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+      // Remove the Z suffix to simulate some API responses
+      const timestampWithoutZ = fiveDaysAgo.toISOString().replace('Z', '');
+
+      const leadWithDate = { ...mockLead, createdAt: timestampWithoutZ };
+      render(<PropertyDetailsSection lead={leadWithDate} />);
+
+      expect(screen.getByText('DOM')).toBeInTheDocument();
+      expect(screen.getByText('5 days')).toBeInTheDocument();
+    });
+
+    it('should display dash for null createdAt', () => {
+      const leadNoDate = { ...mockLead, createdAt: '' };
+      render(<PropertyDetailsSection lead={leadNoDate} />);
+
+      expect(screen.getByText('DOM')).toBeInTheDocument();
+      expect(screen.getByText('-')).toBeInTheDocument();
+    });
+  });
+
+  describe('AI Analysis', () => {
+    it('should display AI summary when present', () => {
+      const leadWithAiSummary = {
+        ...mockLead,
+        aiSummary: 'Strong investment opportunity. Property is priced below market.',
+      };
+      render(<PropertyDetailsSection lead={leadWithAiSummary} />);
+
+      expect(screen.getByText('AI Analysis')).toBeInTheDocument();
+      expect(screen.getByText(/Strong investment opportunity/)).toBeInTheDocument();
+    });
+
+    it('should not display AI section when no summary', () => {
+      const leadNoAiSummary = { ...mockLead, aiSummary: undefined };
+      render(<PropertyDetailsSection lead={leadNoAiSummary} />);
+
+      expect(screen.queryByText('AI Analysis')).not.toBeInTheDocument();
+    });
   });
 });

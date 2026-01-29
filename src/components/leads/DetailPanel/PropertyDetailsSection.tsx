@@ -42,10 +42,30 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
     }).format(value);
   };
 
-  // Calculate days since created as proxy for DOM
-  const daysOnMarket = lead.createdAt
-    ? Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / (1000 * 60 * 60 * 24))
-    : null;
+  // Calculate days since created as proxy for DOM (using Mountain Time for consistency)
+  const daysOnMarket = (() => {
+    if (!lead.createdAt) return null;
+    try {
+      // Ensure the timestamp is treated as UTC by appending 'Z' if not present
+      const utcString = lead.createdAt.endsWith('Z') ? lead.createdAt : `${lead.createdAt}Z`;
+      const createdDate = new Date(utcString);
+      const now = new Date();
+
+      if (isNaN(createdDate.getTime())) return null;
+
+      // Convert to Mountain Time for day calculation
+      const mtCreated = new Date(createdDate.toLocaleString('en-US', { timeZone: 'America/Denver' }));
+      const mtNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Denver' }));
+
+      // Calculate days difference using Mountain Time dates (at midnight)
+      const mtCreatedDay = new Date(mtCreated.getFullYear(), mtCreated.getMonth(), mtCreated.getDate());
+      const mtNowDay = new Date(mtNow.getFullYear(), mtNow.getMonth(), mtNow.getDate());
+
+      return Math.floor((mtNowDay.getTime() - mtCreatedDay.getTime()) / (1000 * 60 * 60 * 24));
+    } catch {
+      return null;
+    }
+  })();
 
   return (
     <SectionCard title="PROPERTY DETAILS">

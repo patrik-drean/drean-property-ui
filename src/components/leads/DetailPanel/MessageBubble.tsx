@@ -20,13 +20,30 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   timestamp,
   status,
 }) => {
+  // Format timestamp in Mountain Time
   const formatTimestamp = (ts: string): string => {
-    const date = new Date(ts);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+    try {
+      // Ensure the timestamp is treated as UTC by appending 'Z' if not present
+      const utcString = ts.endsWith('Z') ? ts : `${ts}Z`;
+      const date = new Date(utcString);
+
+      // Validate date
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid timestamp:', ts);
+        return ts;
+      }
+
+      // Format time in Mountain Time
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Denver',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }).format(date);
+    } catch (error) {
+      console.error('Error formatting timestamp:', error);
+      return ts;
+    }
   };
 
   const getStatusIndicator = () => {

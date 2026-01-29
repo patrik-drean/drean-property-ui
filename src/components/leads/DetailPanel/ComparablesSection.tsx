@@ -29,12 +29,28 @@ export const ComparablesSection: React.FC<ComparablesSectionProps> = ({ comps })
     }).format(value);
   };
 
+  // Format date in Mountain Time
   const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      year: '2-digit',
-    });
+    try {
+      // Ensure the timestamp is treated as UTC by appending 'Z' if not present
+      const utcString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+      const date = new Date(utcString);
+
+      // Validate date
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date:', dateString);
+        return dateString;
+      }
+
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Denver',
+        month: 'short',
+        year: '2-digit',
+      }).format(date);
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
   };
 
   if (comps.length === 0) {

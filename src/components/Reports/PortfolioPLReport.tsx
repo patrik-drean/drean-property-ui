@@ -84,10 +84,10 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
   const getHighlightStyle = (isHighlighted: boolean, baseColor?: string) => {
     if (!isHighlighted) return { bgcolor: baseColor || 'inherit' };
     return {
-      bgcolor: 'rgba(76, 175, 80, 0.15)',
+      bgcolor: 'rgba(74, 222, 128, 0.15)',
       borderLeft: '3px solid',
-      borderColor: 'rgb(46, 125, 50)',
-      color: 'rgba(27, 94, 32, 1) !important'
+      borderColor: '#4ade80',
+      color: '#4ade80 !important'
     };
   };
 
@@ -123,11 +123,11 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} px={2}>
-        <Typography variant="h5">Portfolio P&L Report</Typography>
+        <Typography variant="h5" sx={{ color: '#f0f6fc' }}>Portfolio P&L Report</Typography>
       </Box>
 
       {/* Main P&L Table */}
-      <Paper sx={{ overflowX: 'auto', mb: 3 }}>
+      <Paper sx={{ overflowX: 'auto', mb: 3, bgcolor: '#161b22' }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -138,13 +138,14 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
                   align="right"
                   sx={{
                     ...(isLastFullMonth(m.month) ? {
-                      bgcolor: 'rgb(46, 125, 50) !important',
+                      bgcolor: '#238636 !important',
                       borderLeft: '3px solid',
-                      borderColor: 'rgb(46, 125, 50)',
+                      borderColor: '#4ade80',
                       fontWeight: 600,
-                      color: 'white !important'
+                      color: '#f0f6fc !important'
                     } : {
-                      fontWeight: 400
+                      fontWeight: 400,
+                      color: '#f0f6fc'
                     })
                   }}
                 >
@@ -159,13 +160,13 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
           <TableBody>
             {/* Income */}
             <TableRow>
-              <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: 'grey.100' }}>
+              <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: '#21262d', color: '#f0f6fc' }}>
                 <strong>INCOME</strong>
               </TableCell>
             </TableRow>
             {incomeCategories.map(category => (
               <TableRow key={`income-${category}`}>
-                <TableCell sx={{ pl: 4 }}>{category}</TableCell>
+                <TableCell sx={{ pl: 4, color: '#f0f6fc' }}>{category}</TableCell>
                 {report.months.map(m => (
                   <TableCell
                     key={m.month}
@@ -182,34 +183,35 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
                 </TableCell>
               </TableRow>
             ))}
-            <TableRow sx={{ bgcolor: 'grey.50' }}>
-              <TableCell><strong>Total Income</strong></TableCell>
+            <TableRow sx={{ bgcolor: '#21262d' }}>
+              <TableCell sx={{ color: '#f0f6fc' }}><strong>Total Income</strong></TableCell>
               {report.months.map(m => (
                 <TableCell
                   key={m.month}
                   align="right"
                   sx={{
                     ...getHighlightStyle(isLastFullMonth(m.month)),
-                    ...(!isLastFullMonth(m.month) && { bgcolor: 'grey.50' })
+                    ...(!isLastFullMonth(m.month) && { bgcolor: '#21262d' }),
+                    color: '#f0f6fc'
                   }}
                 >
                   <strong>{formatCurrency(m.totalIncome)}</strong>
                 </TableCell>
               ))}
-              <TableCell align="right">
+              <TableCell align="right" sx={{ color: '#f0f6fc' }}>
                 <strong>{formatCurrency(report.sixMonthAverage.totalIncome)}</strong>
               </TableCell>
             </TableRow>
 
             {/* Expenses */}
             <TableRow>
-              <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: 'grey.100' }}>
+              <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: '#21262d', color: '#f0f6fc' }}>
                 <strong>EXPENSES</strong>
               </TableCell>
             </TableRow>
             {expenseCategories.map(category => (
               <TableRow key={`expense-${category}`}>
-                <TableCell sx={{ pl: 4 }}>{category}</TableCell>
+                <TableCell sx={{ pl: 4, color: '#f0f6fc' }}>{category}</TableCell>
                 {report.months.map(m => (
                   <TableCell
                     key={m.month}
@@ -226,41 +228,42 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
                 </TableCell>
               </TableRow>
             ))}
-            <TableRow sx={{ bgcolor: 'grey.50' }}>
-              <TableCell><strong>Total Expenses</strong></TableCell>
+            <TableRow sx={{ bgcolor: '#21262d' }}>
+              <TableCell sx={{ color: '#f0f6fc' }}><strong>Total Expenses</strong></TableCell>
               {report.months.map(m => (
                 <TableCell
                   key={m.month}
                   align="right"
                   sx={{
                     ...getHighlightStyle(isLastFullMonth(m.month)),
-                    ...(!isLastFullMonth(m.month) && { bgcolor: 'grey.50' })
+                    ...(!isLastFullMonth(m.month) && { bgcolor: '#21262d' }),
+                    color: '#f0f6fc'
                   }}
                 >
                   <strong>{formatCurrency(m.totalExpenses)}</strong>
                 </TableCell>
               ))}
-              <TableCell align="right">
+              <TableCell align="right" sx={{ color: '#f0f6fc' }}>
                 <strong>{formatCurrency(report.sixMonthAverage.totalExpenses)}</strong>
               </TableCell>
             </TableRow>
 
             {/* Net Income */}
             <TableRow>
-              <TableCell><strong>Net Income</strong></TableCell>
+              <TableCell sx={{ color: '#f0f6fc' }}><strong>Net Income</strong></TableCell>
               {report.months.map(m => (
                 <TableCell
                   key={m.month}
                   align="right"
                   sx={getHighlightStyle(isLastFullMonth(m.month))}
                 >
-                  <strong style={{ color: m.netIncome >= 0 ? 'green' : 'red' }}>
+                  <strong style={{ color: m.netIncome >= 0 ? '#4ade80' : '#f87171' }}>
                     {formatCurrency(m.netIncome)}
                   </strong>
                 </TableCell>
               ))}
               <TableCell align="right">
-                <strong style={{ color: report.sixMonthAverage.netIncome >= 0 ? 'green' : 'red' }}>
+                <strong style={{ color: report.sixMonthAverage.netIncome >= 0 ? '#4ade80' : '#f87171' }}>
                   {formatCurrency(report.sixMonthAverage.netIncome)}
                 </strong>
               </TableCell>
@@ -270,9 +273,9 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
       </Paper>
 
       {/* Property Breakdown */}
-      <Accordion defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6">Property Breakdown</Typography>
+      <Accordion defaultExpanded sx={{ bgcolor: '#161b22' }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#8b949e' }} />}>
+          <Typography variant="h6" sx={{ color: '#f0f6fc' }}>Property Breakdown</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Table size="small">
@@ -287,11 +290,11 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
                 <TableCell
                   align="right"
                   sx={{
-                    bgcolor: 'rgb(46, 125, 50) !important',
+                    bgcolor: '#238636 !important',
                     borderLeft: '3px solid',
-                    borderColor: 'rgb(46, 125, 50)',
+                    borderColor: '#4ade80',
                     fontWeight: 600,
-                    color: 'white !important'
+                    color: '#f0f6fc !important'
                   }}
                 >
                   <strong>Last Mo Net</strong>
@@ -301,7 +304,7 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
             <TableBody>
               {report.propertyBreakdowns.map((prop, idx) => (
                 <TableRow key={idx}>
-                  <TableCell>
+                  <TableCell sx={{ color: '#f0f6fc' }}>
                     {prop.propertyId === 'business' ? (
                       prop.propertyAddress
                     ) : (
@@ -309,31 +312,30 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
                         href={`#/reports/property-pl/${prop.propertyId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ color: 'inherit', textDecoration: 'underline' }}
+                        style={{ color: '#60a5fa', textDecoration: 'underline' }}
                       >
                         {prop.propertyAddress}
                       </a>
                     )}
                   </TableCell>
-                  <TableCell align="right">{formatCurrency(prop.totalIncome)}</TableCell>
-                  <TableCell align="right">{formatCurrency(prop.totalExpenses)}</TableCell>
+                  <TableCell align="right" sx={{ color: '#f0f6fc' }}>{formatCurrency(prop.totalIncome)}</TableCell>
+                  <TableCell align="right" sx={{ color: '#f0f6fc' }}>{formatCurrency(prop.totalExpenses)}</TableCell>
                   <TableCell align="right">
-                    <strong style={{ color: prop.netIncome >= 0 ? 'green' : 'red' }}>
+                    <strong style={{ color: prop.netIncome >= 0 ? '#4ade80' : '#f87171' }}>
                       {formatCurrency(prop.netIncome)}
                     </strong>
                   </TableCell>
-                  <TableCell align="right">{formatCurrency(prop.lastMonthIncome)}</TableCell>
-                  <TableCell align="right">{formatCurrency(prop.lastMonthExpenses)}</TableCell>
+                  <TableCell align="right" sx={{ color: '#f0f6fc' }}>{formatCurrency(prop.lastMonthIncome)}</TableCell>
+                  <TableCell align="right" sx={{ color: '#f0f6fc' }}>{formatCurrency(prop.lastMonthExpenses)}</TableCell>
                   <TableCell
                     align="right"
                     sx={{
-                      bgcolor: 'rgba(76, 175, 80, 0.15)',
+                      bgcolor: 'rgba(74, 222, 128, 0.15)',
                       borderLeft: '3px solid',
-                      borderColor: 'rgb(46, 125, 50)',
-                      color: 'rgba(27, 94, 32, 1) !important'
+                      borderColor: '#4ade80',
                     }}
                   >
-                    <strong style={{ color: prop.lastMonthNetIncome >= 0 ? 'green' : 'red' }}>
+                    <strong style={{ color: prop.lastMonthNetIncome >= 0 ? '#4ade80' : '#f87171' }}>
                       {formatCurrency(prop.lastMonthNetIncome)}
                     </strong>
                   </TableCell>

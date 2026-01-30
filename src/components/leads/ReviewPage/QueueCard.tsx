@@ -138,12 +138,19 @@ export const QueueCard: React.FC<QueueCardProps> = ({
         mao={lead.mao ?? null}
         spreadPercent={lead.spreadPercent ?? null}
         neighborhoodGrade={lead.neighborhoodGrade ?? null}
+        metrics={lead.metrics}
+        listingPrice={lead.listingPrice}
       />
 
       {/* AI Evaluation Summary */}
-      {lead.aiSummary && (
+      {(lead.aiSummary || lead.aiVerdict || (lead.aiWeaknesses && lead.aiWeaknesses.length > 0)) && (
         <Box sx={{ mt: 1.5 }}>
-          <AiSummaryPreview summary={lead.aiSummary} />
+          <AiSummaryPreview
+            summary={lead.aiSummary}
+            verdict={lead.aiVerdict}
+            weaknesses={lead.aiWeaknesses}
+            recommendation={lead.recommendation}
+          />
         </Box>
       )}
 

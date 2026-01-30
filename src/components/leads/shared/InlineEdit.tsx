@@ -10,6 +10,7 @@ import {
 import { Edit as EditIcon } from '@mui/icons-material';
 import { ConfidenceBadge, ConfidenceSource, ConfidenceLevel } from './ConfidenceBadge';
 import { InfoAlert } from './InfoAlert';
+import { RawJsonTooltip } from './RawJsonTooltip';
 
 interface InlineEditProps {
   /** Label displayed above the value */
@@ -36,6 +37,10 @@ interface InlineEditProps {
   infoMessage?: string;
   /** Format value with commas during editing (for currency inputs) */
   formatWithCommas?: boolean;
+  /** Raw data object for JSON tooltip display */
+  rawData?: object | null;
+  /** Label for raw data tooltip */
+  rawDataLabel?: string;
 }
 
 /**
@@ -61,6 +66,8 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
   disabled = false,
   infoMessage = 'MAO will recalculate automatically',
   formatWithCommas = false,
+  rawData,
+  rawDataLabel,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(String(value));
@@ -247,6 +254,15 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
   }
 
   // View mode
+  const valueElement = (
+    <Typography
+      variant="h6"
+      sx={{ fontWeight: 600, color: '#f0f6fc', cursor: rawData ? 'help' : 'default' }}
+    >
+      {formatValue(value)}
+    </Typography>
+  );
+
   return (
     <Box sx={{ mb: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -268,9 +284,13 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
         )}
       </Box>
 
-      <Typography variant="h6" sx={{ fontWeight: 600, color: '#f0f6fc' }}>
-        {formatValue(value)}
-      </Typography>
+      {rawData ? (
+        <RawJsonTooltip data={rawData} label={rawDataLabel || label}>
+          {valueElement}
+        </RawJsonTooltip>
+      ) : (
+        valueElement
+      )}
 
       <ConfidenceBadge confidence={confidence} source={source} note={note} />
     </Box>

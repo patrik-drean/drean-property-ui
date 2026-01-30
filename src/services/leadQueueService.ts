@@ -1,5 +1,58 @@
 import { axiosInstance } from './api';
 
+// Raw evaluation types for tooltip display
+export interface RawArvEstimate {
+  arv: number;
+  arvPerSqft: number;
+  arvLow?: number;
+  arvHigh?: number;
+  confidence: number;
+  source: string;
+  estimatedAt: string;
+}
+
+export interface RawRehabEstimate {
+  lowEstimate: number;
+  midEstimate: number;
+  highEstimate: number;
+  tier: string;
+  confidence: number;
+  source: string;
+  estimatedAt: string;
+}
+
+export interface RawRentEstimate {
+  rent: number;
+  rentLow?: number;
+  rentHigh?: number;
+  confidence: number;
+  source: string;
+  estimatedAt: string;
+}
+
+export interface RawNeighborhoodGrade {
+  grade: string;
+  gradeDescription: string;
+  confidence: number;
+  source: string;
+  gradedAt: string;
+}
+
+export interface RawScore {
+  score: number;
+  maoSpreadScore: number;
+  neighborhoodScore: number;
+  confidenceScore: number;
+  mao: number;
+  maoSpreadPercent: number;
+  recommendation: string;
+  aiSummary?: string;
+  aiVerdict?: string;
+  aiWeaknesses?: string[];
+  isDisqualified: boolean;
+  disqualifyReason?: string;
+}
+
 // Types matching backend API contracts
 export interface LeadMetrics {
   arv?: number;
@@ -17,6 +70,12 @@ export interface LeadMetrics {
   mao?: number;
   spreadPercent?: number;
   neighborhoodGrade?: string;
+  // Raw evaluation objects for tooltip display
+  rawArvEstimate?: RawArvEstimate;
+  rawRehabEstimate?: RawRehabEstimate;
+  rawRentEstimate?: RawRentEstimate;
+  rawNeighborhoodGrade?: RawNeighborhoodGrade;
+  rawScore?: RawScore;
 }
 
 export interface PropertyInfo {
@@ -59,7 +118,13 @@ export interface LeadQueueItem {
   zillowLink?: string;
   photoUrl?: string;
   followUpDue: boolean;
+  // AI evaluation fields
   aiSummary?: string;
+  aiVerdict?: string;
+  aiWeaknesses?: string[];
+  recommendation?: string;
+  // Comparables from ARV evaluation
+  comparables?: ComparableSale[];
 }
 
 export interface QueueCounts {

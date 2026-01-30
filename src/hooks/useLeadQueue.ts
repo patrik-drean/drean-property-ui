@@ -80,11 +80,16 @@ function mapToQueueLead(item: LeadQueueItem): QueueLead {
     lastContactDate: null,
     followUpDue: item.followUpDue,
     aiSummary: item.aiSummary,
+    aiVerdict: item.aiVerdict,
+    aiWeaknesses: item.aiWeaknesses,
+    recommendation: item.recommendation,
     priority: item.priority as Priority,
     timeSinceCreated: item.timeAgo || formatTimeSince(item.createdAt),
-    // Store metrics for evaluation section
-    _metrics: item.metrics,
-  } as QueueLead & { _metrics: typeof item.metrics };
+    // Full metrics data for tooltips
+    metrics: item.metrics,
+    // Comparables from ARV evaluation
+    _comparables: item.comparables,
+  } as QueueLead;
 }
 
 /**
@@ -370,7 +375,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
           if (l.id !== leadId) return l;
 
           // Merge updates into existing metrics
-          const existingMetrics = (l as any)._metrics || {};
+          const existingMetrics = (l as any).metrics || {};
           const updatedMetrics = { ...existingMetrics };
 
           if (updates.arv !== undefined) {
@@ -394,7 +399,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
 
           return {
             ...l,
-            _metrics: updatedMetrics,
+            metrics: updatedMetrics,
           };
         })
       );
@@ -410,7 +415,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
                   ...l,
                   mao: result.metrics.mao,
                   spreadPercent: result.metrics.spreadPercent,
-                  _metrics: result.metrics,
+                  metrics: result.metrics,
                 }
               : l
           )

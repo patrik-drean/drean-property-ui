@@ -1,65 +1,28 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { AddLeadModal } from '../AddLeadModal';
-import * as api from '../../../../services/api';
 import { leadQueueService, IngestLeadResponse } from '../../../../services/leadQueueService';
+import * as urlParser from '../../../../utils/urlParser';
 
-// Mock the API and service
-jest.mock('../../../../services/api', () => ({
-  scorePropertyLead: jest.fn(),
-}));
-
+// Mock the leadQueueService
 jest.mock('../../../../services/leadQueueService', () => ({
   leadQueueService: {
     ingestLead: jest.fn(),
   },
 }));
 
+// Mock the URL parser
+jest.mock('../../../../utils/urlParser', () => ({
+  parseListingUrl: jest.fn(),
+}));
+
 // Mock MUI icons
-jest.mock('@mui/icons-material/AutoFixHigh', () => () => <span data-testid="score-icon">Score</span>);
-jest.mock('@mui/icons-material/Search', () => () => <span data-testid="search-icon">Search</span>);
-jest.mock('@mui/icons-material/BarChart', () => () => <span data-testid="chart-icon">Chart</span>);
-jest.mock('@mui/icons-material/SmartToy', () => () => <span data-testid="ai-icon">AI</span>);
+jest.mock('@mui/icons-material/CheckCircleOutline', () => () => <span data-testid="check-icon">Check</span>);
 jest.mock('@mui/icons-material/WarningAmber', () => () => <span data-testid="warning-icon">Warning</span>);
 jest.mock('@mui/icons-material/ExpandMore', () => () => <span data-testid="expand-more-icon">ExpandMore</span>);
 jest.mock('@mui/icons-material/ExpandLess', () => () => <span data-testid="expand-less-icon">ExpandLess</span>);
-
-// Mock ScoreResultsCard
-jest.mock('../../ScoreResultsCard', () => ({
-  ScoreResultsCard: ({ score, grade, aiSummary }: any) => (
-    <div data-testid="score-results-card">
-      <span>Score: {score}</span>
-      {grade && <span>Grade: {grade}</span>}
-      {aiSummary && <span>Summary: {aiSummary}</span>}
-    </div>
-  ),
-}));
-
-// Mock styled components from leadsStyles
-jest.mock('../../leadsStyles', () => ({
-  ScorePropertyButton: ({ children, onClick, disabled, hasUrl, isScoring, startIcon, fullWidth, variant, ...props }: any) => (
-    <button onClick={onClick} disabled={disabled} data-testid="score-button" {...props}>
-      {children}
-    </button>
-  ),
-  ScoreErrorCard: ({ children, ...props }: any) => (
-    <div data-testid="score-error-card" {...props}>
-      {children}
-    </div>
-  ),
-  LoadingStepsContainer: ({ children, ...props }: any) => (
-    <div data-testid="loading-steps" {...props}>
-      {children}
-    </div>
-  ),
-  LoadingStep: ({ children, active }: any) => (
-    <div data-testid="loading-step" data-active={active}>
-      {children}
-    </div>
-  ),
-}));
 
 const theme = createTheme();
 
@@ -85,25 +48,24 @@ const mockIngestResponse: IngestLeadResponse = {
   wasConsolidated: false,
 };
 
-const mockScoredData = {
-  address: '123 Main St, Austin, TX 78701',
-  listingPrice: 250000,
-  zillowLink: 'https://www.zillow.com/homedetails/123',
-  sqft: 1500,
-  units: 1,
-  agentInfo: {
-    name: 'John Agent',
-    email: 'agent@example.com',
-    phone: '555-123-4567',
-    agency: 'Test Realty',
+const mockSuccessParseResult: urlParser.UrlParseResult = {
+  success: true,
+  source: 'zillow',
+  originalUrl: 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/',
+  address: {
+    street: '123 Main St',
+    city: 'Austin',
+    state: 'TX',
+    zip: '78701',
+    fullAddress: '123 Main St, Austin, TX 78701',
   },
-  note: 'Great investment opportunity',
-  leadScore: 8,
-  metadata: {
-    zestimate: 275000,
-    arv: 320000,
-    propertyGrade: 'B',
-  },
+};
+
+const mockFailedParseResult: urlParser.UrlParseResult = {
+  success: false,
+  source: 'unknown',
+  originalUrl: 'https://random-site.com/property/123',
+  error: 'Could not extract property address from this URL. Please enter the address manually.',
 };
 
 const defaultProps = {
@@ -123,6 +85,7 @@ const renderModal = (props = {}) => {
 describe('AddLeadModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (urlParser.parseListingUrl as jest.Mock).mockReturnValue(mockSuccessParseResult);
   });
 
   afterEach(() => {
@@ -140,21 +103,15 @@ describe('AddLeadModal', () => {
       expect(screen.getByLabelText(/Listing URL/i)).toBeInTheDocument();
     });
 
-    it('should render the Score Property button', () => {
+    it('should render the listing price input', () => {
       renderModal();
-      expect(screen.getByTestId('score-button')).toBeInTheDocument();
+      expect(screen.getByLabelText(/Listing Price/i)).toBeInTheDocument();
     });
 
     it('should render Cancel and Add Lead buttons', () => {
       renderModal();
       expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /add lead/i })).toBeInTheDocument();
-    });
-
-    it('should disable Score button when no URL is entered', () => {
-      renderModal();
-      const scoreButton = screen.getByTestId('score-button');
-      expect(scoreButton).toBeDisabled();
     });
 
     it('should disable Add Lead button initially (no address/price)', () => {
@@ -167,174 +124,138 @@ describe('AddLeadModal', () => {
       renderModal({ open: false });
       expect(screen.queryByText('Add New Lead')).not.toBeInTheDocument();
     });
-  });
 
-  describe('URL Input and Validation', () => {
-    it('should enable Score button when Zillow URL is entered', async () => {
+    it('should render Show Property Details toggle', () => {
       renderModal();
-      const urlInput = screen.getByLabelText(/Listing URL/i);
-
-      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123-main-st');
-
-      const scoreButton = screen.getByTestId('score-button');
-      expect(scoreButton).not.toBeDisabled();
-    });
-
-    it('should enable Score button when Redfin URL is entered', async () => {
-      renderModal();
-      const urlInput = screen.getByLabelText(/Listing URL/i);
-
-      await userEvent.type(urlInput, 'https://www.redfin.com/TX/Austin/123-Main-St');
-
-      const scoreButton = screen.getByTestId('score-button');
-      expect(scoreButton).not.toBeDisabled();
-    });
-
-    it('should enable Score button when Realtor.com URL is entered', async () => {
-      renderModal();
-      const urlInput = screen.getByLabelText(/Listing URL/i);
-
-      await userEvent.type(urlInput, 'https://www.realtor.com/realestateandhomes-detail/123');
-
-      const scoreButton = screen.getByTestId('score-button');
-      expect(scoreButton).not.toBeDisabled();
-    });
-
-    it('should show hint text when valid URL is entered but not scored', async () => {
-      renderModal();
-      const urlInput = screen.getByLabelText(/Listing URL/i);
-
-      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123-main-st');
-
-      expect(screen.getByText(/we will analyze/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /show property details/i })).toBeInTheDocument();
     });
   });
 
-  describe('URL Scoring Flow', () => {
-    it('should call scorePropertyLead when Score button is clicked', async () => {
-      (api.scorePropertyLead as jest.Mock).mockResolvedValue(mockScoredData);
-
+  describe('URL Parsing Flow', () => {
+    it('should call parseListingUrl when URL field loses focus', async () => {
       renderModal();
       const urlInput = screen.getByLabelText(/Listing URL/i);
-      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123');
 
-      const scoreButton = screen.getByTestId('score-button');
-      fireEvent.click(scoreButton);
+      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/');
+      fireEvent.blur(urlInput);
 
-      expect(api.scorePropertyLead).toHaveBeenCalledWith('https://www.zillow.com/homedetails/123');
-    });
-
-    it('should show loading steps during scoring', async () => {
-      (api.scorePropertyLead as jest.Mock).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(mockScoredData), 3000))
+      expect(urlParser.parseListingUrl).toHaveBeenCalledWith(
+        'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/'
       );
-
-      renderModal();
-      const urlInput = screen.getByLabelText(/Listing URL/i);
-      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123');
-
-      const scoreButton = screen.getByTestId('score-button');
-      fireEvent.click(scoreButton);
-
-      expect(screen.getByTestId('loading-steps')).toBeInTheDocument();
-      expect(screen.getByText('Fetching property details...')).toBeInTheDocument();
     });
 
-    it('should populate form fields after successful scoring', async () => {
-      (api.scorePropertyLead as jest.Mock).mockResolvedValue(mockScoredData);
-
+    it('should show success message when URL is parsed successfully', async () => {
       renderModal();
       const urlInput = screen.getByLabelText(/Listing URL/i);
-      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123');
 
-      const scoreButton = screen.getByTestId('score-button');
-      fireEvent.click(scoreButton);
+      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/');
+      fireEvent.blur(urlInput);
 
+      expect(screen.getByText(/Address extracted:/i)).toBeInTheDocument();
+      expect(screen.getByText(/123 Main St, Austin, TX 78701/i)).toBeInTheDocument();
+    });
+
+    it('should auto-fill address fields when URL is parsed successfully', async () => {
+      renderModal();
+      const urlInput = screen.getByLabelText(/Listing URL/i);
+
+      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/');
+      fireEvent.blur(urlInput);
+
+      // Form should auto-expand and fields should be filled
       await waitFor(() => {
-        expect(screen.getByTestId('score-results-card')).toBeInTheDocument();
-      });
-
-      // Expand form to see populated fields
-      const expandButton = screen.getByRole('button', { name: /show property details/i });
-      fireEvent.click(expandButton);
-
-      await waitFor(() => {
-        const addressInput = screen.getByLabelText(/address/i);
+        const addressInput = screen.getByRole('textbox', { name: /^address$/i });
         expect(addressInput).toHaveValue('123 Main St, Austin, TX 78701');
       });
+      expect(screen.getByRole('textbox', { name: /city/i })).toHaveValue('Austin');
+      expect(screen.getByRole('textbox', { name: /^state$/i })).toHaveValue('TX');
+      expect(screen.getByRole('textbox', { name: /zip/i })).toHaveValue('78701');
     });
 
-    it('should show score results card after successful scoring', async () => {
-      (api.scorePropertyLead as jest.Mock).mockResolvedValue(mockScoredData);
-
+    it('should auto-expand form when URL is parsed successfully', async () => {
       renderModal();
       const urlInput = screen.getByLabelText(/Listing URL/i);
-      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123');
 
-      const scoreButton = screen.getByTestId('score-button');
-      fireEvent.click(scoreButton);
+      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/');
+      fireEvent.blur(urlInput);
 
+      // Form should be expanded - check that Hide is visible
       await waitFor(() => {
-        expect(screen.getByTestId('score-results-card')).toBeInTheDocument();
-        expect(screen.getByText('Score: 8')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /hide property details/i })).toBeInTheDocument();
       });
     });
 
-    it('should show error card when scoring fails', async () => {
-      (api.scorePropertyLead as jest.Mock).mockRejectedValue(new Error('Could not fetch property details'));
+    it('should show warning message when URL parsing fails', async () => {
+      (urlParser.parseListingUrl as jest.Mock).mockReturnValue(mockFailedParseResult);
 
       renderModal();
       const urlInput = screen.getByLabelText(/Listing URL/i);
-      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123');
 
-      const scoreButton = screen.getByTestId('score-button');
-      fireEvent.click(scoreButton);
+      await userEvent.type(urlInput, 'https://random-site.com/property/123');
+      fireEvent.blur(urlInput);
 
+      expect(screen.getByText(/Could not extract property address/i)).toBeInTheDocument();
+    });
+
+    it('should auto-expand form when URL parsing fails for manual entry', async () => {
+      (urlParser.parseListingUrl as jest.Mock).mockReturnValue(mockFailedParseResult);
+
+      renderModal();
+      const urlInput = screen.getByLabelText(/Listing URL/i);
+
+      await userEvent.type(urlInput, 'https://random-site.com/property/123');
+      fireEvent.blur(urlInput);
+
+      // Form should be expanded for manual entry
       await waitFor(() => {
-        expect(screen.getByTestId('score-error-card')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /hide property details/i })).toBeInTheDocument();
       });
     });
 
-    it('should show timeout error message for timeout errors', async () => {
-      (api.scorePropertyLead as jest.Mock).mockRejectedValue({ message: 'Request timeout' });
-
+    it('should not call parseListingUrl when URL is empty', async () => {
       renderModal();
       const urlInput = screen.getByLabelText(/Listing URL/i);
-      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123');
 
-      const scoreButton = screen.getByTestId('score-button');
-      fireEvent.click(scoreButton);
+      fireEvent.blur(urlInput);
 
-      await waitFor(() => {
-        expect(screen.getByText('Scoring timed out')).toBeInTheDocument();
-      });
+      expect(urlParser.parseListingUrl).not.toHaveBeenCalled();
     });
 
-    it('should show rate limit error message for 429 errors', async () => {
-      (api.scorePropertyLead as jest.Mock).mockRejectedValue({ response: { status: 429, data: { error: '429 rate limit' } } });
-
+    it('should show hint text when valid URL is entered but not yet parsed', async () => {
       renderModal();
       const urlInput = screen.getByLabelText(/Listing URL/i);
+
       await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123');
 
-      const scoreButton = screen.getByTestId('score-button');
-      fireEvent.click(scoreButton);
+      expect(screen.getByText(/Click outside the field to extract address/i)).toBeInTheDocument();
+    });
 
-      await waitFor(() => {
-        expect(screen.getByText('Rate limit reached')).toBeInTheDocument();
-      });
+    it('should clear parse result when URL is modified', async () => {
+      renderModal();
+      const urlInput = screen.getByLabelText(/Listing URL/i);
+
+      // First parse
+      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/');
+      fireEvent.blur(urlInput);
+      expect(screen.getByText(/Address extracted:/i)).toBeInTheDocument();
+
+      // Modify URL
+      await userEvent.type(urlInput, 'a');
+      expect(screen.queryByText(/Address extracted:/i)).not.toBeInTheDocument();
     });
   });
 
   describe('Manual Form Entry', () => {
-    it('should expand form when "Show Property Details" is clicked', () => {
+    it('should expand form when "Show Property Details" is clicked', async () => {
       renderModal();
 
       const expandButton = screen.getByRole('button', { name: /show property details/i });
       fireEvent.click(expandButton);
 
-      expect(screen.getByLabelText(/address/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/listing price/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /^address$/i })).toBeInTheDocument();
+      });
+      expect(screen.getByRole('textbox', { name: /city/i })).toBeInTheDocument();
     });
 
     it('should collapse form when "Hide Property Details" is clicked', () => {
@@ -359,8 +280,13 @@ describe('AddLeadModal', () => {
       const expandButton = screen.getByRole('button', { name: /show property details/i });
       fireEvent.click(expandButton);
 
+      // Wait for form to expand
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /^address$/i })).toBeInTheDocument();
+      });
+
       // Fill required fields
-      const addressInput = screen.getByLabelText(/address/i);
+      const addressInput = screen.getByRole('textbox', { name: /^address$/i });
       const priceInput = screen.getByLabelText(/listing price/i);
 
       await userEvent.type(addressInput, '123 Test St, Austin, TX');
@@ -373,36 +299,35 @@ describe('AddLeadModal', () => {
     it('should format currency input correctly', async () => {
       renderModal();
 
-      // Expand form
-      const expandButton = screen.getByRole('button', { name: /show property details/i });
-      fireEvent.click(expandButton);
-
       const priceInput = screen.getByLabelText(/listing price/i);
       await userEvent.type(priceInput, '250000');
 
       expect(priceInput).toHaveValue('250,000');
     });
 
-    it('should render all form fields', () => {
+    it('should render all form fields when expanded', async () => {
       renderModal();
 
       // Expand form
       const expandButton = screen.getByRole('button', { name: /show property details/i });
       fireEvent.click(expandButton);
 
-      expect(screen.getByLabelText(/address/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/listing price/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/city/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/state/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/zip/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/sqft/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/beds/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/baths/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/units/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/year built/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/agent\/seller phone/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/agent\/seller email/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/agent name/i)).toBeInTheDocument();
+      // Wait for form to expand
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /^address$/i })).toBeInTheDocument();
+      });
+
+      expect(screen.getByRole('textbox', { name: /city/i })).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: /^state$/i })).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: /zip/i })).toBeInTheDocument();
+      expect(screen.getByRole('spinbutton', { name: /sqft/i })).toBeInTheDocument();
+      expect(screen.getByRole('spinbutton', { name: /beds/i })).toBeInTheDocument();
+      expect(screen.getByRole('spinbutton', { name: /baths/i })).toBeInTheDocument();
+      expect(screen.getByRole('spinbutton', { name: /units/i })).toBeInTheDocument();
+      expect(screen.getByRole('spinbutton', { name: /year built/i })).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: /agent\/seller phone/i })).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: /agent\/seller email/i })).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: /agent name/i })).toBeInTheDocument();
     });
   });
 
@@ -416,8 +341,13 @@ describe('AddLeadModal', () => {
       const expandButton = screen.getByRole('button', { name: /show property details/i });
       fireEvent.click(expandButton);
 
+      // Wait for form to expand
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /^address$/i })).toBeInTheDocument();
+      });
+
       // Fill required fields
-      const addressInput = screen.getByLabelText(/address/i);
+      const addressInput = screen.getByRole('textbox', { name: /^address$/i });
       const priceInput = screen.getByLabelText(/listing price/i);
 
       await userEvent.type(addressInput, '123 Test St, Austin, TX');
@@ -439,6 +369,38 @@ describe('AddLeadModal', () => {
       });
     });
 
+    it('should include URL in submission when provided', async () => {
+      (leadQueueService.ingestLead as jest.Mock).mockResolvedValue(mockIngestResponse);
+
+      renderModal();
+      const urlInput = screen.getByLabelText(/Listing URL/i);
+
+      // Enter URL and trigger parse
+      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/');
+      fireEvent.blur(urlInput);
+
+      // Enter price
+      const priceInput = screen.getByLabelText(/listing price/i);
+      await userEvent.type(priceInput, '250000');
+
+      // Submit
+      const addButton = screen.getByRole('button', { name: /add lead/i });
+      fireEvent.click(addButton);
+
+      await waitFor(() => {
+        expect(leadQueueService.ingestLead).toHaveBeenCalledWith(
+          expect.objectContaining({
+            address: '123 Main St, Austin, TX 78701',
+            listingPrice: 250000,
+            zillowLink: 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/',
+            city: 'Austin',
+            state: 'TX',
+            zipCode: '78701',
+          })
+        );
+      });
+    });
+
     it('should call onSuccess callback after successful submission', async () => {
       (leadQueueService.ingestLead as jest.Mock).mockResolvedValue(mockIngestResponse);
 
@@ -448,7 +410,12 @@ describe('AddLeadModal', () => {
       const expandButton = screen.getByRole('button', { name: /show property details/i });
       fireEvent.click(expandButton);
 
-      const addressInput = screen.getByLabelText(/address/i);
+      // Wait for form to expand
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /^address$/i })).toBeInTheDocument();
+      });
+
+      const addressInput = screen.getByRole('textbox', { name: /^address$/i });
       const priceInput = screen.getByLabelText(/listing price/i);
 
       await userEvent.type(addressInput, '123 Test St, Austin, TX');
@@ -472,7 +439,12 @@ describe('AddLeadModal', () => {
       const expandButton = screen.getByRole('button', { name: /show property details/i });
       fireEvent.click(expandButton);
 
-      const addressInput = screen.getByLabelText(/address/i);
+      // Wait for form to expand
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /^address$/i })).toBeInTheDocument();
+      });
+
+      const addressInput = screen.getByRole('textbox', { name: /^address$/i });
       const priceInput = screen.getByLabelText(/listing price/i);
 
       await userEvent.type(addressInput, '123 Test St, Austin, TX');
@@ -498,7 +470,12 @@ describe('AddLeadModal', () => {
       const expandButton = screen.getByRole('button', { name: /show property details/i });
       fireEvent.click(expandButton);
 
-      const addressInput = screen.getByLabelText(/address/i);
+      // Wait for form to expand
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /^address$/i })).toBeInTheDocument();
+      });
+
+      const addressInput = screen.getByRole('textbox', { name: /^address$/i });
       const priceInput = screen.getByLabelText(/listing price/i);
 
       await userEvent.type(addressInput, '123 Test St, Austin, TX');
@@ -516,11 +493,7 @@ describe('AddLeadModal', () => {
     it('should show validation error when address is missing', async () => {
       renderModal();
 
-      // Expand form
-      const expandButton = screen.getByRole('button', { name: /show property details/i });
-      fireEvent.click(expandButton);
-
-      // Fill only price
+      // Just fill price, no address
       const priceInput = screen.getByLabelText(/listing price/i);
       await userEvent.type(priceInput, '250000');
 
@@ -540,7 +513,12 @@ describe('AddLeadModal', () => {
       const expandButton = screen.getByRole('button', { name: /show property details/i });
       fireEvent.click(expandButton);
 
-      const addressInput = screen.getByLabelText(/address/i);
+      // Wait for form to expand
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /^address$/i })).toBeInTheDocument();
+      });
+
+      const addressInput = screen.getByRole('textbox', { name: /^address$/i });
       const priceInput = screen.getByLabelText(/listing price/i);
 
       await userEvent.type(addressInput, '123 Test St, Austin, TX');
@@ -564,7 +542,12 @@ describe('AddLeadModal', () => {
       const expandButton = screen.getByRole('button', { name: /show property details/i });
       fireEvent.click(expandButton);
 
-      const addressInput = screen.getByLabelText(/address/i);
+      // Wait for form to expand
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /^address$/i })).toBeInTheDocument();
+      });
+
+      const addressInput = screen.getByRole('textbox', { name: /^address$/i });
       const priceInput = screen.getByLabelText(/listing price/i);
 
       await userEvent.type(addressInput, '123 Test St, Austin, TX');
@@ -614,10 +597,37 @@ describe('AddLeadModal', () => {
       const newUrlInput = screen.getByLabelText(/Listing URL/i);
       expect(newUrlInput).toHaveValue('');
     });
+
+    it('should reset parse result when dialog is reopened', async () => {
+      const { rerender } = renderModal();
+
+      // Enter URL and parse
+      const urlInput = screen.getByLabelText(/Listing URL/i);
+      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/');
+      fireEvent.blur(urlInput);
+      expect(screen.getByText(/Address extracted:/i)).toBeInTheDocument();
+
+      // Close the dialog
+      rerender(
+        <ThemeProvider theme={theme}>
+          <AddLeadModal {...defaultProps} open={false} />
+        </ThemeProvider>
+      );
+
+      // Reopen the dialog
+      rerender(
+        <ThemeProvider theme={theme}>
+          <AddLeadModal {...defaultProps} open={true} />
+        </ThemeProvider>
+      );
+
+      // Parse result should be cleared
+      expect(screen.queryByText(/Address extracted:/i)).not.toBeInTheDocument();
+    });
   });
 
   describe('Accessibility', () => {
-    it('should have accessible dialog title', () => {
+    it('should have accessible dialog', () => {
       renderModal();
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
@@ -643,23 +653,24 @@ describe('AddLeadModal', () => {
     });
   });
 
-  describe('Integration with Scoring and Submission', () => {
-    it('should submit scored data when user scores URL then submits', async () => {
-      (api.scorePropertyLead as jest.Mock).mockResolvedValue(mockScoredData);
+  describe('URL Parsing with Form Submission', () => {
+    it('should submit parsed data when user parses URL then submits', async () => {
       (leadQueueService.ingestLead as jest.Mock).mockResolvedValue(mockIngestResponse);
 
       renderModal();
 
-      // Score URL
+      // Enter URL and parse
       const urlInput = screen.getByLabelText(/Listing URL/i);
-      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123');
-
-      const scoreButton = screen.getByTestId('score-button');
-      fireEvent.click(scoreButton);
+      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/');
+      fireEvent.blur(urlInput);
 
       await waitFor(() => {
-        expect(screen.getByTestId('score-results-card')).toBeInTheDocument();
+        expect(screen.getByText(/Address extracted:/i)).toBeInTheDocument();
       });
+
+      // Enter price
+      const priceInput = screen.getByLabelText(/listing price/i);
+      await userEvent.type(priceInput, '350000');
 
       // Submit
       const addButton = screen.getByRole('button', { name: /add lead/i });
@@ -669,11 +680,51 @@ describe('AddLeadModal', () => {
         expect(leadQueueService.ingestLead).toHaveBeenCalledWith(
           expect.objectContaining({
             address: '123 Main St, Austin, TX 78701',
-            listingPrice: 250000,
-            zillowLink: 'https://www.zillow.com/homedetails/123',
-            squareFootage: 1500,
-            agentPhone: '555-123-4567',
-            agentName: 'John Agent',
+            listingPrice: 350000,
+            city: 'Austin',
+            state: 'TX',
+            zipCode: '78701',
+            zillowLink: 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/',
+            source: 'manual',
+            sendFirstMessage: false,
+          })
+        );
+      });
+    });
+
+    it('should allow manual override of parsed address fields', async () => {
+      (leadQueueService.ingestLead as jest.Mock).mockResolvedValue(mockIngestResponse);
+
+      renderModal();
+
+      // Enter URL and parse
+      const urlInput = screen.getByLabelText(/Listing URL/i);
+      await userEvent.type(urlInput, 'https://www.zillow.com/homedetails/123-Main-St-Austin-TX-78701/12345_zpid/');
+      fireEvent.blur(urlInput);
+
+      // Wait for form to auto-expand
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /^address$/i })).toHaveValue('123 Main St, Austin, TX 78701');
+      });
+
+      // Clear and change the address
+      const addressInput = screen.getByRole('textbox', { name: /^address$/i });
+      await userEvent.clear(addressInput);
+      await userEvent.type(addressInput, '456 Oak Ave, Houston, TX 77001');
+
+      // Enter price
+      const priceInput = screen.getByLabelText(/listing price/i);
+      await userEvent.type(priceInput, '200000');
+
+      // Submit
+      const addButton = screen.getByRole('button', { name: /add lead/i });
+      fireEvent.click(addButton);
+
+      await waitFor(() => {
+        expect(leadQueueService.ingestLead).toHaveBeenCalledWith(
+          expect.objectContaining({
+            address: '456 Oak Ave, Houston, TX 77001',
+            listingPrice: 200000,
           })
         );
       });

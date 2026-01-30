@@ -14,7 +14,7 @@ import { SectionCard } from './SectionCard';
 import { ScoreBadge } from './ScoreBadge';
 import { GradeBadge } from './GradeBadge';
 import { ComparablesSection, Comparable } from './ComparablesSection';
-import { InlineEdit, ConfidenceSource } from '../shared';
+import { InlineEdit, ConfidenceSource, RawJsonTooltip } from '../shared';
 import {
   formatCurrency,
   parseCurrency,
@@ -42,9 +42,8 @@ interface EvaluationData {
   rentNote?: string;
 }
 
-// Extended QueueLead with _metrics and _comparables from useLeadQueue
+// Extended QueueLead with comparables from useLeadQueue
 interface QueueLeadWithMetrics extends QueueLead {
-  _metrics?: LeadMetrics;
   _comparables?: ComparableSale[];
 }
 
@@ -73,8 +72,8 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
   onEvaluationChange,
   onRentCastSuccess,
 }) => {
-  // Get metrics from lead._metrics (populated by useLeadQueue from API response)
-  const metrics = lead._metrics;
+  // Get metrics from lead.metrics (populated by useLeadQueue from API response)
+  const metrics = lead.metrics;
   const listingPrice = lead.listingPrice;
 
   // RentCast loading and error state
@@ -305,7 +304,14 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
     <SectionCard title="EVALUATION">
       {/* Score Badge (circular ring) - uses calculated score based on current ARV/rehab */}
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-        <ScoreBadge score={calculatedScore} size="large" />
+        <ScoreBadge
+          score={calculatedScore}
+          size="large"
+          spreadPercent={calculatedSpread}
+          mao={calculatedMao}
+          listingPrice={listingPrice}
+          rawScore={metrics?.rawScore}
+        />
       </Box>
 
       {/* RentCast Error Alert */}
@@ -339,6 +345,8 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
             validate={(v) => validateCurrency(Number(v), 10000, 5000000)}
             onSave={handleArvSave}
             formatWithCommas
+            rawData={metrics?.rawArvEstimate}
+            rawDataLabel="ArvEstimate"
           />
 
           {/* RentCast Refresh Button - positioned next to label */}
@@ -383,6 +391,8 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
           validate={(v) => validateCurrency(Number(v), 0, 500000)}
           onSave={handleRehabSave}
           formatWithCommas
+          rawData={metrics?.rawRehabEstimate}
+          rawDataLabel="RehabEstimate"
         />
 
         {/* Rent Estimate */}
@@ -398,6 +408,8 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
           onSave={handleRentSave}
           infoMessage="Used for rental income projections"
           formatWithCommas
+          rawData={metrics?.rawRentEstimate}
+          rawDataLabel="RentEstimate"
         />
 
         {/* MAO with Spread (read-only, auto-calculated) */}
@@ -433,7 +445,7 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
           <Typography variant="caption" sx={{ color: '#8b949e', mb: 0.5, display: 'block' }}>
             Neighborhood
           </Typography>
-          <GradeBadge grade={lead.neighborhoodGrade || 'C'} />
+          <GradeBadge grade={lead.neighborhoodGrade || 'C'} rawGrade={metrics?.rawNeighborhoodGrade} />
         </Box>
       </Stack>
 

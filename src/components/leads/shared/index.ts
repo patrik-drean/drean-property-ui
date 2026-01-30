@@ -3,3 +3,4 @@ export { ConfidenceBadge, percentageToLevel } from './ConfidenceBadge';
 export type { ConfidenceSource, ConfidenceLevel } from './ConfidenceBadge';
 export { InfoAlert } from './InfoAlert';
 export { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+export { RawJsonTooltip } from './RawJsonTooltip';

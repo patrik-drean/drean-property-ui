@@ -1,4 +1,5 @@
 // Queue types for the Review Page priority queue
+import { LeadMetrics, ComparableSale } from '../services/leadQueueService';
 
 export type QueueType = 'action_now' | 'follow_up' | 'negotiating' | 'all';
 
@@ -58,6 +59,9 @@ export interface QueueLead {
 
   // AI evaluation summary (from lead evaluation pipeline)
   aiSummary?: string;
+  aiVerdict?: string;
+  aiWeaknesses?: string[];
+  recommendation?: string;
 
   // AI suggestions (deprecated - replaced by aiSummary)
   aiSuggestion?: AiSuggestion;
@@ -65,6 +69,12 @@ export interface QueueLead {
   // Computed priority
   priority: Priority;
   timeSinceCreated: string;
+
+  // Full metrics data for tooltips (populated from API)
+  metrics?: LeadMetrics;
+
+  // Comparables from ARV evaluation (AI or RentCast)
+  _comparables?: ComparableSale[];
 }
 
 export type LeadQueueStatus =

@@ -1,29 +1,12 @@
-import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Stack } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, TextField, Button, Stack, CircularProgress } from '@mui/material';
 import { Send as SendIcon } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue';
 import { SectionCard } from './SectionCard';
 import { MessageBubble } from './MessageBubble';
 import { TemplateChip } from './TemplateChip';
-
-// Message templates for quick selection
-const TEMPLATES = {
-  initial:
-    "Hi! I noticed your property at {address}. I'm an investor looking to buy properties in the area. Would you be open to discussing a quick cash sale?",
-  followUp:
-    "Following up on my previous message about your property. I'm still interested and can close quickly. Would you have a few minutes to chat?",
-  price:
-    "Thank you for responding. Based on my analysis, I'm looking at an offer around {mao}. This accounts for needed repairs and market conditions. Would this work for you?",
-};
-
-// Mock message interface
-interface Message {
-  id: string;
-  body: string;
-  direction: 'inbound' | 'outbound';
-  timestamp: string;
-  status?: 'sending' | 'sent' | 'delivered' | 'failed';
-}
+import { smsService } from '../../../services/smsService';
+import { SmsMessage, SmsTemplate, TemplateVariables } from '../../../types/sms';
 
 interface MessagingSectionProps {
   lead: QueueLead;
@@ -31,49 +14,123 @@ interface MessagingSectionProps {
 }
 
 /**
+ * Calculate discounted price (listing price × 0.735) and format in compact "k" format
+ */
+const calculateDiscountedPrice = (price?: number): string | undefined => {
+  if (!price) return undefined;
+  const discounted = price * 0.735;
+  const roundedThousands = Math.round(discounted / 1000);
+  return `$${roundedThousands}k`;
+};
+
+/**
+ * Extract short address (street address only, no city/state)
+ */
+const extractShortAddress = (fullAddress?: string): string | undefined => {
+  if (!fullAddress) return undefined;
+  const parts = fullAddress.split(',');
+  return parts[0].trim();
+};
+
+/**
+ * Get day of the week in MST timezone
+ */
+const getDayOfWeek = (): string => {
+  const now = new Date();
+  const mstDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Denver' }));
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return days[mstDate.getDay()];
+};
+
+/**
+ * Substitute template variables in a string
+ */
+const substituteVariables = (body: string, variables: TemplateVariables): string => {
+  let result = body;
+  Object.entries(variables).forEach(([key, value]) => {
+    if (value) {
+      result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
+    }
+  });
+  return result;
+};
+
+/**
  * MessagingSection - Bottom-left quadrant of the Lead Detail Panel
  *
  * Features:
- * - Message history preview (last 3 messages)
+ * - Real message history from SMS conversations
  * - Quick compose input
- * - Template suggestions
+ * - Template suggestions with variable substitution
  * - Send button
  */
 export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSendMessage }) => {
   const [message, setMessage] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [messages, setMessages] = useState<SmsMessage[]>([]);
+  const [templates, setTemplates] = useState<SmsTemplate[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
-  // Mock recent messages for demo
-  const mockMessages: Message[] =
-    lead.status !== 'New'
-      ? [
-          {
-            id: '1',
-            body: TEMPLATES.initial.replace('{address}', lead.address.split(',')[0]),
-            direction: 'outbound',
-            timestamp: lead.lastContactDate || new Date().toISOString(),
-            status: 'delivered',
-          },
-          ...(lead.status === 'Responding' || lead.status === 'Negotiating'
-            ? [
-                {
-                  id: '2',
-                  body: "Thanks for reaching out. I'd be interested in hearing more about your offer.",
-                  direction: 'inbound' as const,
-                  timestamp: lead.respondedDate || new Date().toISOString(),
-                },
-              ]
-            : []),
-        ]
-      : [];
+  // Build template variables from lead data
+  const templateVariables: TemplateVariables = {
+    name: undefined, // We don't have seller name in QueueLead
+    address: lead.address,
+    price: lead.listingPrice ? `$${lead.listingPrice.toLocaleString()}` : undefined,
+    phone: lead.sellerPhone,
+    discounted_price: calculateDiscountedPrice(lead.listingPrice),
+    address_short: extractShortAddress(lead.address),
+    day_of_the_week: getDayOfWeek(),
+  };
 
-  const handleTemplateSelect = (templateKey: keyof typeof TEMPLATES) => {
-    let templateText = TEMPLATES[templateKey];
-    // Replace placeholders
-    templateText = templateText.replace('{address}', lead.address.split(',')[0]);
-    templateText = templateText.replace('{mao}', `$${(lead.mao ?? 0).toLocaleString()}`);
-    setMessage(templateText);
-    setSelectedTemplate(templateKey);
+  // Fetch real messages when lead changes
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!lead.sellerPhone) {
+        setMessages([]);
+        setConversationId(null);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const conversation = await smsService.getConversationByPhone(lead.sellerPhone);
+        if (conversation) {
+          setMessages(conversation.messages || []);
+          setConversationId(conversation.conversation.id);
+        } else {
+          setMessages([]);
+          setConversationId(null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch messages:', error);
+        setMessages([]);
+        setConversationId(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [lead.sellerPhone, lead.id]);
+
+  // Fetch templates on mount
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const fetchedTemplates = await smsService.getTemplates();
+        setTemplates(fetchedTemplates);
+      } catch (error) {
+        console.error('Failed to fetch templates:', error);
+      }
+    };
+    fetchTemplates();
+  }, []);
+
+  const handleTemplateSelect = (template: SmsTemplate) => {
+    const substitutedBody = substituteVariables(template.body, templateVariables);
+    setMessage(substitutedBody);
+    setSelectedTemplate(template.id);
   };
 
   const handleSend = () => {
@@ -100,10 +157,10 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
         </Typography>
       )}
 
-      {/* Message History Preview */}
+      {/* Message History */}
       <Box
         sx={{
-          maxHeight: 180,
+          maxHeight: 280,
           overflowY: 'auto',
           mb: 2,
           px: 1,
@@ -111,14 +168,18 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
           '&::-webkit-scrollbar-thumb': { bgcolor: '#30363d', borderRadius: 2 },
         }}
       >
-        {mockMessages.length > 0 ? (
-          mockMessages.map((msg) => (
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+            <CircularProgress size={20} sx={{ color: '#8b949e' }} />
+          </Box>
+        ) : messages.length > 0 ? (
+          messages.map((msg) => (
             <MessageBubble
               key={msg.id}
               message={msg.body}
               isOutbound={msg.direction === 'outbound'}
-              timestamp={msg.timestamp}
-              status={msg.status}
+              timestamp={msg.createdAt}
+              status={msg.status as 'sending' | 'sent' | 'delivered' | 'failed' | undefined}
             />
           ))
         ) : (
@@ -172,32 +233,27 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
         </Button>
       </Box>
 
-      {/* Template Suggestions */}
-      <Box>
-        <Typography
-          variant="caption"
-          sx={{ color: '#8b949e', mb: 1, display: 'block', fontSize: '0.7rem' }}
-        >
-          Quick Templates:
-        </Typography>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          <TemplateChip
-            label="Initial Outreach"
-            onClick={() => handleTemplateSelect('initial')}
-            selected={selectedTemplate === 'initial'}
-          />
-          <TemplateChip
-            label="Follow-Up"
-            onClick={() => handleTemplateSelect('followUp')}
-            selected={selectedTemplate === 'followUp'}
-          />
-          <TemplateChip
-            label="Price Discussion"
-            onClick={() => handleTemplateSelect('price')}
-            selected={selectedTemplate === 'price'}
-          />
-        </Stack>
-      </Box>
+      {/* Template Suggestions - Show all templates */}
+      {templates.length > 0 && (
+        <Box>
+          <Typography
+            variant="caption"
+            sx={{ color: '#8b949e', mb: 1, display: 'block', fontSize: '0.7rem' }}
+          >
+            Quick Templates:
+          </Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ gap: 0.5 }}>
+            {templates.map((template) => (
+              <TemplateChip
+                key={template.id}
+                label={template.name}
+                onClick={() => handleTemplateSelect(template)}
+                selected={selectedTemplate === template.id}
+              />
+            ))}
+          </Stack>
+        </Box>
+      )}
     </SectionCard>
   );
 };

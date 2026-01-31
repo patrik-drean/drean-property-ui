@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Link, Grid } from '@mui/material';
-import { OpenInNew as OpenInNewIcon, AutoAwesome as AiIcon } from '@mui/icons-material';
+import { OpenInNew as OpenInNewIcon, AutoAwesome as AiIcon, Home as HomeIcon } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue';
 import { SectionCard } from './SectionCard';
 
@@ -34,6 +34,12 @@ const StatItem: React.FC<StatItemProps> = ({ label, value }) => (
  * - Listing price
  */
 export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ lead }) => {
+  // Track image load error to show placeholder
+  const [imageError, setImageError] = useState(false);
+
+  // Check if we should show the photo or placeholder
+  const hasValidPhoto = lead.photoUrl && lead.photoUrl.trim() !== '' && !imageError;
+
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -69,29 +75,75 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
 
   return (
     <SectionCard title="PROPERTY DETAILS">
-      {/* Address with Zillow link */}
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="body1" sx={{ color: '#f0f6fc', fontWeight: 600, mb: 0.5 }}>
-          {lead.address}
-        </Typography>
-        {lead.zillowLink && (
-          <Link
-            href={lead.zillowLink}
-            target="_blank"
-            rel="noopener noreferrer"
+      {/* Address with thumbnail and Zillow link */}
+      <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
+        {/* Property Thumbnail */}
+        {hasValidPhoto ? (
+          <Box
             sx={{
-              color: '#4ade80',
-              fontSize: '0.8rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 0.5,
-              textDecoration: 'none',
-              '&:hover': { textDecoration: 'underline' },
+              width: 60,
+              height: 60,
+              borderRadius: 1,
+              overflow: 'hidden',
+              flexShrink: 0,
+              bgcolor: '#21262d',
             }}
           >
-            View on Zillow <OpenInNewIcon sx={{ fontSize: '0.9rem' }} />
-          </Link>
+            <Box
+              component="img"
+              src={lead.photoUrl}
+              alt={`${lead.address} thumbnail`}
+              loading="lazy"
+              onError={() => setImageError(true)}
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block',
+              }}
+            />
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              width: 60,
+              height: 60,
+              borderRadius: 1,
+              bgcolor: '#21262d',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <HomeIcon sx={{ fontSize: 24, color: '#30363d' }} />
+          </Box>
         )}
+
+        {/* Address and Zillow link */}
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography variant="body1" sx={{ color: '#f0f6fc', fontWeight: 600, mb: 0.5 }}>
+            {lead.address}
+          </Typography>
+          {lead.zillowLink && (
+            <Link
+              href={lead.zillowLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                color: '#4ade80',
+                fontSize: '0.8rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.5,
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              View on Zillow <OpenInNewIcon sx={{ fontSize: '0.9rem' }} />
+            </Link>
+          )}
+        </Box>
       </Box>
 
       {/* Property Stats Grid */}

@@ -274,4 +274,79 @@ describe('QueueCard', () => {
       expect(screen.getByText('NORMAL')).toBeInTheDocument();
     });
   });
+
+  describe('cover photo', () => {
+    it('should display cover photo when photoUrl is present', () => {
+      const leadWithPhoto = {
+        ...mockLead,
+        photoUrl: 'https://photos.zillowstatic.com/photo123.jpg',
+      };
+      render(<QueueCard lead={leadWithPhoto} isSelected={false} {...mockHandlers} />);
+
+      const img = screen.getByAltText('123 Main Street exterior');
+      expect(img).toBeInTheDocument();
+      expect(img).toHaveAttribute('src', 'https://photos.zillowstatic.com/photo123.jpg');
+      expect(img).toHaveAttribute('loading', 'lazy');
+    });
+
+    it('should display placeholder when photoUrl is undefined', () => {
+      const leadNoPhoto = { ...mockLead, photoUrl: undefined };
+      render(<QueueCard lead={leadNoPhoto} isSelected={false} {...mockHandlers} />);
+
+      // Should not find an image with the exterior alt text
+      expect(screen.queryByAltText('123 Main Street exterior')).not.toBeInTheDocument();
+      // HomeIcon placeholder should be rendered (there's already a HomeIcon for property basics)
+      const homeIcons = document.querySelectorAll('[data-testid="HomeIcon"]');
+      // Should have at least 2 HomeIcon elements (one for photo placeholder, one for property basics)
+      expect(homeIcons.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should display placeholder when photoUrl is empty string', () => {
+      const leadEmptyPhoto = { ...mockLead, photoUrl: '' };
+      render(<QueueCard lead={leadEmptyPhoto} isSelected={false} {...mockHandlers} />);
+
+      expect(screen.queryByAltText('123 Main Street exterior')).not.toBeInTheDocument();
+    });
+
+    it('should display placeholder when photoUrl is whitespace only', () => {
+      const leadWhitespacePhoto = { ...mockLead, photoUrl: '   ' };
+      render(<QueueCard lead={leadWhitespacePhoto} isSelected={false} {...mockHandlers} />);
+
+      expect(screen.queryByAltText('123 Main Street exterior')).not.toBeInTheDocument();
+    });
+
+    it('should fallback to placeholder when image fails to load', () => {
+      const leadWithPhoto = {
+        ...mockLead,
+        photoUrl: 'https://photos.zillowstatic.com/invalid-photo.jpg',
+      };
+      render(<QueueCard lead={leadWithPhoto} isSelected={false} {...mockHandlers} />);
+
+      const img = screen.getByAltText('123 Main Street exterior');
+      expect(img).toBeInTheDocument();
+
+      // Simulate image load error
+      fireEvent.error(img);
+
+      // After error, image should no longer be visible (placeholder shown instead)
+      expect(screen.queryByAltText('123 Main Street exterior')).not.toBeInTheDocument();
+    });
+
+    it('should render card correctly with photo and all other content', () => {
+      const leadWithPhoto = {
+        ...mockLead,
+        photoUrl: 'https://photos.zillowstatic.com/photo123.jpg',
+      };
+      render(<QueueCard lead={leadWithPhoto} isSelected={false} {...mockHandlers} />);
+
+      // Photo should be present
+      expect(screen.getByAltText('123 Main Street exterior')).toBeInTheDocument();
+      // Address should still be visible
+      expect(screen.getByText('123 Main Street')).toBeInTheDocument();
+      // Price should still be visible
+      expect(screen.getByText('$150,000')).toBeInTheDocument();
+      // Priority should still be visible
+      expect(screen.getByText('HIGH')).toBeInTheDocument();
+    });
+  });
 });

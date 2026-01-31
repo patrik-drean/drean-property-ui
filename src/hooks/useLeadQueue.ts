@@ -95,6 +95,8 @@ export function mapToQueueLead(item: LeadQueueItem): QueueLead {
     metrics: item.metrics,
     // Comparables from ARV evaluation
     _comparables: item.comparables,
+    // Property photo URL
+    photoUrl: item.photoUrl,
   } as QueueLead;
 }
 

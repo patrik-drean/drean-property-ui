@@ -76,6 +76,9 @@ export interface QueueLead {
 
   // Comparables from ARV evaluation (AI or RentCast)
   _comparables?: ComparableSale[];
+
+  // Property photo URL (first image from Apify scrape)
+  photoUrl?: string;
 }
 
 export type LeadQueueStatus =

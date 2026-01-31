@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { PropertyDetailsSection } from '../PropertyDetailsSection';
 import { QueueLead } from '../../../../types/queue';
 
@@ -199,6 +199,76 @@ describe('PropertyDetailsSection', () => {
       render(<PropertyDetailsSection lead={leadNoAiSummary} />);
 
       expect(screen.queryByText('AI Analysis')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('property thumbnail', () => {
+    it('should display thumbnail when photoUrl is present', () => {
+      const leadWithPhoto = {
+        ...mockLead,
+        photoUrl: 'https://photos.zillowstatic.com/photo123.jpg',
+      };
+      render(<PropertyDetailsSection lead={leadWithPhoto} />);
+
+      const img = screen.getByAltText('123 Main Street thumbnail');
+      expect(img).toBeInTheDocument();
+      expect(img).toHaveAttribute('src', 'https://photos.zillowstatic.com/photo123.jpg');
+      expect(img).toHaveAttribute('loading', 'lazy');
+    });
+
+    it('should display placeholder when photoUrl is undefined', () => {
+      const leadNoPhoto = { ...mockLead, photoUrl: undefined };
+      render(<PropertyDetailsSection lead={leadNoPhoto} />);
+
+      // Should not find an image with the thumbnail alt text
+      expect(screen.queryByAltText('123 Main Street thumbnail')).not.toBeInTheDocument();
+      // HomeIcon placeholder should be rendered
+      const homeIcons = document.querySelectorAll('[data-testid="HomeIcon"]');
+      expect(homeIcons.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should display placeholder when photoUrl is empty string', () => {
+      const leadEmptyPhoto = { ...mockLead, photoUrl: '' };
+      render(<PropertyDetailsSection lead={leadEmptyPhoto} />);
+
+      expect(screen.queryByAltText('123 Main Street thumbnail')).not.toBeInTheDocument();
+    });
+
+    it('should display placeholder when photoUrl is whitespace only', () => {
+      const leadWhitespacePhoto = { ...mockLead, photoUrl: '   ' };
+      render(<PropertyDetailsSection lead={leadWhitespacePhoto} />);
+
+      expect(screen.queryByAltText('123 Main Street thumbnail')).not.toBeInTheDocument();
+    });
+
+    it('should fallback to placeholder when image fails to load', () => {
+      const leadWithPhoto = {
+        ...mockLead,
+        photoUrl: 'https://photos.zillowstatic.com/invalid-photo.jpg',
+      };
+      const { rerender } = render(<PropertyDetailsSection lead={leadWithPhoto} />);
+
+      const img = screen.getByAltText('123 Main Street thumbnail');
+      expect(img).toBeInTheDocument();
+
+      // Simulate image load error
+      fireEvent.error(img);
+
+      // After error, image should no longer be visible (placeholder shown instead)
+      expect(screen.queryByAltText('123 Main Street thumbnail')).not.toBeInTheDocument();
+    });
+
+    it('should display address alongside thumbnail', () => {
+      const leadWithPhoto = {
+        ...mockLead,
+        photoUrl: 'https://photos.zillowstatic.com/photo123.jpg',
+      };
+      render(<PropertyDetailsSection lead={leadWithPhoto} />);
+
+      // Both thumbnail and address should be visible
+      expect(screen.getByAltText('123 Main Street thumbnail')).toBeInTheDocument();
+      expect(screen.getByText('123 Main Street')).toBeInTheDocument();
+      expect(screen.getByText('View on Zillow')).toBeInTheDocument();
     });
   });
 });

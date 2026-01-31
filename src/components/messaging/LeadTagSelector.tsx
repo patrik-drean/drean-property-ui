@@ -74,14 +74,6 @@ export const LeadTagSelector: React.FC<LeadTagSelectorProps> = ({
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -104,13 +96,12 @@ export const LeadTagSelector: React.FC<LeadTagSelectorProps> = ({
           key={tag.leadId}
           title={
             <Box>
-              <Typography variant="body2">{formatPrice(tag.listingPrice)}</Typography>
               {tag.isAutoTagged && (
-                <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>
                   Auto-tagged by phone match
                 </Typography>
               )}
-              <Typography variant="caption" sx={{ display: 'block', opacity: 0.7, mt: 0.5 }}>
+              <Typography variant="caption" sx={{ display: 'block', opacity: 0.7 }}>
                 Double-click to view details
               </Typography>
             </Box>
@@ -203,16 +194,9 @@ export const LeadTagSelector: React.FC<LeadTagSelectorProps> = ({
                 </ListItemIcon>
                 <ListItemText
                   primary={lead.address}
-                  secondary={
-                    <Box component="span" sx={{ display: 'flex', flexDirection: 'column' }}>
-                      <span>{formatPrice(lead.listingPrice)}</span>
-                      <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>
-                        Added {formatDate(lead.createdAt)}
-                      </span>
-                    </Box>
-                  }
+                  secondary={`Added ${formatDate(lead.createdAt)}`}
                   primaryTypographyProps={{ sx: { color: '#f0f6fc' } }}
-                  secondaryTypographyProps={{ sx: { color: '#8b949e' }, component: 'div' }}
+                  secondaryTypographyProps={{ sx: { color: '#8b949e' } }}
                 />
               </MenuItem>
             ))}

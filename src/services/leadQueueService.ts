@@ -206,6 +206,9 @@ export interface IngestLeadRequest {
   bathrooms?: number;
   units?: number;
   zillowLink?: string;
+  photoUrls?: string[];
+  zestimate?: number;
+  rentZestimate?: number;
   sellerPhone?: string;
   sellerEmail?: string;
   agentName?: string;
@@ -250,6 +253,43 @@ export interface IngestLeadResponse {
   correlationId: string;
   wasConsolidated: boolean;
   consolidation?: ConsolidationInfo;
+}
+
+// Listing Enrichment types
+export interface EnrichedAgentInfo {
+  name?: string;
+  phone?: string;
+  email?: string;
+  agency?: string;
+}
+
+export interface EnrichedListingData {
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  listingPrice?: number;
+  squareFootage?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  yearBuilt?: number;
+  units?: number;
+  propertyType?: string;
+  daysOnMarket?: number;
+  zestimate?: number;
+  rentZestimate?: number;
+  description?: string;
+  photoUrls: string[];
+  agent?: EnrichedAgentInfo;
+  zillowLink?: string;
+  zpid?: string;
+}
+
+export interface EnrichListingResponse {
+  success: boolean;
+  data?: EnrichedListingData;
+  error?: string;
+  partialData?: EnrichedListingData;
 }
 
 /**
@@ -394,6 +434,19 @@ export const leadQueueService = {
   async getRentCastArv(leadId: string): Promise<RentCastArvResult> {
     const response = await axiosInstance.post<RentCastArvResult>(
       `/api/leads/${leadId}/rentcast-arv`
+    );
+    return response.data;
+  },
+
+  /**
+   * Enrich a listing from a Zillow URL.
+   * Fetches property details, photos, and agent info via Apify.
+   * @param url The Zillow listing URL
+   */
+  async enrichListing(url: string): Promise<EnrichListingResponse> {
+    const response = await axiosInstance.post<EnrichListingResponse>(
+      '/api/listings/enrich',
+      { url }
     );
     return response.data;
   },

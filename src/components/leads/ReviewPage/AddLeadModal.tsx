@@ -12,15 +12,17 @@ import {
   CircularProgress,
   Collapse,
   Alert,
+  Divider,
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { leadQueueService, IngestLeadRequest, IngestLeadResponse } from '../../../services/leadQueueService';
-import { parseListingUrl, UrlParseResult } from '../../../utils/urlParser';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import { leadQueueService, IngestLeadRequest, IngestLeadResponse, EnrichedListingData } from '../../../services/leadQueueService';
 
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error';
+type EnrichState = 'idle' | 'enriching' | 'success' | 'error';
 
 interface FormData {
   zillowLink: string;
@@ -38,6 +40,9 @@ interface FormData {
   sellerEmail: string;
   agentName: string;
   agentPhone: string;
+  photoUrls: string[];
+  zestimate: number | null;
+  rentZestimate: number | null;
 }
 
 const initialFormData: FormData = {
@@ -56,6 +61,9 @@ const initialFormData: FormData = {
   sellerEmail: '',
   agentName: '',
   agentPhone: '',
+  photoUrls: [],
+  zestimate: null,
+  rentZestimate: null,
 };
 
 interface AddLeadModalProps {
@@ -76,6 +84,12 @@ const handleCurrencyInput = (value: string): number => {
   return parseInt(cleaned, 10) || 0;
 };
 
+// Check if URL looks like a Zillow URL
+const isZillowUrl = (url: string): boolean => {
+  if (!url) return false;
+  return url.toLowerCase().includes('zillow.com');
+};
+
 export const AddLeadModal: React.FC<AddLeadModalProps> = ({
   open,
   onClose,
@@ -85,47 +99,77 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
   const [formExpanded, setFormExpanded] = useState(false);
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [parseResult, setParseResult] = useState<UrlParseResult | null>(null);
+  const [enrichState, setEnrichState] = useState<EnrichState>('idle');
+  const [enrichError, setEnrichError] = useState<string | null>(null);
+  const [hasEnrichedData, setHasEnrichedData] = useState(false);
 
-  // Check if URL looks valid (for any supported site)
-  const hasValidUrl = useCallback(() => {
+  // Check if URL looks valid for enrichment
+  const canEnrich = useCallback(() => {
     const url = formData.zillowLink?.trim() || '';
-    return url.length > 10 && (
-      url.includes('zillow.com') ||
-      url.includes('redfin.com') ||
-      url.includes('realtor.com') ||
-      url.includes('trulia.com') ||
-      url.includes('har.com')
-    );
+    return url.length > 10 && isZillowUrl(url);
   }, [formData.zillowLink]);
 
-  // Handle URL parsing when user leaves the URL field
-  const handleUrlBlur = useCallback(() => {
+  // Handle fetching details from URL
+  const handleFetchDetails = async () => {
     const url = formData.zillowLink?.trim();
-    if (!url) {
-      setParseResult(null);
+    if (!url || !isZillowUrl(url)) {
+      setEnrichError('Please enter a valid Zillow URL');
       return;
     }
 
-    const result = parseListingUrl(url);
-    setParseResult(result);
+    setEnrichState('enriching');
+    setEnrichError(null);
 
-    if (result.success && result.address) {
-      // Auto-fill address fields from parsed URL
-      setFormData(prev => ({
-        ...prev,
-        address: result.address!.fullAddress,
-        city: result.address!.city,
-        state: result.address!.state,
-        zipCode: result.address!.zip,
-      }));
-      // Expand form to show auto-filled data and allow price entry
-      setFormExpanded(true);
-    } else if (!result.success) {
-      // Expand form for manual entry when parsing fails
+    try {
+      const result = await leadQueueService.enrichListing(url);
+
+      if (result.success && result.data) {
+        // Auto-fill all fields from enriched data
+        populateFormFromEnrichedData(result.data);
+        setHasEnrichedData(true);
+        setEnrichState('success');
+        // Expand form to show filled data
+        setFormExpanded(true);
+      } else {
+        // Handle partial data
+        if (result.partialData) {
+          populateFormFromEnrichedData(result.partialData);
+          setFormExpanded(true);
+        }
+        setEnrichError(result.error || 'Failed to fetch listing details');
+        setEnrichState('error');
+      }
+    } catch (err: any) {
+      console.error('Error enriching listing:', err);
+      setEnrichError(err.response?.data?.error || err.message || 'Network error. You can enter details manually.');
+      setEnrichState('error');
+      // Expand form for manual entry
       setFormExpanded(true);
     }
-  }, [formData.zillowLink]);
+  };
+
+  // Populate form from enriched data
+  const populateFormFromEnrichedData = (data: EnrichedListingData) => {
+    setFormData(prev => ({
+      ...prev,
+      address: data.address || prev.address,
+      city: data.city || prev.city,
+      state: data.state || prev.state,
+      zipCode: data.zipCode || prev.zipCode,
+      listingPrice: data.listingPrice || prev.listingPrice,
+      squareFootage: data.squareFootage ?? prev.squareFootage,
+      yearBuilt: data.yearBuilt ?? prev.yearBuilt,
+      bedrooms: data.bedrooms ?? prev.bedrooms,
+      bathrooms: data.bathrooms ?? prev.bathrooms,
+      units: data.units ?? prev.units,
+      agentName: data.agent?.name || prev.agentName,
+      agentPhone: data.agent?.phone || prev.agentPhone,
+      sellerEmail: data.agent?.email || prev.sellerEmail,
+      photoUrls: data.photoUrls?.length ? data.photoUrls : prev.photoUrls,
+      zestimate: data.zestimate ?? prev.zestimate,
+      rentZestimate: data.rentZestimate ?? prev.rentZestimate,
+    }));
+  };
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -150,6 +194,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
         bathrooms: formData.bathrooms || undefined,
         units: formData.units || undefined,
         zillowLink: formData.zillowLink || undefined,
+        photoUrls: formData.photoUrls.length > 0 ? formData.photoUrls : undefined,
+        zestimate: formData.zestimate || undefined,
+        rentZestimate: formData.rentZestimate || undefined,
         sellerPhone: formData.sellerPhone || undefined,
         sellerEmail: formData.sellerEmail || undefined,
         agentName: formData.agentName || undefined,
@@ -175,7 +222,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
     setFormExpanded(false);
     setSubmitState('idle');
     setSubmitError(null);
-    setParseResult(null);
+    setEnrichState('idle');
+    setEnrichError(null);
+    setHasEnrichedData(false);
     onClose();
   };
 
@@ -186,16 +235,20 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
       setFormExpanded(false);
       setSubmitState('idle');
       setSubmitError(null);
-      setParseResult(null);
+      setEnrichState('idle');
+      setEnrichError(null);
+      setHasEnrichedData(false);
     }
   }, [open]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear parse result when URL changes
+    // Reset enrich state when URL changes
     if (name === 'zillowLink') {
-      setParseResult(null);
+      setEnrichState('idle');
+      setEnrichError(null);
+      setHasEnrichedData(false);
     }
   };
 
@@ -242,42 +295,69 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
       </DialogTitle>
       <DialogContent sx={{ backgroundColor: '#1a1d26' }}>
         <Box component="form" sx={{ mt: 2 }}>
-          {/* Listing URL Input */}
-          <TextField
-            label="Listing URL"
-            name="zillowLink"
-            value={formData.zillowLink}
-            onChange={handleInputChange}
-            onBlur={handleUrlBlur}
-            fullWidth
-            margin="normal"
-            placeholder="Paste any Zillow, Redfin, Realtor.com, HAR, or Trulia link..."
-            sx={inputSx}
-          />
+          {/* Zillow URL Input with Fetch Button */}
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+            <TextField
+              label="Zillow URL"
+              name="zillowLink"
+              value={formData.zillowLink}
+              onChange={handleInputChange}
+              fullWidth
+              margin="normal"
+              placeholder="Paste a Zillow listing URL..."
+              sx={{ ...inputSx, flex: 1, mt: 0 }}
+              disabled={enrichState === 'enriching'}
+            />
+            <Button
+              variant="contained"
+              onClick={handleFetchDetails}
+              disabled={!canEnrich() || enrichState === 'enriching'}
+              startIcon={
+                enrichState === 'enriching' ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <AutoAwesomeIcon />
+                )
+              }
+              sx={{
+                mt: 0,
+                height: 56,
+                minWidth: 140,
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                },
+                '&.Mui-disabled': {
+                  background: 'rgba(255,255,255,0.1)',
+                  color: 'rgba(255,255,255,0.4)',
+                },
+              }}
+            >
+              {enrichState === 'enriching' ? 'Fetching...' : 'Fetch Details'}
+            </Button>
+          </Box>
 
-          {/* URL Parse Feedback */}
-          {parseResult && (
-            <Box sx={{ mt: 1, mb: 2 }}>
-              {parseResult.success && parseResult.address ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CheckCircleOutlineIcon sx={{ color: '#10b981', fontSize: '1.2rem' }} />
-                  <Typography variant="body2" sx={{ color: '#10b981' }}>
-                    Address extracted: {parseResult.address.fullAddress}
-                  </Typography>
-                </Box>
-              ) : (
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                  <WarningAmberIcon sx={{ color: '#f59e0b', fontSize: '1.2rem', mt: 0.25 }} />
-                  <Typography variant="body2" sx={{ color: '#f59e0b' }}>
-                    {parseResult.error || 'Could not extract address from URL. Please enter details below.'}
-                  </Typography>
-                </Box>
-              )}
+          {/* Enrichment Status Feedback */}
+          {enrichState === 'success' && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 2 }}>
+              <CheckCircleOutlineIcon sx={{ color: '#10b981', fontSize: '1.2rem' }} />
+              <Typography variant="body2" sx={{ color: '#10b981' }}>
+                Property details fetched successfully! Review and edit below.
+              </Typography>
             </Box>
           )}
 
-          {/* Hint text when URL is entered but not yet parsed */}
-          {hasValidUrl() && !parseResult && (
+          {enrichError && (
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mt: 1, mb: 2 }}>
+              <WarningAmberIcon sx={{ color: '#f59e0b', fontSize: '1.2rem', mt: 0.25 }} />
+              <Typography variant="body2" sx={{ color: '#f59e0b' }}>
+                {enrichError}
+              </Typography>
+            </Box>
+          )}
+
+          {/* Hint text */}
+          {canEnrich() && enrichState === 'idle' && (
             <Typography
               variant="caption"
               sx={{
@@ -287,30 +367,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
                 mb: 1,
               }}
             >
-              Click outside the field to extract address from URL
+              Click "Fetch Details" to auto-fill property information from Zillow
             </Typography>
           )}
-
-          {/* Listing Price - Always visible since it's required */}
-          <TextField
-            label="Listing Price"
-            name="listingPrice"
-            value={formatInputCurrency(formData.listingPrice)}
-            onChange={(e) => {
-              setFormData((prev) => ({
-                ...prev,
-                listingPrice: handleCurrencyInput(e.target.value),
-              }));
-            }}
-            fullWidth
-            margin="normal"
-            required
-            placeholder="Enter the listing price"
-            InputProps={{
-              startAdornment: <InputAdornment position="start">$</InputAdornment>,
-            }}
-            sx={inputSx}
-          />
 
           {/* Collapsible Form Section Header */}
           <Box
@@ -352,7 +411,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
               sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600, transition: 'color 0.2s' }}
             >
               {formExpanded ? 'Hide' : 'Show'} Property Details
-              {parseResult?.success && ' (auto-filled)'}
+              {hasEnrichedData && ' (auto-filled)'}
             </Typography>
             {formExpanded ? (
               <ExpandLessIcon sx={{ color: 'rgba(255,255,255,0.7)', transition: 'color 0.2s' }} />
@@ -399,6 +458,25 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
                 sx={{ ...inputSx, flex: 1 }}
               />
             </Box>
+            <TextField
+              label="Listing Price"
+              name="listingPrice"
+              value={formatInputCurrency(formData.listingPrice)}
+              onChange={(e) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  listingPrice: handleCurrencyInput(e.target.value),
+                }));
+              }}
+              fullWidth
+              margin="normal"
+              required
+              placeholder="Enter the listing price"
+              InputProps={{
+                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+              }}
+              sx={inputSx}
+            />
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
                 label="Sqft"
@@ -463,6 +541,20 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
               type="number"
               sx={inputSx}
             />
+
+            {/* Photo count indicator when photos are fetched */}
+            {formData.photoUrls.length > 0 && (
+              <Alert severity="info" sx={{ mt: 2, bgcolor: 'rgba(99, 102, 241, 0.1)', color: '#a5b4fc' }}>
+                {formData.photoUrls.length} photos will be saved with this lead
+              </Alert>
+            )}
+
+            <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 2 }} />
+
+            <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 1 }}>
+              Contact Information
+            </Typography>
+
             <TextField
               label="Agent/Seller Phone"
               name="agentPhone"

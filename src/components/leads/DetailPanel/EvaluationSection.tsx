@@ -9,7 +9,6 @@ import {
   Alert,
 } from '@mui/material';
 import {
-  Sync as SyncIcon,
   FlashOn as QuickIcon,
   Search as FullIcon,
 } from '@mui/icons-material';
@@ -18,15 +17,13 @@ import { SectionCard } from './SectionCard';
 import { ScoreBadge } from './ScoreBadge';
 import { GradeBadge } from './GradeBadge';
 import { ComparablesSection, Comparable } from './ComparablesSection';
-import { InlineEdit, ConfidenceSource, RawJsonTooltip } from '../shared';
+import { InlineEdit, ConfidenceSource } from '../shared';
 import {
   formatCurrency,
   parseCurrency,
   validateCurrency,
 } from '../../../utils/currencyUtils';
 import {
-  LeadMetrics,
-  leadQueueService,
   ComparableSale,
   RentCastArvResult,
 } from '../../../services/leadQueueService';
@@ -86,8 +83,7 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
   const metrics = lead.metrics;
   const listingPrice = lead.listingPrice;
 
-  // RentCast loading and error state
-  const [loadingRentCast, setLoadingRentCast] = useState(false);
+  // RentCast error state (kept for error display from field re-runs)
   const [rentCastError, setRentCastError] = useState<string | null>(null);
 
   // Field re-run loading state
@@ -214,52 +210,6 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
     },
   ];
 
-  // Handle RentCast refresh click
-  const handleRentCastRefresh = async () => {
-    setLoadingRentCast(true);
-    setRentCastError(null);
-
-    try {
-      const result = await leadQueueService.getRentCastArv(lead.id);
-
-      // Update local evaluation state with RentCast ARV
-      const updates = {
-        arv: result.arv,
-        arvSource: 'rentcast' as ConfidenceSource,
-        arvConfidence: result.arvConfidence,
-        arvNote: undefined,
-      };
-      setEvaluation((prev) => ({ ...prev, ...updates }));
-
-      // Update comparables
-      if (result.comparables && result.comparables.length > 0) {
-        setComparables(result.comparables.map(mapComparableSaleToComparable));
-        setCompsVerified(true);
-      }
-
-      // Notify parent of changes
-      onEvaluationChange?.(updates);
-      onRentCastSuccess?.(result);
-    } catch (error: unknown) {
-      // Handle specific error types
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number } };
-        if (axiosError.response?.status === 429) {
-          setRentCastError('Daily RentCast limit reached. Try again tomorrow.');
-        } else if (axiosError.response?.status === 404) {
-          setRentCastError('Property not found in RentCast database.');
-        } else {
-          setRentCastError('Failed to fetch RentCast data. Please try again.');
-        }
-      } else {
-        setRentCastError('Failed to fetch RentCast data. Please try again.');
-      }
-      console.error('RentCast API error:', error);
-    } finally {
-      setLoadingRentCast(false);
-    }
-  };
-
   // Calculate MAO based on current values
   // MAO = (ARV × 70%) - Rehab - $5k (wholesale fee)
   const calculatedMao = useMemo(() => {
@@ -342,7 +292,7 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
     return (
       <Box sx={{ display: 'flex', gap: 0.25, ml: 0.5 }}>
         {quickEnabled && (
-          <Tooltip title={`Quick re-run (AI only, ~${quickCost})`}>
+          <Tooltip title={`AI-only re-evaluation (~${quickCost})`}>
             <IconButton
               size="small"
               onClick={(e) => {
@@ -366,7 +316,7 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
           </Tooltip>
         )}
         {fullEnabled && (
-          <Tooltip title={`Full re-run (${fullLabel || 'RentCast/Vision'}, ~${fullCost})`}>
+          <Tooltip title={`${fullLabel || 'RentCast + AI'} combined (~${fullCost})`}>
             <IconButton
               size="small"
               onClick={(e) => {
@@ -445,28 +395,7 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
               />
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-              <RerunButtons field="arv" quickCost="$0.15" fullCost="$0.50" fullLabel="RentCast" />
-              {/* RentCast Refresh Button (legacy - fetches comps too) */}
-              <Tooltip title="Get RentCast ARV & Comps (~$1 API call)">
-                <IconButton
-                  onClick={handleRentCastRefresh}
-                  disabled={loadingRentCast || loadingField !== null}
-                  size="small"
-                  aria-label="Get RentCast ARV"
-                  sx={{
-                    p: 0.25,
-                    color: '#60a5fa',
-                    '&:hover': { bgcolor: 'rgba(96, 165, 250, 0.1)' },
-                    '&.Mui-disabled': { color: '#4a5568' },
-                  }}
-                >
-                  {loadingRentCast ? (
-                    <CircularProgress size={14} sx={{ color: '#60a5fa' }} />
-                  ) : (
-                    <SyncIcon sx={{ fontSize: 14 }} />
-                  )}
-                </IconButton>
-              </Tooltip>
+              <RerunButtons field="arv" quickCost="$0.15" fullCost="$0.50" fullLabel="RentCast + AI" />
             </Box>
           </Box>
         </Box>

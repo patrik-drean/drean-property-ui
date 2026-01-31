@@ -1,11 +1,12 @@
 import React from 'react';
-import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, IconButton, Tooltip } from '@mui/material';
 import {
   OpenInNew as OpenIcon,
   CheckCircle as DoneIcon,
   SkipNext as SkipIcon,
   Archive as ArchiveIcon,
   Home as HomeIcon,
+  Event as EventIcon,
 } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue';
 import { PriorityBadge } from './PriorityBadge';
@@ -34,6 +35,11 @@ export const QueueCard: React.FC<QueueCardProps> = ({
   onSkip,
   onArchive,
 }) => {
+  // Double-click to open details
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onViewDetails();
+  };
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -50,15 +56,32 @@ export const QueueCard: React.FC<QueueCardProps> = ({
     return parts.join(' · ') || 'Details N/A';
   };
 
+  const formatFollowUpDate = (dateStr: string | undefined) => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateOnly = new Date(date);
+    dateOnly.setHours(0, 0, 0, 0);
+
+    if (dateOnly.getTime() === today.getTime()) return 'Today';
+    if (dateOnly.getTime() === tomorrow.getTime()) return 'Tomorrow';
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   return (
     <Box
       onClick={onSelect}
+      onDoubleClick={handleDoubleClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onSelect();
+          onViewDetails();
         }
       }}
       sx={{
@@ -80,10 +103,38 @@ export const QueueCard: React.FC<QueueCardProps> = ({
         },
       }}
     >
-      {/* Header: Priority badge + Address */}
+      {/* Header: Priority badge + Follow-up badge + Address */}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <PriorityBadge priority={lead.priority} timeSince={lead.timeSinceCreated} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <PriorityBadge priority={lead.priority} timeSince={lead.timeSinceCreated} />
+            {lead.followUpDate && (
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  backgroundColor: 'rgba(251, 191, 36, 0.15)',
+                  border: '1px solid #fbbf24',
+                }}
+              >
+                <EventIcon sx={{ fontSize: '0.75rem', color: '#fbbf24' }} />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: '#fbbf24',
+                    fontWeight: 600,
+                    fontSize: '0.7rem',
+                  }}
+                >
+                  {formatFollowUpDate(lead.followUpDate)}
+                </Typography>
+              </Box>
+            )}
+          </Box>
           <Typography
             variant="body1"
             sx={{
@@ -154,37 +205,13 @@ export const QueueCard: React.FC<QueueCardProps> = ({
         </Box>
       )}
 
-      {/* Actions */}
-      <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-        <Button
-          variant="contained"
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewDetails();
-          }}
-          sx={{
-            flex: 1,
-            bgcolor: '#238636',
-            color: '#ffffff',
-            textTransform: 'none',
-            fontWeight: 500,
-            fontSize: '0.8rem',
-            py: 0.75,
-            '&:hover': { bgcolor: '#2ea043' },
-          }}
-        >
-          View Details
-        </Button>
-      </Box>
-
-      {/* Secondary actions */}
+      {/* Quick Actions */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'flex-end',
           gap: 0.5,
-          mt: 1.5,
+          mt: 2,
           pt: 1.5,
           borderTop: '1px solid #21262d',
         }}

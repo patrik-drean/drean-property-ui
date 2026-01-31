@@ -3,6 +3,23 @@
  * Type definitions for SMS conversations, messages, and API contracts
  */
 
+export interface ConversationLeadTag {
+  leadId: string;
+  address: string;
+  listingPrice: number;
+  taggedAt: string;
+  isAutoTagged: boolean;
+}
+
+export interface SuggestedLead {
+  id: string;
+  address: string;
+  listingPrice: number;
+  sellerPhone?: string;
+  alreadyTagged: boolean;
+  createdAt: string;
+}
+
 export interface SmsConversation {
   id: string;
   phoneNumber: string;
@@ -14,6 +31,7 @@ export interface SmsConversation {
   unreadCount: number;
   createdAt?: string;
   updatedAt?: string;
+  taggedLeads?: ConversationLeadTag[];
 }
 
 export interface SmsMessage {

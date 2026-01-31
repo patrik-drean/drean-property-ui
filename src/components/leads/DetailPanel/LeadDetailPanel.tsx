@@ -7,6 +7,7 @@ import { PropertyDetailsSection } from './PropertyDetailsSection';
 import { EvaluationSection } from './EvaluationSection';
 import { MessagingSection } from './MessagingSection';
 import { ActionsSection } from './ActionsSection';
+import { RentCastArvResult } from '../../../services/leadQueueService';
 
 export interface EvaluationUpdate {
   arv?: number;
@@ -29,20 +30,22 @@ interface LeadDetailPanelProps {
   isLast?: boolean;
   onSendMessage?: (message: string) => void;
   onStatusChange?: (status: QueueLead['status']) => void;
-  onAction?: (action: string) => void;
+  onAction?: (action: string, data?: any) => void;
   onNotesChange?: (notes: string) => void;
   onRetry?: () => void;
   onEvaluationSave?: (leadId: string, updates: EvaluationUpdate) => Promise<void>;
+  onRentCastSuccess?: (leadId: string, result: RentCastArvResult) => void;
   onDeletePermanently?: () => Promise<void>;
   deleteLoading?: boolean;
+  onFollowUp?: () => void;
 }
 
 /**
  * LeadDetailPanel - Slide-out drawer showing comprehensive lead details
  *
  * Features:
- * - 2x2 grid layout: Property | Evaluation | Messaging | Actions
- * - Keyboard navigation (j/k for next/prev, Esc to close)
+ * - 2x2 grid layout: Property | Actions | Evaluation | Messaging
+ * - Keyboard navigation (j/k for prev/next, f for follow-up, Esc to close)
  * - Mobile responsive (full-screen on mobile, 800px drawer on desktop)
  * - Loading and error states
  * - PropGuide dark theme styling
@@ -78,6 +81,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
   onEvaluationSave,
   onDeletePermanently,
   deleteLoading = false,
+  onFollowUp,
 }) => {
   // Keyboard shortcuts for panel navigation
   const handleKeyDown = useCallback(
@@ -102,20 +106,24 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
           break;
         case 'k':
           e.preventDefault();
-          if (!isFirst) onNavigatePrev?.();
+          if (!isLast) onNavigateNext?.();
           break;
         case 'j':
           e.preventDefault();
-          if (!isLast) onNavigateNext?.();
+          if (!isFirst) onNavigatePrev?.();
           break;
-        case 'c':
+        case 'l':
+          e.preventDefault();
+          onFollowUp?.();
+          break;
+        case 'm':
           // Focus message input
           e.preventDefault();
           document.getElementById('message-input')?.focus();
           break;
       }
     },
-    [open, onClose, onNavigatePrev, onNavigateNext, isFirst, isLast]
+    [open, onClose, onNavigatePrev, onNavigateNext, isFirst, isLast, onFollowUp]
   );
 
   useEffect(() => {
@@ -225,7 +233,24 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
           }}
         >
           <Grid container spacing={2}>
-            {/* Top Left: Evaluation */}
+            {/* Top Left: Property Details */}
+            <Grid item xs={12} md={6}>
+              <PropertyDetailsSection lead={lead} />
+            </Grid>
+
+            {/* Top Right: Actions */}
+            <Grid item xs={12} md={6}>
+              <ActionsSection
+                lead={lead}
+                onStatusChange={onStatusChange}
+                onAction={onAction}
+                onNotesChange={onNotesChange}
+                onDeletePermanently={onDeletePermanently}
+                deleteLoading={deleteLoading}
+              />
+            </Grid>
+
+            {/* Bottom Left: Evaluation */}
             <Grid item xs={12} md={6}>
               <EvaluationSection
                 lead={lead}
@@ -251,26 +276,9 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
               />
             </Grid>
 
-            {/* Top Right: Messaging */}
+            {/* Bottom Right: Messaging */}
             <Grid item xs={12} md={6}>
               <MessagingSection lead={lead} onSendMessage={onSendMessage} />
-            </Grid>
-
-            {/* Bottom Left: Property Details */}
-            <Grid item xs={12} md={6}>
-              <PropertyDetailsSection lead={lead} />
-            </Grid>
-
-            {/* Bottom Right: Actions */}
-            <Grid item xs={12} md={6}>
-              <ActionsSection
-                lead={lead}
-                onStatusChange={onStatusChange}
-                onAction={onAction}
-                onNotesChange={onNotesChange}
-                onDeletePermanently={onDeletePermanently}
-                deleteLoading={deleteLoading}
-              />
             </Grid>
           </Grid>
 
@@ -284,7 +292,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
             }}
           >
             <Typography variant="caption" sx={{ color: '#484f58', fontSize: '0.7rem' }}>
-              Keyboard: ← Prev (k) • Next (j) → • Contact (c) • Close (ESC)
+              Keyboard: ← Prev (j) • Next (k) → • Follow-up (l) • Message (m) • Close (ESC)
             </Typography>
           </Box>
         </Box>

@@ -8,6 +8,7 @@ interface ShortcutHandlers {
   onDone?: () => void;
   onSkip?: () => void;
   onArchive?: () => void;
+  onFollowUp?: () => void;
 }
 
 /**
@@ -21,6 +22,7 @@ interface ShortcutHandlers {
  * - d: Mark as done
  * - s: Skip (postpone follow-up)
  * - a: Archive lead
+ * - l: Schedule follow-up for 2 days
  *
  * Note: Shortcuts are disabled when focus is on input/textarea elements
  */
@@ -70,6 +72,10 @@ export const useKeyboardShortcuts = (handlers: ShortcutHandlers, enabled: boolea
         case 'a':
           e.preventDefault();
           handlers.onArchive?.();
+          break;
+        case 'l':
+          e.preventDefault();
+          handlers.onFollowUp?.();
           break;
       }
     },

@@ -7,6 +7,8 @@ import {
   SmsTemplate,
   CreateTemplateRequest,
   UpdateTemplateRequest,
+  ConversationLeadTag,
+  SuggestedLead,
 } from '../types/sms';
 import { axiosInstance } from './api';
 
@@ -150,5 +152,45 @@ export const smsService = {
    */
   async reorderTemplates(templateIds: string[]): Promise<void> {
     await axiosInstance.put('/api/sms/templates/reorder', { templateIds });
+  },
+
+  // ============ Conversation Lead Tagging Methods ============
+
+  /**
+   * Get all leads tagged to a conversation
+   */
+  async getConversationLeads(conversationId: string): Promise<ConversationLeadTag[]> {
+    const response = await axiosInstance.get<ConversationLeadTag[]>(
+      `/api/sms/conversations/${conversationId}/leads`
+    );
+    return response.data;
+  },
+
+  /**
+   * Tag a lead to a conversation
+   */
+  async tagLeadToConversation(conversationId: string, leadId: string): Promise<ConversationLeadTag> {
+    const response = await axiosInstance.post<ConversationLeadTag>(
+      `/api/sms/conversations/${conversationId}/leads`,
+      { leadId }
+    );
+    return response.data;
+  },
+
+  /**
+   * Remove a lead tag from a conversation
+   */
+  async untagLeadFromConversation(conversationId: string, leadId: string): Promise<void> {
+    await axiosInstance.delete(`/api/sms/conversations/${conversationId}/leads/${leadId}`);
+  },
+
+  /**
+   * Get suggested leads for tagging (matching phone number)
+   */
+  async getSuggestedLeads(conversationId: string): Promise<SuggestedLead[]> {
+    const response = await axiosInstance.get<SuggestedLead[]>(
+      `/api/sms/conversations/${conversationId}/suggested-leads`
+    );
+    return response.data;
   },
 };

@@ -7,6 +7,7 @@ import {
 } from '@mui/icons-material';
 import { MessageBubble } from './MessageBubble';
 import { MessageComposer } from './MessageComposer';
+import { LeadTagSelector } from './LeadTagSelector';
 import { ConversationWithMessages } from '../../types/sms';
 import { smsService } from '../../services/smsService';
 
@@ -14,20 +15,22 @@ interface ConversationViewProps {
   conversation: ConversationWithMessages;
   onMessageSent: () => void;
   onMarkAsUnread?: () => void;
+  onRefresh?: () => void;
   leadName?: string;
   leadAddress?: string;
   leadPrice?: string;
-  zillowLink?: string;
+  onOpenLeadDetail?: (leadId: string) => void;
 }
 
 export const ConversationView: React.FC<ConversationViewProps> = ({
   conversation,
   onMessageSent,
   onMarkAsUnread,
+  onRefresh,
   leadName,
   leadAddress,
   leadPrice,
-  zillowLink,
+  onOpenLeadDetail,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { conversation: conv, messages } = conversation;
@@ -36,12 +39,6 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  const handleOpenLead = () => {
-    if (conv.propertyLeadId) {
-      window.open(`/#/leads?id=${conv.propertyLeadId}`, '_blank');
-    }
-  };
 
   const handleOpenContact = () => {
     if (conv.contactId) {
@@ -73,32 +70,11 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
           gap: 2,
         }}
       >
-        {zillowLink && (
-          <Tooltip title="Open Zillow" arrow>
-            <IconButton
-              href={zillowLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              size="small"
-              sx={{
-                backgroundColor: 'rgba(96, 165, 250, 0.15)',
-                color: '#60a5fa',
-                '&:hover': {
-                  backgroundColor: 'rgba(96, 165, 250, 0.25)'
-                }
-              }}
-            >
-              <OpenInNewIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h6" sx={{ color: '#f0f6fc' }}>
-            {conv.displayName || conv.phoneNumber}
-          </Typography>
+          {/* Phone number as primary identifier */}
           <Box display="flex" alignItems="center" gap={1}>
-            <PhoneIcon fontSize="small" sx={{ color: '#8b949e' }} />
-            <Typography variant="body2" sx={{ color: '#8b949e' }}>
+            <PhoneIcon fontSize="small" sx={{ color: '#60a5fa' }} />
+            <Typography variant="h6" sx={{ color: '#f0f6fc' }}>
               {conv.phoneNumber}
             </Typography>
             {conv.contactId && (
@@ -115,6 +91,17 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
               </Tooltip>
             )}
           </Box>
+          {/* Tagged Leads as chips */}
+          {conv.id && (
+            <Box sx={{ mt: 0.5 }}>
+              <LeadTagSelector
+                conversationId={conv.id}
+                taggedLeads={conv.taggedLeads || []}
+                onTagsChanged={onRefresh || onMessageSent}
+                onOpenLeadDetail={onOpenLeadDetail}
+              />
+            </Box>
+          )}
         </Box>
         {conv.id && onMarkAsUnread && (
           <Tooltip title="Mark as unread" arrow>

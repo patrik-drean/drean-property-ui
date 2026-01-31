@@ -25,6 +25,7 @@ function transformQueueCounts(apiCounts: ApiQueueCounts): QueueCounts {
     follow_up: apiCounts.followUp,
     negotiating: apiCounts.negotiating,
     all: apiCounts.all,
+    archived: apiCounts.archived ?? 0,
   };
 }
 
@@ -43,6 +44,10 @@ interface UseLeadQueueReturn {
   archiveLead: (leadId: string) => Promise<void>;
   deleteLeadPermanently: (leadId: string) => Promise<void>;
   updateEvaluation: (leadId: string, updates: UpdateEvaluationRequest) => Promise<void>;
+  updateLeadComparables: (leadId: string, comparables: import('../services/leadQueueService').ComparableSale[], arv?: number, arvSource?: string) => void;
+  updateNotes: (leadId: string, notes: string) => Promise<void>;
+  scheduleFollowUp: (leadId: string, followUpDate: string) => Promise<void>;
+  cancelFollowUp: (leadId: string) => Promise<void>;
   refetch: () => Promise<void>;
   markAsDone: (leadId: string) => void;
   markAsSkip: (leadId: string) => void;
@@ -52,7 +57,7 @@ interface UseLeadQueueReturn {
  * Maps API LeadQueueItem to frontend QueueLead type.
  * Handles the property mapping between backend and frontend models.
  */
-function mapToQueueLead(item: LeadQueueItem): QueueLead {
+export function mapToQueueLead(item: LeadQueueItem): QueueLead {
   return {
     id: item.id,
     address: item.address,
@@ -79,6 +84,7 @@ function mapToQueueLead(item: LeadQueueItem): QueueLead {
     status: item.status as any,
     lastContactDate: null,
     followUpDue: item.followUpDue,
+    followUpDate: item.followUpDate,
     aiSummary: item.aiSummary,
     aiVerdict: item.aiVerdict,
     aiWeaknesses: item.aiWeaknesses,
@@ -155,6 +161,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
     follow_up: 0,
     negotiating: 0,
     all: 0,
+    archived: 0,
   });
   const [selectedQueue, setSelectedQueue] = useState<QueueType>(initialQueueType);
   const [page, setPage] = useState(1);
@@ -365,6 +372,78 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
     [leads, queueCounts, notify]
   );
 
+  const scheduleFollowUp = useCallback(
+    async (leadId: string, followUpDate: string) => {
+      const previousLeads = leads;
+      const previousCounts = queueCounts;
+
+      // Remove from current list if viewing action_now or follow_up queues
+      // (lead will still be in All Leads)
+      const shouldRemoveFromList = selectedQueue === 'action_now' || selectedQueue === 'follow_up';
+
+      if (shouldRemoveFromList) {
+        setLeads((prev) => prev.filter((l) => l.id !== leadId));
+      } else {
+        // Just update the lead's follow-up status
+        setLeads((prev) =>
+          prev.map((l) =>
+            l.id === leadId
+              ? { ...l, followUpDate, followUpDue: true }
+              : l
+          )
+        );
+      }
+
+      // Update queue counts (move from action_now to follow_up if applicable)
+      setQueueCounts((prev) => ({
+        ...prev,
+        follow_up: prev.follow_up + 1,
+        action_now: Math.max(0, prev.action_now - 1),
+      }));
+
+      try {
+        await leadQueueService.scheduleFollowUp(leadId, followUpDate);
+        notify('Follow-up scheduled', 'success');
+        // Refetch to get accurate counts
+        await fetchQueue();
+      } catch (err) {
+        // Rollback
+        setLeads(previousLeads);
+        setQueueCounts(previousCounts);
+        notify('Failed to schedule follow-up', 'error');
+      }
+    },
+    [leads, queueCounts, selectedQueue, notify, fetchQueue]
+  );
+
+  // Cancel a follow-up reminder for a lead
+  const cancelFollowUp = useCallback(
+    async (leadId: string) => {
+      const previousLeads = leads;
+
+      // Optimistic update - clear follow-up date
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === leadId
+            ? { ...l, followUpDate: undefined, followUpDue: false }
+            : l
+        )
+      );
+
+      try {
+        await leadQueueService.cancelFollowUp(leadId);
+        notify('Follow-up cancelled', 'success');
+        // Refetch to get accurate counts
+        await fetchQueue();
+      } catch (err) {
+        // Rollback
+        setLeads(previousLeads);
+        notify('Failed to cancel follow-up', 'error');
+      }
+    },
+    [leads, notify, fetchQueue]
+  );
+
   const updateEvaluation = useCallback(
     async (leadId: string, updates: UpdateEvaluationRequest) => {
       const previousLeads = leads;
@@ -430,12 +509,85 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
     [leads, notify]
   );
 
+  // Update lead comparables after RentCast refresh
+  const updateLeadComparables = useCallback(
+    (leadId: string, comparables: import('../services/leadQueueService').ComparableSale[], arv?: number, arvSource?: string) => {
+      setLeads((prev) =>
+        prev.map((l) => {
+          if (l.id !== leadId) return l;
+          const existingMetrics = (l as any).metrics || {};
+          return {
+            ...l,
+            _comparables: comparables,
+            metrics: {
+              ...existingMetrics,
+              arv: arv ?? existingMetrics.arv,
+              arvSource: arvSource ?? existingMetrics.arvSource,
+            },
+          };
+        })
+      );
+    },
+    []
+  );
+
+  // Update notes for a lead
+  const updateNotes = useCallback(
+    async (leadId: string, notes: string) => {
+      const previousLeads = leads;
+
+      // Optimistic update
+      setLeads((prev) =>
+        prev.map((l) => (l.id === leadId ? { ...l, notes } : l))
+      );
+
+      try {
+        await leadQueueService.updateNotes(leadId, notes);
+        notify('Notes saved', 'success');
+      } catch (err) {
+        // Rollback
+        setLeads(previousLeads);
+        notify('Failed to save notes', 'error');
+      }
+    },
+    [leads, notify]
+  );
+
   // Mock data compatibility functions (for gradual migration)
   const markAsDone = useCallback(
-    (leadId: string) => {
-      updateLeadStatus(leadId, 'Contacted');
+    async (leadId: string) => {
+      const previousLeads = leads;
+      const previousCounts = queueCounts;
+
+      // Remove from current list if viewing action_now or follow_up queues
+      // (lead will still be in All Leads)
+      const shouldRemoveFromList = selectedQueue === 'action_now' || selectedQueue === 'follow_up';
+
+      if (shouldRemoveFromList) {
+        setLeads((prev) => prev.filter((l) => l.id !== leadId));
+        // Update queue counts
+        setQueueCounts((prev) => ({
+          ...prev,
+          [selectedQueue]: Math.max(0, prev[selectedQueue] - 1),
+        }));
+      } else {
+        // Just update status in place
+        setLeads((prev) =>
+          prev.map((l) => (l.id === leadId ? { ...l, status: 'Contacted' as any } : l))
+        );
+      }
+
+      try {
+        await leadQueueService.updateStatus(leadId, 'Contacted');
+        notify('Marked as done', 'success');
+      } catch (err) {
+        // Rollback
+        setLeads(previousLeads);
+        setQueueCounts(previousCounts);
+        notify('Failed to update status', 'error');
+      }
     },
-    [updateLeadStatus]
+    [leads, queueCounts, selectedQueue, notify]
   );
 
   const markAsSkip = useCallback(
@@ -462,6 +614,10 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
     archiveLead,
     deleteLeadPermanently,
     updateEvaluation,
+    updateLeadComparables,
+    updateNotes,
+    scheduleFollowUp,
+    cancelFollowUp,
     refetch: fetchQueue,
     markAsDone,
     markAsSkip,

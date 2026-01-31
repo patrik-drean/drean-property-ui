@@ -122,8 +122,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onRetry }
       <Box
         sx={{
           maxWidth: '70%',
-          backgroundColor: isOutbound ? 'primary.main' : 'white',
-          color: isOutbound ? 'white' : 'text.primary',
+          backgroundColor: isOutbound ? 'primary.main' : '#374151',  // gray-700 for incoming
+          color: isOutbound ? 'white' : '#f3f4f6',  // gray-100 for incoming text
           borderRadius: 2,
           px: 2,
           py: 1,
@@ -149,7 +149,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onRetry }
             variant="caption"
             sx={{
               opacity: 0.7,
-              color: isOutbound ? 'inherit' : 'text.secondary',
+              color: 'inherit',  // Inherit from parent (white for outbound, gray-100 for incoming)
             }}
           >
             {formatMessageTime(message.createdAt)}

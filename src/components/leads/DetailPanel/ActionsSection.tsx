@@ -17,6 +17,8 @@ import {
   Schedule as ScheduleIcon,
   Archive as ArchiveIcon,
   DeleteForever as DeleteForeverIcon,
+  Event as EventIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { QueueLead, LeadQueueStatus } from '../../../types/queue';
 import { SectionCard } from './SectionCard';
@@ -25,7 +27,7 @@ import { DeleteConfirmationDialog } from '../shared';
 interface ActionsSectionProps {
   lead: QueueLead;
   onStatusChange?: (status: LeadQueueStatus) => void;
-  onAction?: (action: string) => void;
+  onAction?: (action: string, data?: any) => void;
   onNotesChange?: (notes: string) => void;
   onDeletePermanently?: () => Promise<void>;
   deleteLoading?: boolean;
@@ -60,12 +62,40 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
 }) => {
   const [notes, setNotes] = useState(lead.notes || '');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [showFollowUpPicker, setShowFollowUpPicker] = useState(false);
+  const [followUpDate, setFollowUpDate] = useState(() => {
+    // Default to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  });
 
   const handleDeleteConfirm = async () => {
     if (onDeletePermanently) {
       await onDeletePermanently();
       setDeleteDialogOpen(false);
     }
+  };
+
+  const formatFollowUpDate = (dateStr: string | undefined) => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateOnly = new Date(date);
+    dateOnly.setHours(0, 0, 0, 0);
+
+    if (dateOnly.getTime() === today.getTime()) return 'Today';
+    if (dateOnly.getTime() === tomorrow.getTime()) return 'Tomorrow';
+
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  const handleCancelFollowUp = () => {
+    // Cancel follow-up by scheduling with no date (or a past action)
+    onAction?.('cancelFollowUp');
   };
 
   const handleNotesBlur = () => {
@@ -140,25 +170,142 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
             Mark Contacted
           </Button>
         )}
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<ScheduleIcon />}
-          onClick={() => onAction?.('scheduleFollowUp')}
-          sx={{
-            borderColor: '#30363d',
-            color: '#f0f6fc',
-            textTransform: 'none',
-            fontWeight: 500,
-            fontSize: '0.85rem',
-            '&:hover': {
-              borderColor: '#4ade80',
-              bgcolor: 'rgba(74, 222, 128, 0.1)',
-            },
-          }}
-        >
-          Schedule Follow-Up
-        </Button>
+        {/* Current Follow-up Indicator */}
+        {lead.followUpDate && !showFollowUpPicker && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              p: 1.5,
+              borderRadius: 1,
+              backgroundColor: 'rgba(251, 191, 36, 0.1)',
+              border: '1px solid rgba(251, 191, 36, 0.3)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <EventIcon sx={{ fontSize: '1rem', color: '#fbbf24' }} />
+              <Box>
+                <Typography
+                  variant="caption"
+                  sx={{ color: '#8b949e', fontSize: '0.7rem', display: 'block' }}
+                >
+                  Follow-up scheduled
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#fbbf24', fontWeight: 600, fontSize: '0.85rem' }}
+                >
+                  {formatFollowUpDate(lead.followUpDate)}
+                </Typography>
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Tooltip title="Reschedule">
+                <IconButton
+                  size="small"
+                  onClick={() => setShowFollowUpPicker(true)}
+                  sx={{
+                    color: '#8b949e',
+                    '&:hover': { color: '#fbbf24', bgcolor: 'rgba(251, 191, 36, 0.1)' },
+                  }}
+                >
+                  <ScheduleIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Cancel follow-up">
+                <IconButton
+                  size="small"
+                  onClick={handleCancelFollowUp}
+                  sx={{
+                    color: '#8b949e',
+                    '&:hover': { color: '#f87171', bgcolor: 'rgba(248, 113, 113, 0.1)' },
+                  }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Box>
+        )}
+        {!lead.followUpDate && !showFollowUpPicker ? (
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<ScheduleIcon />}
+            onClick={() => setShowFollowUpPicker(true)}
+            sx={{
+              borderColor: '#30363d',
+              color: '#f0f6fc',
+              textTransform: 'none',
+              fontWeight: 500,
+              fontSize: '0.85rem',
+              '&:hover': {
+                borderColor: '#4ade80',
+                bgcolor: 'rgba(74, 222, 128, 0.1)',
+              },
+            }}
+          >
+            Schedule Follow-Up
+          </Button>
+        ) : showFollowUpPicker ? (
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <TextField
+              type="date"
+              size="small"
+              value={followUpDate}
+              onChange={(e) => setFollowUpDate(e.target.value)}
+              sx={{
+                flex: 1,
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#21262d',
+                  '& fieldset': { borderColor: '#30363d' },
+                  '&:hover fieldset': { borderColor: '#4ade80' },
+                  '&.Mui-focused fieldset': { borderColor: '#4ade80' },
+                },
+                '& .MuiInputBase-input': {
+                  color: '#f0f6fc',
+                  fontSize: '0.85rem',
+                },
+              }}
+              inputProps={{
+                min: new Date().toISOString().split('T')[0],
+              }}
+            />
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => {
+                onAction?.('scheduleFollowUp', { followUpDate });
+                setShowFollowUpPicker(false);
+              }}
+              sx={{
+                bgcolor: '#4ade80',
+                color: '#0d1117',
+                textTransform: 'none',
+                fontWeight: 600,
+                minWidth: 'auto',
+                px: 2,
+                '&:hover': { bgcolor: '#86efac' },
+              }}
+            >
+              Set
+            </Button>
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => setShowFollowUpPicker(false)}
+              sx={{
+                color: '#8b949e',
+                textTransform: 'none',
+                minWidth: 'auto',
+                px: 1,
+              }}
+            >
+              Cancel
+            </Button>
+          </Box>
+        ) : null}
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <Button
             fullWidth

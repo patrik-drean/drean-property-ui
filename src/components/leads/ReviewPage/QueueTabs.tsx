@@ -58,7 +58,7 @@ export const QueueTabs: React.FC<QueueTabsProps> = ({
   // Load saved queue selection from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem(QUEUE_STORAGE_KEY) as QueueType | null;
-    if (saved && ['action_now', 'follow_up', 'negotiating', 'all'].includes(saved)) {
+    if (saved && ['action_now', 'follow_up', 'negotiating', 'all', 'archived'].includes(saved)) {
       onQueueChange(saved);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,6 +128,15 @@ export const QueueTabs: React.FC<QueueTabsProps> = ({
           </Typography>
         }
         aria-label={`All leads with ${counts.all} total`}
+      />
+      <Tab
+        value="archived"
+        label={
+          <Typography variant="body2" sx={{ fontWeight: 500, color: '#6e7681' }}>
+            Archived ({counts.archived})
+          </Typography>
+        }
+        aria-label={`Archived leads with ${counts.archived} total`}
       />
     </Tabs>
   );

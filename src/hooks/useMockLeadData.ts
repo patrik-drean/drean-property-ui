@@ -225,6 +225,7 @@ export const useMockLeadData = () => {
       follow_up: filterLeadsByQueue(leads, 'follow_up').length,
       negotiating: filterLeadsByQueue(leads, 'negotiating').length,
       all: filterLeadsByQueue(leads, 'all').length,
+      archived: leads.filter((l) => l.archived).length,
     }),
     [leads]
   );

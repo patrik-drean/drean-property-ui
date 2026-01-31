@@ -23,10 +23,14 @@ import { ConversationList } from '../components/messaging/ConversationList';
 import { ConversationView } from '../components/messaging/ConversationView';
 import { NewMessageDialog } from '../components/messaging/NewMessageDialog';
 import { MessagingLockedOverlay } from '../components/shared/MessagingLockedOverlay';
+import { LeadDetailPanel } from '../components/leads/DetailPanel';
 import { smsService } from '../services/smsService';
 import { getPropertyLead } from '../services/api';
+import { leadQueueService } from '../services/leadQueueService';
+import { mapToQueueLead } from '../hooks/useLeadQueue';
 import { SmsConversation, ConversationWithMessages } from '../types/sms';
 import { PropertyLead } from '../types/property';
+import { QueueLead } from '../types/queue';
 import { useSubscription } from '../contexts/SubscriptionContext';
 
 const POLL_INTERVAL = 10000; // 10 seconds
@@ -45,6 +49,8 @@ export const MessagingPage: React.FC = () => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [leadData, setLeadData] = useState<PropertyLead | null>(null);
   const [newMessageDialogOpen, setNewMessageDialogOpen] = useState(false);
+  const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+  const [detailPanelLead, setDetailPanelLead] = useState<QueueLead | null>(null);
   const hasLoggedError = useRef(false);
 
   // Handle URL params for deep linking
@@ -236,6 +242,21 @@ export const MessagingPage: React.FC = () => {
     }
   };
 
+  const handleOpenLeadDetail = async (leadId: string) => {
+    try {
+      const leadItem = await leadQueueService.getLeadById(leadId);
+      setDetailPanelLead(mapToQueueLead(leadItem));
+      setDetailPanelOpen(true);
+    } catch (err) {
+      console.error('Failed to fetch lead for detail panel:', err);
+    }
+  };
+
+  const handleCloseDetailPanel = () => {
+    setDetailPanelOpen(false);
+    setDetailPanelLead(null);
+  };
+
   // Show loading while checking subscription
   if (subscriptionLoading || loading) {
     return (
@@ -380,7 +401,7 @@ export const MessagingPage: React.FC = () => {
               leadName={leadData?.address}
               leadAddress={leadData?.address}
               leadPrice={leadData?.listingPrice?.toLocaleString()}
-              zillowLink={leadData?.zillowLink}
+              onOpenLeadDetail={handleOpenLeadDetail}
             />
           ) : (
             <Box
@@ -407,6 +428,12 @@ export const MessagingPage: React.FC = () => {
         onStartConversation={handleStartNewConversation}
       />
 
+      {/* Lead Detail Panel */}
+      <LeadDetailPanel
+        open={detailPanelOpen}
+        lead={detailPanelLead}
+        onClose={handleCloseDetailPanel}
+      />
     </Box>
   );
 };

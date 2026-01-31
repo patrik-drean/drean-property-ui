@@ -118,6 +118,7 @@ export interface LeadQueueItem {
   zillowLink?: string;
   photoUrl?: string;
   followUpDue: boolean;
+  followUpDate?: string;
   // AI evaluation fields
   aiSummary?: string;
   aiVerdict?: string;
@@ -132,6 +133,7 @@ export interface QueueCounts {
   followUp: number;
   negotiating: number;
   all: number;
+  archived: number;
 }
 
 export interface PaginationInfo {
@@ -147,7 +149,7 @@ export interface LeadQueueResponse {
   pagination: PaginationInfo;
 }
 
-export type QueueType = 'action_now' | 'follow_up' | 'negotiating' | 'all';
+export type QueueType = 'action_now' | 'follow_up' | 'negotiating' | 'all' | 'archived';
 
 export interface UpdateEvaluationRequest {
   arv?: number;
@@ -254,6 +256,10 @@ export interface IngestLeadResponse {
  * Lead Queue Service
  * Provides API functions for the Review Page queue operations.
  */
+export interface ScheduleFollowUpRequest {
+  followUpDate: string; // ISO date string
+}
+
 export const leadQueueService = {
   /**
    * Fetch leads for the queue with priority sorting and filtering.
@@ -273,6 +279,17 @@ export const leadQueueService = {
     });
     const response = await axiosInstance.get<LeadQueueResponse>(
       `/api/leads/queue?${params}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Fetch a single lead by ID with all queue data.
+   * @param leadId The lead ID to fetch
+   */
+  async getLeadById(leadId: string): Promise<LeadQueueItem> {
+    const response = await axiosInstance.get<LeadQueueItem>(
+      `/api/leads/${leadId}`
     );
     return response.data;
   },
@@ -300,7 +317,7 @@ export const leadQueueService = {
    * @param status The new status
    */
   async updateStatus(leadId: string, status: string): Promise<void> {
-    await axiosInstance.put(`/api/PropertyLeads/${leadId}`, { status });
+    await axiosInstance.put(`/api/leads/${leadId}/status`, { status });
   },
 
   /**
@@ -308,7 +325,7 @@ export const leadQueueService = {
    * @param leadId The lead ID to archive
    */
   async archiveLead(leadId: string): Promise<void> {
-    await axiosInstance.put(`/api/PropertyLeads/${leadId}/archive`);
+    await axiosInstance.put(`/api/leads/${leadId}/archive`);
   },
 
   /**
@@ -318,6 +335,37 @@ export const leadQueueService = {
    */
   async deleteLeadPermanently(leadId: string): Promise<void> {
     await axiosInstance.delete(`/api/leads/${leadId}`);
+  },
+
+  /**
+   * Schedule a follow-up for a lead.
+   * Sets the follow-up date and moves the lead to the follow_up queue.
+   * @param leadId The lead ID
+   * @param followUpDate ISO date string for the follow-up
+   * @param reason Optional reason for the follow-up
+   */
+  async scheduleFollowUp(leadId: string, followUpDate: string, reason?: string): Promise<void> {
+    await axiosInstance.put(`/api/leads/${leadId}/follow-up`, {
+      followUpDate,
+      reason,
+    });
+  },
+
+  /**
+   * Update notes for a lead.
+   * @param leadId The lead ID
+   * @param notes The new notes text
+   */
+  async updateNotes(leadId: string, notes: string): Promise<void> {
+    await axiosInstance.put(`/api/leads/${leadId}/notes`, { notes });
+  },
+
+  /**
+   * Cancel a scheduled follow-up for a lead.
+   * @param leadId The lead ID
+   */
+  async cancelFollowUp(leadId: string): Promise<void> {
+    await axiosInstance.delete(`/api/leads/${leadId}/follow-up`);
   },
 
   /**

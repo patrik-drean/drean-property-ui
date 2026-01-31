@@ -1,7 +1,7 @@
 // Queue types for the Review Page priority queue
 import { LeadMetrics, ComparableSale } from '../services/leadQueueService';
 
-export type QueueType = 'action_now' | 'follow_up' | 'negotiating' | 'all';
+export type QueueType = 'action_now' | 'follow_up' | 'negotiating' | 'all' | 'archived';
 
 export type Priority = 'urgent' | 'high' | 'medium' | 'normal';
 
@@ -10,6 +10,7 @@ export interface QueueCounts {
   follow_up: number;
   negotiating: number;
   all: number;
+  archived: number;
 }
 
 export interface TodayProgress {

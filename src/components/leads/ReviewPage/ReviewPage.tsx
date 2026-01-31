@@ -55,6 +55,10 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     archiveLead,
     deleteLeadPermanently,
     updateEvaluation,
+    updateLeadComparables,
+    updateNotes,
+    scheduleFollowUp,
+    cancelFollowUp,
   } = useLeadQueue({
     initialQueueType: 'action_now',
     onNotification: showSnackbar,
@@ -71,14 +75,30 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     return filteredLeads.findIndex((l) => l.id === selectedCardId);
   }, [filteredLeads, selectedCardId]);
 
-  // Auto-select first card if none selected and leads exist
+  // Track the last valid index for maintaining position when lead is removed
+  const lastValidIndexRef = React.useRef<number>(0);
+
+  // Update the last valid index when we have a valid selection
   React.useEffect(() => {
-    if (filteredLeads.length > 0 && !selectedCardId) {
-      setSelectedCardId(filteredLeads[0].id);
-    } else if (filteredLeads.length === 0) {
-      setSelectedCardId(null);
+    if (selectedCardIndex >= 0) {
+      lastValidIndexRef.current = selectedCardIndex;
     }
-  }, [filteredLeads, selectedCardId]);
+  }, [selectedCardIndex]);
+
+  // Auto-select: first card if none selected, or next card if current was removed
+  React.useEffect(() => {
+    if (filteredLeads.length === 0) {
+      setSelectedCardId(null);
+      return;
+    }
+
+    // If no selection or selected card was removed (not found in list)
+    if (!selectedCardId || selectedCardIndex === -1) {
+      // Try to select the card at the same position, or the last one if we're past the end
+      const targetIndex = Math.min(lastValidIndexRef.current, filteredLeads.length - 1);
+      setSelectedCardId(filteredLeads[targetIndex].id);
+    }
+  }, [filteredLeads, selectedCardId, selectedCardIndex]);
 
   // Keyboard navigation handlers
   const selectNextCard = useCallback(() => {
@@ -151,6 +171,15 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     }
   }, [selectedCardId, archiveLead]);
 
+  // Handle follow-up shortcut (f) - schedules 2-day follow-up
+  const handleFollowUp = useCallback(() => {
+    if (selectedCardId) {
+      const followUpDate = new Date();
+      followUpDate.setDate(followUpDate.getDate() + 2);
+      scheduleFollowUp(selectedCardId, followUpDate.toISOString().split('T')[0]);
+    }
+  }, [selectedCardId, scheduleFollowUp]);
+
   // Register keyboard shortcuts (disabled when detail panel is open - it handles its own shortcuts)
   useKeyboardShortcuts(
     {
@@ -161,6 +190,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
       onDone: handleDone,
       onSkip: handleSkip,
       onArchive: handleArchive,
+      onFollowUp: handleFollowUp,
     },
     !detailPanelOpen
   );
@@ -185,7 +215,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   };
 
   // Handle actions from detail panel
-  const handlePanelAction = (action: string) => {
+  const handlePanelAction = (action: string, data?: any) => {
     switch (action) {
       case 'markContacted':
         if (selectedCardId) {
@@ -194,13 +224,22 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         }
         break;
       case 'scheduleFollowUp':
-        showSnackbar('Follow-up scheduled (mock)', 'info');
+        if (selectedCardId && data?.followUpDate) {
+          scheduleFollowUp(selectedCardId, data.followUpDate);
+          // Notification shown by hook via onNotification callback
+        }
         break;
       case 'archive':
         if (selectedCardId) {
           archiveLead(selectedCardId);
           // Notification shown by hook via onNotification callback
           setDetailPanelOpen(false);
+        }
+        break;
+      case 'cancelFollowUp':
+        if (selectedCardId) {
+          cancelFollowUp(selectedCardId);
+          // Notification shown by hook via onNotification callback
         }
         break;
       case 'promote':
@@ -217,7 +256,9 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
 
   // Handle notes change from detail panel
   const handleNotesChange = (notes: string) => {
-    showSnackbar('Notes saved (mock)', 'success');
+    if (selectedCardId) {
+      updateNotes(selectedCardId, notes);
+    }
   };
 
   const handleCardDone = (lead: QueueLead) => {
@@ -356,8 +397,13 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         onAction={handlePanelAction}
         onNotesChange={handleNotesChange}
         onEvaluationSave={updateEvaluation}
+        onRentCastSuccess={(leadId, result) => {
+          updateLeadComparables(leadId, result.comparables, result.arv, result.arvSource);
+          showSnackbar('RentCast ARV updated', 'success');
+        }}
         onDeletePermanently={handleDeletePermanently}
         deleteLoading={deleteLoading}
+        onFollowUp={handleFollowUp}
       />
 
       {/* Add Lead Modal */}

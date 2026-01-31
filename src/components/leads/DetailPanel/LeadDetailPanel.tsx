@@ -92,7 +92,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
     setActiveTab(0);
   }, [lead?.id]);
 
-  // Handle re-run evaluation
+  // Handle re-run evaluation (all fields)
   const handleRerunEvaluation = useCallback(async (tier: 'quick' | 'full' = 'quick') => {
     if (!lead?.id) return;
     try {
@@ -101,6 +101,18 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
       onAction?.('refresh');
     } catch (err) {
       console.error('Failed to re-run evaluation:', err);
+    }
+  }, [lead?.id, onAction]);
+
+  // Handle field-specific re-run evaluation
+  const handleFieldRerun = useCallback(async (field: 'arv' | 'rehab' | 'rent' | 'neighborhood', tier: 'quick' | 'full') => {
+    if (!lead?.id) return;
+    try {
+      await leadQueueService.rerunFieldEvaluation(lead.id, field, tier);
+      onAction?.('refresh');
+    } catch (err) {
+      console.error(`Failed to re-run ${field} evaluation:`, err);
+      throw err; // Re-throw so caller can handle
     }
   }, [lead?.id, onAction]);
 
@@ -325,6 +337,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
                           onEvaluationSave(lead.id, updates);
                         }
                       }}
+                      onFieldRerun={handleFieldRerun}
                     />
                   </Grid>
 

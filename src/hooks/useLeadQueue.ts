@@ -5,6 +5,7 @@ import {
   QueueCounts as ApiQueueCounts,
   QueueType,
   UpdateEvaluationRequest,
+  EnrichmentMetadata,
 } from '../services/leadQueueService';
 import { useLeadEvents, LeadEventData, ConsolidationEventData } from './useLeadEvents';
 import { QueueLead, QueueCounts, Priority, formatTimeSince } from '../types/queue';
@@ -54,6 +55,18 @@ interface UseLeadQueueReturn {
 }
 
 /**
+ * Parses enrichment metadata JSON from the API response.
+ */
+function parseEnrichmentMetadata(metadataJson: string | undefined): EnrichmentMetadata | undefined {
+  if (!metadataJson || metadataJson === '{}') return undefined;
+  try {
+    return JSON.parse(metadataJson);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Maps API LeadQueueItem to frontend QueueLead type.
  * Handles the property mapping between backend and frontend models.
  */
@@ -97,6 +110,8 @@ export function mapToQueueLead(item: LeadQueueItem): QueueLead {
     _comparables: item.comparables,
     // Property photo URL
     photoUrl: item.photoUrl,
+    // Enrichment metadata
+    enrichmentMetadata: parseEnrichmentMetadata(item.metadata),
   } as QueueLead;
 }
 

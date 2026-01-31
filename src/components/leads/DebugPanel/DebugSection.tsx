@@ -28,6 +28,7 @@ import {
   EvaluationHistoryItem,
   LeadActivityItem,
 } from '../../../services/leadQueueService';
+import { EvaluationHistorySection } from './EvaluationHistorySection';
 
 interface DebugSectionProps {
   lead: QueueLead;
@@ -58,7 +59,7 @@ export const DebugSection: React.FC<DebugSectionProps> = ({
     evaluation: false,
     activity: true,
     aiReasoning: false,
-    history: false,
+    evaluationHistory: false,
   });
 
   const toggleSection = (section: string) => {
@@ -204,6 +205,15 @@ export const DebugSection: React.FC<DebugSectionProps> = ({
           <AiReasoningView evaluation={debugData.latestEvaluation} />
         </CollapsibleSection>
       )}
+
+      {/* Evaluation History Section */}
+      <CollapsibleSection
+        title="EVALUATION HISTORY"
+        expanded={expandedSections.evaluationHistory}
+        onToggle={() => toggleSection('evaluationHistory')}
+      >
+        <EvaluationHistorySection leadId={lead.id} />
+      </CollapsibleSection>
 
       {/* Re-run Actions */}
       {onRerunEvaluation && (

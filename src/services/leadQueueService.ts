@@ -126,6 +126,8 @@ export interface LeadQueueItem {
   recommendation?: string;
   // Comparables from ARV evaluation
   comparables?: ComparableSale[];
+  // Enrichment metadata JSON
+  metadata?: string;
 }
 
 export interface QueueCounts {

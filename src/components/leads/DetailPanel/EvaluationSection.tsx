@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -8,7 +8,11 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
-import { Sync as SyncIcon } from '@mui/icons-material';
+import {
+  Sync as SyncIcon,
+  FlashOn as QuickIcon,
+  Search as FullIcon,
+} from '@mui/icons-material';
 import { QueueLead, getSpreadColor, calculateScoreFromSpread } from '../../../types/queue';
 import { SectionCard } from './SectionCard';
 import { ScoreBadge } from './ScoreBadge';
@@ -47,11 +51,16 @@ interface QueueLeadWithMetrics extends QueueLead {
   _comparables?: ComparableSale[];
 }
 
+type EvaluationField = 'arv' | 'rehab' | 'rent' | 'neighborhood';
+type EvaluationTier = 'quick' | 'full';
+
 interface EvaluationSectionProps {
   lead: QueueLeadWithMetrics;
   onEvaluationChange?: (data: Partial<EvaluationData>) => void;
   /** Callback when RentCast data is fetched successfully */
   onRentCastSuccess?: (result: RentCastArvResult) => void;
+  /** Callback when a field re-evaluation is triggered */
+  onFieldRerun?: (field: EvaluationField, tier: EvaluationTier) => Promise<void>;
 }
 
 /**
@@ -71,6 +80,7 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
   lead,
   onEvaluationChange,
   onRentCastSuccess,
+  onFieldRerun,
 }) => {
   // Get metrics from lead.metrics (populated by useLeadQueue from API response)
   const metrics = lead.metrics;
@@ -79,6 +89,20 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
   // RentCast loading and error state
   const [loadingRentCast, setLoadingRentCast] = useState(false);
   const [rentCastError, setRentCastError] = useState<string | null>(null);
+
+  // Field re-run loading state
+  const [loadingField, setLoadingField] = useState<{ field: EvaluationField; tier: EvaluationTier } | null>(null);
+
+  // Handle field re-run
+  const handleFieldRerun = useCallback(async (field: EvaluationField, tier: EvaluationTier) => {
+    if (!onFieldRerun || loadingField) return;
+    setLoadingField({ field, tier });
+    try {
+      await onFieldRerun(field, tier);
+    } finally {
+      setLoadingField(null);
+    }
+  }, [onFieldRerun, loadingField]);
 
   // Comparables state - from API or fallback
   const [comparables, setComparables] = useState<Comparable[]>([]);
@@ -300,6 +324,75 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
     onEvaluationChange?.(updates);
   };
 
+  // Rerun buttons component for each field
+  const RerunButtons: React.FC<{
+    field: EvaluationField;
+    quickEnabled?: boolean;
+    fullEnabled?: boolean;
+    quickCost?: string;
+    fullCost?: string;
+    fullLabel?: string;
+  }> = ({ field, quickEnabled = true, fullEnabled = true, quickCost = '$0.10', fullCost = '$0.50', fullLabel }) => {
+    const isQuickLoading = loadingField?.field === field && loadingField?.tier === 'quick';
+    const isFullLoading = loadingField?.field === field && loadingField?.tier === 'full';
+    const isAnyLoading = loadingField !== null;
+
+    if (!onFieldRerun) return null;
+
+    return (
+      <Box sx={{ display: 'flex', gap: 0.25, ml: 0.5 }}>
+        {quickEnabled && (
+          <Tooltip title={`Quick re-run (AI only, ~${quickCost})`}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFieldRerun(field, 'quick');
+              }}
+              disabled={isAnyLoading}
+              sx={{
+                p: 0.25,
+                color: '#4ade80',
+                '&:hover': { bgcolor: 'rgba(74, 222, 128, 0.1)' },
+                '&.Mui-disabled': { color: '#4a5568' },
+              }}
+            >
+              {isQuickLoading ? (
+                <CircularProgress size={14} sx={{ color: '#4ade80' }} />
+              ) : (
+                <QuickIcon sx={{ fontSize: 14 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+        )}
+        {fullEnabled && (
+          <Tooltip title={`Full re-run (${fullLabel || 'RentCast/Vision'}, ~${fullCost})`}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFieldRerun(field, 'full');
+              }}
+              disabled={isAnyLoading}
+              sx={{
+                p: 0.25,
+                color: '#a78bfa',
+                '&:hover': { bgcolor: 'rgba(167, 139, 250, 0.1)' },
+                '&.Mui-disabled': { color: '#4a5568' },
+              }}
+            >
+              {isFullLoading ? (
+                <CircularProgress size={14} sx={{ color: '#a78bfa' }} />
+              ) : (
+                <FullIcon sx={{ fontSize: 14 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+        )}
+      </Box>
+    );
+  };
+
   return (
     <SectionCard title="EVALUATION">
       {/* Score Badge (circular ring) - uses calculated score based on current ARV/rehab */}
@@ -332,85 +425,98 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
 
       {/* Editable Metrics */}
       <Stack spacing={0}>
-        {/* ARV with RentCast trigger */}
+        {/* ARV with RentCast trigger and re-run buttons */}
         <Box sx={{ position: 'relative' }}>
-          <InlineEdit
-            label="ARV (After Repair Value)"
-            value={evaluation.arv}
-            confidence={evaluation.arvConfidence}
-            source={evaluation.arvSource}
-            note={evaluation.arvNote}
-            formatValue={(v) => formatCurrency(Number(v))}
-            parseValue={parseCurrency}
-            validate={(v) => validateCurrency(Number(v), 10000, 5000000)}
-            onSave={handleArvSave}
-            formatWithCommas
-            rawData={metrics?.rawArvEstimate}
-            rawDataLabel="ArvEstimate"
-          />
-
-          {/* RentCast Refresh Button - positioned next to label */}
-          <Tooltip title="Get RentCast ARV & Comps (~$1 API call)">
-            <IconButton
-              onClick={handleRentCastRefresh}
-              disabled={loadingRentCast}
-              size="small"
-              aria-label="Get RentCast ARV"
-              sx={{
-                position: 'absolute',
-                top: 0,
-                right: 28, // Position next to edit button
-                color: '#a78bfa',
-                p: 0.5,
-                '&:hover': {
-                  bgcolor: 'rgba(167, 139, 250, 0.1)',
-                },
-                '&.Mui-disabled': {
-                  color: '#4a5568',
-                },
-              }}
-            >
-              {loadingRentCast ? (
-                <CircularProgress size={16} sx={{ color: '#a78bfa' }} />
-              ) : (
-                <SyncIcon sx={{ fontSize: 16 }} />
-              )}
-            </IconButton>
-          </Tooltip>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+            <Box sx={{ flex: 1 }}>
+              <InlineEdit
+                label="ARV (After Repair Value)"
+                value={evaluation.arv}
+                confidence={evaluation.arvConfidence}
+                source={evaluation.arvSource}
+                note={evaluation.arvNote}
+                formatValue={(v) => formatCurrency(Number(v))}
+                parseValue={parseCurrency}
+                validate={(v) => validateCurrency(Number(v), 10000, 5000000)}
+                onSave={handleArvSave}
+                formatWithCommas
+                rawData={metrics?.rawArvEstimate}
+                rawDataLabel="ArvEstimate"
+              />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+              <RerunButtons field="arv" quickCost="$0.15" fullCost="$0.50" fullLabel="RentCast" />
+              {/* RentCast Refresh Button (legacy - fetches comps too) */}
+              <Tooltip title="Get RentCast ARV & Comps (~$1 API call)">
+                <IconButton
+                  onClick={handleRentCastRefresh}
+                  disabled={loadingRentCast || loadingField !== null}
+                  size="small"
+                  aria-label="Get RentCast ARV"
+                  sx={{
+                    p: 0.25,
+                    color: '#60a5fa',
+                    '&:hover': { bgcolor: 'rgba(96, 165, 250, 0.1)' },
+                    '&.Mui-disabled': { color: '#4a5568' },
+                  }}
+                >
+                  {loadingRentCast ? (
+                    <CircularProgress size={14} sx={{ color: '#60a5fa' }} />
+                  ) : (
+                    <SyncIcon sx={{ fontSize: 14 }} />
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Box>
         </Box>
 
-        {/* Rehab Estimate */}
-        <InlineEdit
-          label="Rehab Estimate"
-          value={evaluation.rehab}
-          confidence={evaluation.rehabConfidence}
-          source={evaluation.rehabSource}
-          note={evaluation.rehabNote}
-          formatValue={(v) => formatCurrency(Number(v))}
-          parseValue={parseCurrency}
-          validate={(v) => validateCurrency(Number(v), 0, 500000)}
-          onSave={handleRehabSave}
-          formatWithCommas
-          rawData={metrics?.rawRehabEstimate}
-          rawDataLabel="RehabEstimate"
-        />
+        {/* Rehab Estimate with re-run buttons */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+          <Box sx={{ flex: 1 }}>
+            <InlineEdit
+              label="Rehab Estimate"
+              value={evaluation.rehab}
+              confidence={evaluation.rehabConfidence}
+              source={evaluation.rehabSource}
+              note={evaluation.rehabNote}
+              formatValue={(v) => formatCurrency(Number(v))}
+              parseValue={parseCurrency}
+              validate={(v) => validateCurrency(Number(v), 0, 500000)}
+              onSave={handleRehabSave}
+              formatWithCommas
+              rawData={metrics?.rawRehabEstimate}
+              rawDataLabel="RehabEstimate"
+            />
+          </Box>
+          <Box sx={{ mt: 0.5 }}>
+            <RerunButtons field="rehab" quickCost="$0.10" fullCost="$0.20" fullLabel="Vision AI" />
+          </Box>
+        </Box>
 
-        {/* Rent Estimate */}
-        <InlineEdit
-          label="Rent Estimate"
-          value={evaluation.rent}
-          confidence={evaluation.rentConfidence}
-          source={evaluation.rentSource}
-          note={evaluation.rentNote}
-          formatValue={(v) => `${formatCurrency(Number(v))}/mo`}
-          parseValue={parseCurrency}
-          validate={(v) => validateCurrency(Number(v), 0, 50000)}
-          onSave={handleRentSave}
-          infoMessage="Used for rental income projections"
-          formatWithCommas
-          rawData={metrics?.rawRentEstimate}
-          rawDataLabel="RentEstimate"
-        />
+        {/* Rent Estimate with re-run buttons */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+          <Box sx={{ flex: 1 }}>
+            <InlineEdit
+              label="Rent Estimate"
+              value={evaluation.rent}
+              confidence={evaluation.rentConfidence}
+              source={evaluation.rentSource}
+              note={evaluation.rentNote}
+              formatValue={(v) => `${formatCurrency(Number(v))}/mo`}
+              parseValue={parseCurrency}
+              validate={(v) => validateCurrency(Number(v), 0, 50000)}
+              onSave={handleRentSave}
+              infoMessage="Used for rental income projections"
+              formatWithCommas
+              rawData={metrics?.rawRentEstimate}
+              rawDataLabel="RentEstimate"
+            />
+          </Box>
+          <Box sx={{ mt: 0.5 }}>
+            <RerunButtons field="rent" quickCost="$0.08" fullCost="$0.40" fullLabel="RentCast" />
+          </Box>
+        </Box>
 
         {/* MAO with Spread (read-only, auto-calculated) */}
         <Box sx={{ mb: 2 }}>
@@ -440,12 +546,17 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
           </Typography>
         </Box>
 
-        {/* Neighborhood Grade */}
-        <Box>
-          <Typography variant="caption" sx={{ color: '#8b949e', mb: 0.5, display: 'block' }}>
-            Neighborhood
-          </Typography>
-          <GradeBadge grade={lead.neighborhoodGrade || 'C'} rawGrade={metrics?.rawNeighborhoodGrade} />
+        {/* Neighborhood Grade with re-run button */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="caption" sx={{ color: '#8b949e', mb: 0.5, display: 'block' }}>
+              Neighborhood
+            </Typography>
+            <GradeBadge grade={lead.neighborhoodGrade || 'C'} rawGrade={metrics?.rawNeighborhoodGrade} />
+          </Box>
+          <Box sx={{ mt: 0.5 }}>
+            <RerunButtons field="neighborhood" quickCost="$0.08" fullEnabled={false} />
+          </Box>
         </Box>
       </Stack>
 

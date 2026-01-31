@@ -121,9 +121,14 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
           e.preventDefault();
           document.getElementById('message-input')?.focus();
           break;
+        case 'a':
+          // Archive lead
+          e.preventDefault();
+          onAction?.('archive');
+          break;
       }
     },
-    [open, onClose, onNavigatePrev, onNavigateNext, isFirst, isLast, onFollowUp]
+    [open, onClose, onNavigatePrev, onNavigateNext, isFirst, isLast, onFollowUp, onAction]
   );
 
   useEffect(() => {
@@ -292,7 +297,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
             }}
           >
             <Typography variant="caption" sx={{ color: '#484f58', fontSize: '0.7rem' }}>
-              Keyboard: ← Prev (j) • Next (k) → • Follow-up (l) • Message (m) • Close (ESC)
+              Keyboard: ← Prev (j) • Next (k) → • Follow-up (l) • Message (m) • Archive (a) • Close (ESC)
             </Typography>
           </Box>
         </Box>

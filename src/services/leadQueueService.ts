@@ -279,6 +279,7 @@ export interface EnrichmentMetadata {
   pricePerSquareFoot?: number;
   zestimate?: number;
   rentZestimate?: number;
+  daysOnMarket?: number;
 }
 
 export interface EnrichedListingData {

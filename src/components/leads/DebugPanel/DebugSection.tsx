@@ -667,8 +667,6 @@ const SnapshotViewer: React.FC<SnapshotViewerProps> = ({ label, snapshot }) => {
                   p: 1,
                   bgcolor: '#161b22',
                   borderRadius: 0.5,
-                  maxHeight: 150,
-                  overflow: 'auto',
                 }}
               >
                 <pre
@@ -695,8 +693,6 @@ const SnapshotViewer: React.FC<SnapshotViewerProps> = ({ label, snapshot }) => {
                   p: 1,
                   bgcolor: '#161b22',
                   borderRadius: 0.5,
-                  maxHeight: 200,
-                  overflow: 'auto',
                 }}
               >
                 <pre
@@ -723,8 +719,6 @@ const SnapshotViewer: React.FC<SnapshotViewerProps> = ({ label, snapshot }) => {
                   p: 1,
                   bgcolor: '#161b22',
                   borderRadius: 0.5,
-                  maxHeight: 150,
-                  overflow: 'auto',
                 }}
               >
                 <pre

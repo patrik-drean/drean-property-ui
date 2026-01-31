@@ -396,13 +396,10 @@ const SnapshotCard: React.FC<SnapshotCardProps> = ({ label, snapshot }) => {
                     p: 1,
                     bgcolor: '#0d1117',
                     borderRadius: 0.5,
-                    maxHeight: 100,
-                    overflow: 'auto',
                   }}
                 >
                   <pre style={{ margin: 0, color: '#8b949e', fontSize: '0.65rem', whiteSpace: 'pre-wrap' }}>
-                    {snapshot.prompt.substring(0, 500)}
-                    {snapshot.prompt.length > 500 && '...'}
+                    {snapshot.prompt}
                   </pre>
                 </Box>
               </Box>
@@ -419,13 +416,10 @@ const SnapshotCard: React.FC<SnapshotCardProps> = ({ label, snapshot }) => {
                     p: 1,
                     bgcolor: '#0d1117',
                     borderRadius: 0.5,
-                    maxHeight: 100,
-                    overflow: 'auto',
                   }}
                 >
                   <pre style={{ margin: 0, color: '#8b949e', fontSize: '0.65rem', whiteSpace: 'pre-wrap' }}>
-                    {snapshot.rawResponse.substring(0, 500)}
-                    {snapshot.rawResponse.length > 500 && '...'}
+                    {snapshot.rawResponse}
                   </pre>
                 </Box>
               </Box>
@@ -442,8 +436,6 @@ const SnapshotCard: React.FC<SnapshotCardProps> = ({ label, snapshot }) => {
                     p: 1,
                     bgcolor: '#0d1117',
                     borderRadius: 0.5,
-                    maxHeight: 100,
-                    overflow: 'auto',
                   }}
                 >
                   <pre style={{ margin: 0, color: '#4ade80', fontSize: '0.65rem', whiteSpace: 'pre-wrap' }}>

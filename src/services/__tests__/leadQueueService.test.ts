@@ -7,6 +7,7 @@ import {
   QueueType,
   IngestLeadRequest,
   IngestLeadResponse,
+  EnrichmentMetadata,
 } from '../leadQueueService';
 
 // Mock axios module
@@ -604,6 +605,99 @@ describe('leadQueueService', () => {
       await expect(leadQueueService.ingestLead(request)).rejects.toEqual({
         response: { status: 500 },
       });
+    });
+
+    it('should include metadata when provided', async () => {
+      const metadata: EnrichmentMetadata = {
+        taxAssessedValue: 518000,
+        lotSize: '0.55 Acres',
+        monthlyHoaFee: 350,
+        propertyCondition: 'Good',
+        isNewConstruction: false,
+      };
+      const request: IngestLeadRequest = {
+        address: '123 Test St',
+        listingPrice: 250000,
+        metadata: JSON.stringify(metadata),
+      };
+      mockPost.mockResolvedValue({ data: mockIngestResponse });
+
+      await leadQueueService.ingestLead(request);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/leads/ingest',
+        expect.objectContaining({ metadata: JSON.stringify(metadata) })
+      );
+    });
+  });
+
+  describe('EnrichmentMetadata', () => {
+    it('should handle all fields being optional', () => {
+      const emptyMetadata: EnrichmentMetadata = {};
+      expect(emptyMetadata.taxAssessedValue).toBeUndefined();
+      expect(emptyMetadata.lotSize).toBeUndefined();
+      expect(emptyMetadata.propertyCondition).toBeUndefined();
+    });
+
+    it('should handle full metadata object', () => {
+      const fullMetadata: EnrichmentMetadata = {
+        taxAssessedValue: 518000,
+        propertyTaxRate: 2.15,
+        monthlyHoaFee: 350,
+        lotSize: '0.55 Acres',
+        propertyCondition: 'Good',
+        isNewConstruction: false,
+        bathroomsFull: 2,
+        bathroomsHalf: 1,
+        pricePerSquareFoot: 285.5,
+        zestimate: 625000,
+        rentZestimate: 3200,
+      };
+
+      expect(fullMetadata.taxAssessedValue).toBe(518000);
+      expect(fullMetadata.propertyTaxRate).toBe(2.15);
+      expect(fullMetadata.monthlyHoaFee).toBe(350);
+      expect(fullMetadata.lotSize).toBe('0.55 Acres');
+      expect(fullMetadata.propertyCondition).toBe('Good');
+      expect(fullMetadata.isNewConstruction).toBe(false);
+      expect(fullMetadata.bathroomsFull).toBe(2);
+      expect(fullMetadata.bathroomsHalf).toBe(1);
+      expect(fullMetadata.pricePerSquareFoot).toBe(285.5);
+      expect(fullMetadata.zestimate).toBe(625000);
+      expect(fullMetadata.rentZestimate).toBe(3200);
+    });
+
+    it('should serialize to JSON correctly', () => {
+      const metadata: EnrichmentMetadata = {
+        taxAssessedValue: 518000,
+        lotSize: '0.55 Acres',
+        isNewConstruction: true,
+      };
+
+      const json = JSON.stringify(metadata);
+      const parsed = JSON.parse(json) as EnrichmentMetadata;
+
+      expect(parsed.taxAssessedValue).toBe(518000);
+      expect(parsed.lotSize).toBe('0.55 Acres');
+      expect(parsed.isNewConstruction).toBe(true);
+    });
+
+    it('should handle large tax assessed values', () => {
+      const metadata: EnrichmentMetadata = {
+        taxAssessedValue: 2500000,
+      };
+
+      expect(metadata.taxAssessedValue).toBe(2500000);
+    });
+
+    it('should handle new construction flag', () => {
+      const newConstruction: EnrichmentMetadata = { isNewConstruction: true };
+      const existingHome: EnrichmentMetadata = { isNewConstruction: false };
+      const unknownConstruction: EnrichmentMetadata = {};
+
+      expect(newConstruction.isNewConstruction).toBe(true);
+      expect(existingHome.isNewConstruction).toBe(false);
+      expect(unknownConstruction.isNewConstruction).toBeUndefined();
     });
   });
 });

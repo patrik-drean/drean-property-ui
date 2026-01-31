@@ -1,5 +1,5 @@
-import React, { useEffect, useCallback } from 'react';
-import { Drawer, Box, Grid, CircularProgress, Typography, Button } from '@mui/material';
+import React, { useEffect, useCallback, useState } from 'react';
+import { Drawer, Box, Grid, CircularProgress, Typography, Button, Tabs, Tab } from '@mui/material';
 import { Refresh as RefreshIcon } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue';
 import { PanelHeader } from './PanelHeader';
@@ -7,7 +7,8 @@ import { PropertyDetailsSection } from './PropertyDetailsSection';
 import { EvaluationSection } from './EvaluationSection';
 import { MessagingSection } from './MessagingSection';
 import { ActionsSection } from './ActionsSection';
-import { RentCastArvResult } from '../../../services/leadQueueService';
+import { DebugSection } from '../DebugPanel';
+import { RentCastArvResult, leadQueueService } from '../../../services/leadQueueService';
 
 export interface EvaluationUpdate {
   arv?: number;
@@ -83,6 +84,26 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
   deleteLoading = false,
   onFollowUp,
 }) => {
+  // Tab state: 0 = Details, 1 = Debug
+  const [activeTab, setActiveTab] = useState(0);
+
+  // Reset tab when lead changes
+  useEffect(() => {
+    setActiveTab(0);
+  }, [lead?.id]);
+
+  // Handle re-run evaluation
+  const handleRerunEvaluation = useCallback(async (tier: 'quick' | 'full' = 'quick') => {
+    if (!lead?.id) return;
+    try {
+      await leadQueueService.rerunFieldEvaluation(lead.id, 'all', tier);
+      // The page will need to refresh the lead data after this
+      onAction?.('refresh');
+    } catch (err) {
+      console.error('Failed to re-run evaluation:', err);
+    }
+  }, [lead?.id, onAction]);
+
   // Keyboard shortcuts for panel navigation
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -226,79 +247,113 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
       ) : error ? (
         <ErrorState />
       ) : lead ? (
-        <Box
-          sx={{
-            p: 2,
-            height: 'calc(100% - 80px)',
-            overflowY: 'auto',
-            bgcolor: '#0d1117',
-            '&::-webkit-scrollbar': { width: 6 },
-            '&::-webkit-scrollbar-thumb': { bgcolor: '#30363d', borderRadius: 3 },
-            '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
-          }}
-        >
-          <Grid container spacing={2}>
-            {/* Top Left: Property Details */}
-            <Grid item xs={12} md={6}>
-              <PropertyDetailsSection lead={lead} />
-            </Grid>
+        <Box sx={{ height: 'calc(100% - 80px)', display: 'flex', flexDirection: 'column' }}>
+          {/* Tabs */}
+          <Box sx={{ borderBottom: '1px solid #21262d', bgcolor: '#0d1117' }}>
+            <Tabs
+              value={activeTab}
+              onChange={(_, newValue) => setActiveTab(newValue)}
+              sx={{
+                minHeight: 40,
+                '& .MuiTabs-indicator': { bgcolor: '#4ade80' },
+                '& .MuiTab-root': {
+                  color: '#8b949e',
+                  minHeight: 40,
+                  fontSize: '0.8rem',
+                  textTransform: 'none',
+                  '&.Mui-selected': { color: '#f0f6fc' },
+                },
+              }}
+            >
+              <Tab label="Details" />
+              <Tab label="Debug" />
+            </Tabs>
+          </Box>
 
-            {/* Top Right: Actions */}
-            <Grid item xs={12} md={6}>
-              <ActionsSection
-                lead={lead}
-                onStatusChange={onStatusChange}
-                onAction={onAction}
-                onNotesChange={onNotesChange}
-                onDeletePermanently={onDeletePermanently}
-                deleteLoading={deleteLoading}
-              />
-            </Grid>
-
-            {/* Bottom Left: Evaluation */}
-            <Grid item xs={12} md={6}>
-              <EvaluationSection
-                lead={lead}
-                onEvaluationChange={(data) => {
-                  // Call API to save evaluation changes
-                  if (onEvaluationSave && lead) {
-                    const updates: EvaluationUpdate = {};
-                    if (data.arv !== undefined) {
-                      updates.arv = data.arv;
-                      updates.arvNote = data.arvNote;
-                    }
-                    if (data.rehab !== undefined) {
-                      updates.rehabEstimate = data.rehab;
-                      updates.rehabNote = data.rehabNote;
-                    }
-                    if (data.rent !== undefined) {
-                      updates.rentEstimate = data.rent;
-                      updates.rentNote = data.rentNote;
-                    }
-                    onEvaluationSave(lead.id, updates);
-                  }
-                }}
-              />
-            </Grid>
-
-            {/* Bottom Right: Messaging */}
-            <Grid item xs={12} md={6}>
-              <MessagingSection lead={lead} onSendMessage={onSendMessage} />
-            </Grid>
-          </Grid>
-
-          {/* Keyboard shortcut hint */}
+          {/* Tab Content */}
           <Box
             sx={{
-              mt: 3,
-              pt: 2,
-              borderTop: '1px solid #21262d',
-              textAlign: 'center',
+              flex: 1,
+              overflowY: 'auto',
+              bgcolor: '#0d1117',
+              '&::-webkit-scrollbar': { width: 6 },
+              '&::-webkit-scrollbar-thumb': { bgcolor: '#30363d', borderRadius: 3 },
+              '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
             }}
           >
-            <Typography variant="caption" sx={{ color: '#484f58', fontSize: '0.7rem' }}>
-              Keyboard: ← Prev (j) • Next (k) → • Follow-up (l) • Message (m) • Archive (a) • Close (ESC)
-            </Typography>
+            {/* Details Tab */}
+            {activeTab === 0 && (
+              <Box sx={{ p: 2 }}>
+                <Grid container spacing={2}>
+                  {/* Top Left: Property Details */}
+                  <Grid item xs={12} md={6}>
+                    <PropertyDetailsSection lead={lead} />
+                  </Grid>
+
+                  {/* Top Right: Actions */}
+                  <Grid item xs={12} md={6}>
+                    <ActionsSection
+                      lead={lead}
+                      onStatusChange={onStatusChange}
+                      onAction={onAction}
+                      onNotesChange={onNotesChange}
+                      onDeletePermanently={onDeletePermanently}
+                      deleteLoading={deleteLoading}
+                    />
+                  </Grid>
+
+                  {/* Bottom Left: Evaluation */}
+                  <Grid item xs={12} md={6}>
+                    <EvaluationSection
+                      lead={lead}
+                      onEvaluationChange={(data) => {
+                        // Call API to save evaluation changes
+                        if (onEvaluationSave && lead) {
+                          const updates: EvaluationUpdate = {};
+                          if (data.arv !== undefined) {
+                            updates.arv = data.arv;
+                            updates.arvNote = data.arvNote;
+                          }
+                          if (data.rehab !== undefined) {
+                            updates.rehabEstimate = data.rehab;
+                            updates.rehabNote = data.rehabNote;
+                          }
+                          if (data.rent !== undefined) {
+                            updates.rentEstimate = data.rent;
+                            updates.rentNote = data.rentNote;
+                          }
+                          onEvaluationSave(lead.id, updates);
+                        }
+                      }}
+                    />
+                  </Grid>
+
+                  {/* Bottom Right: Messaging */}
+                  <Grid item xs={12} md={6}>
+                    <MessagingSection lead={lead} onSendMessage={onSendMessage} />
+                  </Grid>
+                </Grid>
+
+                {/* Keyboard shortcut hint */}
+                <Box
+                  sx={{
+                    mt: 3,
+                    pt: 2,
+                    borderTop: '1px solid #21262d',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: '#484f58', fontSize: '0.7rem' }}>
+                    Keyboard: ← Prev (j) | Next (k) → | Follow-up (l) | Message (m) | Archive (a) | Close (ESC)
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+
+            {/* Debug Tab */}
+            {activeTab === 1 && (
+              <DebugSection lead={lead} onRerunEvaluation={handleRerunEvaluation} />
+            )}
           </Box>
         </Box>
       ) : (

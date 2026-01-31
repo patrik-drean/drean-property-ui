@@ -1,5 +1,5 @@
 // Queue types for the Review Page priority queue
-import { LeadMetrics, ComparableSale } from '../services/leadQueueService';
+import { LeadMetrics, ComparableSale, EnrichmentMetadata } from '../services/leadQueueService';
 
 export type QueueType = 'action_now' | 'follow_up' | 'negotiating' | 'all' | 'archived';
 
@@ -79,6 +79,9 @@ export interface QueueLead {
 
   // Property photo URL (first image from Apify scrape)
   photoUrl?: string;
+
+  // Enrichment metadata from Apify (stored in Lead.Metadata JSON)
+  enrichmentMetadata?: EnrichmentMetadata;
 }
 
 export type LeadQueueStatus =

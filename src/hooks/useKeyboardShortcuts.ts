@@ -6,7 +6,6 @@ interface ShortcutHandlers {
   onEnter: () => void;
   onTemplate: () => void;
   onDone?: () => void;
-  onSkip?: () => void;
   onArchive?: () => void;
   onFollowUp?: () => void;
 }
@@ -20,9 +19,8 @@ interface ShortcutHandlers {
  * - Enter: Open detail panel for selected card
  * - t: Send template message
  * - d: Mark as done
- * - s: Skip (postpone follow-up)
  * - a: Archive lead
- * - l: Schedule follow-up for 2 days
+ * - l: Schedule follow-up for 2 days & mark done
  *
  * Note: Shortcuts are disabled when focus is on input/textarea elements
  */
@@ -64,10 +62,6 @@ export const useKeyboardShortcuts = (handlers: ShortcutHandlers, enabled: boolea
         case 'd':
           e.preventDefault();
           handlers.onDone?.();
-          break;
-        case 's':
-          e.preventDefault();
-          handlers.onSkip?.();
           break;
         case 'a':
           e.preventDefault();

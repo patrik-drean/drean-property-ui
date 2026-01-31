@@ -11,7 +11,7 @@ interface QueueCardListProps {
   onCardSelect: (id: string) => void;
   onViewDetails: (lead: QueueLead) => void;
   onDone: (lead: QueueLead) => void;
-  onSkip: (lead: QueueLead) => void;
+  onFollowUp: (lead: QueueLead) => void;
   onArchive: (lead: QueueLead) => void;
 }
 
@@ -51,7 +51,7 @@ export const QueueCardList: React.FC<QueueCardListProps> = ({
   onCardSelect,
   onViewDetails,
   onDone,
-  onSkip,
+  onFollowUp,
   onArchive,
 }) => {
   if (leads.length === 0) {
@@ -108,7 +108,7 @@ export const QueueCardList: React.FC<QueueCardListProps> = ({
           onSelect={() => onCardSelect(lead.id)}
           onViewDetails={() => onViewDetails(lead)}
           onDone={() => onDone(lead)}
-          onSkip={() => onSkip(lead)}
+          onFollowUp={() => onFollowUp(lead)}
           onArchive={() => onArchive(lead)}
         />
       ))}

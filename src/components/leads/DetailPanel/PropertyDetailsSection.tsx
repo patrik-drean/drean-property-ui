@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
-import { Box, Typography, Link, Grid } from '@mui/material';
-import { OpenInNew as OpenInNewIcon, AutoAwesome as AiIcon, Home as HomeIcon } from '@mui/icons-material';
-import { QueueLead } from '../../../types/queue';
+import { Box, Typography, Link, Grid, Tooltip } from '@mui/material';
+import {
+  OpenInNew as OpenInNewIcon,
+  AutoAwesome as AiIcon,
+  Home as HomeIcon,
+  AccountBalance as TaxIcon,
+  Landscape as LotIcon,
+  Apartment as HoaIcon,
+  Build as ConditionIcon,
+  NewReleases as NewConstructionIcon,
+} from '@mui/icons-material';
+import { QueueLead } from '../../../types/queue'
 import { SectionCard } from './SectionCard';
 
 interface PropertyDetailsSectionProps {
@@ -47,6 +56,27 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
       maximumFractionDigits: 0,
     }).format(value);
   };
+
+  // Format large numbers compactly (e.g., $518K instead of $518,000)
+  const formatCompact = (value: number): string => {
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    }
+    if (value >= 1000) {
+      return `$${Math.round(value / 1000)}K`;
+    }
+    return `$${value}`;
+  };
+
+  // Check if we have any enrichment metadata to display
+  const metadata = lead.enrichmentMetadata;
+  const hasMetadata = metadata && (
+    metadata.taxAssessedValue ||
+    metadata.lotSize ||
+    metadata.monthlyHoaFee ||
+    metadata.propertyCondition ||
+    metadata.isNewConstruction
+  );
 
   // Calculate days since created as proxy for DOM (using Mountain Time for consistency)
   const daysOnMarket = (() => {
@@ -158,6 +188,61 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
         <StatItem label="DOM" value={daysOnMarket !== null ? `${daysOnMarket} days` : '-'} />
         <StatItem label="Phone" value={lead.sellerPhone || '-'} />
       </Grid>
+
+      {/* Enrichment Metadata Icons */}
+      {hasMetadata && (
+        <Box sx={{ display: 'flex', gap: 1.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          {metadata?.taxAssessedValue && (
+            <Tooltip title={`Tax Assessed: ${formatCurrency(metadata.taxAssessedValue)}`} arrow>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#8b949e', cursor: 'help' }}>
+                <TaxIcon sx={{ fontSize: 16 }} />
+                <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                  {formatCompact(metadata.taxAssessedValue)}
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
+
+          {metadata?.lotSize && (
+            <Tooltip title={`Lot Size: ${metadata.lotSize}`} arrow>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#8b949e', cursor: 'help' }}>
+                <LotIcon sx={{ fontSize: 16 }} />
+                <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                  {metadata.lotSize}
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
+
+          {metadata?.monthlyHoaFee && (
+            <Tooltip title={`HOA Fee: ${formatCurrency(metadata.monthlyHoaFee)}/month`} arrow>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#8b949e', cursor: 'help' }}>
+                <HoaIcon sx={{ fontSize: 16 }} />
+                <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                  ${metadata.monthlyHoaFee}/mo
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
+
+          {metadata?.propertyCondition && (
+            <Tooltip title={`Property Condition: ${metadata.propertyCondition}`} arrow>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#4ade80', cursor: 'help' }}>
+                <ConditionIcon sx={{ fontSize: 16 }} />
+                <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                  {metadata.propertyCondition}
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
+
+          {metadata?.isNewConstruction && (
+            <Tooltip title="New Construction" arrow>
+              <NewConstructionIcon sx={{ fontSize: 16, color: '#60a5fa', cursor: 'help' }} />
+            </Tooltip>
+          )}
+        </Box>
+      )}
 
       {/* Listing Price */}
       <Box sx={{ pt: 2, borderTop: '1px solid #30363d' }}>

@@ -215,6 +215,7 @@ export interface IngestLeadRequest {
   agentPhone?: string;
   source?: string;
   sendFirstMessage?: boolean;
+  metadata?: string;  // JSON string of EnrichmentMetadata
 }
 
 export interface LeadDto {
@@ -263,6 +264,21 @@ export interface EnrichedAgentInfo {
   agency?: string;
 }
 
+// Enrichment metadata for investment analysis
+export interface EnrichmentMetadata {
+  taxAssessedValue?: number;
+  propertyTaxRate?: number;
+  monthlyHoaFee?: number;
+  lotSize?: string;
+  propertyCondition?: string;
+  isNewConstruction?: boolean;
+  bathroomsFull?: number;
+  bathroomsHalf?: number;
+  pricePerSquareFoot?: number;
+  zestimate?: number;
+  rentZestimate?: number;
+}
+
 export interface EnrichedListingData {
   address?: string;
   city?: string;
@@ -283,6 +299,7 @@ export interface EnrichedListingData {
   agent?: EnrichedAgentInfo;
   zillowLink?: string;
   zpid?: string;
+  metadata?: EnrichmentMetadata;
 }
 
 export interface EnrichListingResponse {
@@ -290,6 +307,133 @@ export interface EnrichListingResponse {
   data?: EnrichedListingData;
   error?: string;
   partialData?: EnrichedListingData;
+}
+
+// Debug and Evaluation Transparency types (TASK-086)
+export interface ProviderSnapshot {
+  prompt?: string;
+  rawResponse?: string;
+  parsedResult?: unknown;
+  cost?: number;
+  durationMs?: number;
+  error?: string;
+  providerName?: string;
+}
+
+export interface ProviderError {
+  provider: string;
+  error: string;
+  stackTrace?: string;
+}
+
+export interface EvaluationHistoryItem {
+  id: string;
+  leadId: string;
+  evaluatedAt: string;
+  tier: string;
+  triggerSource: string;
+  triggeredBy?: string;
+  correlationId?: string;
+  totalCost?: number;
+  durationMs?: number;
+  arvSnapshot?: ProviderSnapshot;
+  rehabSnapshot?: ProviderSnapshot;
+  rentSnapshot?: ProviderSnapshot;
+  neighborhoodSnapshot?: ProviderSnapshot;
+  summarySnapshot?: ProviderSnapshot;
+  scoreSnapshot?: ProviderSnapshot;
+  errors: ProviderError[];
+}
+
+export interface LeadActivityItem {
+  id: string;
+  leadId: string;
+  occurredAt: string;
+  eventType: string;
+  eventData: Record<string, unknown>;
+  triggeredBy?: string;
+  correlationId?: string;
+}
+
+export interface LeadDebugDto {
+  id: string;
+  userId: string;
+  address: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  listingPrice: number;
+  originalListingPrice?: number;
+  hasPriceDropped: boolean;
+  squareFootage?: number;
+  yearBuilt?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  units?: number;
+  zillowLink?: string;
+  photoUrls: string[];
+  status: string;
+  createdAt: string;
+  updatedAt?: string;
+  lastEvaluatedAt?: string;
+  evaluationTier?: string;
+  isDisqualified: boolean;
+  disqualifyReason?: string;
+  calculatedMao?: number;
+  maoSpreadPercent?: number;
+  isPriority: boolean;
+  isArchived: boolean;
+  notes?: string;
+  tags: string[];
+  source?: string;
+  sourceId?: string;
+  sources: string[];
+  normalizedAddress?: string;
+  metadata: string;
+  evaluationNotes?: string;
+}
+
+export interface EvaluationDataDto {
+  arvEstimate?: unknown;
+  rehabEstimate?: unknown;
+  rentEstimate?: unknown;
+  neighborhoodGrade?: unknown;
+  score?: unknown;
+  evaluationNotes?: unknown;
+}
+
+export interface EvaluationMetadataDto {
+  correlationId?: string;
+  lastEvaluatedAt?: string;
+  evaluationTier?: string;
+  totalCost?: number;
+  durationMs?: number;
+}
+
+export interface LeadDebugResponse {
+  lead: LeadDebugDto;
+  evaluationData: EvaluationDataDto;
+  latestEvaluation?: EvaluationHistoryItem;
+  recentActivity: LeadActivityItem[];
+  metadata: EvaluationMetadataDto;
+}
+
+export interface EvaluationHistoryListResponse {
+  items: EvaluationHistoryItem[];
+  total: number;
+}
+
+export interface ActivityLogListResponse {
+  items: LeadActivityItem[];
+  total: number;
+}
+
+export interface RerunFieldEvaluationResponse {
+  success: boolean;
+  result?: unknown;
+  snapshot?: ProviderSnapshot;
+  activityId?: string;
+  error?: string;
 }
 
 /**
@@ -447,6 +591,84 @@ export const leadQueueService = {
     const response = await axiosInstance.post<EnrichListingResponse>(
       '/api/listings/enrich',
       { url }
+    );
+    return response.data;
+  },
+
+  // Debug and Evaluation Transparency API (TASK-086)
+
+  /**
+   * Get full debug data for a lead including raw evaluation data, activity log, and AI reasoning.
+   * @param leadId The lead ID
+   */
+  async getDebugData(leadId: string): Promise<LeadDebugResponse> {
+    const response = await axiosInstance.get<LeadDebugResponse>(
+      `/api/leads/${leadId}/debug`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get evaluation history for a lead with pagination.
+   * @param leadId The lead ID
+   * @param limit Number of items to return
+   * @param offset Number of items to skip
+   */
+  async getEvaluationHistory(
+    leadId: string,
+    limit = 20,
+    offset = 0
+  ): Promise<EvaluationHistoryListResponse> {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    const response = await axiosInstance.get<EvaluationHistoryListResponse>(
+      `/api/leads/${leadId}/evaluation-history?${params}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get activity log for a lead with pagination and optional filtering.
+   * @param leadId The lead ID
+   * @param limit Number of items to return
+   * @param offset Number of items to skip
+   * @param eventTypes Optional comma-separated list of event types to filter
+   */
+  async getActivityLog(
+    leadId: string,
+    limit = 50,
+    offset = 0,
+    eventTypes?: string
+  ): Promise<ActivityLogListResponse> {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (eventTypes) {
+      params.set('eventTypes', eventTypes);
+    }
+    const response = await axiosInstance.get<ActivityLogListResponse>(
+      `/api/leads/${leadId}/activity?${params}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Re-run evaluation for a specific field or all fields.
+   * @param leadId The lead ID
+   * @param field The field to re-evaluate (arv, rehab, rent, neighborhood, summary, all)
+   * @param tier The evaluation tier (quick or full)
+   */
+  async rerunFieldEvaluation(
+    leadId: string,
+    field: 'arv' | 'rehab' | 'rent' | 'neighborhood' | 'summary' | 'all',
+    tier: 'quick' | 'full' = 'quick'
+  ): Promise<RerunFieldEvaluationResponse> {
+    const params = new URLSearchParams({ tier });
+    const response = await axiosInstance.post<RerunFieldEvaluationResponse>(
+      `/api/leads/${leadId}/evaluate/${field}?${params}`
     );
     return response.data;
   },

@@ -3,7 +3,7 @@ import { Box, Typography, IconButton, Tooltip } from '@mui/material';
 import {
   OpenInNew as OpenIcon,
   CheckCircle as DoneIcon,
-  SkipNext as SkipIcon,
+  NotificationsActive as RemindIcon,
   Archive as ArchiveIcon,
   Home as HomeIcon,
   Event as EventIcon,
@@ -19,7 +19,7 @@ interface QueueCardProps {
   onSelect: () => void;
   onViewDetails: () => void;
   onDone: () => void;
-  onSkip: () => void;
+  onFollowUp: () => void;
   onArchive: () => void;
 }
 
@@ -32,7 +32,7 @@ export const QueueCard: React.FC<QueueCardProps> = ({
   onSelect,
   onViewDetails,
   onDone,
-  onSkip,
+  onFollowUp,
   onArchive,
 }) => {
   // Track image load error to show placeholder
@@ -279,20 +279,20 @@ export const QueueCard: React.FC<QueueCardProps> = ({
               <DoneIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Skip for now (s)">
+          <Tooltip title="Follow up in 2 days (l)">
             <IconButton
               size="small"
-              data-testid="skip-button"
+              data-testid="followup-button"
               onClick={(e) => {
                 e.stopPropagation();
-                onSkip();
+                onFollowUp();
               }}
               sx={{
                 color: '#8b949e',
                 '&:hover': { color: '#fbbf24', bgcolor: 'rgba(251, 191, 36, 0.1)' },
               }}
             >
-              <SkipIcon fontSize="small" />
+              <RemindIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Archive (a)">

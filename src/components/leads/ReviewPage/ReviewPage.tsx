@@ -51,7 +51,6 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     error,
     changeQueue,
     markAsDone,
-    markAsSkip,
     archiveLead,
     deleteLeadPermanently,
     updateEvaluation,
@@ -157,13 +156,6 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     }
   }, [selectedCardId, markAsDone]);
 
-  const handleSkip = useCallback(() => {
-    if (selectedCardId) {
-      markAsSkip(selectedCardId);
-      // Notification is shown by the hook via onNotification callback
-    }
-  }, [selectedCardId, markAsSkip]);
-
   const handleArchive = useCallback(() => {
     if (selectedCardId) {
       archiveLead(selectedCardId);
@@ -188,7 +180,6 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
       onEnter: openDetailPanel,
       onTemplate: sendTemplate,
       onDone: handleDone,
-      onSkip: handleSkip,
       onArchive: handleArchive,
       onFollowUp: handleFollowUp,
     },
@@ -266,9 +257,10 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     // Notification shown by hook via onNotification callback
   };
 
-  const handleCardSkip = (lead: QueueLead) => {
-    markAsSkip(lead.id);
-    // Notification shown by hook via onNotification callback
+  const handleCardFollowUp = (lead: QueueLead) => {
+    const followUpDate = new Date();
+    followUpDate.setDate(followUpDate.getDate() + 2);
+    scheduleFollowUp(lead.id, followUpDate.toISOString().split('T')[0]);
   };
 
   const handleCardArchive = (lead: QueueLead) => {
@@ -377,7 +369,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
             onCardSelect={(id) => setSelectedCardId(id)}
             onViewDetails={handleViewDetails}
             onDone={handleCardDone}
-            onSkip={handleCardSkip}
+            onFollowUp={handleCardFollowUp}
             onArchive={handleCardArchive}
           />
         )}

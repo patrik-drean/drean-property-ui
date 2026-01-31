@@ -19,7 +19,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import { leadQueueService, IngestLeadRequest, IngestLeadResponse, EnrichedListingData } from '../../../services/leadQueueService';
+import { leadQueueService, IngestLeadRequest, IngestLeadResponse, EnrichedListingData, EnrichmentMetadata } from '../../../services/leadQueueService';
 
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error';
 type EnrichState = 'idle' | 'enriching' | 'success' | 'error';
@@ -43,6 +43,7 @@ interface FormData {
   photoUrls: string[];
   zestimate: number | null;
   rentZestimate: number | null;
+  enrichmentMetadata: EnrichmentMetadata | null;
 }
 
 const initialFormData: FormData = {
@@ -64,6 +65,7 @@ const initialFormData: FormData = {
   photoUrls: [],
   zestimate: null,
   rentZestimate: null,
+  enrichmentMetadata: null,
 };
 
 interface AddLeadModalProps {
@@ -168,6 +170,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
       photoUrls: data.photoUrls?.length ? data.photoUrls : prev.photoUrls,
       zestimate: data.zestimate ?? prev.zestimate,
       rentZestimate: data.rentZestimate ?? prev.rentZestimate,
+      enrichmentMetadata: data.metadata ?? prev.enrichmentMetadata,
     }));
   };
 
@@ -203,6 +206,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
         agentPhone: formData.agentPhone || undefined,
         source: 'manual',
         sendFirstMessage: false,
+        metadata: formData.enrichmentMetadata ? JSON.stringify(formData.enrichmentMetadata) : undefined,
       };
 
       const response = await leadQueueService.ingestLead(request);

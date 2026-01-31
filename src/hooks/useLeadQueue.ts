@@ -233,9 +233,11 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
       } as QueueLead & { _isNew: boolean };
 
       setLeads((prev) => [queueLead, ...prev]);
-      setQueueCounts((prev) => ({ ...prev, all: prev.all + 1 }));
 
       notify(`New lead: ${newLead.address}`, 'success');
+
+      // Refetch to get accurate counts (new lead may go to action_now based on score)
+      fetchQueue();
 
       // Remove animation flag after delay
       setTimeout(() => {
@@ -246,7 +248,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
         );
       }, 2000);
     },
-    [notify]
+    [notify, fetchQueue]
   );
 
   const handleLeadUpdated = useCallback((updatedLead: LeadEventData) => {
@@ -257,7 +259,9 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
           : l
       )
     );
-  }, []);
+    // Refetch to get accurate counts (status change may affect queue membership)
+    fetchQueue();
+  }, [fetchQueue]);
 
   const handleLeadConsolidated = useCallback(
     ({ lead, priceChange }: ConsolidationEventData) => {
@@ -274,14 +278,18 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
         ).toFixed(0);
         notify(`Price dropped ${pct}% on ${lead.address}!`, 'info');
       }
+
+      // Refetch to get accurate counts (price change may affect queue membership)
+      fetchQueue();
     },
-    [notify]
+    [notify, fetchQueue]
   );
 
   const handleLeadDeleted = useCallback((leadId: string) => {
     setLeads((prev) => prev.filter((l) => l.id !== leadId));
-    setQueueCounts((prev) => ({ ...prev, all: Math.max(0, prev.all - 1) }));
-  }, []);
+    // Refetch to get accurate counts
+    fetchQueue();
+  }, [fetchQueue]);
 
   // Subscribe to WebSocket events
   const { connectionStatus } = useLeadEvents({
@@ -319,6 +327,8 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
       try {
         await leadQueueService.updateStatus(leadId, status);
         notify('Status updated', 'success');
+        // Refetch to get accurate counts (status change may affect queue membership)
+        await fetchQueue();
       } catch (err) {
         // Rollback
         setLeads(previousLeads);
@@ -326,7 +336,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
         notify('Failed to update status', 'error');
       }
     },
-    [leads, queueCounts, notify]
+    [leads, queueCounts, notify, fetchQueue]
   );
 
   const archiveLead = useCallback(
@@ -341,6 +351,8 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
       try {
         await leadQueueService.archiveLead(leadId);
         notify('Lead archived', 'success');
+        // Refetch to get accurate counts
+        await fetchQueue();
       } catch (err) {
         // Rollback
         setLeads(previousLeads);
@@ -348,7 +360,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
         notify('Failed to archive lead', 'error');
       }
     },
-    [leads, queueCounts, notify]
+    [leads, queueCounts, notify, fetchQueue]
   );
 
   const deleteLeadPermanently = useCallback(
@@ -363,6 +375,8 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
       try {
         await leadQueueService.deleteLeadPermanently(leadId);
         notify('Lead permanently deleted', 'success');
+        // Refetch to get accurate counts
+        await fetchQueue();
       } catch (err) {
         // Rollback
         setLeads(previousLeads);
@@ -371,7 +385,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
         throw err; // Re-throw so the dialog can handle loading state
       }
     },
-    [leads, queueCounts, notify]
+    [leads, queueCounts, notify, fetchQueue]
   );
 
   const scheduleFollowUp = useCallback(
@@ -386,11 +400,11 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
       if (shouldRemoveFromList) {
         setLeads((prev) => prev.filter((l) => l.id !== leadId));
       } else {
-        // Just update the lead's follow-up status
+        // Just update the lead's follow-up status and mark as contacted
         setLeads((prev) =>
           prev.map((l) =>
             l.id === leadId
-              ? { ...l, followUpDate, followUpDue: true }
+              ? { ...l, followUpDate, followUpDue: true, status: 'Contacted' as any }
               : l
           )
         );
@@ -404,8 +418,12 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
       }));
 
       try {
-        await leadQueueService.scheduleFollowUp(leadId, followUpDate);
-        notify('Follow-up scheduled', 'success');
+        // Schedule follow-up and mark as done (Contacted)
+        await Promise.all([
+          leadQueueService.scheduleFollowUp(leadId, followUpDate),
+          leadQueueService.updateStatus(leadId, 'Contacted'),
+        ]);
+        notify('Follow-up scheduled & marked done', 'success');
         // Refetch to get accurate counts
         await fetchQueue();
       } catch (err) {
@@ -582,6 +600,8 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
       try {
         await leadQueueService.updateStatus(leadId, 'Contacted');
         notify('Marked as done', 'success');
+        // Refetch to get accurate counts
+        await fetchQueue();
       } catch (err) {
         // Rollback
         setLeads(previousLeads);
@@ -589,16 +609,17 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
         notify('Failed to update status', 'error');
       }
     },
-    [leads, queueCounts, selectedQueue, notify]
+    [leads, queueCounts, selectedQueue, notify, fetchQueue]
   );
 
   const markAsSkip = useCallback(
     (leadId: string) => {
-      // Skip sets a follow-up for tomorrow - update status to indicate pending follow-up
-      updateLeadStatus(leadId, 'New'); // Keep as New but would set followUpDate in real implementation
-      notify('Skipped for tomorrow', 'info');
+      // Skip schedules a follow-up for 2 days from now
+      const followUpDate = new Date();
+      followUpDate.setDate(followUpDate.getDate() + 2);
+      scheduleFollowUp(leadId, followUpDate.toISOString().split('T')[0]);
     },
-    [updateLeadStatus, notify]
+    [scheduleFollowUp]
   );
 
   return {

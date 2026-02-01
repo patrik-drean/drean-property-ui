@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Button, Collapse, Link, Typography } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
+import { Box, Button, Collapse, Link, Typography, Tooltip, Chip } from '@mui/material';
+import { ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon, Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material';
 
 export interface Comparable {
   id?: string;
@@ -17,6 +17,10 @@ export interface Comparable {
   city?: string;
   state?: string;
   propertyType?: string;
+  // Filtering metadata (TASK-106)
+  daysAgo?: number;
+  status?: 'used' | 'excluded';
+  exclusionReason?: string;
 }
 
 interface ComparablesSectionProps {
@@ -30,6 +34,7 @@ interface ComparablesSectionProps {
  *
  * Supports both basic comps (address, price, sqft, date, distance)
  * and enhanced RentCast comps (with beds/baths, Zillow links).
+ * Shows filtering status (used vs excluded) when available.
  */
 export const ComparablesSection: React.FC<ComparablesSectionProps> = ({
   comps,
@@ -95,6 +100,16 @@ export const ComparablesSection: React.FC<ComparablesSectionProps> = ({
     );
   }
 
+  // Separate used and excluded comps
+  const usedComps = comps.filter(c => c.status === 'used' || !c.status);
+  const excludedComps = comps.filter(c => c.status === 'excluded');
+  const hasFilteringInfo = comps.some(c => c.status !== undefined);
+
+  // Build button label
+  const buttonLabel = hasFilteringInfo
+    ? `View ${usedComps.length} Used / ${comps.length} Total Comps`
+    : `View ${comps.length} Comps`;
+
   return (
     <Box sx={{ mt: 2 }}>
       <Button
@@ -110,7 +125,7 @@ export const ComparablesSection: React.FC<ComparablesSectionProps> = ({
           '&:hover': { bgcolor: 'transparent' },
         }}
       >
-        View {comps.length} Comps {isVerified && '(RentCast)'}
+        {buttonLabel} {isVerified && '(RentCast)'}
       </Button>
 
       <Collapse in={expanded}>
@@ -123,69 +138,161 @@ export const ComparablesSection: React.FC<ComparablesSectionProps> = ({
             overflow: 'hidden',
           }}
         >
-          {comps.map((comp, index) => {
-            const bedsBaths = formatBedsBaths(comp.bedrooms, comp.bathrooms);
+          {/* Used comps section */}
+          {usedComps.map((comp, index) => (
+            <CompRow
+              key={comp.id || `used-${index}`}
+              comp={comp}
+              index={index}
+              isLast={index === usedComps.length - 1 && excludedComps.length === 0}
+              formatCurrency={formatCurrency}
+              formatDate={formatDate}
+              formatBedsBaths={formatBedsBaths}
+            />
+          ))}
 
-            return (
+          {/* Excluded comps section with header */}
+          {excludedComps.length > 0 && (
+            <>
               <Box
-                key={comp.id || index}
                 sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
                   px: 1.5,
-                  py: 1,
-                  borderBottom: index < comps.length - 1 ? '1px solid #30363d' : 'none',
-                  '&:hover': { bgcolor: '#161b22' },
+                  py: 0.75,
+                  bgcolor: '#161b22',
+                  borderTop: usedComps.length > 0 ? '1px solid #30363d' : 'none',
+                  borderBottom: '1px solid #30363d',
                 }}
               >
-                {/* Left side: Address, Date, Beds/Baths */}
-                <Box sx={{ flex: 1, minWidth: 0, mr: 2 }}>
-                  <Box sx={{ color: '#f0f6fc', fontSize: '0.75rem', fontWeight: 500 }}>
-                    {comp.zillowUrl ? (
-                      <Link
-                        href={comp.zillowUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{
-                          color: '#60a5fa',
-                          textDecoration: 'none',
-                          '&:hover': { textDecoration: 'underline' },
-                        }}
-                      >
-                        {comp.address}
-                      </Link>
-                    ) : (
-                      comp.address
-                    )}
-                  </Box>
-                  <Box sx={{ display: 'flex', gap: 1, color: '#8b949e', fontSize: '0.65rem' }}>
-                    <span>{formatDate(comp.saleDate)}</span>
-                    {bedsBaths && (
-                      <>
-                        <span>•</span>
-                        <span>{bedsBaths}</span>
-                      </>
-                    )}
-                    <span>•</span>
-                    <span>{comp.distanceMiles.toFixed(1)} mi</span>
-                  </Box>
-                </Box>
-
-                {/* Right side: Price, $/sqft */}
-                <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                  <Box sx={{ color: '#f0f6fc', fontSize: '0.75rem', fontWeight: 500 }}>
-                    {formatCurrency(comp.salePrice)}
-                  </Box>
-                  <Box sx={{ color: '#4ade80', fontSize: '0.65rem' }}>
-                    ${comp.pricePerSqft}/sqft
-                  </Box>
-                </Box>
+                <Typography
+                  variant="caption"
+                  sx={{ color: '#8b949e', fontSize: '0.65rem', fontWeight: 500 }}
+                >
+                  {excludedComps.length} Excluded Comp{excludedComps.length !== 1 ? 's' : ''}
+                </Typography>
               </Box>
-            );
-          })}
+              {excludedComps.map((comp, index) => (
+                <CompRow
+                  key={comp.id || `excluded-${index}`}
+                  comp={comp}
+                  index={index}
+                  isLast={index === excludedComps.length - 1}
+                  formatCurrency={formatCurrency}
+                  formatDate={formatDate}
+                  formatBedsBaths={formatBedsBaths}
+                  isExcluded
+                />
+              ))}
+            </>
+          )}
         </Box>
       </Collapse>
+    </Box>
+  );
+};
+
+interface CompRowProps {
+  comp: Comparable;
+  index: number;
+  isLast: boolean;
+  formatCurrency: (value: number) => string;
+  formatDate: (dateString: string) => string;
+  formatBedsBaths: (beds?: number, baths?: number) => string | null;
+  isExcluded?: boolean;
+}
+
+const CompRow: React.FC<CompRowProps> = ({
+  comp,
+  index,
+  isLast,
+  formatCurrency,
+  formatDate,
+  formatBedsBaths,
+  isExcluded = false,
+}) => {
+  const bedsBaths = formatBedsBaths(comp.bedrooms, comp.bathrooms);
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        px: 1.5,
+        py: 1,
+        borderBottom: !isLast ? '1px solid #30363d' : 'none',
+        '&:hover': { bgcolor: '#161b22' },
+        opacity: isExcluded ? 0.6 : 1,
+      }}
+    >
+      {/* Left side: Status icon, Address, Date, Beds/Baths */}
+      <Box sx={{ flex: 1, minWidth: 0, mr: 2, display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+        {/* Status indicator */}
+        {comp.status && (
+          <Box sx={{ mt: 0.25 }}>
+            {comp.status === 'used' ? (
+              <CheckIcon sx={{ fontSize: '0.9rem', color: '#4ade80' }} />
+            ) : (
+              <Tooltip title={comp.exclusionReason || 'Excluded from ARV'} arrow placement="top">
+                <CloseIcon sx={{ fontSize: '0.9rem', color: '#f87171', cursor: 'help' }} />
+              </Tooltip>
+            )}
+          </Box>
+        )}
+
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ color: '#f0f6fc', fontSize: '0.75rem', fontWeight: 500 }}>
+            {comp.zillowUrl ? (
+              <Link
+                href={comp.zillowUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: '#60a5fa',
+                  textDecoration: 'none',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                {comp.address}
+              </Link>
+            ) : (
+              comp.address
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, color: '#8b949e', fontSize: '0.65rem' }}>
+            <span>{formatDate(comp.saleDate)}</span>
+            {comp.daysAgo !== undefined && (
+              <>
+                <span>•</span>
+                <span>{comp.daysAgo}d ago</span>
+              </>
+            )}
+            {bedsBaths && (
+              <>
+                <span>•</span>
+                <span>{bedsBaths}</span>
+              </>
+            )}
+            <span>•</span>
+            <span>{comp.distanceMiles.toFixed(2)} mi</span>
+          </Box>
+          {/* Exclusion reason on separate line for excluded comps */}
+          {isExcluded && comp.exclusionReason && (
+            <Box sx={{ color: '#f87171', fontSize: '0.6rem', mt: 0.25 }}>
+              {comp.exclusionReason}
+            </Box>
+          )}
+        </Box>
+      </Box>
+
+      {/* Right side: Price, $/sqft */}
+      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+        <Box sx={{ color: '#f0f6fc', fontSize: '0.75rem', fontWeight: 500 }}>
+          {formatCurrency(comp.salePrice)}
+        </Box>
+        <Box sx={{ color: isExcluded ? '#8b949e' : '#4ade80', fontSize: '0.65rem' }}>
+          ${comp.pricePerSqft}/sqft
+        </Box>
+      </Box>
     </Box>
   );
 };

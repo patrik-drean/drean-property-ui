@@ -9,6 +9,11 @@ export interface RawArvEstimate {
   confidence: number;
   source: string;
   estimatedAt: string;
+  // Quality metadata from comp filtering (TASK-106)
+  averageCompAgeDays?: number;
+  searchRadiusUsed?: string;
+  filterTierUsed?: string;
+  wasExpanded?: boolean;
 }
 
 export interface RawRehabEstimate {
@@ -184,6 +189,10 @@ export interface ComparableSale {
   distanceMiles: number;
   zillowUrl?: string;
   propertyType?: string;
+  // Filtering metadata (TASK-106)
+  daysAgo?: number;
+  status?: 'used' | 'excluded';
+  exclusionReason?: string;
 }
 
 export interface RentCastArvResult {

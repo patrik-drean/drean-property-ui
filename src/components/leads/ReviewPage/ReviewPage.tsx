@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Box, Snackbar, Alert, CircularProgress, Typography } from '@mui/material';
+import { Box, Snackbar, Alert, CircularProgress, Typography, Pagination } from '@mui/material';
 import { QueueLead, LeadQueueStatus } from '../../../types/queue';
 import { useLeadQueue } from '../../../hooks/useLeadQueue';
 import { sortLeadsByPriority } from '../../../hooks/useMockLeadData';
@@ -47,9 +47,12 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     leads,
     queueCounts,
     selectedQueue,
+    page,
+    totalPages,
     loading,
     error,
     changeQueue,
+    changePage,
     markAsDone,
     archiveLead,
     deleteLeadPermanently,
@@ -372,6 +375,47 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
             onFollowUp={handleCardFollowUp}
             onArchive={handleCardArchive}
           />
+        )}
+
+        {/* Pagination for All Leads and Archived tabs */}
+        {!loading && !error && (selectedQueue === 'all' || selectedQueue === 'archived') && totalPages > 1 && (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              mt: 3,
+              mb: 2,
+              gap: 2,
+            }}
+          >
+            <Typography sx={{ color: '#8b949e', fontSize: '0.875rem' }}>
+              Page {page} of {totalPages}
+            </Typography>
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={(_, newPage) => changePage(newPage)}
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  color: '#8b949e',
+                  borderColor: '#30363d',
+                  '&:hover': {
+                    bgcolor: '#21262d',
+                  },
+                  '&.Mui-selected': {
+                    bgcolor: '#238636',
+                    color: '#ffffff',
+                    '&:hover': {
+                      bgcolor: '#2ea043',
+                    },
+                  },
+                },
+              }}
+              showFirstButton
+              showLastButton
+            />
+          </Box>
         )}
       </Box>
 

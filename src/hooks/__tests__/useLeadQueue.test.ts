@@ -594,6 +594,301 @@ describe('useLeadQueue', () => {
     });
   });
 
+  describe('optimistic updates - scheduleFollowUp', () => {
+    // Helper to get today's date string
+    const getTodayString = () => {
+      const today = new Date();
+      return today.toISOString().split('T')[0];
+    };
+
+    // Helper to get tomorrow's date string
+    const getTomorrowString = () => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return tomorrow.toISOString().split('T')[0];
+    };
+
+    // Helper to get future date string (e.g., 5 days from now)
+    const getFutureDateString = (daysFromNow: number) => {
+      const future = new Date();
+      future.setDate(future.getDate() + daysFromNow);
+      return future.toISOString().split('T')[0];
+    };
+
+    it('should schedule follow-up without changing lead status', async () => {
+      mockScheduleFollowUp.mockResolvedValue(undefined);
+      const onNotification = jest.fn();
+      const { result } = renderHook(() => useLeadQueue({ onNotification }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const originalStatus = result.current.leads[0].status;
+
+      await act(async () => {
+        await result.current.scheduleFollowUp('lead-1', getTomorrowString());
+      });
+
+      // Status should NOT change - user hasn't contacted them yet
+      expect(mockScheduleFollowUp).toHaveBeenCalledWith('lead-1', getTomorrowString());
+      // Should NOT call updateStatus
+      expect(mockUpdateStatus).not.toHaveBeenCalled();
+      expect(onNotification).toHaveBeenCalledWith('Follow-up scheduled', 'success');
+    });
+
+    it('should only call scheduleFollowUp API, not updateStatus', async () => {
+      mockScheduleFollowUp.mockResolvedValue(undefined);
+      const { result } = renderHook(() => useLeadQueue());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Clear any previous calls
+      mockUpdateStatus.mockClear();
+
+      await act(async () => {
+        await result.current.scheduleFollowUp('lead-1', getTomorrowString());
+      });
+
+      // Verify scheduleFollowUp was called
+      expect(mockScheduleFollowUp).toHaveBeenCalledWith('lead-1', getTomorrowString());
+      // Verify updateStatus was NOT called (this was the bug fix)
+      expect(mockUpdateStatus).not.toHaveBeenCalled();
+    });
+
+    it('should rollback on schedule follow-up failure', async () => {
+      mockScheduleFollowUp.mockRejectedValue(new Error('Network error'));
+      const onNotification = jest.fn();
+      const { result } = renderHook(() => useLeadQueue({ onNotification }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const originalLeadsCount = result.current.leads.length;
+
+      await act(async () => {
+        await result.current.scheduleFollowUp('lead-1', getTomorrowString());
+      });
+
+      // Should rollback
+      expect(result.current.leads).toHaveLength(originalLeadsCount);
+      expect(onNotification).toHaveBeenCalledWith('Failed to schedule follow-up', 'error');
+    });
+
+    // TASK-114: Tests for date-based follow-up scheduling logic
+    // These tests verify the date comparison logic used in optimistic updates
+    describe('date-based queue count updates (TASK-114)', () => {
+      it('should call scheduleFollowUp API with today date', async () => {
+        mockScheduleFollowUp.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useLeadQueue({ initialQueueType: 'all' }));
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        await act(async () => {
+          await result.current.scheduleFollowUp('lead-1', getTodayString());
+        });
+
+        expect(mockScheduleFollowUp).toHaveBeenCalledWith('lead-1', getTodayString());
+      });
+
+      it('should call scheduleFollowUp API with future date', async () => {
+        mockScheduleFollowUp.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useLeadQueue({ initialQueueType: 'all' }));
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        await act(async () => {
+          await result.current.scheduleFollowUp('lead-1', getTomorrowString());
+        });
+
+        expect(mockScheduleFollowUp).toHaveBeenCalledWith('lead-1', getTomorrowString());
+      });
+
+      it('should call scheduleFollowUp API with far future date', async () => {
+        mockScheduleFollowUp.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useLeadQueue({ initialQueueType: 'all' }));
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        const farFutureDate = getFutureDateString(30);
+
+        await act(async () => {
+          await result.current.scheduleFollowUp('lead-1', farFutureDate);
+        });
+
+        expect(mockScheduleFollowUp).toHaveBeenCalledWith('lead-1', farFutureDate);
+      });
+
+      it('should remove lead from follow_up queue when scheduling for any date', async () => {
+        mockScheduleFollowUp.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useLeadQueue({ initialQueueType: 'follow_up' }));
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        const initialLeadsCount = result.current.leads.length;
+        expect(initialLeadsCount).toBe(1);
+
+        // Start the action - lead should be removed optimistically
+        let schedulePromise: Promise<void>;
+        act(() => {
+          schedulePromise = result.current.scheduleFollowUp('lead-1', getTomorrowString());
+        });
+
+        // Immediately check optimistic state (before API resolves)
+        expect(result.current.leads).toHaveLength(0);
+
+        // Complete the async operation
+        await act(async () => {
+          await schedulePromise;
+        });
+      });
+
+      it('should remove lead from action_now queue when scheduling', async () => {
+        mockScheduleFollowUp.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useLeadQueue({ initialQueueType: 'action_now' }));
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.leads).toHaveLength(1);
+
+        let schedulePromise: Promise<void>;
+        act(() => {
+          schedulePromise = result.current.scheduleFollowUp('lead-1', getTomorrowString());
+        });
+
+        // Should be removed from action_now view
+        expect(result.current.leads).toHaveLength(0);
+
+        await act(async () => {
+          await schedulePromise;
+        });
+      });
+
+      it('should keep lead in all queue when scheduling', async () => {
+        mockScheduleFollowUp.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useLeadQueue({ initialQueueType: 'all' }));
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.leads).toHaveLength(1);
+
+        let schedulePromise: Promise<void>;
+        act(() => {
+          schedulePromise = result.current.scheduleFollowUp('lead-1', getTomorrowString());
+        });
+
+        // Should stay in 'all' view with updated properties
+        expect(result.current.leads).toHaveLength(1);
+        expect(result.current.leads[0].followUpDate).toBe(getTomorrowString());
+        // followUpDue should be false for future date
+        expect(result.current.leads[0].followUpDue).toBe(false);
+
+        await act(async () => {
+          await schedulePromise;
+        });
+      });
+
+      it('should set followUpDue true when scheduling for today in all queue', async () => {
+        mockScheduleFollowUp.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useLeadQueue({ initialQueueType: 'all' }));
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        let schedulePromise: Promise<void>;
+        act(() => {
+          schedulePromise = result.current.scheduleFollowUp('lead-1', getTodayString());
+        });
+
+        // followUpDue should be true for today's date
+        expect(result.current.leads[0].followUpDue).toBe(true);
+        expect(result.current.leads[0].followUpDate).toBe(getTodayString());
+
+        await act(async () => {
+          await schedulePromise;
+        });
+      });
+
+      it('should set followUpDue false when scheduling for tomorrow in all queue', async () => {
+        mockScheduleFollowUp.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useLeadQueue({ initialQueueType: 'all' }));
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        let schedulePromise: Promise<void>;
+        act(() => {
+          schedulePromise = result.current.scheduleFollowUp('lead-1', getTomorrowString());
+        });
+
+        // followUpDue should be false for future date
+        expect(result.current.leads[0].followUpDue).toBe(false);
+        expect(result.current.leads[0].followUpDate).toBe(getTomorrowString());
+
+        await act(async () => {
+          await schedulePromise;
+        });
+      });
+
+      it('should refetch queue after successful schedule', async () => {
+        mockScheduleFollowUp.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useLeadQueue({ initialQueueType: 'all' }));
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        const initialCallCount = mockGetQueue.mock.calls.length;
+
+        await act(async () => {
+          await result.current.scheduleFollowUp('lead-1', getTomorrowString());
+        });
+
+        // Should have called getQueue again after scheduling
+        expect(mockGetQueue.mock.calls.length).toBeGreaterThan(initialCallCount);
+      });
+
+      it('should rollback to original state on API error', async () => {
+        mockScheduleFollowUp.mockRejectedValue(new Error('Network error'));
+        const onNotification = jest.fn();
+        const { result } = renderHook(() => useLeadQueue({ initialQueueType: 'all', onNotification }));
+
+        await waitFor(() => {
+          expect(result.current.loading).toBe(false);
+        });
+
+        const originalFollowUpDue = result.current.leads[0].followUpDue;
+        const originalFollowUpDate = result.current.leads[0].followUpDate;
+
+        await act(async () => {
+          await result.current.scheduleFollowUp('lead-1', getTomorrowString());
+        });
+
+        // Should rollback to original values
+        expect(result.current.leads[0].followUpDue).toBe(originalFollowUpDue);
+        expect(result.current.leads[0].followUpDate).toBe(originalFollowUpDate);
+        expect(onNotification).toHaveBeenCalledWith('Failed to schedule follow-up', 'error');
+      });
+    });
+  });
+
   describe('helper actions', () => {
     it('should mark lead as done (Contacted status)', async () => {
       mockUpdateStatus.mockResolvedValue(undefined);
@@ -612,8 +907,8 @@ describe('useLeadQueue', () => {
       });
     });
 
-    it('should skip lead with notification', async () => {
-      mockUpdateStatus.mockResolvedValue(undefined);
+    it('should skip lead by scheduling follow-up', async () => {
+      mockScheduleFollowUp.mockResolvedValue(undefined);
       const onNotification = jest.fn();
       const { result } = renderHook(() => useLeadQueue({ onNotification }));
 
@@ -625,8 +920,10 @@ describe('useLeadQueue', () => {
         result.current.markAsSkip('lead-1');
       });
 
+      // markAsSkip delegates to scheduleFollowUp, which shows "Follow-up scheduled"
       await waitFor(() => {
-        expect(onNotification).toHaveBeenCalledWith('Skipped for tomorrow', 'info');
+        expect(mockScheduleFollowUp).toHaveBeenCalled();
+        expect(onNotification).toHaveBeenCalledWith('Follow-up scheduled', 'success');
       });
     });
   });

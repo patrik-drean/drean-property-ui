@@ -409,6 +409,12 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
       const previousLeads = leads;
       const previousCounts = queueCounts;
 
+      // Determine if the new follow-up is for today or future
+      // Compare date strings to avoid timezone issues (followUpDate is YYYY-MM-DD format)
+      const todayString = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format
+      const isScheduledForToday = followUpDate === todayString;
+      const isScheduledForFuture = followUpDate > todayString;
+
       // Remove from current list if viewing action_now or follow_up queues
       // (lead will still be in All Leads)
       const shouldRemoveFromList = selectedQueue === 'action_now' || selectedQueue === 'follow_up';
@@ -416,30 +422,43 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
       if (shouldRemoveFromList) {
         setLeads((prev) => prev.filter((l) => l.id !== leadId));
       } else {
-        // Just update the lead's follow-up status and mark as contacted
+        // Update the lead's follow-up status
+        // Only set followUpDue: true if scheduled for today (not future)
         setLeads((prev) =>
           prev.map((l) =>
             l.id === leadId
-              ? { ...l, followUpDate, followUpDue: true, status: 'Contacted' as any }
+              ? { ...l, followUpDate, followUpDue: isScheduledForToday }
               : l
           )
         );
       }
 
-      // Update queue counts (move from action_now to follow_up if applicable)
-      setQueueCounts((prev) => ({
-        ...prev,
-        follow_up: prev.follow_up + 1,
-        action_now: Math.max(0, prev.action_now - 1),
-      }));
+      // Update queue counts based on scheduling date
+      setQueueCounts((prev) => {
+        const newCounts = { ...prev };
+
+        // If coming from action_now queue, decrement it
+        if (selectedQueue === 'action_now') {
+          newCounts.action_now = Math.max(0, prev.action_now - 1);
+        }
+
+        // Only add to follow_up count if scheduled for today
+        // If scheduled for future, lead won't be in Follow-Up Today queue
+        if (isScheduledForToday && selectedQueue !== 'follow_up') {
+          // Add to follow_up only if not already in that queue
+          newCounts.follow_up = prev.follow_up + 1;
+        } else if (isScheduledForFuture && selectedQueue === 'follow_up') {
+          // Decrement follow_up if rescheduling from Follow-Up Today to future
+          newCounts.follow_up = Math.max(0, prev.follow_up - 1);
+        }
+
+        return newCounts;
+      });
 
       try {
-        // Schedule follow-up and mark as done (Contacted)
-        await Promise.all([
-          leadQueueService.scheduleFollowUp(leadId, followUpDate),
-          leadQueueService.updateStatus(leadId, 'Contacted'),
-        ]);
-        notify('Follow-up scheduled & marked done', 'success');
+        // Only schedule follow-up - do NOT mark as contacted (user hasn't contacted them yet)
+        await leadQueueService.scheduleFollowUp(leadId, followUpDate);
+        notify('Follow-up scheduled', 'success');
         // Refetch to get accurate counts
         await fetchQueue();
       } catch (err) {

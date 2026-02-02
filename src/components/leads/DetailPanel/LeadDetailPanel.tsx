@@ -33,6 +33,7 @@ interface LeadDetailPanelProps {
   onStatusChange?: (status: QueueLead['status']) => void;
   onAction?: (action: string, data?: any) => void;
   onNotesChange?: (notes: string) => void;
+  onSellerPhoneChange?: (phone: string) => void;
   onRetry?: () => void;
   onEvaluationSave?: (leadId: string, updates: EvaluationUpdate) => Promise<void>;
   onRentCastSuccess?: (leadId: string, result: RentCastArvResult) => void;
@@ -78,6 +79,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
   onStatusChange,
   onAction,
   onNotesChange,
+  onSellerPhoneChange,
   onRetry,
   onEvaluationSave,
   onDeletePermanently,
@@ -299,7 +301,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
                 <Grid container spacing={2}>
                   {/* Top Left: Property Details */}
                   <Grid item xs={12} md={6}>
-                    <PropertyDetailsSection lead={lead} />
+                    <PropertyDetailsSection lead={lead} onSellerPhoneChange={onSellerPhoneChange} />
                   </Grid>
 
                   {/* Top Right: Actions */}

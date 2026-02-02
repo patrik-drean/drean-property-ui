@@ -47,6 +47,7 @@ interface UseLeadQueueReturn {
   updateEvaluation: (leadId: string, updates: UpdateEvaluationRequest) => Promise<void>;
   updateLeadComparables: (leadId: string, comparables: import('../services/leadQueueService').ComparableSale[], arv?: number, arvSource?: string) => void;
   updateNotes: (leadId: string, notes: string) => Promise<void>;
+  updateSellerPhone: (leadId: string, sellerPhone: string | null) => Promise<void>;
   scheduleFollowUp: (leadId: string, followUpDate: string) => Promise<void>;
   cancelFollowUp: (leadId: string) => Promise<void>;
   refetch: () => Promise<void>;
@@ -588,6 +589,28 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
     [leads, notify]
   );
 
+  // Update seller phone for a lead
+  const updateSellerPhone = useCallback(
+    async (leadId: string, sellerPhone: string | null) => {
+      const previousLeads = leads;
+
+      // Optimistic update
+      setLeads((prev) =>
+        prev.map((l) => (l.id === leadId ? { ...l, sellerPhone: sellerPhone || '' } : l))
+      );
+
+      try {
+        await leadQueueService.updateSellerPhone(leadId, sellerPhone);
+        notify('Phone updated', 'success');
+      } catch (err) {
+        // Rollback
+        setLeads(previousLeads);
+        notify('Failed to update phone', 'error');
+      }
+    },
+    [leads, notify]
+  );
+
   // Mock data compatibility functions (for gradual migration)
   const markAsDone = useCallback(
     async (leadId: string) => {
@@ -654,6 +677,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
     updateEvaluation,
     updateLeadComparables,
     updateNotes,
+    updateSellerPhone,
     scheduleFollowUp,
     cancelFollowUp,
     refetch: fetchQueue,

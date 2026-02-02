@@ -59,6 +59,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     updateEvaluation,
     updateLeadComparables,
     updateNotes,
+    updateSellerPhone,
     scheduleFollowUp,
     cancelFollowUp,
   } = useLeadQueue({
@@ -145,6 +146,34 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     }
   }, [filteredLeads, selectedCardIndex]);
 
+  // Navigate to next lead after current one is removed (archive/delete)
+  // Returns the ID of the lead to select, or null if pane should close
+  const getNextLeadIdAfterRemoval = useCallback((): string | null => {
+    // Edge case: only one lead - close the pane
+    if (filteredLeads.length <= 1) {
+      return null;
+    }
+
+    // Edge case: current lead not found (already removed)
+    if (selectedCardIndex === -1) {
+      return filteredLeads[0].id;
+    }
+
+    // If at last position, wrap to first lead
+    // Otherwise, stay at same index (next lead will slide up into position)
+    const isLastLead = selectedCardIndex === filteredLeads.length - 1;
+    const nextIndex = isLastLead ? 0 : selectedCardIndex;
+
+    // Get the lead that will be at nextIndex after removal
+    const leadsAfterRemoval = filteredLeads.filter(l => l.id !== selectedCardId);
+    if (leadsAfterRemoval.length > 0) {
+      const safeIndex = Math.min(nextIndex, leadsAfterRemoval.length - 1);
+      return leadsAfterRemoval[safeIndex].id;
+    }
+
+    return null;
+  }, [filteredLeads, selectedCardIndex, selectedCardId]);
+
   const sendTemplate = useCallback(() => {
     if (selectedCardId) {
       // TODO: Implement template sending with backend
@@ -225,9 +254,21 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         break;
       case 'archive':
         if (selectedCardId) {
-          archiveLead(selectedCardId);
+          // Get the next lead to navigate to BEFORE archiving (so we have correct index)
+          const nextLeadId = getNextLeadIdAfterRemoval();
+          const currentLeadId = selectedCardId;
+
+          if (nextLeadId) {
+            // Navigate to next lead (wrap to first if at end)
+            setSelectedCardId(nextLeadId);
+          } else {
+            // No more leads - close the pane
+            setDetailPanelOpen(false);
+          }
+
+          // Archive the original lead
+          archiveLead(currentLeadId);
           // Notification shown by hook via onNotification callback
-          setDetailPanelOpen(false);
         }
         break;
       case 'cancelFollowUp':
@@ -255,6 +296,13 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     }
   };
 
+  // Handle seller phone change from detail panel
+  const handleSellerPhoneChange = useCallback((phone: string) => {
+    if (selectedCardId) {
+      updateSellerPhone(selectedCardId, phone || null);
+    }
+  }, [selectedCardId, updateSellerPhone]);
+
   const handleCardDone = (lead: QueueLead) => {
     markAsDone(lead.id);
     // Notification shown by hook via onNotification callback
@@ -275,15 +323,29 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   const handleDeletePermanently = useCallback(async () => {
     if (!selectedCardId) return;
     setDeleteLoading(true);
+
+    // Get the next lead to navigate to BEFORE deleting (so we have correct index)
+    const nextLeadId = getNextLeadIdAfterRemoval();
+    const currentLeadId = selectedCardId;
+
     try {
-      await deleteLeadPermanently(selectedCardId);
-      setDetailPanelOpen(false);
+      if (nextLeadId) {
+        // Navigate to next lead (wrap to first if at end)
+        setSelectedCardId(nextLeadId);
+      } else {
+        // No more leads - close the pane
+        setDetailPanelOpen(false);
+      }
+
+      await deleteLeadPermanently(currentLeadId);
     } catch {
       // Error is handled by hook, loading state needs to be reset
+      // On error, try to restore selection to original lead if it still exists
+      setSelectedCardId(currentLeadId);
     } finally {
       setDeleteLoading(false);
     }
-  }, [selectedCardId, deleteLeadPermanently]);
+  }, [selectedCardId, deleteLeadPermanently, getNextLeadIdAfterRemoval]);
 
   // Handle successful lead addition
   const handleAddLeadSuccess = useCallback((response: IngestLeadResponse) => {
@@ -432,6 +494,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         onStatusChange={handleStatusChange}
         onAction={handlePanelAction}
         onNotesChange={handleNotesChange}
+        onSellerPhoneChange={handleSellerPhoneChange}
         onEvaluationSave={updateEvaluation}
         onRentCastSuccess={(leadId, result) => {
           updateLeadComparables(leadId, result.comparables, result.arv, result.arvSource);

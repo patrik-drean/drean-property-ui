@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
-import { Box, Typography, Link, Grid, Tooltip } from '@mui/material';
+import React, { useState, useRef, useEffect } from 'react';
+import { Box, Typography, Link, Grid, Tooltip, TextField, IconButton, Button } from '@mui/material';
 import {
   OpenInNew as OpenInNewIcon,
   AutoAwesome as AiIcon,
   Home as HomeIcon,
   DataObject as MetadataIcon,
+  Edit as EditIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
+  Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue'
 import { SectionCard } from './SectionCard';
 
 interface PropertyDetailsSectionProps {
   lead: QueueLead;
+  onSellerPhoneChange?: (phone: string) => void;
 }
 
 interface StatItemProps {
@@ -36,11 +41,55 @@ const StatItem: React.FC<StatItemProps> = ({ label, value }) => (
  * - Property photo (if available)
  * - Address with Zillow link
  * - Property stats (beds, baths, sqft, year built, units, DOM)
+ * - Editable seller phone number
  * - Listing price
  */
-export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ lead }) => {
+export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ lead, onSellerPhoneChange }) => {
   // Track image load error to show placeholder
   const [imageError, setImageError] = useState(false);
+
+  // Phone editing state
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [phoneValue, setPhoneValue] = useState(lead.sellerPhone || '');
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+
+  // Description expand/collapse state
+  const [descExpanded, setDescExpanded] = useState(false);
+  const DESC_MAX_CHARS = 200;
+
+  // Reset phone value when lead changes
+  useEffect(() => {
+    setPhoneValue(lead.sellerPhone || '');
+    setEditingPhone(false);
+  }, [lead.id, lead.sellerPhone]);
+
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (editingPhone && phoneInputRef.current) {
+      phoneInputRef.current.focus();
+      phoneInputRef.current.select();
+    }
+  }, [editingPhone]);
+
+  const handlePhoneSave = () => {
+    const trimmedPhone = phoneValue.trim();
+    onSellerPhoneChange?.(trimmedPhone);
+    setEditingPhone(false);
+  };
+
+  const handlePhoneCancel = () => {
+    setPhoneValue(lead.sellerPhone || '');
+    setEditingPhone(false);
+  };
+
+  const handlePhoneKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handlePhoneSave();
+    } else if (e.key === 'Escape') {
+      handlePhoneCancel();
+    }
+  };
 
   // Check if we should show the photo or placeholder
   const hasValidPhoto = lead.photoUrl && lead.photoUrl.trim() !== '' && !imageError;
@@ -143,7 +192,80 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
         />
         <StatItem label="Units" value={lead.units ?? 1} />
         <StatItem label="DOM" value={daysOnMarket !== null ? `${daysOnMarket} days` : '-'} />
-        <StatItem label="Phone" value={lead.sellerPhone || '-'} />
+        {/* Editable Phone Field */}
+        <Grid item xs={4}>
+          <Typography variant="caption" sx={{ color: '#8b949e', fontSize: '0.65rem' }}>
+            Phone
+          </Typography>
+          {editingPhone ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <TextField
+                inputRef={phoneInputRef}
+                value={phoneValue}
+                onChange={(e) => setPhoneValue(e.target.value)}
+                onKeyDown={handlePhoneKeyDown}
+                size="small"
+                placeholder="Enter phone"
+                sx={{
+                  flex: 1,
+                  '& .MuiOutlinedInput-root': {
+                    height: 28,
+                    bgcolor: '#161b22',
+                    '& fieldset': { borderColor: '#30363d' },
+                    '&:hover fieldset': { borderColor: '#4ade80' },
+                    '&.Mui-focused fieldset': { borderColor: '#4ade80' },
+                  },
+                  '& .MuiInputBase-input': {
+                    color: '#f0f6fc',
+                    fontSize: '0.8rem',
+                    p: '4px 8px',
+                  },
+                }}
+              />
+              <IconButton
+                size="small"
+                onClick={handlePhoneSave}
+                sx={{ color: '#4ade80', p: 0.25 }}
+              >
+                <CheckIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={handlePhoneCancel}
+                sx={{ color: '#8b949e', p: 0.25 }}
+              >
+                <CloseIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                cursor: onSellerPhoneChange ? 'pointer' : 'default',
+                '&:hover .edit-icon': { opacity: 1 },
+              }}
+              onClick={() => onSellerPhoneChange && setEditingPhone(true)}
+            >
+              <Typography variant="body2" sx={{ color: '#f0f6fc', fontWeight: 500 }}>
+                {lead.sellerPhone || '-'}
+              </Typography>
+              {onSellerPhoneChange && (
+                <EditIcon
+                  className="edit-icon"
+                  sx={{
+                    fontSize: 14,
+                    color: '#8b949e',
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                    '&:hover': { color: '#4ade80' },
+                  }}
+                />
+              )}
+            </Box>
+          )}
+        </Grid>
       </Grid>
 
       {/* Enrichment Metadata */}
@@ -174,6 +296,50 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
               </Typography>
             </Box>
           </Tooltip>
+        </Box>
+      )}
+
+      {/* Listing Description */}
+      {metadata?.description && (
+        <Box sx={{ mb: 2, p: 1.5, bgcolor: '#161b22', borderRadius: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+            <DescriptionIcon sx={{ fontSize: 14, color: '#8b949e' }} />
+            <Typography variant="caption" sx={{ color: '#8b949e', fontWeight: 600, fontSize: '0.7rem' }}>
+              LISTING DESCRIPTION
+            </Typography>
+          </Box>
+          <Typography
+            sx={{
+              color: '#c9d1d9',
+              fontSize: '0.8rem',
+              lineHeight: 1.5,
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {descExpanded || metadata.description.length <= DESC_MAX_CHARS
+              ? metadata.description
+              : `${metadata.description.slice(0, DESC_MAX_CHARS)}...`}
+          </Typography>
+          {metadata.description.length > DESC_MAX_CHARS && (
+            <Button
+              size="small"
+              onClick={() => setDescExpanded(!descExpanded)}
+              sx={{
+                mt: 0.5,
+                p: 0,
+                minWidth: 0,
+                color: '#58a6ff',
+                fontSize: '0.75rem',
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: 'transparent',
+                  textDecoration: 'underline',
+                },
+              }}
+            >
+              {descExpanded ? 'Show less' : 'Show more'}
+            </Button>
+          )}
         </Box>
       )}
 

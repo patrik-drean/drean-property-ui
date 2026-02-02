@@ -7,6 +7,11 @@ const mockGetQueue = jest.fn();
 const mockUpdateEvaluation = jest.fn();
 const mockUpdateStatus = jest.fn();
 const mockArchiveLead = jest.fn();
+const mockUpdateSellerPhone = jest.fn();
+const mockUpdateNotes = jest.fn();
+const mockScheduleFollowUp = jest.fn();
+const mockCancelFollowUp = jest.fn();
+const mockDeleteLeadPermanently = jest.fn();
 
 jest.mock('../../services/leadQueueService', () => ({
   leadQueueService: {
@@ -14,6 +19,11 @@ jest.mock('../../services/leadQueueService', () => ({
     updateEvaluation: (...args: any[]) => mockUpdateEvaluation(...args),
     updateStatus: (...args: any[]) => mockUpdateStatus(...args),
     archiveLead: (...args: any[]) => mockArchiveLead(...args),
+    updateSellerPhone: (...args: any[]) => mockUpdateSellerPhone(...args),
+    updateNotes: (...args: any[]) => mockUpdateNotes(...args),
+    scheduleFollowUp: (...args: any[]) => mockScheduleFollowUp(...args),
+    cancelFollowUp: (...args: any[]) => mockCancelFollowUp(...args),
+    deleteLeadPermanently: (...args: any[]) => mockDeleteLeadPermanently(...args),
   },
 }));
 
@@ -79,6 +89,7 @@ const mockQueueResponse: LeadQueueResponse = {
     followUp: 12,
     negotiating: 3,
     all: 20,
+    archived: 2,
   },
   pagination: {
     page: 1,
@@ -527,6 +538,62 @@ describe('useLeadQueue', () => {
     });
   });
 
+  describe('optimistic updates - updateSellerPhone', () => {
+    it('should optimistically update seller phone', async () => {
+      mockUpdateSellerPhone.mockResolvedValue(undefined);
+      const onNotification = jest.fn();
+      const { result } = renderHook(() => useLeadQueue({ onNotification }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.updateSellerPhone('lead-1', '555-999-8888');
+      });
+
+      expect(result.current.leads[0].sellerPhone).toBe('555-999-8888');
+      expect(mockUpdateSellerPhone).toHaveBeenCalledWith('lead-1', '555-999-8888');
+      expect(onNotification).toHaveBeenCalledWith('Phone updated', 'success');
+    });
+
+    it('should handle null phone (clearing the value)', async () => {
+      mockUpdateSellerPhone.mockResolvedValue(undefined);
+      const { result } = renderHook(() => useLeadQueue());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.updateSellerPhone('lead-1', null);
+      });
+
+      expect(result.current.leads[0].sellerPhone).toBe('');
+      expect(mockUpdateSellerPhone).toHaveBeenCalledWith('lead-1', null);
+    });
+
+    it('should rollback on phone update failure', async () => {
+      mockUpdateSellerPhone.mockRejectedValue(new Error('Network error'));
+      const onNotification = jest.fn();
+      const { result } = renderHook(() => useLeadQueue({ onNotification }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const originalPhone = result.current.leads[0].sellerPhone;
+
+      await act(async () => {
+        await result.current.updateSellerPhone('lead-1', '555-999-8888');
+      });
+
+      // Should rollback to original phone
+      expect(result.current.leads[0].sellerPhone).toBe(originalPhone);
+      expect(onNotification).toHaveBeenCalledWith('Failed to update phone', 'error');
+    });
+  });
+
   describe('helper actions', () => {
     it('should mark lead as done (Contacted status)', async () => {
       mockUpdateStatus.mockResolvedValue(undefined);
@@ -595,6 +662,7 @@ describe('useLeadQueue', () => {
         follow_up: 12,
         negotiating: 3,
         all: 20,
+        archived: 2,
       });
     });
 

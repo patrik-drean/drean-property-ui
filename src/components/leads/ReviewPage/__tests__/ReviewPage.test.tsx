@@ -1,6 +1,14 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { ReviewPage } from '../ReviewPage';
+
+// Mock useNavigate
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}));
 
 // Define mocks at module level for hoisting
 const mockMarkAsDone = jest.fn();
@@ -179,6 +187,15 @@ jest.mock('../AddLeadModal', () => ({
     ) : null,
 }));
 
+// Helper to render with router context
+const renderWithRouter = (ui: React.ReactElement) => {
+  return render(
+    <MemoryRouter>
+      {ui}
+    </MemoryRouter>
+  );
+};
+
 describe('ReviewPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -193,19 +210,19 @@ describe('ReviewPage', () => {
 
   describe('rendering', () => {
     it('should render the page header with title', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       expect(screen.getByText('Review Leads')).toBeInTheDocument();
     });
 
     it('should render the Add Lead button', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       expect(screen.getByRole('button', { name: /add lead/i })).toBeInTheDocument();
     });
 
     it('should render queue tabs', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       expect(screen.getByText('Action Now')).toBeInTheDocument();
       expect(screen.getByText(/Follow-Up/i)).toBeInTheDocument();
@@ -214,7 +231,7 @@ describe('ReviewPage', () => {
     });
 
     it('should render lead cards', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       expect(screen.getByText('123 Main Street')).toBeInTheDocument();
       expect(screen.getByText('456 Oak Avenue')).toBeInTheDocument();
@@ -223,7 +240,7 @@ describe('ReviewPage', () => {
 
   describe('Add Lead Modal', () => {
     it('should open Add Lead modal when button is clicked', async () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       const addLeadButton = screen.getByRole('button', { name: /add lead/i });
       fireEvent.click(addLeadButton);
@@ -234,7 +251,7 @@ describe('ReviewPage', () => {
     });
 
     it('should close Add Lead modal when close is triggered', async () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       // Open modal
       const addLeadButton = screen.getByRole('button', { name: /add lead/i });
@@ -256,7 +273,7 @@ describe('ReviewPage', () => {
 
   describe('tab navigation', () => {
     it('should call changeQueue when follow-up tab is clicked', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       const followUpTab = screen.getByRole('tab', { name: /Follow-Up/i });
       fireEvent.click(followUpTab);
@@ -265,7 +282,7 @@ describe('ReviewPage', () => {
     });
 
     it('should call changeQueue when negotiating tab is clicked', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       const negotiatingTab = screen.getByRole('tab', { name: /Negotiating/i });
       fireEvent.click(negotiatingTab);
@@ -274,7 +291,7 @@ describe('ReviewPage', () => {
     });
 
     it('should call changeQueue when all tab is clicked', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       const allTab = screen.getByRole('tab', { name: /All/i });
       fireEvent.click(allTab);
@@ -285,7 +302,7 @@ describe('ReviewPage', () => {
 
   describe('card actions', () => {
     it('should render View Details buttons for leads', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       // Find View Details buttons - should have at least one per lead
       const detailButtons = screen.getAllByRole('button', { name: /view details/i });
@@ -293,7 +310,7 @@ describe('ReviewPage', () => {
     });
 
     it('should call markAsDone when Done button is clicked', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       // Find the first Done button using data-testid
       const doneButtons = screen.getAllByTestId('done-button');
@@ -304,7 +321,7 @@ describe('ReviewPage', () => {
     });
 
     it('should call markAsSkip when Skip button is clicked', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       // Find the first Skip button using data-testid
       const skipButtons = screen.getAllByTestId('skip-button');
@@ -315,7 +332,7 @@ describe('ReviewPage', () => {
     });
 
     it('should call archiveLead when Archive button is clicked', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       // Find the first Archive button using data-testid
       const archiveButtons = screen.getAllByTestId('archive-button');
@@ -328,7 +345,7 @@ describe('ReviewPage', () => {
 
   describe('detail panel', () => {
     it('should have View Details buttons that can be clicked', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       const detailButtons = screen.getAllByRole('button', { name: /view details/i });
       expect(detailButtons.length).toBeGreaterThan(0);
@@ -338,7 +355,7 @@ describe('ReviewPage', () => {
     });
 
     it('should select different lead cards', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       // Both addresses should be visible
       expect(screen.getByText('123 Main Street')).toBeInTheDocument();
@@ -353,7 +370,7 @@ describe('ReviewPage', () => {
 
   describe('keyboard shortcuts', () => {
     it('should handle keyboard navigation without crashing', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       // Press j to go to next card
       fireEvent.keyDown(window, { key: 'j' });
@@ -366,13 +383,25 @@ describe('ReviewPage', () => {
 
   describe('snackbar', () => {
     it('should call markAsDone when done button is clicked', () => {
-      render(<ReviewPage />);
+      renderWithRouter(<ReviewPage />);
 
       const doneButtons = screen.getAllByTestId('done-button');
       fireEvent.click(doneButtons[0]);
 
       // markAsDone was called, which would trigger the snackbar via onNotification
       expect(mockMarkAsDone).toHaveBeenCalled();
+    });
+  });
+
+  describe('archive from card view', () => {
+    it('should call archiveLead when archive button is clicked on card', () => {
+      renderWithRouter(<ReviewPage />);
+
+      const archiveButtons = screen.getAllByTestId('archive-button');
+      fireEvent.click(archiveButtons[0]);
+
+      // archiveLead should be called with the first lead's ID
+      expect(mockArchiveLead).toHaveBeenCalledWith('lead-1');
     });
   });
 });

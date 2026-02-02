@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { PropertyDetailsSection } from '../PropertyDetailsSection';
 import { QueueLead } from '../../../../types/queue';
 
@@ -199,6 +200,308 @@ describe('PropertyDetailsSection', () => {
       render(<PropertyDetailsSection lead={leadNoAiSummary} />);
 
       expect(screen.queryByText('AI Analysis')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('phone editing', () => {
+    it('should show edit icon on hover when onSellerPhoneChange is provided', async () => {
+      const mockOnPhoneChange = jest.fn();
+      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
+
+      // Phone number should be displayed
+      expect(screen.getByText('555-123-4567')).toBeInTheDocument();
+    });
+
+    it('should not show edit icon when onSellerPhoneChange is not provided', () => {
+      render(<PropertyDetailsSection lead={mockLead} />);
+
+      // Phone number should be displayed without edit capability
+      expect(screen.getByText('555-123-4567')).toBeInTheDocument();
+      // Edit icon should not be present
+      expect(screen.queryByTestId('EditIcon')).not.toBeInTheDocument();
+    });
+
+    it('should enter edit mode when clicking on phone', async () => {
+      const mockOnPhoneChange = jest.fn();
+      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
+
+      const phoneText = screen.getByText('555-123-4567');
+      fireEvent.click(phoneText);
+
+      // Should show input field
+      const input = screen.getByPlaceholderText('Enter phone');
+      expect(input).toBeInTheDocument();
+      expect(input).toHaveValue('555-123-4567');
+    });
+
+    it('should save phone when clicking check button', async () => {
+      const mockOnPhoneChange = jest.fn();
+      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
+
+      // Enter edit mode
+      const phoneText = screen.getByText('555-123-4567');
+      fireEvent.click(phoneText);
+
+      // Change the value
+      const input = screen.getByPlaceholderText('Enter phone');
+      fireEvent.change(input, { target: { value: '210-555-9999' } });
+
+      // Click save button
+      const saveButton = screen.getByTestId('CheckIcon').closest('button');
+      fireEvent.click(saveButton!);
+
+      expect(mockOnPhoneChange).toHaveBeenCalledWith('210-555-9999');
+    });
+
+    it('should save phone when pressing Enter', async () => {
+      const mockOnPhoneChange = jest.fn();
+      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
+
+      // Enter edit mode
+      const phoneText = screen.getByText('555-123-4567');
+      fireEvent.click(phoneText);
+
+      // Change the value and press Enter
+      const input = screen.getByPlaceholderText('Enter phone');
+      fireEvent.change(input, { target: { value: '210-555-9999' } });
+      fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+
+      expect(mockOnPhoneChange).toHaveBeenCalledWith('210-555-9999');
+    });
+
+    it('should cancel edit when clicking close button', async () => {
+      const mockOnPhoneChange = jest.fn();
+      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
+
+      // Enter edit mode
+      const phoneText = screen.getByText('555-123-4567');
+      fireEvent.click(phoneText);
+
+      // Change the value
+      const input = screen.getByPlaceholderText('Enter phone');
+      fireEvent.change(input, { target: { value: '210-555-9999' } });
+
+      // Click cancel button
+      const cancelButton = screen.getByTestId('CloseIcon').closest('button');
+      fireEvent.click(cancelButton!);
+
+      // Should not call onPhoneChange
+      expect(mockOnPhoneChange).not.toHaveBeenCalled();
+      // Should show original phone number
+      expect(screen.getByText('555-123-4567')).toBeInTheDocument();
+    });
+
+    it('should cancel edit when pressing Escape', async () => {
+      const mockOnPhoneChange = jest.fn();
+      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
+
+      // Enter edit mode
+      const phoneText = screen.getByText('555-123-4567');
+      fireEvent.click(phoneText);
+
+      // Change the value and press Escape
+      const input = screen.getByPlaceholderText('Enter phone');
+      fireEvent.change(input, { target: { value: '210-555-9999' } });
+      fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });
+
+      // Should not call onPhoneChange
+      expect(mockOnPhoneChange).not.toHaveBeenCalled();
+      // Should show original phone number
+      expect(screen.getByText('555-123-4567')).toBeInTheDocument();
+    });
+
+    it('should save empty phone as trimmed value', async () => {
+      const mockOnPhoneChange = jest.fn();
+      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
+
+      // Enter edit mode
+      const phoneText = screen.getByText('555-123-4567');
+      fireEvent.click(phoneText);
+
+      // Clear the value
+      const input = screen.getByPlaceholderText('Enter phone');
+      fireEvent.change(input, { target: { value: '   ' } });
+      fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+
+      // Should call with empty string (trimmed)
+      expect(mockOnPhoneChange).toHaveBeenCalledWith('');
+    });
+
+    it('should reset phone value when lead changes', async () => {
+      const mockOnPhoneChange = jest.fn();
+      const { rerender } = render(
+        <PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />
+      );
+
+      // Enter edit mode and change value
+      const phoneText = screen.getByText('555-123-4567');
+      fireEvent.click(phoneText);
+      const input = screen.getByPlaceholderText('Enter phone');
+      fireEvent.change(input, { target: { value: '999-999-9999' } });
+
+      // Rerender with different lead
+      const newLead = { ...mockLead, id: 'lead-2', sellerPhone: '111-222-3333' };
+      rerender(<PropertyDetailsSection lead={newLead} onSellerPhoneChange={mockOnPhoneChange} />);
+
+      // Should show new lead's phone, not be in edit mode
+      expect(screen.getByText('111-222-3333')).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText('Enter phone')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('listing description', () => {
+    it('should not display description section when no description in metadata', () => {
+      const leadNoDescription = { ...mockLead, enrichmentMetadata: undefined };
+      render(<PropertyDetailsSection lead={leadNoDescription} />);
+
+      expect(screen.queryByText('LISTING DESCRIPTION')).not.toBeInTheDocument();
+    });
+
+    it('should not display description section when description is empty', () => {
+      const leadEmptyDescription = {
+        ...mockLead,
+        enrichmentMetadata: { description: '' },
+      };
+      render(<PropertyDetailsSection lead={leadEmptyDescription} />);
+
+      expect(screen.queryByText('LISTING DESCRIPTION')).not.toBeInTheDocument();
+    });
+
+    it('should display description section when description is present', () => {
+      const leadWithDescription = {
+        ...mockLead,
+        enrichmentMetadata: {
+          description: 'Beautiful home with updated kitchen and bathrooms.',
+        },
+      };
+      render(<PropertyDetailsSection lead={leadWithDescription} />);
+
+      expect(screen.getByText('LISTING DESCRIPTION')).toBeInTheDocument();
+      expect(screen.getByText('Beautiful home with updated kitchen and bathrooms.')).toBeInTheDocument();
+    });
+
+    it('should truncate long descriptions to 200 characters', () => {
+      const longDescription = 'A'.repeat(300); // 300 characters
+      const leadWithLongDescription = {
+        ...mockLead,
+        enrichmentMetadata: {
+          description: longDescription,
+        },
+      };
+      render(<PropertyDetailsSection lead={leadWithLongDescription} />);
+
+      // Should show truncated text with ellipsis
+      expect(screen.getByText('A'.repeat(200) + '...')).toBeInTheDocument();
+      // Should show "Show more" button
+      expect(screen.getByRole('button', { name: 'Show more' })).toBeInTheDocument();
+    });
+
+    it('should not show "Show more" button for short descriptions', () => {
+      const shortDescription = 'Short description under 200 chars.';
+      const leadWithShortDescription = {
+        ...mockLead,
+        enrichmentMetadata: {
+          description: shortDescription,
+        },
+      };
+      render(<PropertyDetailsSection lead={leadWithShortDescription} />);
+
+      expect(screen.getByText(shortDescription)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Show more' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Show less' })).not.toBeInTheDocument();
+    });
+
+    it('should expand description when "Show more" is clicked', () => {
+      const longDescription = 'B'.repeat(300);
+      const leadWithLongDescription = {
+        ...mockLead,
+        enrichmentMetadata: {
+          description: longDescription,
+        },
+      };
+      render(<PropertyDetailsSection lead={leadWithLongDescription} />);
+
+      // Initially truncated
+      expect(screen.getByText('B'.repeat(200) + '...')).toBeInTheDocument();
+
+      // Click "Show more"
+      fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+
+      // Should now show full text
+      expect(screen.getByText(longDescription)).toBeInTheDocument();
+      // Button should change to "Show less"
+      expect(screen.getByRole('button', { name: 'Show less' })).toBeInTheDocument();
+    });
+
+    it('should collapse description when "Show less" is clicked', () => {
+      const longDescription = 'C'.repeat(300);
+      const leadWithLongDescription = {
+        ...mockLead,
+        enrichmentMetadata: {
+          description: longDescription,
+        },
+      };
+      render(<PropertyDetailsSection lead={leadWithLongDescription} />);
+
+      // Expand first
+      fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+      expect(screen.getByText(longDescription)).toBeInTheDocument();
+
+      // Then collapse
+      fireEvent.click(screen.getByRole('button', { name: 'Show less' }));
+
+      // Should show truncated text again
+      expect(screen.getByText('C'.repeat(200) + '...')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Show more' })).toBeInTheDocument();
+    });
+
+    it('should handle description exactly at 200 characters', () => {
+      const exactDescription = 'D'.repeat(200);
+      const leadWithExactDescription = {
+        ...mockLead,
+        enrichmentMetadata: {
+          description: exactDescription,
+        },
+      };
+      render(<PropertyDetailsSection lead={leadWithExactDescription} />);
+
+      // Should show full text without truncation
+      expect(screen.getByText(exactDescription)).toBeInTheDocument();
+      // Should not show expand button
+      expect(screen.queryByRole('button', { name: 'Show more' })).not.toBeInTheDocument();
+    });
+
+    it('should handle description at 201 characters (just over limit)', () => {
+      const justOverDescription = 'E'.repeat(201);
+      const leadWithJustOverDescription = {
+        ...mockLead,
+        enrichmentMetadata: {
+          description: justOverDescription,
+        },
+      };
+      render(<PropertyDetailsSection lead={leadWithJustOverDescription} />);
+
+      // Should show truncated text
+      expect(screen.getByText('E'.repeat(200) + '...')).toBeInTheDocument();
+      // Should show expand button
+      expect(screen.getByRole('button', { name: 'Show more' })).toBeInTheDocument();
+    });
+
+    it('should preserve whitespace in description', () => {
+      const descriptionWithLineBreaks = 'First paragraph.\n\nSecond paragraph.';
+      const leadWithLineBreaks = {
+        ...mockLead,
+        enrichmentMetadata: {
+          description: descriptionWithLineBreaks,
+        },
+      };
+      render(<PropertyDetailsSection lead={leadWithLineBreaks} />);
+
+      // The description text should be in the document
+      const descriptionElement = screen.getByText(/First paragraph/);
+      expect(descriptionElement).toBeInTheDocument();
+      // Check that whitespace is preserved via CSS (whiteSpace: 'pre-wrap')
+      expect(descriptionElement).toHaveStyle({ whiteSpace: 'pre-wrap' });
     });
   });
 

@@ -293,6 +293,7 @@ export interface EnrichmentMetadata {
   zestimate?: number;
   rentZestimate?: number;
   daysOnMarket?: number;
+  description?: string;
 }
 
 export interface EnrichedListingData {
@@ -558,6 +559,15 @@ export const leadQueueService = {
    */
   async updateNotes(leadId: string, notes: string): Promise<void> {
     await axiosInstance.put(`/api/leads/${leadId}/notes`, { notes });
+  },
+
+  /**
+   * Update seller phone number for a lead.
+   * @param leadId The lead ID
+   * @param sellerPhone The new phone number (null to clear)
+   */
+  async updateSellerPhone(leadId: string, sellerPhone: string | null): Promise<void> {
+    await axiosInstance.patch(`/api/leads/${leadId}/phone`, { sellerPhone });
   },
 
   /**

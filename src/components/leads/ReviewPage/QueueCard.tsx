@@ -7,6 +7,7 @@ import {
   Archive as ArchiveIcon,
   Home as HomeIcon,
   Event as EventIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue';
 import { PriorityBadge } from './PriorityBadge';
@@ -76,6 +77,41 @@ export const QueueCard: React.FC<QueueCardProps> = ({
     if (dateOnly.getTime() === tomorrow.getTime()) return 'Tomorrow';
 
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // Helper to check if date is within N days (TASK-107)
+  const isWithinDays = (dateStr: string, days: number): boolean => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return diffDays >= 0 && diffDays <= days;
+  };
+
+  // Helper to format relative date for consolidation badge (TASK-107)
+  const formatRelativeDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffHours < 1) return 'just now';
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'yesterday';
+    return `${diffDays}d ago`;
+  };
+
+  // Helper to format full date for tooltip (TASK-107)
+  const formatFullDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   };
 
   return (
@@ -180,6 +216,37 @@ export const QueueCard: React.FC<QueueCardProps> = ({
                     {formatFollowUpDate(lead.followUpDate)}
                   </Typography>
                 </Box>
+              )}
+              {/* Consolidation Badge - TASK-107 */}
+              {lead.lastConsolidatedAt && isWithinDays(lead.lastConsolidatedAt, 7) && (
+                <Tooltip
+                  title={`Data updated from ${lead.lastConsolidatedSource || 'unknown'} on ${formatFullDate(lead.lastConsolidatedAt)}`}
+                >
+                  <Box
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      px: 1,
+                      py: 0.5,
+                      borderRadius: 1,
+                      backgroundColor: 'rgba(96, 165, 250, 0.15)',
+                      border: '1px solid #60a5fa',
+                    }}
+                  >
+                    <RefreshIcon sx={{ fontSize: '0.75rem', color: '#60a5fa' }} />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: '#60a5fa',
+                        fontWeight: 600,
+                        fontSize: '0.7rem',
+                      }}
+                    >
+                      Updated {formatRelativeDate(lead.lastConsolidatedAt)}
+                    </Typography>
+                  </Box>
+                </Tooltip>
               )}
             </Box>
             <Typography

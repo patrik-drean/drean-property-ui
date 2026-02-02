@@ -133,6 +133,10 @@ export interface LeadQueueItem {
   comparables?: ComparableSale[];
   // Enrichment metadata JSON
   metadata?: string;
+  // Consolidation tracking (TASK-107)
+  lastConsolidatedAt?: string;
+  lastConsolidatedSource?: string;
+  consolidationCount?: number;
 }
 
 export interface QueueCounts {

@@ -82,6 +82,11 @@ export interface QueueLead {
 
   // Enrichment metadata from Apify (stored in Lead.Metadata JSON)
   enrichmentMetadata?: EnrichmentMetadata;
+
+  // Consolidation tracking (TASK-107)
+  lastConsolidatedAt?: string;
+  lastConsolidatedSource?: string;
+  consolidationCount?: number;
 }
 
 export type LeadQueueStatus =

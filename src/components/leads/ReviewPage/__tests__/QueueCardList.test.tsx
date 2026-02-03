@@ -152,6 +152,85 @@ describe('QueueCardList', () => {
     });
   });
 
+  describe('empty state - archived queue', () => {
+    it('should display archived queue empty state message', () => {
+      render(
+        <QueueCardList
+          leads={[]}
+          selectedCardId={null}
+          queueType="archived"
+          {...mockHandlers}
+        />
+      );
+
+      expect(screen.getByText('No archived leads')).toBeInTheDocument();
+      expect(screen.getByText(/Archived leads will appear here/)).toBeInTheDocument();
+    });
+  });
+
+  describe('empty state - with active search', () => {
+    it('should display search-specific empty message when hasActiveSearch is true for all queue', () => {
+      render(
+        <QueueCardList
+          leads={[]}
+          selectedCardId={null}
+          queueType="all"
+          hasActiveSearch={true}
+          {...mockHandlers}
+        />
+      );
+
+      expect(screen.getByText('No leads match your search')).toBeInTheDocument();
+      expect(screen.getByText(/Try a different search term or clear the search/)).toBeInTheDocument();
+    });
+
+    it('should display search-specific empty message when hasActiveSearch is true for archived queue', () => {
+      render(
+        <QueueCardList
+          leads={[]}
+          selectedCardId={null}
+          queueType="archived"
+          hasActiveSearch={true}
+          {...mockHandlers}
+        />
+      );
+
+      expect(screen.getByText('No leads match your search')).toBeInTheDocument();
+      expect(screen.getByText(/Try a different search term or clear the search/)).toBeInTheDocument();
+    });
+
+    it('should display regular empty message when hasActiveSearch is true but queue is action_now', () => {
+      render(
+        <QueueCardList
+          leads={[]}
+          selectedCardId={null}
+          queueType="action_now"
+          hasActiveSearch={true}
+          {...mockHandlers}
+        />
+      );
+
+      // Should show action_now message, not search message
+      expect(screen.getByText('No leads need action right now')).toBeInTheDocument();
+      expect(screen.queryByText('No leads match your search')).not.toBeInTheDocument();
+    });
+
+    it('should display regular empty message when hasActiveSearch is false', () => {
+      render(
+        <QueueCardList
+          leads={[]}
+          selectedCardId={null}
+          queueType="all"
+          hasActiveSearch={false}
+          {...mockHandlers}
+        />
+      );
+
+      expect(screen.getByText('No leads found')).toBeInTheDocument();
+      expect(screen.queryByText('No leads match your search')).not.toBeInTheDocument();
+    });
+  });
+
   describe('card interactions', () => {
     it('should call onCardSelect with lead id when card is selected', () => {
       const leads = [createMockLead({ id: 'test-lead-1', address: 'Test Address' })];

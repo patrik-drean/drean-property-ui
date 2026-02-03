@@ -148,7 +148,7 @@ describe('useLeadQueue', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      expect(mockGetQueue).toHaveBeenCalledWith('all', 1, 20);
+      expect(mockGetQueue).toHaveBeenCalledWith('all', 1, 20, undefined);
       expect(result.current.leads).toHaveLength(1);
       expect(result.current.queueCounts.all).toBe(20);
     });
@@ -157,7 +157,7 @@ describe('useLeadQueue', () => {
       renderHook(() => useLeadQueue({ initialQueueType: 'action_now' }));
 
       await waitFor(() => {
-        expect(mockGetQueue).toHaveBeenCalledWith('action_now', 1, 20);
+        expect(mockGetQueue).toHaveBeenCalledWith('action_now', 1, 20, undefined);
       });
     });
 
@@ -165,7 +165,31 @@ describe('useLeadQueue', () => {
       renderHook(() => useLeadQueue({ pageSize: 50 }));
 
       await waitFor(() => {
-        expect(mockGetQueue).toHaveBeenCalledWith('all', 1, 50);
+        expect(mockGetQueue).toHaveBeenCalledWith('all', 1, 50, undefined);
+      });
+    });
+
+    it('should pass search parameter to API when provided', async () => {
+      renderHook(() => useLeadQueue({ search: '123 Main St' }));
+
+      await waitFor(() => {
+        expect(mockGetQueue).toHaveBeenCalledWith('all', 1, 20, '123 Main St');
+      });
+    });
+
+    it('should not pass search parameter when undefined', async () => {
+      renderHook(() => useLeadQueue({}));
+
+      await waitFor(() => {
+        expect(mockGetQueue).toHaveBeenCalledWith('all', 1, 20, undefined);
+      });
+    });
+
+    it('should pass empty search parameter as undefined', async () => {
+      renderHook(() => useLeadQueue({ search: '' }));
+
+      await waitFor(() => {
+        expect(mockGetQueue).toHaveBeenCalledWith('all', 1, 20, '');
       });
     });
 
@@ -200,7 +224,7 @@ describe('useLeadQueue', () => {
       });
 
       await waitFor(() => {
-        expect(mockGetQueue).toHaveBeenCalledWith('action_now', 1, 20);
+        expect(mockGetQueue).toHaveBeenCalledWith('action_now', 1, 20, undefined);
       });
 
       expect(result.current.selectedQueue).toBe('action_now');
@@ -241,7 +265,7 @@ describe('useLeadQueue', () => {
       });
 
       await waitFor(() => {
-        expect(mockGetQueue).toHaveBeenCalledWith('all', 2, 20);
+        expect(mockGetQueue).toHaveBeenCalledWith('all', 2, 20, undefined);
       });
 
       expect(result.current.page).toBe(2);

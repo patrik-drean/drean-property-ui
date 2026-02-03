@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Box, Snackbar, Alert, CircularProgress, Typography, Pagination } from '@mui/material';
 import { QueueLead, LeadQueueStatus } from '../../../types/queue';
 import { useLeadQueue } from '../../../hooks/useLeadQueue';
@@ -34,6 +34,13 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   }>({ open: false, message: '', severity: 'info' });
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Search state - separate for All Leads and Archived tabs
+  const [allLeadsSearch, setAllLeadsSearch] = useState('');
+  const [archivedSearch, setArchivedSearch] = useState('');
+  const [debouncedAllSearch, setDebouncedAllSearch] = useState('');
+  const [debouncedArchivedSearch, setDebouncedArchivedSearch] = useState('');
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // Snackbar helper
   const showSnackbar = useCallback((
     message: string,
@@ -41,6 +48,46 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   ) => {
     setSnackbar({ open: true, message, severity });
   }, []);
+
+  // Debounce effect for All Leads search
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedAllSearch(allLeadsSearch);
+    }, 300);
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [allLeadsSearch]);
+
+  // Debounce effect for Archived search
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedArchivedSearch(archivedSearch);
+    }, 300);
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [archivedSearch]);
+
+  // Compute current search based on selected queue
+  // We need to track selectedQueue to know which search to use
+  const [currentQueueType, setCurrentQueueType] = useState<'action_now' | 'follow_up' | 'negotiating' | 'all' | 'archived'>('action_now');
+
+  const currentSearch = useMemo(() => {
+    if (currentQueueType === 'all') return debouncedAllSearch;
+    if (currentQueueType === 'archived') return debouncedArchivedSearch;
+    return ''; // No search for action_now, follow_up, negotiating
+  }, [currentQueueType, debouncedAllSearch, debouncedArchivedSearch]);
 
   // Real API hook with WebSocket integration
   const {
@@ -51,8 +98,8 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     totalPages,
     loading,
     error,
-    changeQueue,
-    changePage,
+    changeQueue: hookChangeQueue,
+    changePage: hookChangePage,
     markAsDone,
     archiveLead,
     deleteLeadPermanently,
@@ -64,8 +111,33 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     cancelFollowUp,
   } = useLeadQueue({
     initialQueueType: 'action_now',
+    search: currentSearch,
     onNotification: showSnackbar,
   });
+
+  // Wrap changeQueue to track current queue type
+  const changeQueue = useCallback((queue: typeof currentQueueType) => {
+    setCurrentQueueType(queue);
+    hookChangeQueue(queue);
+  }, [hookChangeQueue]);
+
+  // Wrap changePage and reset to page 1 when search changes
+  const changePage = useCallback((newPage: number) => {
+    hookChangePage(newPage);
+  }, [hookChangePage]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    if (currentQueueType === 'all' && debouncedAllSearch !== '') {
+      hookChangePage(1);
+    }
+  }, [debouncedAllSearch, currentQueueType, hookChangePage]);
+
+  useEffect(() => {
+    if (currentQueueType === 'archived' && debouncedArchivedSearch !== '') {
+      hookChangePage(1);
+    }
+  }, [debouncedArchivedSearch, currentQueueType, hookChangePage]);
 
   // Sort leads by priority (backend already filters by queue type)
   const filteredLeads = useMemo(() => {
@@ -372,7 +444,27 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
       }}
     >
       <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
-        <PageHeader onAddLead={() => setAddModalOpen(true)} />
+        <PageHeader
+          onAddLead={() => setAddModalOpen(true)}
+          showSearch={selectedQueue === 'all' || selectedQueue === 'archived'}
+          searchQuery={selectedQueue === 'all' ? allLeadsSearch : selectedQueue === 'archived' ? archivedSearch : ''}
+          onSearchChange={(query) => {
+            if (selectedQueue === 'all') {
+              setAllLeadsSearch(query);
+            } else if (selectedQueue === 'archived') {
+              setArchivedSearch(query);
+            }
+          }}
+          onClearSearch={() => {
+            if (selectedQueue === 'all') {
+              setAllLeadsSearch('');
+              setDebouncedAllSearch('');
+            } else if (selectedQueue === 'archived') {
+              setArchivedSearch('');
+              setDebouncedArchivedSearch('');
+            }
+          }}
+        />
 
         <QueueTabs
           selectedQueue={selectedQueue}
@@ -436,6 +528,10 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
             onDone={handleCardDone}
             onFollowUp={handleCardFollowUp}
             onArchive={handleCardArchive}
+            hasActiveSearch={
+              (selectedQueue === 'all' && debouncedAllSearch.length > 0) ||
+              (selectedQueue === 'archived' && debouncedArchivedSearch.length > 0)
+            }
           />
         )}
 

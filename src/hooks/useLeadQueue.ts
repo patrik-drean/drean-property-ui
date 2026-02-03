@@ -13,6 +13,8 @@ import { QueueLead, QueueCounts, Priority, formatTimeSince } from '../types/queu
 interface UseLeadQueueOptions {
   initialQueueType?: QueueType;
   pageSize?: number;
+  /** Optional search query to filter leads (only for all/archived queues) */
+  search?: string;
   /** Callback for toast notifications */
   onNotification?: (message: string, severity: 'success' | 'info' | 'warning' | 'error') => void;
 }
@@ -162,7 +164,7 @@ function mapEventToQueueLead(event: LeadEventData): QueueLead {
  * - Queue filtering and pagination
  */
 export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueReturn => {
-  const { initialQueueType = 'all', pageSize = 20, onNotification } = options;
+  const { initialQueueType = 'all', pageSize = 20, search, onNotification } = options;
 
   // Helper to show notifications (does nothing if no callback provided)
   const notify = useCallback(
@@ -204,7 +206,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
       }
       setError(null);
 
-      const response = await leadQueueService.getQueue(selectedQueue, page, pageSize);
+      const response = await leadQueueService.getQueue(selectedQueue, page, pageSize, search);
 
       // Only update state if this is still the current request (avoid race conditions)
       if (currentRequestId !== requestIdRef.current) {
@@ -232,7 +234,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
         setLoading(false);
       }
     }
-  }, [selectedQueue, page, pageSize, notify]);
+  }, [selectedQueue, page, pageSize, search, notify]);
 
   // Initial fetch and refetch on queue/page change
   useEffect(() => {

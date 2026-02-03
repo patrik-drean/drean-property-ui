@@ -132,6 +132,64 @@ describe('leadQueueService', () => {
       }
     });
 
+    it('should include search parameter when provided', async () => {
+      mockGet.mockResolvedValue({ data: mockQueueResponse });
+
+      await leadQueueService.getQueue('all', 1, 20, '123 Main St');
+
+      expect(mockGet).toHaveBeenCalledWith('/api/leads/queue?type=all&page=1&pageSize=20&search=123+Main+St');
+    });
+
+    it('should not include search parameter when search is empty string', async () => {
+      mockGet.mockResolvedValue({ data: mockQueueResponse });
+
+      await leadQueueService.getQueue('all', 1, 20, '');
+
+      expect(mockGet).toHaveBeenCalledWith('/api/leads/queue?type=all&page=1&pageSize=20');
+    });
+
+    it('should not include search parameter when search is whitespace only', async () => {
+      mockGet.mockResolvedValue({ data: mockQueueResponse });
+
+      await leadQueueService.getQueue('all', 1, 20, '   ');
+
+      expect(mockGet).toHaveBeenCalledWith('/api/leads/queue?type=all&page=1&pageSize=20');
+    });
+
+    it('should trim search parameter', async () => {
+      mockGet.mockResolvedValue({ data: mockQueueResponse });
+
+      await leadQueueService.getQueue('all', 1, 20, '  test  ');
+
+      expect(mockGet).toHaveBeenCalledWith('/api/leads/queue?type=all&page=1&pageSize=20&search=test');
+    });
+
+    it('should truncate search parameter to 100 characters', async () => {
+      mockGet.mockResolvedValue({ data: mockQueueResponse });
+
+      const longSearch = 'a'.repeat(150);
+      await leadQueueService.getQueue('all', 1, 20, longSearch);
+
+      const expectedSearch = 'a'.repeat(100);
+      expect(mockGet).toHaveBeenCalledWith(`/api/leads/queue?type=all&page=1&pageSize=20&search=${expectedSearch}`);
+    });
+
+    it('should URL-encode special characters in search', async () => {
+      mockGet.mockResolvedValue({ data: mockQueueResponse });
+
+      await leadQueueService.getQueue('all', 1, 20, 'test@email.com');
+
+      expect(mockGet).toHaveBeenCalledWith('/api/leads/queue?type=all&page=1&pageSize=20&search=test%40email.com');
+    });
+
+    it('should handle search with phone number format', async () => {
+      mockGet.mockResolvedValue({ data: mockQueueResponse });
+
+      await leadQueueService.getQueue('all', 1, 20, '555-123-4567');
+
+      expect(mockGet).toHaveBeenCalledWith('/api/leads/queue?type=all&page=1&pageSize=20&search=555-123-4567');
+    });
+
     it('should return empty leads array when no leads exist', async () => {
       const emptyResponse: LeadQueueResponse = {
         leads: [],

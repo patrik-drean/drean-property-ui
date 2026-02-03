@@ -13,9 +13,19 @@ interface QueueCardListProps {
   onDone: (lead: QueueLead) => void;
   onFollowUp: (lead: QueueLead) => void;
   onArchive: (lead: QueueLead) => void;
+  /** Whether a search is currently active (for empty state messaging) */
+  hasActiveSearch?: boolean;
 }
 
-const getEmptyStateMessage = (queueType: QueueType): { title: string; subtitle: string } => {
+const getEmptyStateMessage = (queueType: QueueType, hasActiveSearch: boolean): { title: string; subtitle: string } => {
+  // If search is active and no results, show search-specific message
+  if (hasActiveSearch && (queueType === 'all' || queueType === 'archived')) {
+    return {
+      title: 'No leads match your search',
+      subtitle: 'Try a different search term or clear the search.',
+    };
+  }
+
   switch (queueType) {
     case 'action_now':
       return {
@@ -31,6 +41,11 @@ const getEmptyStateMessage = (queueType: QueueType): { title: string; subtitle: 
       return {
         title: 'No active negotiations',
         subtitle: 'Start conversations to move leads into negotiation.',
+      };
+    case 'archived':
+      return {
+        title: 'No archived leads',
+        subtitle: 'Archived leads will appear here.',
       };
     case 'all':
     default:
@@ -53,9 +68,10 @@ export const QueueCardList: React.FC<QueueCardListProps> = ({
   onDone,
   onFollowUp,
   onArchive,
+  hasActiveSearch = false,
 }) => {
   if (leads.length === 0) {
-    const emptyState = getEmptyStateMessage(queueType);
+    const emptyState = getEmptyStateMessage(queueType, hasActiveSearch);
     return (
       <Box
         sx={{

@@ -464,20 +464,28 @@ export interface ScheduleFollowUpRequest {
 export const leadQueueService = {
   /**
    * Fetch leads for the queue with priority sorting and filtering.
-   * @param type Queue type filter (action_now, follow_up, negotiating, all)
+   * @param type Queue type filter (action_now, follow_up, negotiating, all, archived)
    * @param page Page number (1-based)
    * @param pageSize Number of items per page
+   * @param search Optional search query to filter by address, phone, or email (only for all/archived queues)
    */
   async getQueue(
     type: QueueType = 'all',
     page = 1,
-    pageSize = 20
+    pageSize = 20,
+    search?: string
   ): Promise<LeadQueueResponse> {
     const params = new URLSearchParams({
       type,
       page: String(page),
       pageSize: String(pageSize),
     });
+
+    // Add search parameter if provided (truncate to 100 chars)
+    if (search?.trim()) {
+      params.append('search', search.trim().substring(0, 100));
+    }
+
     const response = await axiosInstance.get<LeadQueueResponse>(
       `/api/leads/queue?${params}`
     );

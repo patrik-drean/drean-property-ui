@@ -161,6 +161,11 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
           e.preventDefault();
           onAction?.('archive');
           break;
+        case 'd':
+          // Mark as done
+          e.preventDefault();
+          onAction?.('markContacted');
+          break;
       }
     },
     [open, onClose, onNavigatePrev, onNavigateNext, isFirst, isLast, onFollowUp, onAction]

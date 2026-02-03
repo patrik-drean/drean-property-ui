@@ -108,6 +108,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     updateLeadComparables,
     updateNotes,
     updateSellerPhone,
+    updateLeadStatus,
     scheduleFollowUp,
     cancelFollowUp,
   } = useLeadQueue({
@@ -324,7 +325,9 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
 
   // Handle status change from detail panel
   const handleStatusChange = (status: LeadQueueStatus) => {
-    showSnackbar(`Status updated to ${status}`, 'success');
+    if (selectedCardId) {
+      updateLeadStatus(selectedCardId, status);
+    }
   };
 
   // Handle actions from detail panel

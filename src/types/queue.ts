@@ -35,6 +35,7 @@ export interface QueueLead {
   listingPrice: number;
   sellerPhone: string;
   sellerEmail: string;
+  agentName?: string;
   createdAt: string;
   updatedAt: string;
   archived: boolean;

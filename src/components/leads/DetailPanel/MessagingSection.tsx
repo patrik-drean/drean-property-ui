@@ -155,7 +155,9 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
       {lead.sellerPhone && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <Typography variant="caption" sx={{ color: '#8b949e' }}>
-            Phone: {lead.sellerPhone}
+            {lead.agentName && <span style={{ color: '#f0f6fc' }}>{lead.agentName}</span>}
+            {lead.agentName && ' · '}
+            {lead.sellerPhone}
           </Typography>
           <CallLeadButton lead={lead} iconOnly size="small" />
         </Box>

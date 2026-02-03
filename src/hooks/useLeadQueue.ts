@@ -84,6 +84,7 @@ export function mapToQueueLead(item: LeadQueueItem): QueueLead {
     listingPrice: item.listingPrice,
     sellerPhone: item.contact.sellerPhone || '',
     sellerEmail: item.contact.sellerEmail || '',
+    agentName: item.contact.agentName,
     createdAt: item.createdAt,
     updatedAt: item.createdAt, // API doesn't provide updatedAt separately
     archived: false,

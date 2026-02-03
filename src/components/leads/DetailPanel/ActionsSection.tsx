@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -62,6 +62,11 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
 }) => {
   const [notes, setNotes] = useState(lead.notes || '');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // Sync notes state when lead changes
+  useEffect(() => {
+    setNotes(lead.notes || '');
+  }, [lead.id, lead.notes]);
   const [showFollowUpPicker, setShowFollowUpPicker] = useState(false);
   const [followUpDate, setFollowUpDate] = useState(() => {
     // Default to tomorrow

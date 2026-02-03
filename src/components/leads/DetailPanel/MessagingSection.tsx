@@ -7,6 +7,7 @@ import { MessageBubble } from './MessageBubble';
 import { TemplateChip } from './TemplateChip';
 import { smsService } from '../../../services/smsService';
 import { SmsMessage, SmsTemplate, TemplateVariables } from '../../../types/sms';
+import { CallLeadButton } from '../../voice/CallLeadButton';
 
 interface MessagingSectionProps {
   lead: QueueLead;
@@ -150,11 +151,14 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
 
   return (
     <SectionCard title="MESSAGING">
-      {/* Contact Info */}
+      {/* Contact Info with Call Button */}
       {lead.sellerPhone && (
-        <Typography variant="caption" sx={{ color: '#8b949e', mb: 2, display: 'block' }}>
-          Phone: {lead.sellerPhone}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Typography variant="caption" sx={{ color: '#8b949e' }}>
+            Phone: {lead.sellerPhone}
+          </Typography>
+          <CallLeadButton lead={lead} iconOnly size="small" />
+        </Box>
       )}
 
       {/* Message History */}

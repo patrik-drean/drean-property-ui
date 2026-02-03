@@ -12,6 +12,7 @@ import {
 } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue'
 import { SectionCard } from './SectionCard';
+import { CallLeadButton } from '../../voice/CallLeadButton';
 
 interface PropertyDetailsSectionProps {
   lead: QueueLead;
@@ -243,25 +244,36 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
                 display: 'flex',
                 alignItems: 'center',
                 gap: 0.5,
-                cursor: onSellerPhoneChange ? 'pointer' : 'default',
-                '&:hover .edit-icon': { opacity: 1 },
               }}
-              onClick={() => onSellerPhoneChange && setEditingPhone(true)}
             >
-              <Typography variant="body2" sx={{ color: '#f0f6fc', fontWeight: 500 }}>
-                {lead.sellerPhone || '-'}
-              </Typography>
-              {onSellerPhoneChange && (
-                <EditIcon
-                  className="edit-icon"
-                  sx={{
-                    fontSize: 14,
-                    color: '#8b949e',
-                    opacity: 0,
-                    transition: 'opacity 0.2s',
-                    '&:hover': { color: '#4ade80' },
-                  }}
-                />
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  cursor: onSellerPhoneChange ? 'pointer' : 'default',
+                  '&:hover .edit-icon': { opacity: 1 },
+                }}
+                onClick={() => onSellerPhoneChange && setEditingPhone(true)}
+              >
+                <Typography variant="body2" sx={{ color: '#f0f6fc', fontWeight: 500 }}>
+                  {lead.sellerPhone || '-'}
+                </Typography>
+                {onSellerPhoneChange && (
+                  <EditIcon
+                    className="edit-icon"
+                    sx={{
+                      fontSize: 14,
+                      color: '#8b949e',
+                      opacity: 0,
+                      transition: 'opacity 0.2s',
+                      '&:hover': { color: '#4ade80' },
+                    }}
+                  />
+                )}
+              </Box>
+              {lead.sellerPhone && (
+                <CallLeadButton lead={lead} iconOnly size="small" />
               )}
             </Box>
           )}

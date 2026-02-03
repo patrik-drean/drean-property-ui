@@ -13,6 +13,7 @@ import {
 import { QueueLead } from '../../../types/queue'
 import { SectionCard } from './SectionCard';
 import { CallLeadButton } from '../../voice/CallLeadButton';
+import { formatPhoneForDisplay } from '../../../utils/phoneUtils';
 
 interface PropertyDetailsSectionProps {
   lead: QueueLead;
@@ -193,8 +194,8 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
         />
         <StatItem label="Units" value={lead.units ?? 1} />
         <StatItem label="DOM" value={daysOnMarket !== null ? `${daysOnMarket} days` : '-'} />
-        {/* Editable Phone Field */}
-        <Grid item xs={4}>
+        {/* Editable Phone Field - wider to fit phone + call icon */}
+        <Grid item xs={6}>
           <Typography variant="caption" sx={{ color: '#8b949e', fontSize: '0.65rem' }}>
             Phone
           </Typography>
@@ -256,8 +257,8 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
                 }}
                 onClick={() => onSellerPhoneChange && setEditingPhone(true)}
               >
-                <Typography variant="body2" sx={{ color: '#f0f6fc', fontWeight: 500 }}>
-                  {lead.sellerPhone || '-'}
+                <Typography variant="body2" sx={{ color: '#f0f6fc', fontWeight: 500, whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
+                  {formatPhoneForDisplay(lead.sellerPhone) || '-'}
                 </Typography>
                 {onSellerPhoneChange && (
                   <EditIcon

@@ -10,6 +10,7 @@ import { QueueCardList } from './QueueCardList';
 import { LeadDetailPanel } from '../DetailPanel';
 import { AddLeadModal } from './AddLeadModal';
 import { IngestLeadResponse } from '../../../services/leadQueueService';
+import { smsService } from '../../../services/smsService';
 
 interface ReviewPageProps {}
 
@@ -297,10 +298,27 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   };
 
   // Handle sending message from detail panel
-  const handleSendMessage = (message: string) => {
-    showSnackbar(`Message sent! (mock)`, 'success');
-    if (selectedCardId) {
-      markAsDone(selectedCardId);
+  const handleSendMessage = async (message: string) => {
+    if (!selectedLead?.sellerPhone) {
+      showSnackbar('No phone number available for this lead', 'error');
+      return;
+    }
+
+    try {
+      const response = await smsService.sendMessage({
+        toPhoneNumber: selectedLead.sellerPhone,
+        body: message,
+        propertyLeadId: selectedLead.id,
+      });
+
+      if (response.success) {
+        showSnackbar('Message sent successfully!', 'success');
+      } else {
+        showSnackbar(response.errorMessage || 'Failed to send message', 'error');
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data || error.message || 'Failed to send message';
+      showSnackbar(typeof errorMessage === 'string' ? errorMessage : 'Failed to send message', 'error');
     }
   };
 

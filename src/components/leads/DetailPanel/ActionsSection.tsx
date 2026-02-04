@@ -63,10 +63,12 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
   const [notes, setNotes] = useState(lead.notes || '');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Sync notes state when lead changes
+  // Only sync notes when switching to a different lead (not on every lead.notes change)
+  // This prevents overwriting user's typing when refetch/WebSocket updates arrive
   useEffect(() => {
     setNotes(lead.notes || '');
-  }, [lead.id, lead.notes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead.id]);
   const [showFollowUpPicker, setShowFollowUpPicker] = useState(false);
   const [followUpDate, setFollowUpDate] = useState(() => {
     // Default to tomorrow
@@ -111,6 +113,7 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
 
   return (
     <SectionCard title="ACTIONS">
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Status Dropdown */}
       <FormControl fullWidth size="small" sx={{ mb: 2 }}>
         <InputLabel
@@ -359,7 +362,7 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
       />
 
       {/* Notes Section */}
-      <Box>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <Typography
           variant="caption"
           sx={{ color: '#8b949e', mb: 1, display: 'block', fontSize: '0.7rem' }}
@@ -369,23 +372,27 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
         <TextField
           fullWidth
           multiline
-          rows={3}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           onBlur={handleNotesBlur}
           placeholder="Add notes about this lead..."
           sx={{
+            flex: 1,
+            display: 'flex',
             '& .MuiOutlinedInput-root': {
               bgcolor: '#21262d',
               fontSize: '0.85rem',
+              height: '100%',
+              alignItems: 'flex-start',
               '& fieldset': { borderColor: '#30363d' },
               '&:hover fieldset': { borderColor: '#4ade80' },
               '&.Mui-focused fieldset': { borderColor: '#4ade80' },
             },
-            '& .MuiInputBase-input': { color: '#f0f6fc' },
+            '& .MuiInputBase-input': { color: '#f0f6fc', height: '100% !important', overflow: 'auto !important' },
             '& .MuiInputBase-input::placeholder': { color: '#8b949e' },
           }}
         />
+      </Box>
       </Box>
     </SectionCard>
   );

@@ -5,11 +5,11 @@ import '@testing-library/jest-dom';
 
 // Mock react-router-dom before importing components that use it
 jest.mock('react-router-dom', () => {
-  const mockReact = require('react');
+  const actualReact = require('react');
   return {
-    Link: mockReact.forwardRef(
-      ({ children, to }: { children: mockReact.ReactNode; to: string }, ref: any) =>
-        mockReact.createElement('a', { href: to, ref }, children)
+    Link: actualReact.forwardRef(
+      ({ children, to }: { children: React.ReactNode; to: string }, ref: any) =>
+        actualReact.createElement('a', { href: to, ref }, children)
     ),
     useNavigate: () => jest.fn(),
   };
@@ -31,6 +31,7 @@ const mockTemplates: SmsTemplate[] = [
     name: 'Initial Outreach',
     body: 'Hi {{name}}, I noticed your property at {{address}}. Are you interested in selling?',
     placeholders: ['name', 'address'],
+    order: 1,
     createdAt: '2025-01-15T10:00:00Z',
     updatedAt: '2025-01-15T10:00:00Z',
   },
@@ -39,6 +40,7 @@ const mockTemplates: SmsTemplate[] = [
     name: 'Follow Up',
     body: 'Hi {{name}}, just following up on my previous message.',
     placeholders: ['name'],
+    order: 2,
     createdAt: '2025-01-15T11:00:00Z',
     updatedAt: '2025-01-15T11:00:00Z',
   },

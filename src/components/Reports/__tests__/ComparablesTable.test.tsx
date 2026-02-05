@@ -62,7 +62,7 @@ describe('ComparablesTable', () => {
       daysOnMarket: 30,
       status: 'Sold',
       pricePerSqft: 178,
-      tier: 'ARV',
+      tier: 'Quality',
       percentileRank: 95
     },
     {
@@ -417,7 +417,7 @@ describe('ComparablesTable', () => {
         correlation: 0.95 - i * 0.02,
         daysOnMarket: 30,
         status: 'Sold',
-        tier: i < 3 ? 'ARV' as const : 'Mid' as const,
+        tier: i < 3 ? 'Quality' as const : 'Mid' as const,
         pricePerSqft: (200000 + i * 10000) / (1500 + i * 50),
         percentileRank: 100 - i * 10
       }));

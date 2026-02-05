@@ -11,6 +11,7 @@ describe('QueueTabs', () => {
     follow_up: 3,
     negotiating: 2,
     all: 15,
+    archived: 0,
   };
 
   const mockOnQueueChange = jest.fn();
@@ -161,6 +162,7 @@ describe('QueueTabs', () => {
         follow_up: 0,
         negotiating: 0,
         all: 0,
+        archived: 0,
       };
 
       render(

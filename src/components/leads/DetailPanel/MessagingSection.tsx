@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography, TextField, Button, Stack, CircularProgress } from '@mui/material';
 import { Send as SendIcon } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue';
@@ -72,6 +72,7 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
   const [templates, setTemplates] = useState<SmsTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Build template variables from lead data
   const templateVariables: TemplateVariables = {
@@ -128,6 +129,13 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
     fetchTemplates();
   }, []);
 
+  // Scroll to bottom when messages load
+  useEffect(() => {
+    if (!loading && messages.length > 0 && messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [loading, messages]);
+
   const handleTemplateSelect = (template: SmsTemplate) => {
     const substitutedBody = substituteVariables(template.body, templateVariables);
     setMessage(substitutedBody);
@@ -165,6 +173,7 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
 
       {/* Message History */}
       <Box
+        ref={messagesContainerRef}
         sx={{
           maxHeight: 280,
           overflowY: 'auto',

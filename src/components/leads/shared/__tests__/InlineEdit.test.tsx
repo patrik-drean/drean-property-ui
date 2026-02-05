@@ -3,6 +3,16 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { InlineEdit } from '../InlineEdit';
 import { formatCurrency, parseCurrency, validateCurrency } from '../../../../utils/currencyUtils';
 
+// Wrapper to match InlineEdit's formatValue signature (accepts number | string)
+const formatCurrencyValue = (value: number | string): string => {
+  return formatCurrency(typeof value === 'number' ? value : parseFloat(value) || 0);
+};
+
+// Wrapper to match InlineEdit's validate signature (accepts number | string)
+const validateCurrencyValue = (value: number | string): string | null => {
+  return validateCurrency(typeof value === 'number' ? value : parseFloat(String(value)) || 0);
+};
+
 describe('InlineEdit', () => {
   const defaultProps = {
     label: 'Test Label',
@@ -26,7 +36,7 @@ describe('InlineEdit', () => {
     });
 
     it('renders formatted value when formatValue provided', () => {
-      render(<InlineEdit {...defaultProps} formatValue={formatCurrency} />);
+      render(<InlineEdit {...defaultProps} formatValue={formatCurrencyValue} />);
       expect(screen.getByText('$150,000')).toBeInTheDocument();
     });
 
@@ -385,7 +395,7 @@ describe('InlineEdit', () => {
     });
 
     it('handles zero value', () => {
-      render(<InlineEdit {...defaultProps} value={0} formatValue={formatCurrency} />);
+      render(<InlineEdit {...defaultProps} value={0} formatValue={formatCurrencyValue} />);
       expect(screen.getByText('$0')).toBeInTheDocument();
     });
 

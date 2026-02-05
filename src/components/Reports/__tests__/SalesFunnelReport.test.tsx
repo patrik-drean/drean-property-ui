@@ -36,6 +36,10 @@ const mockReport = {
   endDate: null,
   totalLeads: 100,
   generatedAt: '2024-12-17T10:00:00Z',
+  averageTimeToFirstContactHours: 2.5,
+  timeToFirstContactLeadCount: 80,
+  averageResponseTimeHours: 4.0,
+  responseTimeLeadCount: 60,
 };
 
 describe('SalesFunnelReportComponent', () => {

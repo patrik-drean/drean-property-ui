@@ -446,7 +446,7 @@ describe('OpportunitiesTable', () => {
         phoneNumber: '555-1234',
         propertyLeadId: 'lead-1',
         unreadCount: 3,
-        lastMessage: 'Test message',
+        lastMessagePreview: 'Test message',
         lastMessageAt: new Date().toISOString(),
       }];
 

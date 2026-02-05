@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { QueueCardList } from '../QueueCardList';
 import { QueueLead } from '../../../../types/queue';
 
@@ -38,7 +38,7 @@ describe('QueueCardList', () => {
     onCardSelect: jest.fn(),
     onViewDetails: jest.fn(),
     onDone: jest.fn(),
-    onSkip: jest.fn(),
+    onFollowUp: jest.fn(),
     onArchive: jest.fn(),
   };
 
@@ -232,12 +232,12 @@ describe('QueueCardList', () => {
   });
 
   describe('card interactions', () => {
-    it('should call onCardSelect with lead id when card is selected', () => {
-      const leads = [createMockLead({ id: 'test-lead-1', address: 'Test Address' })];
+    it('should call onViewDetails with lead and false when card is clicked', () => {
+      const lead = createMockLead({ id: 'test-lead-1', address: 'Test Address' });
 
       render(
         <QueueCardList
-          leads={leads}
+          leads={[lead]}
           selectedCardId={null}
           queueType="action_now"
           {...mockHandlers}
@@ -250,29 +250,7 @@ describe('QueueCardList', () => {
       expect(card).not.toBeNull();
       fireEvent.click(card!);
 
-      expect(mockHandlers.onCardSelect).toHaveBeenCalledWith('test-lead-1');
-    });
-
-    it('should call onViewDetails with lead when button is clicked', () => {
-      const lead = createMockLead({ id: 'test-lead-1' });
-
-      render(
-        <QueueCardList
-          leads={[lead]}
-          selectedCardId={null}
-          queueType="action_now"
-          {...mockHandlers}
-        />
-      );
-
-      // Find the actual button element containing "View Details"
-      const detailButtons = screen.getAllByRole('button').filter(
-        (btn) => btn.tagName === 'BUTTON' && btn.textContent === 'View Details'
-      );
-      expect(detailButtons.length).toBe(1);
-      fireEvent.click(detailButtons[0]);
-
-      expect(mockHandlers.onViewDetails).toHaveBeenCalledWith(lead);
+      expect(mockHandlers.onViewDetails).toHaveBeenCalledWith(lead, false);
     });
 
     it('should call onDone with lead when done button is clicked', () => {
@@ -287,12 +265,12 @@ describe('QueueCardList', () => {
         />
       );
 
-      fireEvent.click(screen.getByLabelText(/Mark as done/i));
+      fireEvent.click(screen.getByTestId('done-button'));
 
       expect(mockHandlers.onDone).toHaveBeenCalledWith(lead);
     });
 
-    it('should call onSkip with lead when skip button is clicked', () => {
+    it('should call onFollowUp with lead when follow-up button is clicked', () => {
       const lead = createMockLead({ id: 'test-lead-1' });
 
       render(
@@ -304,9 +282,9 @@ describe('QueueCardList', () => {
         />
       );
 
-      fireEvent.click(screen.getByLabelText(/Skip for now/i));
+      fireEvent.click(screen.getByTestId('followup-button'));
 
-      expect(mockHandlers.onSkip).toHaveBeenCalledWith(lead);
+      expect(mockHandlers.onFollowUp).toHaveBeenCalledWith(lead);
     });
 
     it('should call onArchive with lead when archive button is clicked', () => {
@@ -321,9 +299,32 @@ describe('QueueCardList', () => {
         />
       );
 
-      fireEvent.click(screen.getByLabelText(/Archive/i));
+      fireEvent.click(screen.getByTestId('archive-button'));
 
       expect(mockHandlers.onArchive).toHaveBeenCalledWith(lead);
+    });
+
+    it('should call onViewDetails with lead and true when photo is clicked', () => {
+      const lead = createMockLead({
+        id: 'test-lead-1',
+        photoUrl: 'https://example.com/photo.jpg',
+        photoUrls: ['https://example.com/photo.jpg', 'https://example.com/photo2.jpg'],
+      });
+
+      render(
+        <QueueCardList
+          leads={[lead]}
+          selectedCardId={null}
+          queueType="action_now"
+          {...mockHandlers}
+        />
+      );
+
+      // Click on the photo
+      const photo = screen.getByAltText('123 Main Street exterior');
+      fireEvent.click(photo);
+
+      expect(mockHandlers.onViewDetails).toHaveBeenCalledWith(lead, true);
     });
   });
 

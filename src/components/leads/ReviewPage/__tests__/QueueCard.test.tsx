@@ -43,20 +43,13 @@ describe('QueueCard', () => {
     onSelect: jest.fn(),
     onViewDetails: jest.fn(),
     onDone: jest.fn(),
-    onSkip: jest.fn(),
+    onFollowUp: jest.fn(),
     onArchive: jest.fn(),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
-
-  // Helper to find actual button elements (not role="button" containers)
-  const findButtonByText = (text: string) => {
-    return screen.getAllByRole('button').find(
-      (btn) => btn.tagName === 'BUTTON' && btn.textContent?.includes(text)
-    );
-  };
 
   describe('rendering', () => {
     it('should display the address', () => {
@@ -104,87 +97,68 @@ describe('QueueCard', () => {
     });
   });
 
-  describe('primary action buttons', () => {
-    it('should render View Details button', () => {
-      render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
-
-      const detailsButton = findButtonByText('View Details');
-      expect(detailsButton).toBeDefined();
-    });
-
-    it('should call onViewDetails when View Details is clicked', () => {
-      render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
-
-      const detailsButton = findButtonByText('View Details');
-      expect(detailsButton).toBeDefined();
-      fireEvent.click(detailsButton!);
-      expect(mockHandlers.onViewDetails).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('secondary action buttons', () => {
+  describe('action buttons', () => {
     it('should call onDone when done button is clicked', () => {
       render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
 
-      const doneButton = screen.getByLabelText(/Mark as done/i);
+      const doneButton = screen.getByTestId('done-button');
       fireEvent.click(doneButton);
       expect(mockHandlers.onDone).toHaveBeenCalledTimes(1);
     });
 
-    it('should call onSkip when skip button is clicked', () => {
+    it('should call onFollowUp when follow-up button is clicked', () => {
       render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
 
-      const skipButton = screen.getByLabelText(/Skip for now/i);
-      fireEvent.click(skipButton);
-      expect(mockHandlers.onSkip).toHaveBeenCalledTimes(1);
+      const followUpButton = screen.getByTestId('followup-button');
+      fireEvent.click(followUpButton);
+      expect(mockHandlers.onFollowUp).toHaveBeenCalledTimes(1);
     });
 
     it('should call onArchive when archive button is clicked', () => {
       render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
 
-      const archiveButton = screen.getByLabelText(/Archive/i);
+      const archiveButton = screen.getByTestId('archive-button');
       fireEvent.click(archiveButton);
       expect(mockHandlers.onArchive).toHaveBeenCalledTimes(1);
     });
-  });
 
-  describe('card selection', () => {
-    it('should call onSelect when card is clicked', () => {
+    it('should not propagate clicks from action buttons to card', () => {
       render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
 
-      // Find the card container (div with role="button")
+      const doneButton = screen.getByTestId('done-button');
+      fireEvent.click(doneButton);
+
+      // onViewDetails should not be called when clicking action buttons
+      expect(mockHandlers.onViewDetails).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('card click behavior', () => {
+    it('should call onViewDetails with false when card is clicked', () => {
+      render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
+
       const card = screen.getByText('123 Main Street').closest('[role="button"]');
       expect(card).toBeDefined();
       fireEvent.click(card!);
-      expect(mockHandlers.onSelect).toHaveBeenCalledTimes(1);
+      expect(mockHandlers.onViewDetails).toHaveBeenCalledWith(false);
     });
 
-    it('should call onSelect when Enter key is pressed', () => {
+    it('should call onViewDetails when Enter key is pressed', () => {
       render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
 
       const card = screen.getByText('123 Main Street').closest('[role="button"]');
       expect(card).toBeDefined();
       fireEvent.keyDown(card!, { key: 'Enter' });
-      expect(mockHandlers.onSelect).toHaveBeenCalledTimes(1);
+      expect(mockHandlers.onViewDetails).toHaveBeenCalled();
     });
 
-    it('should call onSelect when Space key is pressed', () => {
+    it('should call onViewDetails when Space key is pressed', () => {
       render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
 
       const card = screen.getByText('123 Main Street').closest('[role="button"]');
       expect(card).toBeDefined();
       fireEvent.keyDown(card!, { key: ' ' });
-      expect(mockHandlers.onSelect).toHaveBeenCalledTimes(1);
-    });
-
-    it('should not call onSelect for action button clicks', () => {
-      render(<QueueCard lead={mockLead} isSelected={false} {...mockHandlers} />);
-
-      const detailsButton = findButtonByText('View Details');
-      fireEvent.click(detailsButton!);
-
-      // onSelect should not be called when clicking action buttons
-      expect(mockHandlers.onSelect).not.toHaveBeenCalled();
+      expect(mockHandlers.onViewDetails).toHaveBeenCalled();
     });
   });
 
@@ -347,6 +321,68 @@ describe('QueueCard', () => {
       expect(screen.getByText('$150,000')).toBeInTheDocument();
       // Priority should still be visible
       expect(screen.getByText('HIGH')).toBeInTheDocument();
+    });
+  });
+
+  describe('photo gallery interaction', () => {
+    it('should call onViewDetails with true when photo is clicked (has photos)', () => {
+      const leadWithPhotos = {
+        ...mockLead,
+        photoUrl: 'https://photos.zillowstatic.com/photo1.jpg',
+        photoUrls: [
+          'https://photos.zillowstatic.com/photo1.jpg',
+          'https://photos.zillowstatic.com/photo2.jpg',
+        ],
+      };
+      render(<QueueCard lead={leadWithPhotos} isSelected={false} {...mockHandlers} />);
+
+      const img = screen.getByAltText('123 Main Street exterior');
+      fireEvent.click(img);
+
+      expect(mockHandlers.onViewDetails).toHaveBeenCalledWith(true);
+    });
+
+    it('should display photo count overlay when multiple photos', () => {
+      const leadWithPhotos = {
+        ...mockLead,
+        photoUrl: 'https://photos.zillowstatic.com/photo1.jpg',
+        photoUrls: [
+          'https://photos.zillowstatic.com/photo1.jpg',
+          'https://photos.zillowstatic.com/photo2.jpg',
+          'https://photos.zillowstatic.com/photo3.jpg',
+        ],
+      };
+      render(<QueueCard lead={leadWithPhotos} isSelected={false} {...mockHandlers} />);
+
+      // Should show photo count badge
+      expect(screen.getByText('3')).toBeInTheDocument();
+    });
+
+    it('should not display photo count when only one photo', () => {
+      const leadWithOnePhoto = {
+        ...mockLead,
+        photoUrl: 'https://photos.zillowstatic.com/photo1.jpg',
+        photoUrls: ['https://photos.zillowstatic.com/photo1.jpg'],
+      };
+      render(<QueueCard lead={leadWithOnePhoto} isSelected={false} {...mockHandlers} />);
+
+      // Photo count should not be displayed
+      expect(screen.queryByText('1')).not.toBeInTheDocument();
+    });
+
+    it('should not call onViewDetails with true when photo is clicked but no photos array', () => {
+      const leadNoPhotoUrls = {
+        ...mockLead,
+        photoUrl: undefined,
+        photoUrls: [],
+      };
+      render(<QueueCard lead={leadNoPhotoUrls} isSelected={false} {...mockHandlers} />);
+
+      // With no valid photo, we get placeholder - clicking card should open details without gallery
+      const card = screen.getByText('123 Main Street').closest('[role="button"]');
+      fireEvent.click(card!);
+
+      expect(mockHandlers.onViewDetails).toHaveBeenCalledWith(false);
     });
   });
 });

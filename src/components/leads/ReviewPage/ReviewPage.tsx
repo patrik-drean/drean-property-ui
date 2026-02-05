@@ -8,6 +8,7 @@ import { PageHeader } from './PageHeader';
 import { QueueTabs } from './QueueTabs';
 import { QueueCardList } from './QueueCardList';
 import { LeadDetailPanel } from '../DetailPanel';
+import { PhotoGalleryPanel } from './PhotoGalleryPanel';
 import { AddLeadModal } from './AddLeadModal';
 import { IngestLeadResponse } from '../../../services/leadQueueService';
 import { smsService } from '../../../services/smsService';
@@ -27,6 +28,7 @@ interface ReviewPageProps {}
 export const ReviewPage: React.FC<ReviewPageProps> = () => {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+  const [showGalleryOnOpen, setShowGalleryOnOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -204,6 +206,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
 
   const closeDetailPanel = useCallback(() => {
     setDetailPanelOpen(false);
+    setShowGalleryOnOpen(false);
   }, []);
 
   // Navigate to previous lead in the detail panel
@@ -293,8 +296,9 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   );
 
   // Action handlers for individual cards
-  const handleViewDetails = (lead: QueueLead) => {
+  const handleViewDetails = (lead: QueueLead, showGallery = false) => {
     setSelectedCardId(lead.id);
+    setShowGalleryOnOpen(showGallery);
     setDetailPanelOpen(true);
   };
 
@@ -598,6 +602,26 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         )}
       </Box>
 
+      {/* Photo Gallery Panel - shown on left when gallery is open */}
+      {detailPanelOpen && showGalleryOnOpen && selectedLead && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 64, // Below navbar
+            left: 0,
+            right: { xs: 0, md: 800 }, // Leave space for detail panel
+            bottom: 0,
+            zIndex: 1300, // Higher than drawer backdrop (1200)
+            bgcolor: '#0d1117',
+          }}
+        >
+          <PhotoGalleryPanel
+            lead={selectedLead}
+            onClose={() => setShowGalleryOnOpen(false)}
+          />
+        </Box>
+      )}
+
       {/* Lead Detail Panel */}
       <LeadDetailPanel
         open={detailPanelOpen}
@@ -620,6 +644,8 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         onDeletePermanently={handleDeletePermanently}
         deleteLoading={deleteLoading}
         onFollowUp={handleFollowUp}
+        onGalleryToggle={setShowGalleryOnOpen}
+        showGallery={showGalleryOnOpen}
       />
 
       {/* Add Lead Modal */}

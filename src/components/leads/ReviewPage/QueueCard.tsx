@@ -8,6 +8,7 @@ import {
   Home as HomeIcon,
   Event as EventIcon,
   Refresh as RefreshIcon,
+  Collections as GalleryIcon,
 } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue';
 import { PriorityBadge } from './PriorityBadge';
@@ -18,7 +19,8 @@ interface QueueCardProps {
   lead: QueueLead;
   isSelected: boolean;
   onSelect: () => void;
-  onViewDetails: () => void;
+  /** Opens detail panel, optionally with gallery shown */
+  onViewDetails: (showGallery?: boolean) => void;
   onDone: () => void;
   onFollowUp: () => void;
   onArchive: () => void;
@@ -39,10 +41,20 @@ export const QueueCard: React.FC<QueueCardProps> = ({
   // Track image load error to show placeholder
   const [imageError, setImageError] = useState(false);
 
-  // Double-click to open details
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onViewDetails();
+  // Get all photos (use photoUrls if available, otherwise just the single photoUrl)
+  const allPhotos = lead.photoUrls?.length ? lead.photoUrls : (lead.photoUrl ? [lead.photoUrl] : []);
+
+  // Handle photo click to open detail panel with gallery
+  const handlePhotoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (allPhotos.length > 0) {
+      onViewDetails(true); // Open detail panel with gallery shown
+    }
+  };
+
+  // Handle card click to open detail panel
+  const handleCardClick = () => {
+    onViewDetails(false);
   };
 
   // Check if we should show the photo or placeholder
@@ -116,8 +128,7 @@ export const QueueCard: React.FC<QueueCardProps> = ({
 
   return (
     <Box
-      onClick={onSelect}
-      onDoubleClick={handleDoubleClick}
+      onClick={handleCardClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -148,11 +159,17 @@ export const QueueCard: React.FC<QueueCardProps> = ({
       {/* Cover Photo Banner */}
       {hasValidPhoto ? (
         <Box
+          onClick={handlePhotoClick}
           sx={{
             width: '100%',
             aspectRatio: '16/9',
             overflow: 'hidden',
             bgcolor: '#21262d',
+            cursor: 'pointer',
+            position: 'relative',
+            '&:hover .photo-overlay': {
+              opacity: 1,
+            },
           }}
         >
           <Box
@@ -168,6 +185,32 @@ export const QueueCard: React.FC<QueueCardProps> = ({
               display: 'block',
             }}
           />
+          {/* Photo count overlay */}
+          {allPhotos.length > 1 && (
+            <Box
+              className="photo-overlay"
+              sx={{
+                position: 'absolute',
+                bottom: 8,
+                right: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                bgcolor: 'rgba(0, 0, 0, 0.7)',
+                color: '#fff',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                opacity: 0.8,
+                transition: 'opacity 0.2s',
+              }}
+            >
+              <GalleryIcon sx={{ fontSize: 14 }} />
+              {allPhotos.length}
+            </Box>
+          )}
         </Box>
       ) : (
         <Box

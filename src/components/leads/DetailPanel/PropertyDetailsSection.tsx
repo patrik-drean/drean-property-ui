@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, Typography, Link, Grid, Tooltip, TextField, IconButton, Button } from '@mui/material';
+import { Box, Typography, Link, Grid, Tooltip, TextField, IconButton } from '@mui/material';
 import {
   OpenInNew as OpenInNewIcon,
   AutoAwesome as AiIcon,
@@ -8,6 +8,7 @@ import {
   Edit as EditIcon,
   Check as CheckIcon,
   Close as CloseIcon,
+  Collections as GalleryIcon,
 } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue'
 import { SectionCard } from './SectionCard';
@@ -17,6 +18,8 @@ import { formatPhoneForDisplay } from '../../../utils/phoneUtils';
 interface PropertyDetailsSectionProps {
   lead: QueueLead;
   onSellerPhoneChange?: (phone: string) => void;
+  /** Callback to open gallery panel */
+  onGalleryToggle?: (open: boolean) => void;
 }
 
 interface StatItemProps {
@@ -45,9 +48,23 @@ const StatItem: React.FC<StatItemProps> = ({ label, value }) => (
  * - Editable seller phone number
  * - Listing price
  */
-export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ lead, onSellerPhoneChange }) => {
+export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
+  lead,
+  onSellerPhoneChange,
+  onGalleryToggle,
+}) => {
   // Track image load error to show placeholder
   const [imageError, setImageError] = useState(false);
+
+  // Get all photos (use photoUrls if available, otherwise just the single photoUrl)
+  const allPhotos = lead.photoUrls?.length ? lead.photoUrls : (lead.photoUrl ? [lead.photoUrl] : []);
+
+  // Handle photo click to open gallery
+  const handlePhotoClick = () => {
+    if (allPhotos.length > 0) {
+      onGalleryToggle?.(true);
+    }
+  };
 
   // Phone editing state
   const [editingPhone, setEditingPhone] = useState(false);
@@ -111,37 +128,76 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
     <SectionCard title="PROPERTY DETAILS">
       {/* Address with thumbnail and Zillow link */}
       <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
-        {/* Property Thumbnail */}
+        {/* Property Thumbnail - larger size */}
         {hasValidPhoto ? (
-          <Box
-            sx={{
-              width: 60,
-              height: 60,
-              borderRadius: 1,
-              overflow: 'hidden',
-              flexShrink: 0,
-              bgcolor: '#21262d',
-            }}
-          >
+          <Tooltip title={allPhotos.length > 1 ? `View ${allPhotos.length} photos (P)` : 'View photo (P)'}>
             <Box
-              component="img"
-              src={lead.photoUrl}
-              alt={`${lead.address} thumbnail`}
-              loading="lazy"
-              onError={() => setImageError(true)}
+              onClick={handlePhotoClick}
               sx={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block',
+                width: 150,
+                height: 112,
+                borderRadius: 1,
+                overflow: 'hidden',
+                flexShrink: 0,
+                bgcolor: '#21262d',
+                cursor: 'pointer',
+                position: 'relative',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': {
+                  transform: 'scale(1.03)',
+                  boxShadow: '0 0 0 2px #4ade80',
+                },
+                '&:hover .photo-count': {
+                  opacity: 1,
+                },
               }}
-            />
-          </Box>
+            >
+              <Box
+                component="img"
+                src={lead.photoUrl}
+                alt={`${lead.address} thumbnail`}
+                loading="lazy"
+                onError={() => setImageError(true)}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+              {/* Photo count badge */}
+              {allPhotos.length > 1 && (
+                <Box
+                  className="photo-count"
+                  sx={{
+                    position: 'absolute',
+                    bottom: 4,
+                    right: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    px: 0.75,
+                    py: 0.25,
+                    borderRadius: 0.5,
+                    bgcolor: 'rgba(0, 0, 0, 0.75)',
+                    color: '#fff',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    opacity: 0.8,
+                    transition: 'opacity 0.2s',
+                  }}
+                >
+                  <GalleryIcon sx={{ fontSize: 12 }} />
+                  {allPhotos.length}
+                </Box>
+              )}
+            </Box>
+          </Tooltip>
         ) : (
           <Box
             sx={{
-              width: 60,
-              height: 60,
+              width: 150,
+              height: 112,
               borderRadius: 1,
               bgcolor: '#21262d',
               display: 'flex',
@@ -150,7 +206,7 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
               flexShrink: 0,
             }}
           >
-            <HomeIcon sx={{ fontSize: 24, color: '#30363d' }} />
+            <HomeIcon sx={{ fontSize: 40, color: '#30363d' }} />
           </Box>
         )}
 
@@ -373,6 +429,7 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({ 
           </Box>
         </Box>
       )}
+
     </SectionCard>
   );
 };

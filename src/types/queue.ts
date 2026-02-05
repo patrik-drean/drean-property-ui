@@ -81,6 +81,9 @@ export interface QueueLead {
   // Property photo URL (first image from Apify scrape)
   photoUrl?: string;
 
+  // All property photo URLs (for gallery display)
+  photoUrls?: string[];
+
   // Enrichment metadata from Apify (stored in Lead.Metadata JSON)
   enrichmentMetadata?: EnrichmentMetadata;
 

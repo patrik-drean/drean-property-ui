@@ -122,6 +122,7 @@ export interface LeadQueueItem {
   suggestedTemplate?: SuggestedTemplate;
   zillowLink?: string;
   photoUrl?: string;
+  photoUrls?: string[];
   followUpDue: boolean;
   followUpDate?: string;
   // AI evaluation fields

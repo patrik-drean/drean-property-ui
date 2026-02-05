@@ -114,6 +114,8 @@ export function mapToQueueLead(item: LeadQueueItem): QueueLead {
     _comparables: item.comparables,
     // Property photo URL
     photoUrl: item.photoUrl,
+    // All property photo URLs (for gallery display)
+    photoUrls: item.photoUrls,
     // Enrichment metadata
     enrichmentMetadata: parseEnrichmentMetadata(item.metadata),
   } as QueueLead;

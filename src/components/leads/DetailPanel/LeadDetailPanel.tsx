@@ -40,6 +40,10 @@ interface LeadDetailPanelProps {
   onDeletePermanently?: () => Promise<void>;
   deleteLoading?: boolean;
   onFollowUp?: () => void;
+  /** Callback to toggle gallery panel (in parent) */
+  onGalleryToggle?: (open: boolean) => void;
+  /** Whether gallery is currently shown */
+  showGallery?: boolean;
 }
 
 /**
@@ -85,6 +89,8 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
   onDeletePermanently,
   deleteLoading = false,
   onFollowUp,
+  onGalleryToggle,
+  showGallery = false,
 }) => {
   // Tab state: 0 = Details, 1 = Debug
   const [activeTab, setActiveTab] = useState(0);
@@ -137,7 +143,11 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
       switch (e.key) {
         case 'Escape':
           e.preventDefault();
-          onClose();
+          // If gallery is open, close gallery first (handled by PropertyDetailsSection)
+          // Only close panel if gallery is not open
+          if (!showGallery) {
+            onClose();
+          }
           break;
         case 'k':
           e.preventDefault();
@@ -166,9 +176,16 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
           e.preventDefault();
           onAction?.('markContacted');
           break;
+        case 'p':
+          // Toggle photo gallery
+          e.preventDefault();
+          if (lead?.photoUrls?.length || lead?.photoUrl) {
+            onGalleryToggle?.(!showGallery);
+          }
+          break;
       }
     },
-    [open, onClose, onNavigatePrev, onNavigateNext, isFirst, isLast, onFollowUp, onAction]
+    [open, onClose, onNavigatePrev, onNavigateNext, isFirst, isLast, onFollowUp, onAction, showGallery, onGalleryToggle, lead]
   );
 
   useEffect(() => {
@@ -306,7 +323,11 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
                 <Grid container spacing={2}>
                   {/* Top Left: Property Details */}
                   <Grid item xs={12} md={6}>
-                    <PropertyDetailsSection lead={lead} onSellerPhoneChange={onSellerPhoneChange} />
+                    <PropertyDetailsSection
+                      lead={lead}
+                      onSellerPhoneChange={onSellerPhoneChange}
+                      onGalleryToggle={onGalleryToggle}
+                    />
                   </Grid>
 
                   {/* Top Right: Actions */}
@@ -364,7 +385,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
                   }}
                 >
                   <Typography variant="caption" sx={{ color: '#484f58', fontSize: '0.7rem' }}>
-                    Keyboard: ← Prev (j) | Next (k) → | Follow-up (l) | Message (m) | Archive (a) | Close (ESC)
+                    Keyboard: ← Prev (j) | Next (k) → | Photos (p) | Follow-up (l) | Message (m) | Archive (a) | Close (ESC)
                   </Typography>
                 </Box>
               </Box>

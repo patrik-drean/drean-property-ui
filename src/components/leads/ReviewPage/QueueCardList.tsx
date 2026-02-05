@@ -9,7 +9,8 @@ interface QueueCardListProps {
   selectedCardId: string | null;
   queueType: QueueType;
   onCardSelect: (id: string) => void;
-  onViewDetails: (lead: QueueLead) => void;
+  /** Opens detail panel for lead, optionally with gallery shown */
+  onViewDetails: (lead: QueueLead, showGallery?: boolean) => void;
   onDone: (lead: QueueLead) => void;
   onFollowUp: (lead: QueueLead) => void;
   onArchive: (lead: QueueLead) => void;
@@ -122,7 +123,7 @@ export const QueueCardList: React.FC<QueueCardListProps> = ({
           lead={lead}
           isSelected={selectedCardId === lead.id}
           onSelect={() => onCardSelect(lead.id)}
-          onViewDetails={() => onViewDetails(lead)}
+          onViewDetails={(showGallery) => onViewDetails(lead, showGallery)}
           onDone={() => onDone(lead)}
           onFollowUp={() => onFollowUp(lead)}
           onArchive={() => onArchive(lead)}

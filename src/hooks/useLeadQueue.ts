@@ -93,7 +93,7 @@ export function mapToQueueLead(item: LeadQueueItem): QueueLead {
     bedrooms: item.property.beds,
     bathrooms: item.property.baths,
     units: item.property.units ?? null,
-    notes: '',
+    notes: item.notes || '',
     leadScore: item.score,
     mao: item.metrics.mao,
     spreadPercent: item.metrics.spreadPercent,

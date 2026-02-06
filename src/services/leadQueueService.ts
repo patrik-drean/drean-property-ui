@@ -138,6 +138,8 @@ export interface LeadQueueItem {
   lastConsolidatedAt?: string;
   lastConsolidatedSource?: string;
   consolidationCount?: number;
+  // User notes
+  notes?: string;
 }
 
 export interface QueueCounts {

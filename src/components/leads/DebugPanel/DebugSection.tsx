@@ -29,6 +29,7 @@ import {
   LeadActivityItem,
 } from '../../../services/leadQueueService';
 import { EvaluationHistorySection } from './EvaluationHistorySection';
+import { ArvAnalysisSection } from './ArvAnalysisSection';
 
 interface DebugSectionProps {
   lead: QueueLead;
@@ -52,10 +53,12 @@ export const DebugSection: React.FC<DebugSectionProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [debugData, setDebugData] = useState<LeadDebugResponse | null>(null);
+  const [rescanLoading, setRescanLoading] = useState<'quick' | 'full' | null>(null);
 
   // Expanded state for collapsible sections
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     metadata: true,
+    arvAnalysis: true,  // TASK-129: Show ARV analysis by default
     evaluation: false,
     activity: true,
     aiReasoning: false,
@@ -83,6 +86,18 @@ export const DebugSection: React.FC<DebugSectionProps> = ({
   useEffect(() => {
     fetchDebugData();
   }, [fetchDebugData]);
+
+  const handleRescan = useCallback(async (tier: 'quick' | 'full') => {
+    if (!onRerunEvaluation || rescanLoading) return;
+    setRescanLoading(tier);
+    try {
+      await onRerunEvaluation(tier);
+      // Refresh debug data after rescan completes
+      await fetchDebugData();
+    } finally {
+      setRescanLoading(null);
+    }
+  }, [onRerunEvaluation, rescanLoading, fetchDebugData]);
 
   const copyToClipboard = (data: unknown) => {
     navigator.clipboard.writeText(JSON.stringify(data, null, 2));
@@ -169,6 +184,20 @@ export const DebugSection: React.FC<DebugSectionProps> = ({
         </MetadataGrid>
       </CollapsibleSection>
 
+      {/* TASK-129: ARV Analysis Section */}
+      <CollapsibleSection
+        title="ARV ANALYSIS"
+        expanded={expandedSections.arvAnalysis}
+        onToggle={() => toggleSection('arvAnalysis')}
+        onCopy={() => copyToClipboard(debugData.evaluationData.arvEstimate)}
+        badge={debugData.evaluationData.arvEstimate ? 'Has Data' : 'No Data'}
+      >
+        <ArvAnalysisSection
+          arvEstimate={debugData.evaluationData.arvEstimate as any}
+          zestimate={(debugData.evaluationData.arvEstimate as any)?.benchmarkZestimate}
+        />
+      </CollapsibleSection>
+
       {/* Evaluation Data Section */}
       <CollapsibleSection
         title="EVALUATION DATA"
@@ -236,28 +265,32 @@ export const DebugSection: React.FC<DebugSectionProps> = ({
             <Button
               variant="outlined"
               size="small"
-              startIcon={<RefreshIcon />}
-              onClick={() => onRerunEvaluation('quick')}
+              startIcon={rescanLoading === 'quick' ? <CircularProgress size={16} sx={{ color: '#4ade80' }} /> : <RefreshIcon />}
+              onClick={() => handleRescan('quick')}
+              disabled={rescanLoading !== null}
               sx={{
                 borderColor: '#30363d',
                 color: '#4ade80',
                 '&:hover': { borderColor: '#4ade80', bgcolor: 'rgba(74, 222, 128, 0.1)' },
+                '&.Mui-disabled': { borderColor: '#21262d', color: '#4ade80', opacity: 0.6 },
               }}
             >
-              Quick (~$0.05)
+              {rescanLoading === 'quick' ? 'Rescanning...' : 'Quick (~$0.05)'}
             </Button>
             <Button
               variant="outlined"
               size="small"
-              startIcon={<RefreshIcon />}
-              onClick={() => onRerunEvaluation('full')}
+              startIcon={rescanLoading === 'full' ? <CircularProgress size={16} sx={{ color: '#a78bfa' }} /> : <RefreshIcon />}
+              onClick={() => handleRescan('full')}
+              disabled={rescanLoading !== null}
               sx={{
                 borderColor: '#30363d',
                 color: '#a78bfa',
                 '&:hover': { borderColor: '#a78bfa', bgcolor: 'rgba(167, 139, 250, 0.1)' },
+                '&.Mui-disabled': { borderColor: '#21262d', color: '#a78bfa', opacity: 0.6 },
               }}
             >
-              Full (~$1.00)
+              {rescanLoading === 'full' ? 'Rescanning...' : 'Full (~$1.00)'}
             </Button>
           </Box>
           <Typography variant="caption" sx={{ color: '#6e7681', display: 'block', mt: 1 }}>

@@ -24,6 +24,7 @@ import { ConversationView } from '../components/messaging/ConversationView';
 import { NewMessageDialog } from '../components/messaging/NewMessageDialog';
 import { MessagingLockedOverlay } from '../components/shared/MessagingLockedOverlay';
 import { LeadDetailPanel } from '../components/leads/DetailPanel';
+import { PhotoGalleryPanel } from '../components/leads/ReviewPage/PhotoGalleryPanel';
 import { smsService } from '../services/smsService';
 import { getPropertyLead } from '../services/api';
 import { leadQueueService } from '../services/leadQueueService';
@@ -51,6 +52,7 @@ export const MessagingPage: React.FC = () => {
   const [newMessageDialogOpen, setNewMessageDialogOpen] = useState(false);
   const [detailPanelOpen, setDetailPanelOpen] = useState(false);
   const [detailPanelLead, setDetailPanelLead] = useState<QueueLead | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
   const hasLoggedError = useRef(false);
 
   // Handle URL params for deep linking
@@ -255,6 +257,19 @@ export const MessagingPage: React.FC = () => {
   const handleCloseDetailPanel = () => {
     setDetailPanelOpen(false);
     setDetailPanelLead(null);
+    setShowGallery(false);
+  };
+
+  const handleStatusChange = async (status: QueueLead['status']) => {
+    if (!detailPanelLead) return;
+    try {
+      await leadQueueService.updateStatus(detailPanelLead.id, status);
+      // Refresh the lead data
+      const updatedLead = await leadQueueService.getLeadById(detailPanelLead.id);
+      setDetailPanelLead(mapToQueueLead(updatedLead));
+    } catch (err) {
+      console.error('Failed to update lead status:', err);
+    }
   };
 
   // Show loading while checking subscription
@@ -433,7 +448,30 @@ export const MessagingPage: React.FC = () => {
         open={detailPanelOpen}
         lead={detailPanelLead}
         onClose={handleCloseDetailPanel}
+        onStatusChange={handleStatusChange}
+        onGalleryToggle={setShowGallery}
+        showGallery={showGallery}
       />
+
+      {/* Photo Gallery Panel - shown on left when gallery is open */}
+      {detailPanelOpen && showGallery && detailPanelLead && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 64, // Below navbar
+            left: 0,
+            right: { xs: 0, md: 800 }, // Leave space for detail panel
+            bottom: 0,
+            zIndex: 1300, // Higher than drawer backdrop (1200)
+            bgcolor: '#0d1117',
+          }}
+        >
+          <PhotoGalleryPanel
+            lead={detailPanelLead}
+            onClose={() => setShowGallery(false)}
+          />
+        </Box>
+      )}
     </Box>
   );
 };

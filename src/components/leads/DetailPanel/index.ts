@@ -16,3 +16,4 @@ export * from './ConfidenceBadge';
 export * from './MessageBubble';
 export * from './TemplateChip';
 export * from './ComparablesSection';
+export * from './QuickMetrics';

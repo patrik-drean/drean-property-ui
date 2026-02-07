@@ -1,23 +1,20 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Box, Typography, Link, Grid, Tooltip, TextField, IconButton } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Link, Grid, Tooltip, Collapse } from '@mui/material';
 import {
   OpenInNew as OpenInNewIcon,
   AutoAwesome as AiIcon,
   Home as HomeIcon,
   DataObject as MetadataIcon,
-  Edit as EditIcon,
-  Check as CheckIcon,
-  Close as CloseIcon,
   Collections as GalleryIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue'
 import { SectionCard } from './SectionCard';
-import { CallLeadButton } from '../../voice/CallLeadButton';
-import { formatPhoneForDisplay } from '../../../utils/phoneUtils';
+import { QuickMetrics } from './QuickMetrics';
 
 interface PropertyDetailsSectionProps {
   lead: QueueLead;
-  onSellerPhoneChange?: (phone: string) => void;
   /** Callback to open gallery panel */
   onGalleryToggle?: (open: boolean) => void;
 }
@@ -44,17 +41,20 @@ const StatItem: React.FC<StatItemProps> = ({ label, value }) => (
  * Displays:
  * - Property photo (if available)
  * - Address with Zillow link
- * - Property stats (beds, baths, sqft, year built, units, DOM)
- * - Editable seller phone number
+ * - Property stats (beds, baths, sqft, units, DOM)
  * - Listing price
+ * - Quick metrics (Score, ARV, Rehab, MAO, Neighborhood)
+ * - AI Analysis (collapsible)
  */
 export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
   lead,
-  onSellerPhoneChange,
   onGalleryToggle,
 }) => {
   // Track image load error to show placeholder
   const [imageError, setImageError] = useState(false);
+
+  // AI Analysis collapsed state (collapsed by default)
+  const [aiExpanded, setAiExpanded] = useState(false);
 
   // Get all photos (use photoUrls if available, otherwise just the single photoUrl)
   const allPhotos = lead.photoUrls?.length ? lead.photoUrls : (lead.photoUrl ? [lead.photoUrl] : []);
@@ -63,46 +63,6 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
   const handlePhotoClick = () => {
     if (allPhotos.length > 0) {
       onGalleryToggle?.(true);
-    }
-  };
-
-  // Phone editing state
-  const [editingPhone, setEditingPhone] = useState(false);
-  const [phoneValue, setPhoneValue] = useState(lead.sellerPhone || '');
-  const phoneInputRef = useRef<HTMLInputElement>(null);
-
-
-  // Reset phone value when lead changes
-  useEffect(() => {
-    setPhoneValue(lead.sellerPhone || '');
-    setEditingPhone(false);
-  }, [lead.id, lead.sellerPhone]);
-
-  // Focus input when entering edit mode
-  useEffect(() => {
-    if (editingPhone && phoneInputRef.current) {
-      phoneInputRef.current.focus();
-      phoneInputRef.current.select();
-    }
-  }, [editingPhone]);
-
-  const handlePhoneSave = () => {
-    const trimmedPhone = phoneValue.trim();
-    onSellerPhoneChange?.(trimmedPhone);
-    setEditingPhone(false);
-  };
-
-  const handlePhoneCancel = () => {
-    setPhoneValue(lead.sellerPhone || '');
-    setEditingPhone(false);
-  };
-
-  const handlePhoneKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handlePhoneSave();
-    } else if (e.key === 'Escape') {
-      handlePhoneCancel();
     }
   };
 
@@ -246,91 +206,6 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
         />
         <StatItem label="Units" value={lead.units ?? 1} />
         <StatItem label="DOM" value={daysOnMarket !== null ? `${daysOnMarket} days` : '-'} />
-        {/* Editable Phone Field - wider to fit phone + call icon */}
-        <Grid item xs={6}>
-          <Typography variant="caption" sx={{ color: '#8b949e', fontSize: '0.65rem' }}>
-            Phone
-          </Typography>
-          {editingPhone ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <TextField
-                inputRef={phoneInputRef}
-                value={phoneValue}
-                onChange={(e) => setPhoneValue(e.target.value)}
-                onKeyDown={handlePhoneKeyDown}
-                size="small"
-                placeholder="Enter phone"
-                sx={{
-                  flex: 1,
-                  '& .MuiOutlinedInput-root': {
-                    height: 28,
-                    bgcolor: '#161b22',
-                    '& fieldset': { borderColor: '#30363d' },
-                    '&:hover fieldset': { borderColor: '#4ade80' },
-                    '&.Mui-focused fieldset': { borderColor: '#4ade80' },
-                  },
-                  '& .MuiInputBase-input': {
-                    color: '#f0f6fc',
-                    fontSize: '0.8rem',
-                    p: '4px 8px',
-                  },
-                }}
-              />
-              <IconButton
-                size="small"
-                onClick={handlePhoneSave}
-                sx={{ color: '#4ade80', p: 0.25 }}
-              >
-                <CheckIcon sx={{ fontSize: 16 }} />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={handlePhoneCancel}
-                sx={{ color: '#8b949e', p: 0.25 }}
-              >
-                <CloseIcon sx={{ fontSize: 16 }} />
-              </IconButton>
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  cursor: onSellerPhoneChange ? 'pointer' : 'default',
-                  '&:hover .edit-icon': { opacity: 1 },
-                }}
-                onClick={() => onSellerPhoneChange && setEditingPhone(true)}
-              >
-                <Typography variant="body2" sx={{ color: '#f0f6fc', fontWeight: 500, whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
-                  {formatPhoneForDisplay(lead.sellerPhone) || '-'}
-                </Typography>
-                {onSellerPhoneChange && (
-                  <EditIcon
-                    className="edit-icon"
-                    sx={{
-                      fontSize: 14,
-                      color: '#8b949e',
-                      opacity: 0,
-                      transition: 'opacity 0.2s',
-                      '&:hover': { color: '#4ade80' },
-                    }}
-                  />
-                )}
-              </Box>
-              {lead.sellerPhone && (
-                <CallLeadButton lead={lead} iconOnly size="small" />
-              )}
-            </Box>
-          )}
-        </Grid>
       </Grid>
 
       {/* Enrichment Metadata */}
@@ -374,59 +249,51 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
         </Typography>
       </Box>
 
-      {/* AI Analysis */}
+      {/* Quick Metrics Grid */}
+      <QuickMetrics lead={lead} />
+
+      {/* AI Analysis - Collapsible */}
       {lead.aiSummary && (
-        <Box
-          sx={{
-            mt: 2,
-            pt: 2,
-            borderTop: '1px solid #30363d',
-          }}
-        >
+        <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #30363d' }}>
           <Box
+            onClick={() => setAiExpanded(!aiExpanded)}
             sx={{
               display: 'flex',
-              alignItems: 'flex-start',
+              alignItems: 'center',
               gap: 1,
-              p: 1.5,
-              bgcolor: 'rgba(96, 165, 250, 0.08)',
+              cursor: 'pointer',
+              p: 1,
               borderRadius: 1,
+              bgcolor: 'rgba(96, 165, 250, 0.08)',
               border: '1px solid rgba(96, 165, 250, 0.2)',
+              '&:hover': {
+                bgcolor: 'rgba(96, 165, 250, 0.12)',
+              },
             }}
           >
-            <AiIcon
-              sx={{
-                color: '#60a5fa',
-                fontSize: '1rem',
-                mt: 0.25,
-                flexShrink: 0,
-              }}
-            />
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: '#60a5fa',
-                  fontWeight: 600,
-                  fontSize: '0.7rem',
-                  display: 'block',
-                  mb: 0.5,
-                }}
-              >
-                AI Analysis
-              </Typography>
+            <AiIcon sx={{ color: '#60a5fa', fontSize: '1rem' }} />
+            <Typography
+              variant="caption"
+              sx={{ color: '#60a5fa', fontWeight: 600, fontSize: '0.7rem', flex: 1 }}
+            >
+              AI Analysis
+            </Typography>
+            {aiExpanded ? (
+              <ExpandLessIcon sx={{ color: '#60a5fa', fontSize: '1rem' }} />
+            ) : (
+              <ExpandMoreIcon sx={{ color: '#60a5fa', fontSize: '1rem' }} />
+            )}
+          </Box>
+          <Collapse in={aiExpanded}>
+            <Box sx={{ p: 1.5, pt: 1 }}>
               <Typography
                 variant="body2"
-                sx={{
-                  color: '#c9d1d9',
-                  fontSize: '0.8rem',
-                  lineHeight: 1.6,
-                }}
+                sx={{ color: '#c9d1d9', fontSize: '0.8rem', lineHeight: 1.6 }}
               >
                 {lead.aiSummary}
               </Typography>
             </Box>
-          </Box>
+          </Collapse>
         </Box>
       )}
 

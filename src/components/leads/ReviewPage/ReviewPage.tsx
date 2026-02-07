@@ -12,6 +12,7 @@ import { PhotoGalleryPanel } from './PhotoGalleryPanel';
 import { AddLeadModal } from './AddLeadModal';
 import { IngestLeadResponse } from '../../../services/leadQueueService';
 import { smsService } from '../../../services/smsService';
+import { promoteListings } from '../../../services/listingsService';
 
 interface ReviewPageProps {}
 
@@ -36,6 +37,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     severity: 'success' | 'info' | 'warning' | 'error';
   }>({ open: false, message: '', severity: 'info' });
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [promoteLoading, setPromoteLoading] = useState(false);
 
   // Search state - separate for All Leads and Archived tabs
   const [allLeadsSearch, setAllLeadsSearch] = useState('');
@@ -457,6 +459,36 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     // The lead will appear in the queue via WebSocket update or next fetch
   }, [showSnackbar]);
 
+  // Handle promote listings button click
+  const handlePromoteListings = useCallback(async () => {
+    setPromoteLoading(true);
+    try {
+      const result = await promoteListings({ minScore: 75, limit: 5 });
+
+      if (result.candidateCount === 0) {
+        showSnackbar('No listings available for promotion', 'info');
+      } else {
+        const parts: string[] = [];
+        if (result.promotedCount > 0) {
+          parts.push(`Promoted ${result.promotedCount} listing${result.promotedCount !== 1 ? 's' : ''}`);
+        }
+        if (result.duplicateCount > 0) {
+          parts.push(`${result.duplicateCount} duplicate${result.duplicateCount !== 1 ? 's' : ''}`);
+        }
+        if (result.failedCount > 0) {
+          parts.push(`${result.failedCount} failed`);
+        }
+        const message = parts.length > 0 ? parts.join(', ') : 'Promotion complete';
+        showSnackbar(message, result.promotedCount > 0 ? 'success' : 'info');
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to promote listings';
+      showSnackbar(typeof errorMessage === 'string' ? errorMessage : 'Failed to promote listings', 'error');
+    } finally {
+      setPromoteLoading(false);
+    }
+  }, [showSnackbar]);
+
   return (
     <Box
       sx={{
@@ -471,6 +503,8 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
       <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
         <PageHeader
           onAddLead={() => setAddModalOpen(true)}
+          onPromoteListings={handlePromoteListings}
+          promoteLoading={promoteLoading}
           showSearch={selectedQueue === 'all' || selectedQueue === 'archived'}
           searchQuery={selectedQueue === 'all' ? allLeadsSearch : selectedQueue === 'archived' ? archivedSearch : ''}
           onSearchChange={(query) => {

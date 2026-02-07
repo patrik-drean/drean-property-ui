@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { PropertyDetailsSection } from '../PropertyDetailsSection';
 import { QueueLead } from '../../../../types/queue';
 
@@ -82,12 +81,6 @@ describe('PropertyDetailsSection', () => {
       expect(screen.getByText('Units')).toBeInTheDocument();
     });
 
-    it('should display seller phone', () => {
-      render(<PropertyDetailsSection lead={mockLead} />);
-
-      expect(screen.getByText('Phone')).toBeInTheDocument();
-      expect(screen.getByText('555-123-4567')).toBeInTheDocument();
-    });
   });
 
   describe('Zillow link', () => {
@@ -130,13 +123,6 @@ describe('PropertyDetailsSection', () => {
       expect(screen.getByText('Sq Ft')).toBeInTheDocument();
     });
 
-    it('should display dash for missing phone', () => {
-      const leadNoPhone = { ...mockLead, sellerPhone: '' };
-      render(<PropertyDetailsSection lead={leadNoPhone} />);
-
-      expect(screen.getByText('Phone')).toBeInTheDocument();
-      expect(screen.getByText('-')).toBeInTheDocument();
-    });
   });
 
   describe('days on market', () => {
@@ -200,152 +186,6 @@ describe('PropertyDetailsSection', () => {
       render(<PropertyDetailsSection lead={leadNoAiSummary} />);
 
       expect(screen.queryByText('AI Analysis')).not.toBeInTheDocument();
-    });
-  });
-
-  describe('phone editing', () => {
-    it('should show edit icon on hover when onSellerPhoneChange is provided', async () => {
-      const mockOnPhoneChange = jest.fn();
-      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
-
-      // Phone number should be displayed
-      expect(screen.getByText('555-123-4567')).toBeInTheDocument();
-    });
-
-    it('should not show edit icon when onSellerPhoneChange is not provided', () => {
-      render(<PropertyDetailsSection lead={mockLead} />);
-
-      // Phone number should be displayed without edit capability
-      expect(screen.getByText('555-123-4567')).toBeInTheDocument();
-      // Edit icon should not be present
-      expect(screen.queryByTestId('EditIcon')).not.toBeInTheDocument();
-    });
-
-    it('should enter edit mode when clicking on phone', async () => {
-      const mockOnPhoneChange = jest.fn();
-      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
-
-      const phoneText = screen.getByText('555-123-4567');
-      fireEvent.click(phoneText);
-
-      // Should show input field
-      const input = screen.getByPlaceholderText('Enter phone');
-      expect(input).toBeInTheDocument();
-      expect(input).toHaveValue('555-123-4567');
-    });
-
-    it('should save phone when clicking check button', async () => {
-      const mockOnPhoneChange = jest.fn();
-      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
-
-      // Enter edit mode
-      const phoneText = screen.getByText('555-123-4567');
-      fireEvent.click(phoneText);
-
-      // Change the value
-      const input = screen.getByPlaceholderText('Enter phone');
-      fireEvent.change(input, { target: { value: '210-555-9999' } });
-
-      // Click save button
-      const saveButton = screen.getByTestId('CheckIcon').closest('button');
-      fireEvent.click(saveButton!);
-
-      expect(mockOnPhoneChange).toHaveBeenCalledWith('210-555-9999');
-    });
-
-    it('should save phone when pressing Enter', async () => {
-      const mockOnPhoneChange = jest.fn();
-      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
-
-      // Enter edit mode
-      const phoneText = screen.getByText('555-123-4567');
-      fireEvent.click(phoneText);
-
-      // Change the value and press Enter
-      const input = screen.getByPlaceholderText('Enter phone');
-      fireEvent.change(input, { target: { value: '210-555-9999' } });
-      fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
-
-      expect(mockOnPhoneChange).toHaveBeenCalledWith('210-555-9999');
-    });
-
-    it('should cancel edit when clicking close button', async () => {
-      const mockOnPhoneChange = jest.fn();
-      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
-
-      // Enter edit mode
-      const phoneText = screen.getByText('555-123-4567');
-      fireEvent.click(phoneText);
-
-      // Change the value
-      const input = screen.getByPlaceholderText('Enter phone');
-      fireEvent.change(input, { target: { value: '210-555-9999' } });
-
-      // Click cancel button
-      const cancelButton = screen.getByTestId('CloseIcon').closest('button');
-      fireEvent.click(cancelButton!);
-
-      // Should not call onPhoneChange
-      expect(mockOnPhoneChange).not.toHaveBeenCalled();
-      // Should show original phone number
-      expect(screen.getByText('555-123-4567')).toBeInTheDocument();
-    });
-
-    it('should cancel edit when pressing Escape', async () => {
-      const mockOnPhoneChange = jest.fn();
-      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
-
-      // Enter edit mode
-      const phoneText = screen.getByText('555-123-4567');
-      fireEvent.click(phoneText);
-
-      // Change the value and press Escape
-      const input = screen.getByPlaceholderText('Enter phone');
-      fireEvent.change(input, { target: { value: '210-555-9999' } });
-      fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });
-
-      // Should not call onPhoneChange
-      expect(mockOnPhoneChange).not.toHaveBeenCalled();
-      // Should show original phone number
-      expect(screen.getByText('555-123-4567')).toBeInTheDocument();
-    });
-
-    it('should save empty phone as trimmed value', async () => {
-      const mockOnPhoneChange = jest.fn();
-      render(<PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />);
-
-      // Enter edit mode
-      const phoneText = screen.getByText('555-123-4567');
-      fireEvent.click(phoneText);
-
-      // Clear the value
-      const input = screen.getByPlaceholderText('Enter phone');
-      fireEvent.change(input, { target: { value: '   ' } });
-      fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
-
-      // Should call with empty string (trimmed)
-      expect(mockOnPhoneChange).toHaveBeenCalledWith('');
-    });
-
-    it('should reset phone value when lead changes', async () => {
-      const mockOnPhoneChange = jest.fn();
-      const { rerender } = render(
-        <PropertyDetailsSection lead={mockLead} onSellerPhoneChange={mockOnPhoneChange} />
-      );
-
-      // Enter edit mode and change value
-      const phoneText = screen.getByText('555-123-4567');
-      fireEvent.click(phoneText);
-      const input = screen.getByPlaceholderText('Enter phone');
-      fireEvent.change(input, { target: { value: '999-999-9999' } });
-
-      // Rerender with different lead
-      const newLead = { ...mockLead, id: 'lead-2', sellerPhone: '111-222-3333' };
-      rerender(<PropertyDetailsSection lead={newLead} onSellerPhoneChange={mockOnPhoneChange} />);
-
-      // Should show new lead's phone, not be in edit mode
-      expect(screen.getByText('111-222-3333')).toBeInTheDocument();
-      expect(screen.queryByPlaceholderText('Enter phone')).not.toBeInTheDocument();
     });
   });
 

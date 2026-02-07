@@ -344,7 +344,7 @@ export const EvaluationSection: React.FC<EvaluationSectionProps> = ({
   };
 
   return (
-    <SectionCard title="EVALUATION">
+    <SectionCard title="ADDITIONAL DETAILS">
       {/* Score Badge (circular ring) - uses calculated score based on current ARV/rehab */}
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
         <ScoreBadge

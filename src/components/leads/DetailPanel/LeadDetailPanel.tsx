@@ -325,7 +325,6 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
                   <Grid item xs={12} md={6}>
                     <PropertyDetailsSection
                       lead={lead}
-                      onSellerPhoneChange={onSellerPhoneChange}
                       onGalleryToggle={onGalleryToggle}
                     />
                   </Grid>
@@ -371,7 +370,11 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
 
                   {/* Bottom Right: Messaging */}
                   <Grid item xs={12} md={6}>
-                    <MessagingSection lead={lead} onSendMessage={onSendMessage} />
+                    <MessagingSection
+                      lead={lead}
+                      onSendMessage={onSendMessage}
+                      onSellerPhoneChange={onSellerPhoneChange}
+                    />
                   </Grid>
                 </Grid>
 

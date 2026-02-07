@@ -1,13 +1,16 @@
 import React from 'react';
-import { Box, Typography, Button, TextField, IconButton, InputAdornment } from '@mui/material';
+import { Box, Typography, Button, TextField, IconButton, InputAdornment, CircularProgress } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import HistoryIcon from '@mui/icons-material/History';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import { useNavigate } from 'react-router-dom';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 interface PageHeaderProps {
   onAddLead?: () => void;
+  /** Callback to promote top listings to leads */
+  onPromoteListings?: () => void;
+  /** Whether promote listings action is in progress */
+  promoteLoading?: boolean;
   /** Whether to show the search input (only for All Leads and Archived tabs) */
   showSearch?: boolean;
   /** Current search query value */
@@ -23,13 +26,13 @@ interface PageHeaderProps {
  */
 export const PageHeader: React.FC<PageHeaderProps> = ({
   onAddLead,
+  onPromoteListings,
+  promoteLoading = false,
   showSearch = false,
   searchQuery = '',
   onSearchChange,
   onClearSearch,
 }) => {
-  const navigate = useNavigate();
-
   return (
     <Box
       sx={{
@@ -107,19 +110,21 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         )}
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        {/* Temporary: Switch to Classic View button - remove after migration */}
-        <Button
-          variant="outlined"
-          size="small"
-          color="secondary"
-          startIcon={<HistoryIcon />}
-          onClick={() => navigate('/leads/classic')}
-          sx={{
-            textTransform: 'none',
-          }}
-        >
-          Classic View
-        </Button>
+        {onPromoteListings && (
+          <Button
+            variant="outlined"
+            size="small"
+            color="secondary"
+            startIcon={promoteLoading ? <CircularProgress size={16} color="inherit" /> : <TrendingUpIcon />}
+            onClick={onPromoteListings}
+            disabled={promoteLoading}
+            sx={{
+              textTransform: 'none',
+            }}
+          >
+            {promoteLoading ? 'Promoting...' : 'Promote Listings'}
+          </Button>
+        )}
         {onAddLead && (
           <Button
             variant="contained"

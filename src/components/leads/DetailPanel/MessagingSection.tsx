@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Typography, TextField, Button, Stack, CircularProgress } from '@mui/material';
-import { Send as SendIcon } from '@mui/icons-material';
+import { Box, Typography, TextField, Button, Stack, CircularProgress, IconButton } from '@mui/material';
+import {
+  Send as SendIcon,
+  Edit as EditIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue';
 import { SectionCard } from './SectionCard';
 import { MessageBubble } from './MessageBubble';
@@ -8,10 +13,12 @@ import { TemplateChip } from './TemplateChip';
 import { smsService } from '../../../services/smsService';
 import { SmsMessage, SmsTemplate, TemplateVariables } from '../../../types/sms';
 import { CallLeadButton } from '../../voice/CallLeadButton';
+import { formatPhoneForDisplay } from '../../../utils/phoneUtils';
 
 interface MessagingSectionProps {
   lead: QueueLead;
   onSendMessage?: (message: string) => void;
+  onSellerPhoneChange?: (phone: string) => void;
 }
 
 /**
@@ -65,7 +72,7 @@ const substituteVariables = (body: string, variables: TemplateVariables): string
  * - Template suggestions with variable substitution
  * - Send button
  */
-export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSendMessage }) => {
+export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSendMessage, onSellerPhoneChange }) => {
   const [message, setMessage] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [messages, setMessages] = useState<SmsMessage[]>([]);
@@ -73,6 +80,45 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Phone editing state
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [phoneValue, setPhoneValue] = useState(lead.sellerPhone || '');
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset phone value when lead changes
+  useEffect(() => {
+    setPhoneValue(lead.sellerPhone || '');
+    setEditingPhone(false);
+  }, [lead.id, lead.sellerPhone]);
+
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (editingPhone && phoneInputRef.current) {
+      phoneInputRef.current.focus();
+      phoneInputRef.current.select();
+    }
+  }, [editingPhone]);
+
+  const handlePhoneSave = () => {
+    const trimmedPhone = phoneValue.trim();
+    onSellerPhoneChange?.(trimmedPhone);
+    setEditingPhone(false);
+  };
+
+  const handlePhoneCancel = () => {
+    setPhoneValue(lead.sellerPhone || '');
+    setEditingPhone(false);
+  };
+
+  const handlePhoneKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handlePhoneSave();
+    } else if (e.key === 'Escape') {
+      handlePhoneCancel();
+    }
+  };
 
   // Build template variables from lead data
   const templateVariables: TemplateVariables = {
@@ -159,17 +205,89 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
 
   return (
     <SectionCard title="MESSAGING">
-      {/* Contact Info with Call Button */}
-      {lead.sellerPhone && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <Typography variant="caption" sx={{ color: '#8b949e' }}>
-            {lead.agentName && <span style={{ color: '#f0f6fc' }}>{lead.agentName}</span>}
-            {lead.agentName && ' · '}
-            {lead.sellerPhone}
+      {/* Contact Info with Call Button and Editable Phone */}
+      <Box sx={{ mb: 2 }}>
+        {lead.agentName && (
+          <Typography variant="caption" sx={{ color: '#f0f6fc', display: 'block', mb: 0.5 }}>
+            {lead.agentName}
           </Typography>
-          <CallLeadButton lead={lead} iconOnly size="small" />
+        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {editingPhone ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flex: 1 }}>
+              <TextField
+                inputRef={phoneInputRef}
+                value={phoneValue}
+                onChange={(e) => setPhoneValue(e.target.value)}
+                onKeyDown={handlePhoneKeyDown}
+                size="small"
+                placeholder="Enter phone number"
+                sx={{
+                  flex: 1,
+                  '& .MuiOutlinedInput-root': {
+                    height: 32,
+                    bgcolor: '#161b22',
+                    '& fieldset': { borderColor: '#30363d' },
+                    '&:hover fieldset': { borderColor: '#4ade80' },
+                    '&.Mui-focused fieldset': { borderColor: '#4ade80' },
+                  },
+                  '& .MuiInputBase-input': {
+                    color: '#f0f6fc',
+                    fontSize: '0.85rem',
+                    p: '6px 10px',
+                  },
+                }}
+              />
+              <IconButton
+                size="small"
+                onClick={handlePhoneSave}
+                sx={{ color: '#4ade80', p: 0.5 }}
+              >
+                <CheckIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={handlePhoneCancel}
+                sx={{ color: '#8b949e', p: 0.5 }}
+              >
+                <CloseIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Box>
+          ) : (
+            <>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  cursor: onSellerPhoneChange ? 'pointer' : 'default',
+                  '&:hover .edit-icon': { opacity: 1 },
+                }}
+                onClick={() => onSellerPhoneChange && setEditingPhone(true)}
+              >
+                <Typography variant="body2" sx={{ color: lead.sellerPhone ? '#f0f6fc' : '#8b949e', fontWeight: 500 }}>
+                  {formatPhoneForDisplay(lead.sellerPhone) || 'No phone number'}
+                </Typography>
+                {onSellerPhoneChange && (
+                  <EditIcon
+                    className="edit-icon"
+                    sx={{
+                      fontSize: 14,
+                      color: '#8b949e',
+                      opacity: 0,
+                      transition: 'opacity 0.2s',
+                      '&:hover': { color: '#4ade80' },
+                    }}
+                  />
+                )}
+              </Box>
+              {lead.sellerPhone && (
+                <CallLeadButton lead={lead} iconOnly size="small" />
+              )}
+            </>
+          )}
         </Box>
-      )}
+      </Box>
 
       {/* Message History */}
       <Box

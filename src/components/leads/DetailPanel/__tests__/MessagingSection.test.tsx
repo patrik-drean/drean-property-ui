@@ -50,10 +50,11 @@ describe('MessagingSection', () => {
       expect(screen.getByText('MESSAGING')).toBeInTheDocument();
     });
 
-    it('should display phone number', () => {
+    it('should display formatted phone number', () => {
       render(<MessagingSection lead={mockLead} {...mockHandlers} />);
 
-      expect(screen.getByText(/555-123-4567/)).toBeInTheDocument();
+      // Phone is formatted as (555) 123-4567
+      expect(screen.getByText('(555) 123-4567')).toBeInTheDocument();
     });
   });
 
@@ -203,13 +204,75 @@ describe('MessagingSection', () => {
     });
   });
 
-  describe('missing phone handling', () => {
-    it('should not display phone when empty', () => {
+  describe('phone display and editing', () => {
+    it('should display "No phone number" when empty', () => {
       const leadNoPhone = { ...mockLead, sellerPhone: '' };
       render(<MessagingSection lead={leadNoPhone} {...mockHandlers} />);
 
-      // Phone label should not be present
-      expect(screen.queryByText(/Phone:/)).not.toBeInTheDocument();
+      expect(screen.getByText('No phone number')).toBeInTheDocument();
+    });
+
+    it('should display formatted phone when present', () => {
+      render(<MessagingSection lead={mockLead} {...mockHandlers} />);
+
+      // Phone is formatted as (555) 123-4567
+      expect(screen.getByText('(555) 123-4567')).toBeInTheDocument();
+    });
+
+    it('should show edit icon when onSellerPhoneChange is provided', () => {
+      const mockPhoneChange = jest.fn();
+      render(<MessagingSection lead={mockLead} {...mockHandlers} onSellerPhoneChange={mockPhoneChange} />);
+
+      // Phone should be clickable to edit
+      const phoneText = screen.getByText('(555) 123-4567');
+      expect(phoneText).toBeInTheDocument();
+    });
+
+    it('should enter edit mode when clicking on phone', () => {
+      const mockPhoneChange = jest.fn();
+      render(<MessagingSection lead={mockLead} {...mockHandlers} onSellerPhoneChange={mockPhoneChange} />);
+
+      const phoneText = screen.getByText('(555) 123-4567');
+      fireEvent.click(phoneText);
+
+      // Should show input field
+      const input = screen.getByPlaceholderText('Enter phone number');
+      expect(input).toBeInTheDocument();
+    });
+
+    it('should save phone when pressing Enter', () => {
+      const mockPhoneChange = jest.fn();
+      render(<MessagingSection lead={mockLead} {...mockHandlers} onSellerPhoneChange={mockPhoneChange} />);
+
+      // Enter edit mode
+      const phoneText = screen.getByText('(555) 123-4567');
+      fireEvent.click(phoneText);
+
+      // Change value and press Enter
+      const input = screen.getByPlaceholderText('Enter phone number');
+      fireEvent.change(input, { target: { value: '210-555-9999' } });
+      fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+
+      expect(mockPhoneChange).toHaveBeenCalledWith('210-555-9999');
+    });
+
+    it('should cancel edit when pressing Escape', () => {
+      const mockPhoneChange = jest.fn();
+      render(<MessagingSection lead={mockLead} {...mockHandlers} onSellerPhoneChange={mockPhoneChange} />);
+
+      // Enter edit mode
+      const phoneText = screen.getByText('(555) 123-4567');
+      fireEvent.click(phoneText);
+
+      // Change value and press Escape
+      const input = screen.getByPlaceholderText('Enter phone number');
+      fireEvent.change(input, { target: { value: '210-555-9999' } });
+      fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });
+
+      // Should not call handler
+      expect(mockPhoneChange).not.toHaveBeenCalled();
+      // Should show original phone (formatted)
+      expect(screen.getByText('(555) 123-4567')).toBeInTheDocument();
     });
   });
 });

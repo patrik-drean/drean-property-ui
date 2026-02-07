@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Box, Snackbar, Alert, CircularProgress, Typography, Pagination } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { QueueLead, LeadQueueStatus } from '../../../types/queue';
 import { useLeadQueue } from '../../../hooks/useLeadQueue';
 import { sortLeadsByPriority } from '../../../hooks/useMockLeadData';
@@ -38,6 +39,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   }>({ open: false, message: '', severity: 'info' });
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [promoteLoading, setPromoteLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Search state - separate for All Leads and Archived tabs
   const [allLeadsSearch, setAllLeadsSearch] = useState('');
@@ -305,10 +307,10 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   };
 
   // Handle sending message from detail panel
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string): Promise<boolean> => {
     if (!selectedLead?.sellerPhone) {
       showSnackbar('No phone number available for this lead', 'error');
-      return;
+      return false;
     }
 
     try {
@@ -320,12 +322,15 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
 
       if (response.success) {
         showSnackbar('Message sent successfully!', 'success');
+        return true;
       } else {
         showSnackbar(response.errorMessage || 'Failed to send message', 'error');
+        return false;
       }
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || 'Failed to send message';
       showSnackbar(typeof errorMessage === 'string' ? errorMessage : 'Failed to send message', 'error');
+      return false;
     }
   };
 
@@ -459,6 +464,11 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     // The lead will appear in the queue via WebSocket update or next fetch
   }, [showSnackbar]);
 
+  // Handle navigate to sales funnel report
+  const handleNavigateToSalesFunnel = useCallback(() => {
+    navigate('/reports?tab=3');
+  }, [navigate]);
+
   // Handle promote listings button click
   const handlePromoteListings = useCallback(async () => {
     setPromoteLoading(true);
@@ -505,6 +515,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
           onAddLead={() => setAddModalOpen(true)}
           onPromoteListings={handlePromoteListings}
           promoteLoading={promoteLoading}
+          onNavigateToSalesFunnel={handleNavigateToSalesFunnel}
           showSearch={selectedQueue === 'all' || selectedQueue === 'archived'}
           searchQuery={selectedQueue === 'all' ? allLeadsSearch : selectedQueue === 'archived' ? archivedSearch : ''}
           onSearchChange={(query) => {

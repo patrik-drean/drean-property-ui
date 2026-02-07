@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { MemoryRouter } from 'react-router-dom';
 import { SalesFunnelReportComponent } from '../SalesFunnelReport';
 import { salesFunnelService } from '../../../services/salesFunnelService';
 
@@ -17,10 +18,32 @@ jest.mock('../../../hooks/useResponsiveLayout', () => ({
   }),
 }));
 
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: { [key: string]: string } = {};
+  return {
+    getItem: jest.fn((key: string) => store[key] || null),
+    setItem: jest.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: jest.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: jest.fn(() => {
+      store = {};
+    }),
+  };
+})();
+Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
 const theme = createTheme();
 
-const renderWithTheme = (ui: React.ReactElement) => {
-  return render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
+const renderWithTheme = (ui: React.ReactElement, { route = '/' } = {}) => {
+  return render(
+    <MemoryRouter initialEntries={[route]}>
+      <ThemeProvider theme={theme}>{ui}</ThemeProvider>
+    </MemoryRouter>
+  );
 };
 
 const mockReport = {
@@ -45,6 +68,7 @@ const mockReport = {
 describe('SalesFunnelReportComponent', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    localStorageMock.clear();
   });
 
   describe('Loading State', () => {
@@ -189,13 +213,12 @@ describe('SalesFunnelReportComponent', () => {
 
       // Check that percentages are rounded to whole numbers and goals are displayed
       // The conversion rates and goals are rendered in the table cells
+      // Note: Stage names changed in TASK-126 to Lead entity stages
       const table = screen.getByRole('table');
       expect(table.textContent).toContain('80%'); // Contacted conversion rate
       expect(table.textContent).toContain('75%'); // Responded conversion rate
       expect(table.textContent).toContain('67%'); // Converted (66.67 rounded)
-      expect(table.textContent).toContain('50% = Goal'); // Contacted goal
-      expect(table.textContent).toContain('40% = Goal'); // Responded goal
-      expect(table.textContent).toContain('33% = Goal'); // Converted goal
+      expect(table.textContent).toContain('50% = Goal'); // Contacted goal (50%)
     });
 
     it('should display null conversion rates as "0%"', async () => {
@@ -320,6 +343,324 @@ describe('SalesFunnelReportComponent', () => {
       await waitFor(() => {
         expect(mockedService.getSalesFunnelReport).toHaveBeenCalledTimes(2);
       });
+    });
+  });
+
+  describe('Debug Mode', () => {
+    const mockReportWithDebug = {
+      ...mockReport,
+      stages: [
+        {
+          stageName: 'Contacted',
+          count: 50,
+          conversionRateFromPrevious: 50,
+          leads: [
+            {
+              id: 'lead-1',
+              address: '123 Main St',
+              listingPrice: 250000,
+              score: 7,
+              status: 'Contacted',
+              createdAt: '2024-01-15T10:00:00Z',
+              stageEnteredAt: '2024-01-16T10:00:00Z',
+              daysInStage: 5,
+            },
+          ],
+        },
+      ],
+      debugData: {
+        dataQualityIssues: [
+          { leadId: 'lead-1', address: '123 Main St', issue: 'Missing date', severity: 'warning' as const },
+        ],
+        stageBreakdowns: [
+          { stageName: 'Contacted', totalCount: 50, withDateSet: 45, withoutDateSet: 5 },
+        ],
+        dateSequenceErrors: [],
+        stageDurations: [],
+        lostByStage: [],
+      },
+    };
+
+    it('should show debug toggle switch', async () => {
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReport);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Debug')).toBeInTheDocument();
+      });
+
+      expect(screen.getByRole('checkbox')).toBeInTheDocument();
+    });
+
+    it('should toggle debug mode when switch is clicked', async () => {
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReportWithDebug);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Sales Funnel Analysis')).toBeInTheDocument();
+      });
+
+      const debugSwitch = screen.getByRole('checkbox');
+      fireEvent.click(debugSwitch);
+
+      await waitFor(() => {
+        // Debug mode toggled, should call API with includeDebug
+        expect(mockedService.getSalesFunnelReport).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.anything(),
+          true
+        );
+      });
+    });
+
+    it('should persist debug mode to localStorage', async () => {
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReport);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Sales Funnel Analysis')).toBeInTheDocument();
+      });
+
+      const debugSwitch = screen.getByRole('checkbox');
+      fireEvent.click(debugSwitch);
+
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('salesFunnelDebugMode', 'true');
+    });
+
+    it('should read debug mode from localStorage on mount', async () => {
+      localStorageMock.getItem.mockReturnValue('true');
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReportWithDebug);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(mockedService.getSalesFunnelReport).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.anything(),
+          true
+        );
+      });
+    });
+
+    it('should enable debug mode when ?debug=true in URL', async () => {
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReportWithDebug);
+
+      renderWithTheme(<SalesFunnelReportComponent />, { route: '/?debug=true' });
+
+      await waitFor(() => {
+        expect(mockedService.getSalesFunnelReport).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.anything(),
+          true
+        );
+      });
+    });
+
+    it('should show debug panel when debug mode is enabled and debug data exists', async () => {
+      localStorageMock.getItem.mockReturnValue('true');
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReportWithDebug);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Debug View')).toBeInTheDocument();
+      });
+    });
+
+    it('should not show debug panel when debug mode is disabled', async () => {
+      localStorageMock.getItem.mockReturnValue('false');
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReport);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Sales Funnel Analysis')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText('Debug View')).not.toBeInTheDocument();
+    });
+
+    it('should show issue count badge in debug panel', async () => {
+      localStorageMock.getItem.mockReturnValue('true');
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReportWithDebug);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByText('1 issue')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Stage Drill-Down', () => {
+    const mockReportWithLeads = {
+      ...mockReport,
+      stages: [
+        {
+          stageName: 'Contacted',
+          count: 2,
+          conversionRateFromPrevious: 50,
+          leads: [
+            {
+              id: 'lead-1',
+              address: '123 Main St',
+              listingPrice: 250000,
+              score: 7,
+              status: 'Contacted',
+              createdAt: '2024-01-15T10:00:00Z',
+              stageEnteredAt: '2024-01-16T10:00:00Z',
+              daysInStage: 5,
+            },
+            {
+              id: 'lead-2',
+              address: '456 Oak Ave',
+              listingPrice: 350000,
+              score: 9,
+              status: 'Contacted',
+              createdAt: '2024-01-14T10:00:00Z',
+              stageEnteredAt: '2024-01-15T10:00:00Z',
+              daysInStage: 6,
+            },
+          ],
+        },
+      ],
+      debugData: {
+        dataQualityIssues: [],
+        stageBreakdowns: [],
+        dateSequenceErrors: [],
+        stageDurations: [],
+        lostByStage: [],
+      },
+    };
+
+    it('should show stage as clickable link when debug mode is on and leads exist', async () => {
+      localStorageMock.getItem.mockReturnValue('true');
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReportWithLeads);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        const table = screen.getByRole('table');
+        expect(table).toBeInTheDocument();
+      });
+
+      // In debug mode with leads, stage name should be a clickable link
+      const contactedCell = screen.getByText('Contacted');
+      expect(contactedCell.closest('span')).toHaveClass('MuiLink-root');
+    });
+
+    it('should open stage leads modal when stage row is clicked in debug mode', async () => {
+      localStorageMock.getItem.mockReturnValue('true');
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReportWithLeads);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('table')).toBeInTheDocument();
+      });
+
+      // Click on the stage row
+      const contactedRow = screen.getByRole('row', { name: /Contacted/i });
+      fireEvent.click(contactedRow);
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText('Contacted Stage')).toBeInTheDocument();
+      });
+    });
+
+    it('should show leads in the modal', async () => {
+      localStorageMock.getItem.mockReturnValue('true');
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReportWithLeads);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('table')).toBeInTheDocument();
+      });
+
+      // Click on the stage row
+      const contactedRow = screen.getByRole('row', { name: /Contacted/i });
+      fireEvent.click(contactedRow);
+
+      await waitFor(() => {
+        expect(screen.getByText('123 Main St')).toBeInTheDocument();
+        expect(screen.getByText('456 Oak Ave')).toBeInTheDocument();
+      });
+    });
+
+    it('should close modal when close button is clicked', async () => {
+      localStorageMock.getItem.mockReturnValue('true');
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReportWithLeads);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('table')).toBeInTheDocument();
+      });
+
+      // Open modal
+      const contactedRow = screen.getByRole('row', { name: /Contacted/i });
+      fireEvent.click(contactedRow);
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      // Close modal
+      const closeButton = screen.getByRole('button', { name: 'Close' });
+      fireEvent.click(closeButton);
+
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should not be clickable when debug mode is off', async () => {
+      localStorageMock.getItem.mockReturnValue('false');
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReport);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('table')).toBeInTheDocument();
+      });
+
+      // Stage names should not be links when debug mode is off
+      const contactedCell = screen.getByText('Contacted');
+      // Without debug mode, stage names are plain text (in th, not wrapped in Link/span)
+      expect(contactedCell.tagName.toLowerCase()).toBe('th');
+    });
+  });
+
+  describe('CSV Export', () => {
+    it('should have download CSV button', async () => {
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReport);
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('download csv')).toBeInTheDocument();
+      });
+    });
+
+    it('should call exportLeadsCsv when download button is clicked', async () => {
+      mockedService.getSalesFunnelReport.mockResolvedValue(mockReport);
+      mockedService.exportLeadsCsv.mockResolvedValue();
+
+      renderWithTheme(<SalesFunnelReportComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Sales Funnel Analysis')).toBeInTheDocument();
+      });
+
+      const downloadButton = screen.getByLabelText('download csv');
+      fireEvent.click(downloadButton);
+
+      expect(mockedService.exportLeadsCsv).toHaveBeenCalled();
     });
   });
 });

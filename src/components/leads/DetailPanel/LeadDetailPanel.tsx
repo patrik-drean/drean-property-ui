@@ -29,7 +29,7 @@ interface LeadDetailPanelProps {
   onNavigateNext?: () => void;
   isFirst?: boolean;
   isLast?: boolean;
-  onSendMessage?: (message: string) => void;
+  onSendMessage?: (message: string) => Promise<boolean>;
   onStatusChange?: (status: QueueLead['status']) => void;
   onAction?: (action: string, data?: any) => void;
   onNotesChange?: (notes: string) => void;
@@ -44,6 +44,8 @@ interface LeadDetailPanelProps {
   onGalleryToggle?: (open: boolean) => void;
   /** Whether gallery is currently shown */
   showGallery?: boolean;
+  /** Optional z-index override for the drawer (default: MUI default ~1200) */
+  zIndex?: number;
 }
 
 /**
@@ -91,6 +93,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
   onFollowUp,
   onGalleryToggle,
   showGallery = false,
+  zIndex,
 }) => {
   // Tab state: 0 = Details, 1 = Debug
   const [activeTab, setActiveTab] = useState(0);
@@ -248,6 +251,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
       open={open}
       onClose={onClose}
       sx={{
+        ...(zIndex !== undefined && { zIndex }),
         '& .MuiDrawer-paper': {
           width: { xs: '100%', md: 800 },
           boxSizing: 'border-box',

@@ -4,6 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import BarChartIcon from '@mui/icons-material/BarChart';
 
 interface PageHeaderProps {
   onAddLead?: () => void;
@@ -11,6 +12,8 @@ interface PageHeaderProps {
   onPromoteListings?: () => void;
   /** Whether promote listings action is in progress */
   promoteLoading?: boolean;
+  /** Callback to navigate to sales funnel report */
+  onNavigateToSalesFunnel?: () => void;
   /** Whether to show the search input (only for All Leads and Archived tabs) */
   showSearch?: boolean;
   /** Current search query value */
@@ -28,6 +31,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   onAddLead,
   onPromoteListings,
   promoteLoading = false,
+  onNavigateToSalesFunnel,
   showSearch = false,
   searchQuery = '',
   onSearchChange,
@@ -123,6 +127,26 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             }}
           >
             {promoteLoading ? 'Promoting...' : 'Promote Listings'}
+          </Button>
+        )}
+        {onNavigateToSalesFunnel && (
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<BarChartIcon />}
+            onClick={onNavigateToSalesFunnel}
+            sx={{
+              textTransform: 'none',
+              borderColor: '#30363d',
+              color: '#8b949e',
+              '&:hover': {
+                borderColor: '#58a6ff',
+                color: '#58a6ff',
+                bgcolor: 'rgba(88, 166, 255, 0.1)',
+              },
+            }}
+          >
+            Sales Funnel
           </Button>
         )}
         {onAddLead && (

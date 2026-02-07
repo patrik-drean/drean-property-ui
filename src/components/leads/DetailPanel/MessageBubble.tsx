@@ -5,7 +5,6 @@ interface MessageBubbleProps {
   message: string;
   isOutbound: boolean;
   timestamp: string;
-  status?: 'sending' | 'sent' | 'delivered' | 'failed';
 }
 
 /**
@@ -18,9 +17,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isOutbound,
   timestamp,
-  status,
 }) => {
-  // Format timestamp in Mountain Time
+  // Format timestamp in Mountain Time with date
   const formatTimestamp = (ts: string): string => {
     try {
       // Ensure the timestamp is treated as UTC by appending 'Z' if not present
@@ -33,9 +31,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         return ts;
       }
 
-      // Format time in Mountain Time
+      // Format date and time in Mountain Time
       return new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/Denver',
+        month: 'short',
+        day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
@@ -43,21 +43,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     } catch (error) {
       console.error('Error formatting timestamp:', error);
       return ts;
-    }
-  };
-
-  const getStatusIndicator = () => {
-    switch (status) {
-      case 'sending':
-        return '...';
-      case 'sent':
-        return '✓';
-      case 'delivered':
-        return '✓✓';
-      case 'failed':
-        return '!';
-      default:
-        return null;
     }
   };
 
@@ -101,17 +86,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <Typography variant="caption" sx={{ color: '#8b949e', fontSize: '0.65rem' }}>
             {formatTimestamp(timestamp)}
           </Typography>
-          {status && (
-            <Typography
-              variant="caption"
-              sx={{
-                color: status === 'failed' ? '#f87171' : '#4ade80',
-                fontSize: '0.65rem',
-              }}
-            >
-              {getStatusIndicator()}
-            </Typography>
-          )}
         </Box>
       </Box>
     </Box>

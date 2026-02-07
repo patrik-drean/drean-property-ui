@@ -126,5 +126,115 @@ describe('salesFunnelService', () => {
       expect(result).toHaveProperty('generatedAt');
       expect(Array.isArray(result.stages)).toBe(true);
     });
+
+    it('should include includeDebug query parameter when set to true', async () => {
+      mockedAxios.get.mockResolvedValue({ data: mockReport });
+
+      await salesFunnelService.getSalesFunnelReport(undefined, undefined, true);
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.stringContaining('includeDebug=true')
+      );
+    });
+
+    it('should not include includeDebug query parameter when false', async () => {
+      mockedAxios.get.mockResolvedValue({ data: mockReport });
+
+      await salesFunnelService.getSalesFunnelReport(undefined, undefined, false);
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.not.stringContaining('includeDebug')
+      );
+    });
+
+    it('should include all parameters together when provided', async () => {
+      mockedAxios.get.mockResolvedValue({ data: mockReport });
+
+      const startDate = new Date('2024-01-01T00:00:00Z');
+      const endDate = new Date('2024-12-31T23:59:59Z');
+      await salesFunnelService.getSalesFunnelReport(startDate, endDate, true);
+
+      const call = mockedAxios.get.mock.calls[0][0];
+      expect(call).toContain('startDate=2024-01-01');
+      expect(call).toContain('endDate=2024-12-31');
+      expect(call).toContain('includeDebug=true');
+    });
+
+    it('should return report with debugData when includeDebug is true', async () => {
+      const mockReportWithDebug = {
+        ...mockReport,
+        debugData: {
+          dataQualityIssues: [
+            { leadId: '1', address: '123 Main St', issue: 'Missing date', severity: 'warning' },
+          ],
+          stageBreakdowns: [],
+          dateSequenceErrors: [],
+          stageDurations: [],
+          lostByStage: [],
+        },
+      };
+      mockedAxios.get.mockResolvedValue({ data: mockReportWithDebug });
+
+      const result = await salesFunnelService.getSalesFunnelReport(undefined, undefined, true);
+
+      expect(result).toHaveProperty('debugData');
+      expect(result.debugData?.dataQualityIssues).toHaveLength(1);
+    });
+  });
+
+  describe('exportLeadsCsv', () => {
+    it('should trigger download with correct URL', async () => {
+      const mockClick = jest.fn();
+      const mockAppendChild = jest.spyOn(document.body, 'appendChild').mockImplementation();
+      const mockRemoveChild = jest.spyOn(document.body, 'removeChild').mockImplementation();
+
+      const originalCreateElement = document.createElement.bind(document);
+      jest.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+        const element = originalCreateElement(tag);
+        if (tag === 'a') {
+          Object.defineProperty(element, 'click', { value: mockClick });
+        }
+        return element;
+      });
+
+      await salesFunnelService.exportLeadsCsv();
+
+      expect(mockClick).toHaveBeenCalled();
+
+      mockAppendChild.mockRestore();
+      mockRemoveChild.mockRestore();
+      (document.createElement as jest.Mock).mockRestore();
+    });
+
+    it('should include date parameters in export URL', async () => {
+      const mockClick = jest.fn();
+      const mockAppendChild = jest.spyOn(document.body, 'appendChild').mockImplementation();
+      const mockRemoveChild = jest.spyOn(document.body, 'removeChild').mockImplementation();
+
+      let capturedHref = '';
+      const originalCreateElement = document.createElement.bind(document);
+      jest.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+        const element = originalCreateElement(tag);
+        if (tag === 'a') {
+          Object.defineProperty(element, 'click', { value: mockClick });
+          Object.defineProperty(element, 'href', {
+            set: (value: string) => { capturedHref = value; },
+            get: () => capturedHref,
+          });
+        }
+        return element;
+      });
+
+      const startDate = new Date('2024-01-01T00:00:00Z');
+      const endDate = new Date('2024-12-31T23:59:59Z');
+      await salesFunnelService.exportLeadsCsv(startDate, endDate);
+
+      expect(capturedHref).toContain('startDate=2024-01-01');
+      expect(capturedHref).toContain('endDate=2024-12-31');
+
+      mockAppendChild.mockRestore();
+      mockRemoveChild.mockRestore();
+      (document.createElement as jest.Mock).mockRestore();
+    });
   });
 });

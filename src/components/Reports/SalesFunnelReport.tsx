@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -17,37 +17,67 @@ import {
   Card,
   CardContent,
   Grid,
+  FormControlLabel,
+  Switch,
+  Link,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DownloadIcon from '@mui/icons-material/Download';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import { TimeFilterSelector } from './TimeFilterSelector';
+import { SalesFunnelDebugPanel } from './SalesFunnelDebugPanel';
+import { StageLeadsModal } from './StageLeadsModal';
+import { LeadDetailPanel } from '../leads/DetailPanel';
+import { PhotoGalleryPanel } from '../leads/ReviewPage/PhotoGalleryPanel';
 import { salesFunnelService } from '../../services/salesFunnelService';
+import { leadQueueService } from '../../services/leadQueueService';
+import { mapToQueueLead } from '../../hooks/useLeadQueue';
 import { calculateDateRange } from '../../utils/timeFilterUtils';
-import { SalesFunnelReport, TimeFilterPreset } from '../../types/salesFunnel';
+import { SalesFunnelReport, SalesFunnelStage, TimeFilterPreset } from '../../types/salesFunnel';
+import { QueueLead } from '../../types/queue';
+import { useSearchParams } from 'react-router-dom';
 
 // Stage goals based on target conversion rates
+// Updated for Lead entity stages (TASK-126)
 const STAGE_GOALS: Record<string, number> = {
   'Contacted': 50,
-  'Responded': 40,
-  'Converted': 33,
+  'Responding': 40,
+  'Negotiating': 33,
   'Under Contract': 15,
-  'Sold': 50,
+  'Closed': 50,
 };
 
 export const SalesFunnelReportComponent: React.FC = () => {
   const theme = useTheme();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<SalesFunnelReport | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<TimeFilterPreset>('last7');
 
-  const loadReport = async () => {
+  // Debug mode state - check URL param or localStorage
+  const debugFromUrl = searchParams.get('debug') === 'true';
+  const [debugMode, setDebugMode] = useState(() => {
+    if (debugFromUrl) return true;
+    return localStorage.getItem('salesFunnelDebugMode') === 'true';
+  });
+
+  // Stage drill-down modal state
+  const [selectedStage, setSelectedStage] = useState<SalesFunnelStage | null>(null);
+
+  // Lead detail panel state (reusing LeadDetailPanel from ReviewPage)
+  const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+  const [detailPanelLead, setDetailPanelLead] = useState<QueueLead | null>(null);
+  const [detailPanelLoading, setDetailPanelLoading] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+
+  const loadReport = useCallback(async (includeDebug: boolean) => {
     setLoading(true);
     setError(null);
 
     try {
       const { startDate, endDate } = calculateDateRange(selectedPreset);
-      const data = await salesFunnelService.getSalesFunnelReport(startDate, endDate);
+      const data = await salesFunnelService.getSalesFunnelReport(startDate, endDate, includeDebug);
       setReport(data);
     } catch (err) {
       console.error('Error loading sales funnel report:', err);
@@ -55,11 +85,61 @@ export const SalesFunnelReportComponent: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPreset]);
 
   useEffect(() => {
-    loadReport();
-  }, [selectedPreset]);
+    loadReport(debugMode);
+  }, [selectedPreset, debugMode, loadReport]);
+
+  const handleDebugToggle = () => {
+    const newValue = !debugMode;
+    setDebugMode(newValue);
+    localStorage.setItem('salesFunnelDebugMode', String(newValue));
+  };
+
+  // Open lead detail panel with full lead data
+  const handleOpenLeadDetail = useCallback(async (leadId: string) => {
+    setDetailPanelLoading(true);
+    setDetailPanelOpen(true);
+    try {
+      const leadItem = await leadQueueService.getLeadById(leadId);
+      setDetailPanelLead(mapToQueueLead(leadItem));
+    } catch (err) {
+      console.error('Failed to fetch lead details:', err);
+      setDetailPanelLead(null);
+    } finally {
+      setDetailPanelLoading(false);
+    }
+  }, []);
+
+  // Close detail panel and reset state
+  const handleCloseDetailPanel = useCallback(() => {
+    setDetailPanelOpen(false);
+    setShowGallery(false);
+    // Clear lead after animation completes
+    setTimeout(() => setDetailPanelLead(null), 300);
+  }, []);
+
+  // Handle status change in detail panel
+  const handleStatusChange = useCallback(async (status: QueueLead['status']) => {
+    if (!detailPanelLead) return;
+    try {
+      await leadQueueService.updateStatus(detailPanelLead.id, status);
+      // Refresh lead data
+      const updatedLead = await leadQueueService.getLeadById(detailPanelLead.id);
+      setDetailPanelLead(mapToQueueLead(updatedLead));
+      // Reload report to reflect status changes
+      loadReport(debugMode);
+    } catch (err) {
+      console.error('Failed to update lead status:', err);
+    }
+  }, [detailPanelLead, debugMode, loadReport]);
+
+  const handleStageClick = (stage: SalesFunnelStage) => {
+    if (debugMode && stage.leads) {
+      setSelectedStage(stage);
+    }
+  };
 
   const handleDownloadCsv = async () => {
     const { startDate, endDate } = calculateDateRange(selectedPreset);
@@ -92,12 +172,13 @@ export const SalesFunnelReportComponent: React.FC = () => {
   };
 
   const getStageVerb = (stageName: string): string => {
+    // Updated for Lead entity stages (TASK-126)
     const verbs: Record<string, string> = {
       'Contacted': 'be contacted',
-      'Responded': 'respond',
-      'Converted': 'be converted',
+      'Responding': 'be responding',
+      'Negotiating': 'be negotiating',
       'Under Contract': 'be under contract',
-      'Sold': 'be sold',
+      'Closed': 'be closed',
     };
     return verbs[stageName] || stageName.toLowerCase();
   };
@@ -117,8 +198,9 @@ export const SalesFunnelReportComponent: React.FC = () => {
     }
 
     // Calculate cumulative conversion rate from Contacted through to this stage
-    // The funnel order is: Contacted -> Responded -> Converted -> Under Contract -> Sold
-    const funnelOrder = ['Contacted', 'Responded', 'Converted', 'Under Contract', 'Sold'];
+    // The funnel order is: Contacted -> Responding -> Negotiating -> Under Contract -> Closed
+    // Updated for Lead entity stages (TASK-126)
+    const funnelOrder = ['Contacted', 'Responding', 'Negotiating', 'Under Contract', 'Closed'];
     const stageIndex = funnelOrder.indexOf(stageName);
 
     // Start from Responded (index 1) and multiply all rates up to and including current stage
@@ -151,7 +233,7 @@ export const SalesFunnelReportComponent: React.FC = () => {
     return (
       <Box>
         <Alert severity="error" action={
-          <IconButton color="inherit" size="small" onClick={loadReport}>
+          <IconButton color="inherit" size="small" onClick={() => loadReport(debugMode)}>
             <RefreshIcon />
           </IconButton>
         }>
@@ -183,13 +265,32 @@ export const SalesFunnelReportComponent: React.FC = () => {
         <Typography variant="h5" component="h2">
           Sales Funnel Analysis
         </Typography>
-        <Box display="flex" gap={1}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Tooltip title="Toggle debug mode to see underlying data">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={debugMode}
+                  onChange={handleDebugToggle}
+                  size="small"
+                  icon={<BugReportIcon />}
+                  checkedIcon={<BugReportIcon />}
+                />
+              }
+              label={
+                <Typography variant="body2" color="text.secondary">
+                  Debug
+                </Typography>
+              }
+              sx={{ mr: 1 }}
+            />
+          </Tooltip>
           <Tooltip title="Download CSV">
             <IconButton onClick={handleDownloadCsv} aria-label="download csv">
               <DownloadIcon />
             </IconButton>
           </Tooltip>
-          <IconButton onClick={loadReport} aria-label="refresh report">
+          <IconButton onClick={() => loadReport(debugMode)} aria-label="refresh report">
             <RefreshIcon />
           </IconButton>
         </Box>
@@ -217,21 +318,40 @@ export const SalesFunnelReportComponent: React.FC = () => {
             {report.stages.map((stage, index) => {
               const tooltipContent = getTooltipContent(stage.stageName);
               const hasGoal = STAGE_GOALS[stage.stageName] !== undefined;
+              const isClickable = debugMode && stage.leads && stage.leads.length > 0;
 
               return (
                 <TableRow
                   key={stage.stageName}
+                  onClick={() => isClickable && handleStageClick(stage)}
                   sx={{
                     backgroundColor: index % 2 === 0 ? 'white' : theme.palette.grey[50],
+                    cursor: isClickable ? 'pointer' : 'default',
                     '&:hover': {
-                      backgroundColor: theme.palette.action.hover,
+                      backgroundColor: isClickable
+                        ? theme.palette.primary.light + '20'
+                        : theme.palette.action.hover,
                     },
                   }}
                 >
                   <TableCell component="th" scope="row">
-                    {stage.stageName}
+                    {isClickable ? (
+                      <Link component="span" sx={{ cursor: 'pointer' }}>
+                        {stage.stageName}
+                      </Link>
+                    ) : (
+                      stage.stageName
+                    )}
                   </TableCell>
-                  <TableCell align="right">{stage.count}</TableCell>
+                  <TableCell align="right">
+                    {isClickable ? (
+                      <Link component="span" sx={{ cursor: 'pointer' }}>
+                        {stage.count}
+                      </Link>
+                    ) : (
+                      stage.count
+                    )}
+                  </TableCell>
                   <TableCell align="right">
                     <Tooltip
                       title={tooltipContent}
@@ -309,6 +429,57 @@ export const SalesFunnelReportComponent: React.FC = () => {
           </Grid>
         </Grid>
       </Box>
+
+      {/* Debug Panel (only shown when debugMode is enabled and data exists) */}
+      {debugMode && report.debugData && (
+        <SalesFunnelDebugPanel
+          data={report.debugData}
+          onNavigateToLead={handleOpenLeadDetail}
+        />
+      )}
+
+      {/* Stage Leads Modal (for drill-down) */}
+      {selectedStage && (
+        <StageLeadsModal
+          open={!!selectedStage}
+          onClose={() => setSelectedStage(null)}
+          stageName={selectedStage.stageName}
+          leads={selectedStage.leads || []}
+          onNavigateToLead={handleOpenLeadDetail}
+        />
+      )}
+
+      {/* Lead Detail Panel (reused from ReviewPage) */}
+      <LeadDetailPanel
+        open={detailPanelOpen}
+        lead={detailPanelLead}
+        loading={detailPanelLoading}
+        onClose={handleCloseDetailPanel}
+        onStatusChange={handleStatusChange}
+        onGalleryToggle={setShowGallery}
+        showGallery={showGallery}
+        zIndex={1400}
+      />
+
+      {/* Photo Gallery Panel (overlay on left when gallery is open) */}
+      {detailPanelOpen && showGallery && detailPanelLead && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 64,
+            left: 0,
+            right: { xs: 0, md: 800 },
+            bottom: 0,
+            zIndex: 1500,
+            bgcolor: '#0d1117',
+          }}
+        >
+          <PhotoGalleryPanel
+            lead={detailPanelLead}
+            onClose={() => setShowGallery(false)}
+          />
+        </Box>
+      )}
     </Box>
   );
 };

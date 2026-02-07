@@ -6,7 +6,8 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:808
 export const salesFunnelService = {
   async getSalesFunnelReport(
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
+    includeDebug?: boolean
   ): Promise<SalesFunnelReport> {
     try {
       const params = new URLSearchParams();
@@ -15,6 +16,9 @@ export const salesFunnelService = {
       }
       if (endDate) {
         params.append('endDate', endDate.toISOString());
+      }
+      if (includeDebug) {
+        params.append('includeDebug', 'true');
       }
 
       const url = `${API_BASE_URL}/api/PropertyLeads/sales-funnel${

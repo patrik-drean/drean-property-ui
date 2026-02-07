@@ -17,7 +17,7 @@ import { formatPhoneForDisplay } from '../../../utils/phoneUtils';
 
 interface MessagingSectionProps {
   lead: QueueLead;
-  onSendMessage?: (message: string) => void;
+  onSendMessage?: (message: string) => Promise<boolean>;
   onSellerPhoneChange?: (phone: string) => void;
 }
 
@@ -131,34 +131,35 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
     day_of_the_week: getDayOfWeek(),
   };
 
+  // Fetch messages function (reusable)
+  const fetchMessages = async (showLoadingState = true) => {
+    if (!lead.sellerPhone) {
+      setMessages([]);
+      setConversationId(null);
+      return;
+    }
+
+    if (showLoadingState) setLoading(true);
+    try {
+      const conversation = await smsService.getConversationByPhone(lead.sellerPhone);
+      if (conversation) {
+        setMessages(conversation.messages || []);
+        setConversationId(conversation.conversation.id);
+      } else {
+        setMessages([]);
+        setConversationId(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
+      setMessages([]);
+      setConversationId(null);
+    } finally {
+      if (showLoadingState) setLoading(false);
+    }
+  };
+
   // Fetch real messages when lead changes
   useEffect(() => {
-    const fetchMessages = async () => {
-      if (!lead.sellerPhone) {
-        setMessages([]);
-        setConversationId(null);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const conversation = await smsService.getConversationByPhone(lead.sellerPhone);
-        if (conversation) {
-          setMessages(conversation.messages || []);
-          setConversationId(conversation.conversation.id);
-        } else {
-          setMessages([]);
-          setConversationId(null);
-        }
-      } catch (error) {
-        console.error('Failed to fetch messages:', error);
-        setMessages([]);
-        setConversationId(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMessages();
   }, [lead.sellerPhone, lead.id]);
 
@@ -188,11 +189,15 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
     setSelectedTemplate(template.id);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (message.trim() && onSendMessage) {
-      onSendMessage(message.trim());
-      setMessage('');
-      setSelectedTemplate(null);
+      const success = await onSendMessage(message.trim());
+      if (success) {
+        setMessage('');
+        setSelectedTemplate(null);
+        // Refetch messages to show the newly sent message
+        await fetchMessages(false);
+      }
     }
   };
 
@@ -312,7 +317,6 @@ export const MessagingSection: React.FC<MessagingSectionProps> = ({ lead, onSend
               message={msg.body}
               isOutbound={msg.direction === 'outbound'}
               timestamp={msg.createdAt}
-              status={msg.status as 'sending' | 'sent' | 'delivered' | 'failed' | undefined}
             />
           ))
         ) : (

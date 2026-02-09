@@ -997,7 +997,7 @@ const PropertyDetailsPage: React.FC = () => {
             <Divider sx={{ mb: 1 }} />
             <List>
               {notes.map(note => (
-                <ListItem key={note.id} alignItems="flex-start" sx={{ mb: 1, background: '#f6fafd', borderRadius: 1 }}>
+                <ListItem key={note.id} alignItems="flex-start" sx={{ mb: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
                   <ListItemText
                     primary={
                       <Box display="flex" alignItems="center" gap={1}>

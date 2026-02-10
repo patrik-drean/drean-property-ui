@@ -147,10 +147,15 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     }
   }, [debouncedArchivedSearch, currentQueueType, hookChangePage]);
 
-  // Sort leads by priority (backend already filters by queue type)
+  // Sort leads: backend sorts All/Archived by UpdatedAt, other queues by priority
   const filteredLeads = useMemo(() => {
+    // For All and Archived queues, preserve backend's UpdatedAt sorting
+    if (currentQueueType === 'all' || currentQueueType === 'archived') {
+      return leads;
+    }
+    // For other queues, sort by priority
     return sortLeadsByPriority(leads);
-  }, [leads]);
+  }, [leads, currentQueueType]);
 
   // Find the index of the currently selected card
   const selectedCardIndex = useMemo(() => {

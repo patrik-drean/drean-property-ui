@@ -260,6 +260,24 @@ export const MessagingPage: React.FC = () => {
     setShowGallery(false);
   };
 
+  const handleDetailSendMessage = async (message: string): Promise<boolean> => {
+    if (!detailPanelLead?.sellerPhone) return false;
+    try {
+      const response = await smsService.sendMessage({
+        toPhoneNumber: detailPanelLead.sellerPhone,
+        body: message,
+        propertyLeadId: detailPanelLead.id,
+      });
+      if (response.success) {
+        handleMessageSent();
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
   const handleStatusChange = async (status: QueueLead['status']) => {
     if (!detailPanelLead) return;
     try {
@@ -448,6 +466,7 @@ export const MessagingPage: React.FC = () => {
         open={detailPanelOpen}
         lead={detailPanelLead}
         onClose={handleCloseDetailPanel}
+        onSendMessage={handleDetailSendMessage}
         onStatusChange={handleStatusChange}
         onGalleryToggle={setShowGallery}
         showGallery={showGallery}

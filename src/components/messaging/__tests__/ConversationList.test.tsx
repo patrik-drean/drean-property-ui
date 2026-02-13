@@ -263,6 +263,51 @@ describe('ConversationList', () => {
     });
   });
 
+  describe('direction indicator dot', () => {
+    it('should render direction dot when lastMessageDirection is outbound', () => {
+      const conversations = [
+        createConversation({ lastMessageDirection: 'outbound' }),
+      ];
+      const { container } = render(
+        <ConversationList {...defaultProps} conversations={conversations} />
+      );
+
+      // The avatar wrapper Box has position:relative, and the dot is a child Box
+      // with position:absolute. Count Box elements inside the avatar area.
+      const avatarWrapper = container.querySelector('.MuiAvatar-root')?.parentElement;
+      expect(avatarWrapper).toBeTruthy();
+      // Avatar wrapper should have 2 children: the Avatar and the dot
+      expect(avatarWrapper!.children.length).toBe(2);
+    });
+
+    it('should render direction dot when lastMessageDirection is inbound', () => {
+      const conversations = [
+        createConversation({ lastMessageDirection: 'inbound' }),
+      ];
+      const { container } = render(
+        <ConversationList {...defaultProps} conversations={conversations} />
+      );
+
+      const avatarWrapper = container.querySelector('.MuiAvatar-root')?.parentElement;
+      expect(avatarWrapper).toBeTruthy();
+      expect(avatarWrapper!.children.length).toBe(2);
+    });
+
+    it('should not render direction dot when lastMessageDirection is undefined', () => {
+      const conversations = [
+        createConversation({ lastMessageDirection: undefined }),
+      ];
+      const { container } = render(
+        <ConversationList {...defaultProps} conversations={conversations} />
+      );
+
+      // Avatar wrapper should only have 1 child: the Avatar (no dot)
+      const avatarWrapper = container.querySelector('.MuiAvatar-root')?.parentElement;
+      expect(avatarWrapper).toBeTruthy();
+      expect(avatarWrapper!.children.length).toBe(1);
+    });
+  });
+
   describe('edge cases', () => {
     it('should handle conversation with all optional fields missing', () => {
       const conversations: SmsConversation[] = [

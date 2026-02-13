@@ -28,6 +28,7 @@ export interface SmsConversation {
   contactId?: string;
   lastMessageAt?: string;
   lastMessagePreview?: string;
+  lastMessageDirection?: 'outbound' | 'inbound';
   unreadCount: number;
   createdAt?: string;
   updatedAt?: string;

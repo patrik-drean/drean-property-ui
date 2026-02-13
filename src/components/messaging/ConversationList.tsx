@@ -154,9 +154,25 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   color="primary"
                   invisible={conv.unreadCount === 0}
                 >
-                  <Avatar sx={{ bgcolor: '#30363d', color: '#8b949e' }}>
-                    <PersonIcon />
-                  </Avatar>
+                  <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                    <Avatar sx={{ bgcolor: '#30363d', color: '#8b949e' }}>
+                      <PersonIcon />
+                    </Avatar>
+                    {conv.lastMessageDirection && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          bgcolor: conv.lastMessageDirection === 'outbound' ? '#4ade80' : '#f59e0b',
+                          border: '2px solid #161b22',
+                        }}
+                      />
+                    )}
+                  </Box>
                 </Badge>
               </ListItemAvatar>
               <ListItemText

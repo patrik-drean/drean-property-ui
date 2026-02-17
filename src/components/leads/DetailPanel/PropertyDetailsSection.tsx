@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Box, Typography, Link, Grid, Tooltip, Collapse } from '@mui/material';
 import {
   OpenInNew as OpenInNewIcon,
-  AutoAwesome as AiIcon,
   Home as HomeIcon,
   DataObject as MetadataIcon,
   Collections as GalleryIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { QueueLead } from '../../../types/queue'
 import { SectionCard } from './SectionCard';
@@ -44,7 +44,7 @@ const StatItem: React.FC<StatItemProps> = ({ label, value }) => (
  * - Property stats (beds, baths, sqft, units, DOM)
  * - Listing price
  * - Quick metrics (Score, ARV, Rehab, MAO, Neighborhood)
- * - AI Analysis (collapsible)
+ * - Zillow Description (collapsible, open by default)
  */
 export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
   lead,
@@ -53,8 +53,8 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
   // Track image load error to show placeholder
   const [imageError, setImageError] = useState(false);
 
-  // AI Analysis collapsed state (collapsed by default)
-  const [aiExpanded, setAiExpanded] = useState(false);
+  // Zillow Description expanded state (open by default)
+  const [descExpanded, setDescExpanded] = useState(true);
 
   // Get all photos (use photoUrls if available, otherwise just the single photoUrl)
   const allPhotos = lead.photoUrls?.length ? lead.photoUrls : (lead.photoUrl ? [lead.photoUrl] : []);
@@ -252,11 +252,11 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
       {/* Quick Metrics Grid */}
       <QuickMetrics lead={lead} />
 
-      {/* AI Analysis - Collapsible */}
-      {lead.aiSummary && (
+      {/* Zillow Description - Collapsible, open by default */}
+      {metadata?.description && (
         <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #30363d' }}>
           <Box
-            onClick={() => setAiExpanded(!aiExpanded)}
+            onClick={() => setDescExpanded(!descExpanded)}
             sx={{
               display: 'flex',
               alignItems: 'center',
@@ -264,33 +264,33 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
               cursor: 'pointer',
               p: 1,
               borderRadius: 1,
-              bgcolor: 'rgba(96, 165, 250, 0.08)',
-              border: '1px solid rgba(96, 165, 250, 0.2)',
+              bgcolor: 'rgba(74, 222, 128, 0.08)',
+              border: '1px solid rgba(74, 222, 128, 0.2)',
               '&:hover': {
-                bgcolor: 'rgba(96, 165, 250, 0.12)',
+                bgcolor: 'rgba(74, 222, 128, 0.12)',
               },
             }}
           >
-            <AiIcon sx={{ color: '#60a5fa', fontSize: '1rem' }} />
+            <DescriptionIcon sx={{ color: '#4ade80', fontSize: '1rem' }} />
             <Typography
               variant="caption"
-              sx={{ color: '#60a5fa', fontWeight: 600, fontSize: '0.7rem', flex: 1 }}
+              sx={{ color: '#4ade80', fontWeight: 600, fontSize: '0.7rem', flex: 1 }}
             >
-              AI Analysis
+              Zillow Description
             </Typography>
-            {aiExpanded ? (
-              <ExpandLessIcon sx={{ color: '#60a5fa', fontSize: '1rem' }} />
+            {descExpanded ? (
+              <ExpandLessIcon sx={{ color: '#4ade80', fontSize: '1rem' }} />
             ) : (
-              <ExpandMoreIcon sx={{ color: '#60a5fa', fontSize: '1rem' }} />
+              <ExpandMoreIcon sx={{ color: '#4ade80', fontSize: '1rem' }} />
             )}
           </Box>
-          <Collapse in={aiExpanded}>
+          <Collapse in={descExpanded}>
             <Box sx={{ p: 1.5, pt: 1 }}>
               <Typography
                 variant="body2"
                 sx={{ color: '#c9d1d9', fontSize: '0.8rem', lineHeight: 1.6 }}
               >
-                {lead.aiSummary}
+                {metadata.description}
               </Typography>
             </Box>
           </Collapse>

@@ -139,7 +139,6 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: '#161b22',
-          borderBottom: '1px solid #30363d',
           boxShadow: 'none',
         },
       },

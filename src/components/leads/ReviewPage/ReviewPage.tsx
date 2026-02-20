@@ -109,6 +109,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     changePage: hookChangePage,
     markAsDone,
     archiveLead,
+    unarchiveLead,
     deleteLeadPermanently,
     updateEvaluation,
     updateLeadComparables,
@@ -378,6 +379,20 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
           // Archive the original lead
           archiveLead(currentLeadId);
           // Notification shown by hook via onNotification callback
+        }
+        break;
+      case 'unarchive':
+        if (selectedCardId) {
+          const nextLeadIdAfterRestore = getNextLeadIdAfterRemoval();
+          const currentLeadIdToRestore = selectedCardId;
+
+          if (nextLeadIdAfterRestore) {
+            setSelectedCardId(nextLeadIdAfterRestore);
+          } else {
+            setDetailPanelOpen(false);
+          }
+
+          unarchiveLead(currentLeadIdToRestore);
         }
         break;
       case 'cancelFollowUp':

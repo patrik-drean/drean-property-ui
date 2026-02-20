@@ -16,6 +16,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
   Archive as ArchiveIcon,
+  Unarchive as UnarchiveIcon,
   DeleteForever as DeleteForeverIcon,
   Event as EventIcon,
   Close as CloseIcon,
@@ -315,25 +316,47 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
           </Box>
         ) : null}
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<ArchiveIcon />}
-            onClick={() => onAction?.('archive')}
-            sx={{
-              borderColor: '#30363d',
-              color: '#8b949e',
-              textTransform: 'none',
-              fontWeight: 500,
-              fontSize: '0.85rem',
-              '&:hover': {
-                borderColor: '#8b949e',
-                bgcolor: 'rgba(139, 148, 158, 0.1)',
-              },
-            }}
-          >
-            Archive Lead
-          </Button>
+          {lead.archived ? (
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<UnarchiveIcon />}
+              onClick={() => onAction?.('unarchive')}
+              sx={{
+                borderColor: '#30363d',
+                color: '#4ade80',
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '0.85rem',
+                '&:hover': {
+                  borderColor: '#4ade80',
+                  bgcolor: 'rgba(74, 222, 128, 0.1)',
+                },
+              }}
+            >
+              Restore Lead
+            </Button>
+          ) : (
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<ArchiveIcon />}
+              onClick={() => onAction?.('archive')}
+              sx={{
+                borderColor: '#30363d',
+                color: '#8b949e',
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '0.85rem',
+                '&:hover': {
+                  borderColor: '#8b949e',
+                  bgcolor: 'rgba(139, 148, 158, 0.1)',
+                },
+              }}
+            >
+              Archive Lead
+            </Button>
+          )}
           <Tooltip title="Delete Permanently" arrow>
             <IconButton
               onClick={() => setDeleteDialogOpen(true)}

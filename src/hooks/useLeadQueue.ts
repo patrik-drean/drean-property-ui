@@ -45,6 +45,7 @@ interface UseLeadQueueReturn {
   changePage: (page: number) => void;
   updateLeadStatus: (leadId: string, status: string) => Promise<void>;
   archiveLead: (leadId: string) => Promise<void>;
+  unarchiveLead: (leadId: string) => Promise<void>;
   deleteLeadPermanently: (leadId: string) => Promise<void>;
   updateEvaluation: (leadId: string, updates: UpdateEvaluationRequest) => Promise<void>;
   updateLeadComparables: (leadId: string, comparables: import('../services/leadQueueService').ComparableSale[], arv?: number, arvSource?: string) => void;
@@ -216,7 +217,12 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
         return; // A newer request was made, ignore this stale response
       }
 
-      setLeads(response.leads.map(mapToQueueLead));
+      const mapped = response.leads.map(mapToQueueLead);
+      // Mark leads as archived when viewing the archived queue
+      if (selectedQueue === 'archived') {
+        mapped.forEach(l => { l.archived = true; });
+      }
+      setLeads(mapped);
       setQueueCounts(transformQueueCounts(response.queueCounts));
       setTotalPages(response.pagination.totalPages);
 
@@ -379,6 +385,34 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
         setLeads(previousLeads);
         setQueueCounts(previousCounts);
         notify('Failed to archive lead', 'error');
+      }
+    },
+    [leads, queueCounts, notify, fetchQueue]
+  );
+
+  const unarchiveLead = useCallback(
+    async (leadId: string) => {
+      const previousLeads = leads;
+      const previousCounts = queueCounts;
+
+      // Optimistic update - remove from archived list
+      setLeads((prev) => prev.filter((l) => l.id !== leadId));
+      setQueueCounts((prev) => ({
+        ...prev,
+        archived: Math.max(0, prev.archived - 1),
+        all: prev.all + 1,
+      }));
+
+      try {
+        await leadQueueService.unarchiveLead(leadId);
+        notify('Lead restored', 'success');
+        // Refetch to get accurate counts
+        await fetchQueue();
+      } catch (err) {
+        // Rollback
+        setLeads(previousLeads);
+        setQueueCounts(previousCounts);
+        notify('Failed to restore lead', 'error');
       }
     },
     [leads, queueCounts, notify, fetchQueue]
@@ -697,6 +731,7 @@ export const useLeadQueue = (options: UseLeadQueueOptions = {}): UseLeadQueueRet
     changePage,
     updateLeadStatus,
     archiveLead,
+    unarchiveLead,
     deleteLeadPermanently,
     updateEvaluation,
     updateLeadComparables,

@@ -44,8 +44,7 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
         justifyContent: 'space-between',
         alignItems: 'center',
         p: 2,
-        borderBottom: '1px solid #30363d',
-        bgcolor: '#161b22',
+        bgcolor: '#0d1117',
       }}
     >
       <Box sx={{ minWidth: 0, flex: 1 }}>

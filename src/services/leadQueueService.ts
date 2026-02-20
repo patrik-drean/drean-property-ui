@@ -541,6 +541,14 @@ export const leadQueueService = {
   },
 
   /**
+   * Restore an archived lead back to active status.
+   * @param leadId The lead ID to unarchive
+   */
+  async unarchiveLead(leadId: string): Promise<void> {
+    await axiosInstance.put(`/api/leads/${leadId}/unarchive`);
+  },
+
+  /**
    * Permanently delete a lead (hard delete).
    * This action cannot be undone. All associated messages, reminders, and notes will be deleted.
    * @param leadId The lead ID to delete

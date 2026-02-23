@@ -58,9 +58,9 @@ export const DebugSection: React.FC<DebugSectionProps> = ({
   // Expanded state for collapsible sections
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     metadata: true,
-    arvAnalysis: true,  // TASK-129: Show ARV analysis by default
+    arvAnalysis: false,
     evaluation: false,
-    activity: true,
+    activity: false,
     aiReasoning: false,
     evaluationHistory: false,
   });

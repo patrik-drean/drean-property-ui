@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, IconButton } from '@mui/material';
+import { Box, Typography, IconButton, CircularProgress, Tooltip } from '@mui/material';
 import {
   Close as CloseIcon,
   KeyboardArrowLeft as PrevIcon,
   KeyboardArrowRight as NextIcon,
   Download as DownloadIcon,
+  FolderZip as FolderZipIcon,
 } from '@mui/icons-material';
+import JSZip from 'jszip';
 import { QueueLead } from '../../../types/queue';
+import { GradeBadge } from '../DetailPanel/GradeBadge';
 
 interface PhotoGalleryPanelProps {
   lead: QueueLead;
@@ -22,6 +25,7 @@ export const PhotoGalleryPanel: React.FC<PhotoGalleryPanelProps> = ({
   onClose,
 }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [isZipping, setIsZipping] = useState(false);
 
   // Get all photos
   const allPhotos = lead.photoUrls?.length ? lead.photoUrls : (lead.photoUrl ? [lead.photoUrl] : []);
@@ -87,6 +91,39 @@ export const PhotoGalleryPanel: React.FC<PhotoGalleryPanelProps> = ({
     }
   };
 
+  // Download all photos as zip
+  const handleDownloadAll = async () => {
+    if (allPhotos.length === 0 || isZipping) return;
+    setIsZipping(true);
+    try {
+      const zip = new JSZip();
+      const results = await Promise.allSettled(
+        allPhotos.map(async (url, index) => {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+          zip.file(`photo-${index + 1}.${ext}`, blob);
+        })
+      );
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      if (failed === allPhotos.length) throw new Error('All downloads failed');
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const slug = lead.address?.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() || 'property';
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = `${slug}-photos.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      console.error('Failed to create zip:', err);
+    } finally {
+      setIsZipping(false);
+    }
+  };
+
   if (allPhotos.length === 0) {
     return null;
   }
@@ -111,16 +148,44 @@ export const PhotoGalleryPanel: React.FC<PhotoGalleryPanelProps> = ({
           borderBottom: '1px solid #21262d',
         }}
       >
-        <Typography sx={{ color: '#f0f6fc', fontWeight: 600, fontSize: '1rem' }}>
-          {lead.address}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
+          <Typography sx={{ color: '#f0f6fc', fontWeight: 600, fontSize: '1rem', whiteSpace: 'nowrap' }}>
+            {lead.address}
+          </Typography>
+          {lead.neighborhoodGrade && (
+            <GradeBadge grade={lead.neighborhoodGrade} showLabel={false} />
+          )}
+          <Typography sx={{ color: '#8b949e', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+            ${lead.listingPrice?.toLocaleString()}
+          </Typography>
+          {lead.units != null && (
+            <Typography sx={{ color: '#8b949e', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+              {lead.units} {lead.units === 1 ? 'unit' : 'units'}
+            </Typography>
+          )}
+        </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton
-            onClick={handleDownload}
-            sx={{ color: '#8b949e', '&:hover': { color: '#f0f6fc' } }}
-          >
-            <DownloadIcon />
-          </IconButton>
+          <Tooltip title="Download current photo" arrow>
+            <IconButton
+              onClick={handleDownload}
+              sx={{ color: '#8b949e', '&:hover': { color: '#f0f6fc' } }}
+            >
+              <DownloadIcon />
+            </IconButton>
+          </Tooltip>
+          {allPhotos.length > 1 && (
+            <Tooltip title={isZipping ? 'Zipping photos...' : `Download all ${allPhotos.length} photos`} arrow>
+              <span>
+                <IconButton
+                  onClick={handleDownloadAll}
+                  disabled={isZipping}
+                  sx={{ color: '#8b949e', '&:hover': { color: '#f0f6fc' }, '&.Mui-disabled': { color: '#484f58' } }}
+                >
+                  {isZipping ? <CircularProgress size={20} sx={{ color: '#8b949e' }} /> : <FolderZipIcon />}
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
           <IconButton
             onClick={onClose}
             sx={{ color: '#8b949e', '&:hover': { color: '#f0f6fc' } }}

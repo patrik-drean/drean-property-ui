@@ -138,7 +138,7 @@ export const PhotoGalleryPanel: React.FC<PhotoGalleryPanelProps> = ({
         borderRight: '1px solid #30363d',
       }}
     >
-      {/* Header */}
+      {/* Header - minimal with address and actions */}
       <Box
         sx={{
           display: 'flex',
@@ -148,23 +148,10 @@ export const PhotoGalleryPanel: React.FC<PhotoGalleryPanelProps> = ({
           borderBottom: '1px solid #21262d',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
-          <Typography sx={{ color: '#f0f6fc', fontWeight: 600, fontSize: '1rem', whiteSpace: 'nowrap' }}>
-            {lead.address}
-          </Typography>
-          {lead.neighborhoodGrade && (
-            <GradeBadge grade={lead.neighborhoodGrade} showLabel={false} />
-          )}
-          <Typography sx={{ color: '#8b949e', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-            ${lead.listingPrice?.toLocaleString()}
-          </Typography>
-          {lead.units != null && (
-            <Typography sx={{ color: '#8b949e', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-              {lead.units} {lead.units === 1 ? 'unit' : 'units'}
-            </Typography>
-          )}
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography sx={{ color: '#f0f6fc', fontWeight: 600, fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
+          {lead.address}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
           <Tooltip title="Download current photo" arrow>
             <IconButton
               onClick={handleDownload}
@@ -199,35 +186,62 @@ export const PhotoGalleryPanel: React.FC<PhotoGalleryPanelProps> = ({
       <Box
         sx={{
           flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           position: 'relative',
-          p: 2,
           minHeight: 0,
+          overflow: 'hidden',
         }}
       >
         {/* Main image */}
         <Box
+          component="img"
+          src={allPhotos[currentPhotoIndex]}
+          alt={`Property photo ${currentPhotoIndex + 1}`}
           sx={{
-            maxWidth: '100%',
-            maxHeight: '100%',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
+        {/* Gradient overlay with property data - sits on bottom of photo */}
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: '25%',
+            left: 0,
+            right: 0,
+            background: 'linear-gradient(transparent 0%, rgba(0,0,0,0.55) 100%)',
+            px: 3,
+            pt: 8,
+            pb: 3,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: 2,
+            flexWrap: 'wrap',
+            zIndex: 1,
+            pointerEvents: 'none',
           }}
         >
-          <Box
-            component="img"
-            src={allPhotos[currentPhotoIndex]}
-            alt={`Property photo ${currentPhotoIndex + 1}`}
-            sx={{
-              maxWidth: '100%',
-              maxHeight: 'calc(100vh - 280px)',
-              objectFit: 'contain',
-              borderRadius: 1,
-            }}
-          />
+          <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '1.5rem', lineHeight: 1 }}>
+            ${lead.listingPrice?.toLocaleString()}
+          </Typography>
+          {lead.neighborhoodGrade && (
+            <GradeBadge grade={lead.neighborhoodGrade} showLabel={false} />
+          )}
+          {lead.units != null && (
+            <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 500, fontSize: '1rem' }}>
+              {lead.units} {lead.units === 1 ? 'unit' : 'units'}
+            </Typography>
+          )}
+          {(lead.bedrooms || lead.bathrooms) && (
+            <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 500, fontSize: '1rem' }}>
+              {lead.bedrooms}/{lead.bathrooms}
+            </Typography>
+          )}
+          {lead.squareFootage && (
+            <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 500, fontSize: '1rem' }}>
+              {lead.squareFootage.toLocaleString()} sqft
+            </Typography>
+          )}
         </Box>
 
         {/* Navigation arrows */}

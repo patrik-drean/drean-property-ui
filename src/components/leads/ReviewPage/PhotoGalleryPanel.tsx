@@ -202,17 +202,17 @@ export const PhotoGalleryPanel: React.FC<PhotoGalleryPanelProps> = ({
             objectFit: 'cover',
           }}
         />
-        {/* Gradient overlay with property data - sits on bottom of photo */}
+        {/* Property data pill - floats over bottom-left of photo */}
         <Box
           sx={{
             position: 'absolute',
-            bottom: '25%',
-            left: 0,
-            right: 0,
-            background: 'linear-gradient(transparent 0%, rgba(0,0,0,0.55) 100%)',
-            px: 3,
-            pt: 8,
-            pb: 3,
+            bottom: 80,
+            left: 16,
+            bgcolor: 'rgba(0,0,0,0.52)',
+            backdropFilter: 'blur(6px)',
+            borderRadius: 2,
+            px: 2,
+            py: 1,
             display: 'flex',
             alignItems: 'center',
             gap: 2,

@@ -202,12 +202,12 @@ export const PhotoGalleryPanel: React.FC<PhotoGalleryPanelProps> = ({
             objectFit: 'cover',
           }}
         />
-        {/* Property data pill - floats over bottom-left of photo */}
+        {/* Property data pill - floats over top-right of photo */}
         <Box
           sx={{
             position: 'absolute',
-            bottom: 80,
-            left: 16,
+            top: 16,
+            right: 16,
             bgcolor: 'rgba(0,0,0,0.52)',
             backdropFilter: 'blur(6px)',
             borderRadius: 2,

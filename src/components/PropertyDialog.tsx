@@ -708,7 +708,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     }}
                   />
                 </Box>
-                <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                <Box sx={{ mt: 2, p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
                   <Typography variant="h6" color="error">
                     Total Monthly Expenses: {formatCurrency(formData.monthlyExpenses?.total || 0)}
                   </Typography>
@@ -877,7 +877,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   </Typography>
                 )}
 
-                <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                <Box sx={{ mt: 2, p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
                   <Typography variant="h6" color="success.main">
                     Total Actual Rent: {formatCurrency(formData.actualRent)}
                   </Typography>
@@ -975,7 +975,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     }}
                   />
                 </Box>
-                <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                <Box sx={{ mt: 2, p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
                   <Typography variant="h6" color="primary">
                     Total Capital Costs: {formatCurrency(formData.capitalCosts?.total || 0)}
                   </Typography>

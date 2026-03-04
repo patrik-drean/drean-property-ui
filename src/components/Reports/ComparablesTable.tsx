@@ -220,7 +220,7 @@ const ComparablesTable: React.FC<Props> = ({ comparables }) => {
           )}
 
           {/* All Comps Average Row */}
-          <TableRow sx={{ bgcolor: '#f5f5f5', '& td': { fontWeight: 'bold' } }}>
+          <TableRow sx={{ bgcolor: 'action.hover', '& td': { fontWeight: 'bold' } }}>
             <TableCell>All Comps Average</TableCell>
             <TableCell align="right">
               ${avgPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}

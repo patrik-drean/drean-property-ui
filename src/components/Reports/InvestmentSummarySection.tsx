@@ -154,7 +154,7 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
             <Grid container spacing={4} justifyContent="center">
               {/* Rent Ratio Calculation */}
               <Grid item xs={12} sm={6}>
-                <Card sx={{ p: 3, textAlign: 'center', bgcolor: '#f8f9fa' }}>
+                <Card sx={{ p: 3, textAlign: 'center', bgcolor: 'action.hover' }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
                     Rent Ratio
                   </Typography>
@@ -208,7 +208,7 @@ const InvestmentSummarySection: React.FC<InvestmentSummarySectionProps> = ({
 
               {/* ARV Ratio Calculation */}
               <Grid item xs={12} sm={6}>
-                <Card sx={{ p: 3, textAlign: 'center', bgcolor: '#f8f9fa' }}>
+                <Card sx={{ p: 3, textAlign: 'center', bgcolor: 'action.hover' }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
                     ARV Ratio
                   </Typography>

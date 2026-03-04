@@ -322,7 +322,7 @@ export const TemplatesPage: React.FC = () => {
           textAlign="center"
           py={6}
           px={2}
-          sx={{ backgroundColor: '#f9f9f9', borderRadius: 2 }}
+          sx={{ backgroundColor: 'action.hover', borderRadius: 2 }}
         >
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No templates yet

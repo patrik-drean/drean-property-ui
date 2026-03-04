@@ -98,7 +98,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
       bgcolor: 'rgba(76, 175, 80, 0.15)',
       borderLeft: '3px solid',
       borderColor: 'rgb(46, 125, 50)',
-      color: 'rgba(27, 94, 32, 1) !important'
+      color: '#4caf50 !important'
     };
   };
 
@@ -257,7 +257,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
           <TableBody>
             {/* Income Section */}
             <TableRow>
-              <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: 'grey.100' }}>
+              <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: 'action.hover' }}>
                 <strong>INCOME</strong>
               </TableCell>
             </TableRow>
@@ -280,7 +280,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
                 </TableCell>
               </TableRow>
             ))}
-            <TableRow sx={{ bgcolor: 'grey.50' }}>
+            <TableRow sx={{ bgcolor: 'action.selected' }}>
               <TableCell><strong>Total Income</strong></TableCell>
               {report.months.map(m => (
                 <TableCell
@@ -288,7 +288,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
                   align="right"
                   sx={{
                     ...getHighlightStyle(isLastFullMonth(m.month)),
-                    ...(!isLastFullMonth(m.month) && { bgcolor: 'grey.50' })
+                    ...(!isLastFullMonth(m.month) && { bgcolor: 'action.selected' })
                   }}
                 >
                   <strong>{formatCurrency(m.totalIncome)}</strong>
@@ -301,7 +301,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
 
             {/* Expenses Section */}
             <TableRow>
-              <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: 'grey.100' }}>
+              <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: 'action.hover' }}>
                 <strong>EXPENSES</strong>
               </TableCell>
             </TableRow>
@@ -324,7 +324,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
                 </TableCell>
               </TableRow>
             ))}
-            <TableRow sx={{ bgcolor: 'grey.50' }}>
+            <TableRow sx={{ bgcolor: 'action.selected' }}>
               <TableCell><strong>Total Expenses</strong></TableCell>
               {report.months.map(m => (
                 <TableCell
@@ -332,7 +332,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
                   align="right"
                   sx={{
                     ...getHighlightStyle(isLastFullMonth(m.month)),
-                    ...(!isLastFullMonth(m.month) && { bgcolor: 'grey.50' })
+                    ...(!isLastFullMonth(m.month) && { bgcolor: 'action.selected' })
                   }}
                 >
                   <strong>{formatCurrency(m.totalExpenses)}</strong>
@@ -352,13 +352,13 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
                   align="right"
                   sx={getHighlightStyle(isLastFullMonth(m.month))}
                 >
-                  <strong style={{ color: m.netIncome >= 0 ? 'green' : 'red' }}>
+                  <strong style={{ color: m.netIncome >= 0 ? '#4caf50' : '#f44336' }}>
                     {formatCurrency(m.netIncome)}
                   </strong>
                 </TableCell>
               ))}
               <TableCell align="right">
-                <strong style={{ color: report.sixMonthAverage.netIncome >= 0 ? 'green' : 'red' }}>
+                <strong style={{ color: report.sixMonthAverage.netIncome >= 0 ? '#4caf50' : '#f44336' }}>
                   {formatCurrency(report.sixMonthAverage.netIncome)}
                 </strong>
               </TableCell>

@@ -177,7 +177,7 @@ export const InvestmentSummaryGenerator: React.FC<InvestmentSummaryGeneratorProp
           )}
 
           {/* Report Preview */}
-          <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
+          <Box sx={{ bgcolor: 'action.hover', p: 2, borderRadius: 1 }}>
             <Typography variant="h6" gutterBottom color="primary">
               {property.address}
             </Typography>

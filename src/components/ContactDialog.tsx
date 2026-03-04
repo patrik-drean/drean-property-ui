@@ -243,10 +243,11 @@ const ContactDialog: React.FC<ContactDialogProps> = ({
                       <ListItem
                         key={contact.id}
                         sx={{
-                          border: isLinked ? '1px solid #e0e0e0' : 'none',
+                          border: isLinked ? '1px solid' : 'none',
+                          borderColor: isLinked ? 'divider' : 'transparent',
                           borderRadius: 1,
                           mb: 0.5,
-                          backgroundColor: isLinked ? '#f5f5f5' : 'transparent',
+                          backgroundColor: isLinked ? 'action.hover' : 'transparent',
                         }}
                       >
                         <FormControlLabel

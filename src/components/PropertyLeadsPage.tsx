@@ -1266,7 +1266,7 @@ const PropertyLeadsPage: React.FC = () => {
                         variant="outlined"
                         sx={{
                           '& .MuiOutlinedInput-root': {
-                            backgroundColor: 'white',
+                            backgroundColor: 'background.paper',
                             borderRadius: 1,
                             height: 28,
                             '& input': {
@@ -1322,7 +1322,7 @@ const PropertyLeadsPage: React.FC = () => {
                         cursor: 'pointer',
                         ...(lead.archived ? {
                           opacity: 0.6,
-                          backgroundColor: '#f5f5f5',
+                          backgroundColor: 'action.hover',
                           '&:hover': {
                             backgroundColor: '#eeeeee',
                           }
@@ -1679,7 +1679,7 @@ const PropertyLeadsPage: React.FC = () => {
                   },
                   ...(lead.archived ? {
                     opacity: 0.6,
-                    backgroundColor: '#f5f5f5',
+                    backgroundColor: 'action.hover',
                   } : {}),
                   ...((lead.convertedToProperty || locallyConvertedLeads.has(lead.id)) ? {
                     borderLeftColor: '#4caf50',

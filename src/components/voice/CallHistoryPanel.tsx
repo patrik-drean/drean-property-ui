@@ -186,7 +186,7 @@ export const CallHistoryPanel: React.FC<CallHistoryPanelProps> = ({
           </ListItem>
           {call.voicemailTranscription && (
             <Collapse in={expandedCallId === call.id}>
-              <Box sx={{ p: 2, pl: 7, bgcolor: 'grey.50' }}>
+              <Box sx={{ p: 2, pl: 7, bgcolor: 'action.hover' }}>
                 <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
                   Voicemail Transcription:
                 </Typography>

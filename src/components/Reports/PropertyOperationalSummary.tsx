@@ -114,7 +114,7 @@ export const PropertyOperationalSummary: React.FC<PropertyOperationalSummaryProp
           sx={{
             p: 3,
             mb: 3,
-            bgcolor: 'grey.50',
+            bgcolor: 'background.paper',
             borderLeft: '4px solid',
             borderColor: hasCriticalAlerts ? 'error.main' : 'warning.main',
           }}

@@ -325,7 +325,7 @@ export const SalesFunnelReportComponent: React.FC = () => {
                   key={stage.stageName}
                   onClick={() => isClickable && handleStageClick(stage)}
                   sx={{
-                    backgroundColor: index % 2 === 0 ? 'white' : theme.palette.grey[50],
+                    backgroundColor: index % 2 === 0 ? 'background.paper' : 'action.hover',
                     cursor: isClickable ? 'pointer' : 'default',
                     '&:hover': {
                       backgroundColor: isClickable

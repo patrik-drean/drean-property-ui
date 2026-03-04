@@ -30,7 +30,7 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   },
   '&.total': {
     fontWeight: 'bold',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.palette.action.hover,
   },
   '&.positive': {
     color: theme.palette.success.main,
@@ -47,7 +47,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
     border: 0,
   },
   '&.summary': {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: theme.palette.action.selected,
   },
 }));
 

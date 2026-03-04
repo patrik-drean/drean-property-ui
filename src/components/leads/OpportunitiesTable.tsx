@@ -702,10 +702,10 @@ export const OpportunitiesTable: React.FC<OpportunitiesTableProps> = ({
                               <Typography variant="body2" sx={{
                                 mt: 1,
                                 pt: 1,
-                                borderTop: '1px solid #eee',
-                                color: '#e65100',
+                                borderTop: '1px solid rgba(255,255,255,0.2)',
+                                color: '#ff9800',
                                 fontWeight: 'bold',
-                                backgroundColor: '#fff3e0',
+                                backgroundColor: 'rgba(255, 152, 0, 0.15)',
                                 p: 0.5,
                                 borderRadius: 1,
                                 textAlign: 'center'

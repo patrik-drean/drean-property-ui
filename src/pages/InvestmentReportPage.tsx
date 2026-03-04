@@ -78,7 +78,7 @@ const InvestmentReportPage: React.FC = () => {
       <Container maxWidth="lg">
         <Box py={4} pb={6}>
           {/* Header Section */}
-          <Paper elevation={2} sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa' }}>
+          <Paper elevation={2} sx={{ p: 3, mb: 3, bgcolor: 'background.paper' }}>
             <Box>
               <Typography variant="h4" component="h1" gutterBottom color="primary" fontWeight="bold">
                 Investment Summary Report

@@ -53,7 +53,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
     border: 0,
   },
   '&:hover': {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.palette.action.hover,
   }
 }));
 

@@ -633,7 +633,7 @@ const PropertyDetailsPage: React.FC = () => {
             </Box>
             
             {/* Scores Section */}
-            <Box sx={{ mt: 3, p: 2, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
+            <Box sx={{ mt: 3, p: 2, backgroundColor: 'action.hover', borderRadius: 2 }}>
               <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'primary.main' }}>Investment Scores</Typography>
               <Box display="flex" gap={2} flexWrap="wrap">
                 <Tooltip 
@@ -655,13 +655,13 @@ const PropertyDetailsPage: React.FC = () => {
                               Rent Ratio: {breakdown.rentRatioScore}/2 points
                               {` (${formatPercentage(calculateRentRatio(property.potentialRent, property.offerPrice, property.rehabCosts))})`}
                             </Typography>
-                            <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                            <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
                               Total Hold Score: {breakdown.totalScore}/10 points
                             </Typography>
                             <Typography variant="body2" sx={{ 
                               mt: 1, 
                               pt: 1, 
-                              borderTop: '1px solid #eee', 
+                              borderTop: '1px solid rgba(255,255,255,0.2)', 
                               color: '#2e7d32', 
                               fontWeight: 'bold',
                               backgroundColor: '#e8f5e9',
@@ -709,13 +709,13 @@ const PropertyDetailsPage: React.FC = () => {
                               ARV Ratio: {breakdown.arvRatioScore}/10 points
                               {` (${formatPercentage(calculateARVRatio(property.offerPrice, property.rehabCosts, property.arv))})`}
                             </Typography>
-                            <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid #eee' }}>
+                            <Typography variant="body2" fontWeight="bold" sx={{ mt: 1, pt: 1, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
                               Total Flip Score: {breakdown.totalScore}/10 points
                             </Typography>
                             <Typography variant="body2" sx={{ 
                               mt: 1, 
                               pt: 1, 
-                              borderTop: '1px solid #eee', 
+                              borderTop: '1px solid rgba(255,255,255,0.2)', 
                               color: '#e65100', 
                               fontWeight: 'bold',
                               backgroundColor: '#fff3e0',

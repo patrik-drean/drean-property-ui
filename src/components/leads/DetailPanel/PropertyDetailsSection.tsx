@@ -175,6 +175,26 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
           <Typography variant="body1" sx={{ color: '#f0f6fc', fontWeight: 600, mb: 0.5 }}>
             {lead.address}
           </Typography>
+          {lead.city && (
+            <Box
+              component="span"
+              sx={{
+                display: 'inline-block',
+                px: 0.75,
+                py: 0.15,
+                mb: 0.5,
+                fontSize: '0.7rem',
+                fontWeight: 500,
+                color: '#8b949e',
+                bgcolor: 'rgba(139, 148, 158, 0.12)',
+                border: '1px solid rgba(139, 148, 158, 0.2)',
+                borderRadius: '4px',
+                letterSpacing: '0.03em',
+              }}
+            >
+              {lead.city}{lead.state ? `, ${lead.state}` : ''}
+            </Box>
+          )}
           {lead.zillowLink && (
             <Link
               href={lead.zillowLink}

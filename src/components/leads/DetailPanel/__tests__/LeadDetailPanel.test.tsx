@@ -254,7 +254,7 @@ describe('LeadDetailPanel', () => {
       expect(mockHandlers.onClose).toHaveBeenCalledTimes(1);
     });
 
-    it('should call onNavigatePrev when k is pressed', () => {
+    it('should call onNavigatePrev when q is pressed', () => {
       render(
         <LeadDetailPanel
           open={true}
@@ -264,11 +264,11 @@ describe('LeadDetailPanel', () => {
         />
       );
 
-      fireEvent.keyDown(window, { key: 'k' });
+      fireEvent.keyDown(window, { key: 'q' });
       expect(mockHandlers.onNavigatePrev).toHaveBeenCalledTimes(1);
     });
 
-    it('should call onNavigateNext when j is pressed', () => {
+    it('should call onNavigateNext when w is pressed', () => {
       render(
         <LeadDetailPanel
           open={true}
@@ -278,7 +278,7 @@ describe('LeadDetailPanel', () => {
         />
       );
 
-      fireEvent.keyDown(window, { key: 'j' });
+      fireEvent.keyDown(window, { key: 'w' });
       expect(mockHandlers.onNavigateNext).toHaveBeenCalledTimes(1);
     });
 
@@ -291,8 +291,8 @@ describe('LeadDetailPanel', () => {
         />
       );
 
-      fireEvent.keyDown(window, { key: 'j' });
-      fireEvent.keyDown(window, { key: 'k' });
+      fireEvent.keyDown(window, { key: 'q' });
+      fireEvent.keyDown(window, { key: 'w' });
       fireEvent.keyDown(window, { key: 'Escape' });
 
       expect(mockHandlers.onNavigateNext).not.toHaveBeenCalled();
@@ -310,7 +310,7 @@ describe('LeadDetailPanel', () => {
         />
       );
 
-      fireEvent.keyDown(window, { key: 'k' });
+      fireEvent.keyDown(window, { key: 'q' });
       expect(mockHandlers.onNavigatePrev).not.toHaveBeenCalled();
     });
 
@@ -324,7 +324,7 @@ describe('LeadDetailPanel', () => {
         />
       );
 
-      fireEvent.keyDown(window, { key: 'j' });
+      fireEvent.keyDown(window, { key: 'w' });
       expect(mockHandlers.onNavigateNext).not.toHaveBeenCalled();
     });
   });

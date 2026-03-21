@@ -68,7 +68,7 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
       </Box>
 
       <Stack direction="row" spacing={0.5}>
-        <Tooltip title="Previous Lead (k)">
+        <Tooltip title="Previous Lead (q)">
           <span>
             <IconButton
               onClick={onPrev}
@@ -84,7 +84,7 @@ export const PanelHeader: React.FC<PanelHeaderProps> = ({
             </IconButton>
           </span>
         </Tooltip>
-        <Tooltip title="Next Lead (j)">
+        <Tooltip title="Next Lead (w)">
           <span>
             <IconButton
               onClick={onNext}

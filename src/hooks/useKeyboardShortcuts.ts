@@ -14,13 +14,13 @@ interface ShortcutHandlers {
  * Hook to handle keyboard shortcuts for the Review Page
  *
  * Shortcuts:
- * - k: Navigate to next card
- * - j: Navigate to previous card
+ * - w: Navigate to next card
+ * - q: Navigate to previous card
  * - Enter: Open detail panel for selected card
  * - t: Send template message
  * - d: Mark as done
  * - a: Archive lead
- * - l: Schedule follow-up for 2 days & mark done
+ * - f: Schedule follow-up for 2 days & mark done
  *
  * Note: Shortcuts are disabled when focus is on input/textarea elements
  */
@@ -43,11 +43,11 @@ export const useKeyboardShortcuts = (handlers: ShortcutHandlers, enabled: boolea
       }
 
       switch (e.key.toLowerCase()) {
-        case 'k':
+        case 'w':
           e.preventDefault();
           handlers.onNext();
           break;
-        case 'j':
+        case 'q':
           e.preventDefault();
           handlers.onPrev();
           break;
@@ -67,7 +67,7 @@ export const useKeyboardShortcuts = (handlers: ShortcutHandlers, enabled: boolea
           e.preventDefault();
           handlers.onArchive?.();
           break;
-        case 'l':
+        case 'f':
           e.preventDefault();
           handlers.onFollowUp?.();
           break;

@@ -53,11 +53,11 @@ export const PhotoGalleryPanel: React.FC<PhotoGalleryPanelProps> = ({
         return;
       }
 
-      if (e.key === 'ArrowLeft') {
+      if (e.key === 'z') {
         e.preventDefault();
         e.stopPropagation();
         goToPrevPhoto();
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === 'x') {
         e.preventDefault();
         e.stopPropagation();
         goToNextPhoto();
@@ -352,7 +352,7 @@ export const PhotoGalleryPanel: React.FC<PhotoGalleryPanelProps> = ({
       {/* Keyboard hint */}
       <Box sx={{ p: 1.5, textAlign: 'center', borderTop: '1px solid #21262d' }}>
         <Typography sx={{ color: '#484f58', fontSize: '0.75rem' }}>
-          ← → Navigate | ESC Close | P Toggle
+          Z X Navigate | ESC Close | P Toggle
         </Typography>
       </Box>
     </Box>

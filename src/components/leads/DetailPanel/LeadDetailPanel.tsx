@@ -152,15 +152,15 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
             onClose();
           }
           break;
-        case 'k':
+        case 'w':
           e.preventDefault();
           if (!isLast) onNavigateNext?.();
           break;
-        case 'j':
+        case 'q':
           e.preventDefault();
           if (!isFirst) onNavigatePrev?.();
           break;
-        case 'l':
+        case 'f':
           e.preventDefault();
           onFollowUp?.();
           break;
@@ -392,7 +392,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
                   }}
                 >
                   <Typography variant="caption" sx={{ color: '#484f58', fontSize: '0.7rem' }}>
-                    Keyboard: ← Prev (j) | Next (k) → | Photos (p) | Follow-up (l) | Message (m) | Archive (a) | Close (ESC)
+                    Keyboard: ← Prev (q) | Next (w) → | Photos (p) | Follow-up (f) | Message (m) | Archive (a) | Close (ESC)
                   </Typography>
                 </Box>
               </Box>

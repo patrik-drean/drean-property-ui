@@ -18,19 +18,19 @@ describe('useKeyboardShortcuts', () => {
   });
 
   describe('keyboard shortcuts', () => {
-    it('should call onNext when "k" key is pressed', () => {
+    it('should call onNext when "w" key is pressed', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers));
 
-      fireEvent.keyDown(window, { key: 'k' });
+      fireEvent.keyDown(window, { key: 'w' });
       expect(handlers.onNext).toHaveBeenCalledTimes(1);
     });
 
-    it('should call onPrev when "j" key is pressed', () => {
+    it('should call onPrev when "q" key is pressed', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers));
 
-      fireEvent.keyDown(window, { key: 'j' });
+      fireEvent.keyDown(window, { key: 'q' });
       expect(handlers.onPrev).toHaveBeenCalledTimes(1);
     });
 
@@ -78,10 +78,10 @@ describe('useKeyboardShortcuts', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers));
 
-      fireEvent.keyDown(window, { key: 'K' });
+      fireEvent.keyDown(window, { key: 'W' });
       expect(handlers.onNext).toHaveBeenCalledTimes(1);
 
-      fireEvent.keyDown(window, { key: 'J' });
+      fireEvent.keyDown(window, { key: 'Q' });
       expect(handlers.onPrev).toHaveBeenCalledTimes(1);
     });
   });
@@ -94,8 +94,8 @@ describe('useKeyboardShortcuts', () => {
       const input = document.createElement('input');
       document.body.appendChild(input);
 
-      fireEvent.keyDown(input, { key: 'j' });
-      fireEvent.keyDown(input, { key: 'k' });
+      fireEvent.keyDown(input, { key: 'q' });
+      fireEvent.keyDown(input, { key: 'w' });
       fireEvent.keyDown(input, { key: 't' });
 
       expect(handlers.onNext).not.toHaveBeenCalled();
@@ -112,8 +112,8 @@ describe('useKeyboardShortcuts', () => {
       const textarea = document.createElement('textarea');
       document.body.appendChild(textarea);
 
-      fireEvent.keyDown(textarea, { key: 'j' });
-      fireEvent.keyDown(textarea, { key: 'k' });
+      fireEvent.keyDown(textarea, { key: 'q' });
+      fireEvent.keyDown(textarea, { key: 'w' });
 
       expect(handlers.onNext).not.toHaveBeenCalled();
       expect(handlers.onPrev).not.toHaveBeenCalled();
@@ -132,7 +132,7 @@ describe('useKeyboardShortcuts', () => {
       renderHook(() => useKeyboardShortcuts(handlers));
 
       // Verify the hook is active and responds to normal keydown
-      fireEvent.keyDown(window, { key: 'k' });
+      fireEvent.keyDown(window, { key: 'w' });
       expect(handlers.onNext).toHaveBeenCalledTimes(1);
     });
   });
@@ -142,7 +142,7 @@ describe('useKeyboardShortcuts', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers));
 
-      fireEvent.keyDown(window, { key: 'j', metaKey: true });
+      fireEvent.keyDown(window, { key: 'q', metaKey: true });
       expect(handlers.onNext).not.toHaveBeenCalled();
     });
 
@@ -150,7 +150,7 @@ describe('useKeyboardShortcuts', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers));
 
-      fireEvent.keyDown(window, { key: 'j', ctrlKey: true });
+      fireEvent.keyDown(window, { key: 'q', ctrlKey: true });
       expect(handlers.onNext).not.toHaveBeenCalled();
     });
 
@@ -158,7 +158,7 @@ describe('useKeyboardShortcuts', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers));
 
-      fireEvent.keyDown(window, { key: 'j', altKey: true });
+      fireEvent.keyDown(window, { key: 'q', altKey: true });
       expect(handlers.onNext).not.toHaveBeenCalled();
     });
   });
@@ -168,8 +168,8 @@ describe('useKeyboardShortcuts', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers, false));
 
-      fireEvent.keyDown(window, { key: 'j' });
-      fireEvent.keyDown(window, { key: 'k' });
+      fireEvent.keyDown(window, { key: 'q' });
+      fireEvent.keyDown(window, { key: 'w' });
       fireEvent.keyDown(window, { key: 't' });
 
       expect(handlers.onNext).not.toHaveBeenCalled();
@@ -181,7 +181,7 @@ describe('useKeyboardShortcuts', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers));
 
-      fireEvent.keyDown(window, { key: 'k' });
+      fireEvent.keyDown(window, { key: 'w' });
       expect(handlers.onNext).toHaveBeenCalledTimes(1);
     });
 
@@ -189,7 +189,7 @@ describe('useKeyboardShortcuts', () => {
       const handlers = createMockHandlers();
       renderHook(() => useKeyboardShortcuts(handlers, true));
 
-      fireEvent.keyDown(window, { key: 'k' });
+      fireEvent.keyDown(window, { key: 'w' });
       expect(handlers.onNext).toHaveBeenCalledTimes(1);
     });
   });
@@ -219,7 +219,7 @@ describe('useKeyboardShortcuts', () => {
 
       unmount();
 
-      fireEvent.keyDown(window, { key: 'j' });
+      fireEvent.keyDown(window, { key: 'q' });
       expect(handlers.onNext).not.toHaveBeenCalled();
     });
   });

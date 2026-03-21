@@ -74,7 +74,7 @@ describe('PhotoGalleryPanel', () => {
     it('should display keyboard hints', () => {
       render(<PhotoGalleryPanel lead={createMockLead()} onClose={mockOnClose} />);
 
-      expect(screen.getByText(/← → Navigate/)).toBeInTheDocument();
+      expect(screen.getByText(/Z X Navigate/)).toBeInTheDocument();
       expect(screen.getByText(/ESC Close/)).toBeInTheDocument();
     });
 
@@ -207,23 +207,23 @@ describe('PhotoGalleryPanel', () => {
   });
 
   describe('keyboard navigation', () => {
-    it('should navigate to next photo with ArrowRight key', () => {
+    it('should navigate to next photo with x key', () => {
       render(<PhotoGalleryPanel lead={createMockLead()} onClose={mockOnClose} />);
 
-      fireEvent.keyDown(window, { key: 'ArrowRight' });
+      fireEvent.keyDown(window, { key: 'x' });
 
       expect(screen.getByText('2 / 3')).toBeInTheDocument();
     });
 
-    it('should navigate to previous photo with ArrowLeft key', () => {
+    it('should navigate to previous photo with z key', () => {
       render(<PhotoGalleryPanel lead={createMockLead()} onClose={mockOnClose} />);
 
       // First go to photo 2
-      fireEvent.keyDown(window, { key: 'ArrowRight' });
+      fireEvent.keyDown(window, { key: 'x' });
       expect(screen.getByText('2 / 3')).toBeInTheDocument();
 
       // Then go back to photo 1
-      fireEvent.keyDown(window, { key: 'ArrowLeft' });
+      fireEvent.keyDown(window, { key: 'z' });
       expect(screen.getByText('1 / 3')).toBeInTheDocument();
     });
 
@@ -243,7 +243,7 @@ describe('PhotoGalleryPanel', () => {
       document.body.appendChild(input);
       input.focus();
 
-      fireEvent.keyDown(input, { key: 'ArrowRight' });
+      fireEvent.keyDown(input, { key: 'x' });
 
       // Should still be on photo 1
       expect(screen.getByText('1 / 3')).toBeInTheDocument();

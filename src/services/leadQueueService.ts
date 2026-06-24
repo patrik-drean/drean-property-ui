@@ -558,6 +558,16 @@ export const leadQueueService = {
   },
 
   /**
+   * Bulk archive all active leads matching a filter.
+   * @param filter 'single_unit' archives 1-unit properties; 'df_neighborhood' archives D/F grade neighborhoods
+   * @returns Number of leads archived
+   */
+  async bulkArchive(filter: 'single_unit' | 'df_neighborhood'): Promise<{ archivedCount: number }> {
+    const response = await axiosInstance.post<{ archivedCount: number }>('/api/leads/bulk-archive', { filter });
+    return response.data;
+  },
+
+  /**
    * Schedule a follow-up for a lead.
    * Sets the follow-up date and moves the lead to the follow_up queue.
    * @param leadId The lead ID

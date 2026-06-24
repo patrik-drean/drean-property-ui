@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Box, Snackbar, Alert, CircularProgress, Typography, Pagination } from '@mui/material';
+import { Box, Snackbar, Alert, CircularProgress, Typography, Pagination, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { QueueLead, LeadQueueStatus } from '../../../types/queue';
 import { useLeadQueue } from '../../../hooks/useLeadQueue';
@@ -11,7 +11,7 @@ import { QueueCardList } from './QueueCardList';
 import { LeadDetailPanel } from '../DetailPanel';
 import { PhotoGalleryPanel } from './PhotoGalleryPanel';
 import { AddLeadModal } from './AddLeadModal';
-import { IngestLeadResponse } from '../../../services/leadQueueService';
+import { IngestLeadResponse, leadQueueService } from '../../../services/leadQueueService';
 import { smsService } from '../../../services/smsService';
 import { promoteListings } from '../../../services/listingsService';
 
@@ -39,6 +39,12 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   }>({ open: false, message: '', severity: 'info' });
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [promoteLoading, setPromoteLoading] = useState(false);
+  const [bulkArchiveLoading, setBulkArchiveLoading] = useState(false);
+  const [bulkArchiveDialog, setBulkArchiveDialog] = useState<{
+    open: boolean;
+    filter: 'single_unit' | 'df_neighborhood' | null;
+    label: string;
+  }>({ open: false, filter: null, label: '' });
   const navigate = useNavigate();
 
   // Search state - separate for All Leads and Archived tabs
@@ -118,6 +124,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     updateLeadStatus,
     scheduleFollowUp,
     cancelFollowUp,
+    refetch,
   } = useLeadQueue({
     initialQueueType: 'action_now',
     search: currentSearch,
@@ -519,6 +526,22 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     }
   }, [showSnackbar]);
 
+  const handleBulkArchiveConfirm = useCallback(async () => {
+    if (!bulkArchiveDialog.filter) return;
+    setBulkArchiveDialog(d => ({ ...d, open: false }));
+    setBulkArchiveLoading(true);
+    try {
+      const { archivedCount } = await leadQueueService.bulkArchive(bulkArchiveDialog.filter);
+      showSnackbar(`Archived ${archivedCount} lead${archivedCount !== 1 ? 's' : ''}`, 'success');
+      await refetch();
+    } catch (error: any) {
+      showSnackbar(error.response?.data?.error || 'Failed to bulk archive', 'error');
+    } finally {
+      setBulkArchiveLoading(false);
+      setBulkArchiveDialog({ open: false, filter: null, label: '' });
+    }
+  }, [bulkArchiveDialog.filter, showSnackbar, refetch]);
+
   return (
     <Box
       sx={{
@@ -561,6 +584,38 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
           onQueueChange={changeQueue}
           counts={queueCounts}
         />
+
+        {/* Bulk Archive Actions - Action Now tab only */}
+        {selectedQueue === 'action_now' && (
+          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+            <Button
+              variant="outlined"
+              color="warning"
+              size="small"
+              disabled={bulkArchiveLoading}
+              onClick={() => setBulkArchiveDialog({
+                open: true,
+                filter: 'single_unit',
+                label: 'Archive 1-Unit Properties',
+              })}
+            >
+              Archive 1-Unit Properties
+            </Button>
+            <Button
+              variant="outlined"
+              color="warning"
+              size="small"
+              disabled={bulkArchiveLoading}
+              onClick={() => setBulkArchiveDialog({
+                open: true,
+                filter: 'df_neighborhood',
+                label: 'Archive D/F Neighborhoods',
+              })}
+            >
+              Archive D/F Neighborhoods
+            </Button>
+          </Box>
+        )}
 
         {/* Loading State */}
         {loading && (
@@ -719,6 +774,27 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
         onClose={() => setAddModalOpen(false)}
         onSuccess={handleAddLeadSuccess}
       />
+
+      {/* Bulk Archive Confirmation Dialog */}
+      <Dialog
+        open={bulkArchiveDialog.open}
+        onClose={() => setBulkArchiveDialog(d => ({ ...d, open: false }))}
+      >
+        <DialogTitle>{bulkArchiveDialog.label}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This will archive all active leads matching this filter. Archived leads can be restored from the Archived tab.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkArchiveDialog(d => ({ ...d, open: false }))}>
+            Cancel
+          </Button>
+          <Button onClick={handleBulkArchiveConfirm} color="warning" variant="contained">
+            Archive
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Feedback snackbar */}
       <Snackbar

@@ -42,9 +42,9 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   const [bulkArchiveLoading, setBulkArchiveLoading] = useState(false);
   const [bulkArchiveDialog, setBulkArchiveDialog] = useState<{
     open: boolean;
-    filter: 'single_unit' | 'df_neighborhood' | null;
+    filters: Array<'single_unit' | 'df_neighborhood'>;
     label: string;
-  }>({ open: false, filter: null, label: '' });
+  }>({ open: false, filters: [], label: '' });
   const navigate = useNavigate();
 
   // Search state - separate for All Leads and Archived tabs
@@ -527,20 +527,25 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
   }, [showSnackbar]);
 
   const handleBulkArchiveConfirm = useCallback(async () => {
-    if (!bulkArchiveDialog.filter) return;
+    if (bulkArchiveDialog.filters.length === 0) return;
+    const filters = bulkArchiveDialog.filters;
     setBulkArchiveDialog(d => ({ ...d, open: false }));
     setBulkArchiveLoading(true);
     try {
-      const { archivedCount } = await leadQueueService.bulkArchive(bulkArchiveDialog.filter);
-      showSnackbar(`Archived ${archivedCount} lead${archivedCount !== 1 ? 's' : ''}`, 'success');
+      let totalArchived = 0;
+      for (const filter of filters) {
+        const { archivedCount } = await leadQueueService.bulkArchive(filter);
+        totalArchived += archivedCount;
+      }
+      showSnackbar(`Archived ${totalArchived} lead${totalArchived !== 1 ? 's' : ''}`, 'success');
       await refetch();
     } catch (error: any) {
       showSnackbar(error.response?.data?.error || 'Failed to bulk archive', 'error');
     } finally {
       setBulkArchiveLoading(false);
-      setBulkArchiveDialog({ open: false, filter: null, label: '' });
+      setBulkArchiveDialog({ open: false, filters: [], label: '' });
     }
-  }, [bulkArchiveDialog.filter, showSnackbar, refetch]);
+  }, [bulkArchiveDialog.filters, showSnackbar, refetch]);
 
   return (
     <Box
@@ -595,24 +600,11 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
               disabled={bulkArchiveLoading}
               onClick={() => setBulkArchiveDialog({
                 open: true,
-                filter: 'single_unit',
-                label: 'Archive 1-Unit Properties',
+                filters: ['single_unit', 'df_neighborhood'],
+                label: 'Archive 1-Unit Properties & D/F Neighborhoods',
               })}
             >
-              Archive 1-Unit Properties
-            </Button>
-            <Button
-              variant="outlined"
-              color="warning"
-              size="small"
-              disabled={bulkArchiveLoading}
-              onClick={() => setBulkArchiveDialog({
-                open: true,
-                filter: 'df_neighborhood',
-                label: 'Archive D/F Neighborhoods',
-              })}
-            >
-              Archive D/F Neighborhoods
+              Archive 1-Unit Properties & D/F Neighborhoods
             </Button>
           </Box>
         )}

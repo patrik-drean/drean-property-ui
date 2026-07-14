@@ -1,8 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Tabs, Tab, Box, Typography } from '@mui/material';
 import { QueueType, QueueCounts } from '../../../types/queue';
-
-const QUEUE_STORAGE_KEY = 'propguide-selected-queue';
 
 interface TabLabelProps {
   label: string;
@@ -42,31 +40,14 @@ interface QueueTabsProps {
 /**
  * QueueTabs - navigation tabs for the different lead queues
  *
- * Tabs:
- * - Action Now (red badge): New high-score leads needing immediate action
- * - Follow-Up Today (yellow badge): Leads with follow-ups due
- * - Negotiating (blue badge): Active negotiations
- * - All Leads: Complete lead list
- *
- * Selection persists to localStorage
+ * Always defaults to Action Now on page load.
  */
 export const QueueTabs: React.FC<QueueTabsProps> = ({
   selectedQueue,
   onQueueChange,
   counts,
 }) => {
-  // Load saved queue selection from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem(QUEUE_STORAGE_KEY) as QueueType | null;
-    if (saved && ['action_now', 'follow_up', 'negotiating', 'all', 'archived'].includes(saved)) {
-      onQueueChange(saved);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount - intentionally omit onQueueChange to prevent loops
-
-  // Save queue selection to localStorage
   const handleQueueChange = (_: React.SyntheticEvent, value: QueueType) => {
-    localStorage.setItem(QUEUE_STORAGE_KEY, value);
     onQueueChange(value);
   };
 

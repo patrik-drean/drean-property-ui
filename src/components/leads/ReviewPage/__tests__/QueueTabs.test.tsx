@@ -3,8 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { QueueTabs } from '../QueueTabs';
 import { QueueCounts } from '../../../../types/queue';
 
-const QUEUE_STORAGE_KEY = 'propguide-selected-queue';
-
 describe('QueueTabs', () => {
   const defaultCounts: QueueCounts = {
     action_now: 5,
@@ -18,7 +16,6 @@ describe('QueueTabs', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    localStorage.clear();
   });
 
   describe('rendering', () => {
@@ -97,62 +94,6 @@ describe('QueueTabs', () => {
       expect(mockOnQueueChange).toHaveBeenCalledWith('follow_up');
     });
 
-    it('should save selected queue to localStorage', () => {
-      render(
-        <QueueTabs
-          selectedQueue="action_now"
-          onQueueChange={mockOnQueueChange}
-          counts={defaultCounts}
-        />
-      );
-
-      const negotiatingTab = screen.getByRole('tab', { name: /Negotiating/i });
-      fireEvent.click(negotiatingTab);
-
-      expect(localStorage.getItem(QUEUE_STORAGE_KEY)).toBe('negotiating');
-    });
-  });
-
-  describe('localStorage persistence', () => {
-    it('should load saved queue from localStorage on mount', () => {
-      localStorage.setItem(QUEUE_STORAGE_KEY, 'follow_up');
-
-      render(
-        <QueueTabs
-          selectedQueue="action_now"
-          onQueueChange={mockOnQueueChange}
-          counts={defaultCounts}
-        />
-      );
-
-      expect(mockOnQueueChange).toHaveBeenCalledWith('follow_up');
-    });
-
-    it('should not call onQueueChange if no saved value', () => {
-      render(
-        <QueueTabs
-          selectedQueue="action_now"
-          onQueueChange={mockOnQueueChange}
-          counts={defaultCounts}
-        />
-      );
-
-      expect(mockOnQueueChange).not.toHaveBeenCalled();
-    });
-
-    it('should not call onQueueChange for invalid saved value', () => {
-      localStorage.setItem(QUEUE_STORAGE_KEY, 'invalid_queue');
-
-      render(
-        <QueueTabs
-          selectedQueue="action_now"
-          onQueueChange={mockOnQueueChange}
-          counts={defaultCounts}
-        />
-      );
-
-      expect(mockOnQueueChange).not.toHaveBeenCalled();
-    });
   });
 
   describe('zero counts', () => {

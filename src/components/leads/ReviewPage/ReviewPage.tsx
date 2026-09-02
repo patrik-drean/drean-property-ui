@@ -127,6 +127,10 @@ export const ReviewPage: React.FC<ReviewPageProps> = () => {
     refetch,
   } = useLeadQueue({
     initialQueueType: 'action_now',
+    // Load up to 100 per page so the work queues (Action Now / Follow-Up /
+    // Negotiating) show all their leads without needing to refresh. All Leads
+    // and Archived still paginate via the controls below.
+    pageSize: 100,
     search: currentSearch,
     onNotification: showSnackbar,
   });

@@ -2,7 +2,8 @@ import {
   generatePropertyPLReport,
   generatePortfolioPLReport,
   getIncomeCategories,
-  getExpenseCategories
+  getExpenseCategories,
+  calculateMonthlyOccupancy
 } from '../reportUtils';
 import { Transaction } from '../../types/transaction';
 import { format, subMonths, startOfMonth } from 'date-fns';
@@ -189,6 +190,27 @@ describe('reportUtils', () => {
 
       // Average net: 1000 - 100 = 900
       expect(report.sixMonthAverage.netIncome).toBe(900);
+    });
+
+    it('should include transactions dated the 1st of the oldest month in the window', () => {
+      // Parsing "yyyy-MM-01" as a Date reads it as UTC midnight, which lands in the
+      // previous month for timezones behind UTC and used to drop these transactions
+      const endDate = subMonths(startOfMonth(new Date()), 1);
+      const oldestMonth = format(subMonths(endDate, 5), 'yyyy-MM');
+
+      const transactions: Transaction[] = [
+        createMockTransaction(1100, 'Rent', `${oldestMonth}-01`)
+      ];
+
+      const report = generatePropertyPLReport(
+        transactions,
+        mockPropertyId,
+        mockPropertyAddress,
+        6
+      );
+
+      const oldestMonthData = report.months.find(m => m.month === oldestMonth);
+      expect(oldestMonthData!.totalIncome).toBe(1100);
     });
 
     it('should handle empty transaction list', () => {
@@ -418,6 +440,122 @@ describe('reportUtils', () => {
       expect(report.lastFullMonth.totalIncome).toBe(1800);
       expect(report.lastFullMonth.totalExpenses).toBe(200);
       expect(report.lastFullMonth.netIncome).toBe(1600);
+    });
+  });
+
+  describe('calculateMonthlyOccupancy', () => {
+    const createRent = (
+      date: string,
+      unit?: string,
+      amount: number = 1000,
+      category: string = 'Rent'
+    ): Transaction => ({
+      id: `trans-${Math.random()}`,
+      date,
+      amount,
+      category,
+      unit,
+      propertyId: mockPropertyId,
+      expenseType: 'Operating',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    it('counts untagged rent as one occupied unit', () => {
+      const result = calculateMonthlyOccupancy(
+        [createRent('2026-05-01')],
+        1,
+        ['2026-05']
+      );
+
+      expect(result).toEqual([{ month: '2026-05', occupied: 1, total: 1 }]);
+    });
+
+    it('reports zero occupied for a month with no rent', () => {
+      const result = calculateMonthlyOccupancy(
+        [createRent('2026-05-01')],
+        1,
+        ['2026-05', '2026-06']
+      );
+
+      expect(result[1]).toEqual({ month: '2026-06', occupied: 0, total: 1 });
+    });
+
+    it('counts distinct tagged units', () => {
+      const result = calculateMonthlyOccupancy(
+        [
+          createRent('2026-05-01', '1'),
+          createRent('2026-05-03', '2'),
+          createRent('2026-05-04', '3')
+        ],
+        4,
+        ['2026-05']
+      );
+
+      expect(result[0].occupied).toBe(3);
+      expect(result[0].total).toBe(4);
+    });
+
+    it('counts multiple payments from the same unit once', () => {
+      const result = calculateMonthlyOccupancy(
+        [createRent('2026-05-01', '1', 500), createRent('2026-05-20', '1', 500)],
+        2,
+        ['2026-05']
+      );
+
+      expect(result[0].occupied).toBe(1);
+    });
+
+    it('treats unit labels case-insensitively', () => {
+      const result = calculateMonthlyOccupancy(
+        [createRent('2026-05-01', 'c'), createRent('2026-05-15', 'C')],
+        2,
+        ['2026-05']
+      );
+
+      expect(result[0].occupied).toBe(1);
+    });
+
+    it('adds one for untagged rent alongside tagged units, capped at total units', () => {
+      const mixed = calculateMonthlyOccupancy(
+        [createRent('2026-05-01', '1'), createRent('2026-05-02')],
+        3,
+        ['2026-05']
+      );
+      expect(mixed[0].occupied).toBe(2);
+
+      const capped = calculateMonthlyOccupancy(
+        [createRent('2026-05-01', '1'), createRent('2026-05-02')],
+        1,
+        ['2026-05']
+      );
+      expect(capped[0].occupied).toBe(1);
+    });
+
+    it('buckets by override date when present', () => {
+      const transaction = { ...createRent('2026-06-02', '1'), overrideDate: '2026-05-31' };
+
+      const result = calculateMonthlyOccupancy(
+        [transaction],
+        1,
+        ['2026-05', '2026-06']
+      );
+
+      expect(result[0].occupied).toBe(1);
+      expect(result[1].occupied).toBe(0);
+    });
+
+    it('ignores non-rent income and rent refunds', () => {
+      const result = calculateMonthlyOccupancy(
+        [
+          createRent('2026-05-01', '1', 200, 'Other Income'),
+          createRent('2026-05-02', '2', -500)
+        ],
+        2,
+        ['2026-05']
+      );
+
+      expect(result[0].occupied).toBe(0);
     });
   });
 });

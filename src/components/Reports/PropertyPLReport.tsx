@@ -9,16 +9,24 @@ import {
   Paper,
   Typography,
   CircularProgress,
-  Button
+  Button,
+  useTheme
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { Download as DownloadIcon } from '@mui/icons-material';
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { transactionApi } from '../../services/transactionApi';
 import PropertyService from '../../services/PropertyService';
-import { generatePropertyPLReport, getIncomeCategories, getExpenseCategories } from '../../utils/reportUtils';
-import type { PropertyPLReport as PLReport } from '../../utils/reportUtils';
+import {
+  generatePropertyPLReport,
+  getIncomeCategories,
+  getExpenseCategories,
+  calculateMonthlyOccupancy
+} from '../../utils/reportUtils';
+import type { PropertyPLReport as PLReport, MonthlyOccupancy } from '../../utils/reportUtils';
 import type { Property } from '../../types/property';
-import { PropertyOperationalSummary } from './PropertyOperationalSummary';
+import { PropertyKpiStrip } from './PropertyKpiStrip';
+import { PropertyPLTrendChart } from './PropertyPLTrendChart';
 
 interface PropertyPLReportProps {
   propertyId: string;
@@ -29,8 +37,10 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
   propertyId,
   months = 6
 }) => {
+  const theme = useTheme();
   const [report, setReport] = useState<PLReport | null>(null);
   const [property, setProperty] = useState<Property | null>(null);
+  const [occupancy, setOccupancy] = useState<MonthlyOccupancy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,8 +63,16 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
           months
         );
 
+        const totalUnits = propertyData.propertyUnits?.length || propertyData.units || 0;
+        const monthlyOccupancy = calculateMonthlyOccupancy(
+          transactions.filter(t => t.propertyId === propertyId && t.expenseType === 'Operating'),
+          totalUnits,
+          plReport.months.map(m => m.month)
+        );
+
         setProperty(propertyData);
         setReport(plReport);
+        setOccupancy(monthlyOccupancy);
       } catch (err) {
         console.error('Failed to load report:', err);
         setError(err instanceof Error ? err.message : 'Failed to load report');
@@ -91,16 +109,29 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
     return monthKey === getLastFullMonth();
   };
 
-  // Subtle highlight style for last full month following UX best practices
+  // Subtle highlight for the last full month column
   const getHighlightStyle = (isHighlighted: boolean, baseColor?: string) => {
     if (!isHighlighted) return { bgcolor: baseColor || 'inherit' };
     return {
-      bgcolor: 'rgba(76, 175, 80, 0.15)',
+      bgcolor: alpha(theme.palette.success.main, 0.12),
       borderLeft: '3px solid',
-      borderColor: 'rgb(46, 125, 50)',
-      color: '#4caf50 !important'
+      borderColor: 'success.main'
     };
   };
+
+  // Keep the category column visible while scrolling months horizontally
+  const stickyLabel = (bgcolor: string = theme.palette.background.paper) => ({
+    position: 'sticky' as const,
+    left: 0,
+    zIndex: 2,
+    bgcolor
+  });
+
+  const formatOccupancy = (occupied: number, total: number) => `${occupied}/${total}`;
+
+  const averageOccupied = occupancy.length
+    ? occupancy.reduce((sum, o) => sum + o.occupied, 0) / occupancy.length
+    : 0;
 
   const handleExportCSV = () => {
     if (!report) return;
@@ -110,6 +141,21 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
 
     // Header row
     rows.push(['Category', ...report.months.map(m => formatMonth(m.month)), '6-Mo Avg']);
+
+    // Summary section
+    rows.push(['SUMMARY']);
+    if (occupancy.length > 0) {
+      rows.push([
+        'Units Occupied',
+        ...occupancy.map(o => formatOccupancy(o.occupied, o.total)),
+        `${averageOccupied.toFixed(1)}/${occupancy[0].total}`
+      ]);
+    }
+    rows.push([
+      'Net Income',
+      ...report.months.map(m => m.netIncome),
+      report.sixMonthAverage.netIncome
+    ]);
 
     // Income section
     rows.push(['INCOME']);
@@ -193,22 +239,46 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
 
   const incomeCategories = getIncomeCategories(report);
   const expenseCategories = getExpenseCategories(report);
+  const dateRange = `${formatMonth(report.months[0].month)} – ${formatMonth(report.months[report.months.length - 1].month)}`;
+
+  // Net income row is shown in the summary block and again after expenses
+  const renderNetIncomeRow = (key: string) => (
+    <TableRow key={key}>
+      <TableCell sx={stickyLabel()}><strong>Net Income</strong></TableCell>
+      {report.months.map(m => (
+        <TableCell
+          key={m.month}
+          align="right"
+          sx={{
+            ...getHighlightStyle(isLastFullMonth(m.month)),
+            color: m.netIncome >= 0 ? 'success.main' : 'error.main',
+            fontWeight: 700
+          }}
+        >
+          {formatCurrency(m.netIncome)}
+        </TableCell>
+      ))}
+      <TableCell
+        align="right"
+        sx={{
+          color: report.sixMonthAverage.netIncome >= 0 ? 'success.main' : 'error.main',
+          fontWeight: 700
+        }}
+      >
+        {formatCurrency(report.sixMonthAverage.netIncome)}
+      </TableCell>
+    </TableRow>
+  );
 
   return (
-    <Box sx={{
-      height: '100vh',
-      width: '100%',
-      overflowY: 'auto',
-      overflowX: 'hidden',
-      position: 'relative'
-    }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+    <Box sx={{ width: '100%' }}>
+      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={3}>
         <Box>
-          <Typography variant="h5" gutterBottom>
-            Property P&L Report
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
+          <Typography variant="h5" fontWeight="bold">
             {report.propertyAddress}
+          </Typography>
+          <Typography variant="subtitle2" color="text.secondary">
+            Property P&L Report · {dateRange}
           </Typography>
         </Box>
         <Button
@@ -220,27 +290,28 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
         </Button>
       </Box>
 
-      {/* Operational Summary Dashboard */}
       {property && (
-        <PropertyOperationalSummary property={property} plReport={report} />
+        <PropertyKpiStrip property={property} plReport={report} />
       )}
 
+      <PropertyPLTrendChart months={report.months} />
+
       <Paper sx={{ overflowX: 'auto' }}>
-        <Table size="small">
+        <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell><strong>Category</strong></TableCell>
+              <TableCell sx={{ ...stickyLabel(), zIndex: 3 }}><strong>Category</strong></TableCell>
               {report.months.map(m => (
                 <TableCell
                   key={m.month}
                   align="right"
                   sx={{
                     ...(isLastFullMonth(m.month) ? {
-                      bgcolor: 'rgb(46, 125, 50) !important',
+                      bgcolor: `${theme.palette.success.dark} !important`,
                       borderLeft: '3px solid',
-                      borderColor: 'rgb(46, 125, 50)',
+                      borderColor: 'success.main',
                       fontWeight: 600,
-                      color: 'white !important'
+                      color: `${theme.palette.getContrastText(theme.palette.success.dark)} !important`
                     } : {
                       fontWeight: 400
                     })
@@ -250,11 +321,39 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
                 </TableCell>
               ))}
               <TableCell align="right">
-                <strong>6-Mo Avg</strong>
+                <strong>{months}-Mo Avg</strong>
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
+            {/* Summary Section */}
+            <TableRow>
+              <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: 'action.hover' }}>
+                <strong>SUMMARY</strong>
+              </TableCell>
+            </TableRow>
+            {occupancy.length > 0 && (
+              <TableRow>
+                <TableCell sx={stickyLabel()}>Units Occupied</TableCell>
+                {occupancy.map(o => (
+                  <TableCell
+                    key={o.month}
+                    align="right"
+                    sx={{
+                      ...getHighlightStyle(isLastFullMonth(o.month)),
+                      ...(o.total > 0 && o.occupied === 0 && { color: 'error.main' })
+                    }}
+                  >
+                    {formatOccupancy(o.occupied, o.total)}
+                  </TableCell>
+                ))}
+                <TableCell align="right">
+                  {`${averageOccupied.toFixed(1)}/${occupancy[0].total}`}
+                </TableCell>
+              </TableRow>
+            )}
+            {renderNetIncomeRow('summary-net-income')}
+
             {/* Income Section */}
             <TableRow>
               <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: 'action.hover' }}>
@@ -263,7 +362,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
             </TableRow>
             {incomeCategories.map(category => (
               <TableRow key={`income-${category}`}>
-                <TableCell sx={{ pl: 4 }}>{category}</TableCell>
+                <TableCell sx={{ ...stickyLabel(), pl: 4 }}>{category}</TableCell>
                 {report.months.map(m => (
                   <TableCell
                     key={m.month}
@@ -281,7 +380,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
               </TableRow>
             ))}
             <TableRow sx={{ bgcolor: 'action.selected' }}>
-              <TableCell><strong>Total Income</strong></TableCell>
+              <TableCell sx={stickyLabel(theme.palette.action.selected)}><strong>Total Income</strong></TableCell>
               {report.months.map(m => (
                 <TableCell
                   key={m.month}
@@ -307,7 +406,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
             </TableRow>
             {expenseCategories.map(category => (
               <TableRow key={`expense-${category}`}>
-                <TableCell sx={{ pl: 4 }}>{category}</TableCell>
+                <TableCell sx={{ ...stickyLabel(), pl: 4 }}>{category}</TableCell>
                 {report.months.map(m => (
                   <TableCell
                     key={m.month}
@@ -325,7 +424,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
               </TableRow>
             ))}
             <TableRow sx={{ bgcolor: 'action.selected' }}>
-              <TableCell><strong>Total Expenses</strong></TableCell>
+              <TableCell sx={stickyLabel(theme.palette.action.selected)}><strong>Total Expenses</strong></TableCell>
               {report.months.map(m => (
                 <TableCell
                   key={m.month}
@@ -344,25 +443,7 @@ export const PropertyPLReport: React.FC<PropertyPLReportProps> = ({
             </TableRow>
 
             {/* Net Income */}
-            <TableRow>
-              <TableCell><strong>Net Income</strong></TableCell>
-              {report.months.map(m => (
-                <TableCell
-                  key={m.month}
-                  align="right"
-                  sx={getHighlightStyle(isLastFullMonth(m.month))}
-                >
-                  <strong style={{ color: m.netIncome >= 0 ? '#4caf50' : '#f44336' }}>
-                    {formatCurrency(m.netIncome)}
-                  </strong>
-                </TableCell>
-              ))}
-              <TableCell align="right">
-                <strong style={{ color: report.sixMonthAverage.netIncome >= 0 ? '#4caf50' : '#f44336' }}>
-                  {formatCurrency(report.sixMonthAverage.netIncome)}
-                </strong>
-              </TableCell>
-            </TableRow>
+            {renderNetIncomeRow('net-income')}
           </TableBody>
         </Table>
       </Paper>

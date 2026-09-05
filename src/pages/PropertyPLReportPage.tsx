@@ -11,7 +11,7 @@ export const PropertyPLReportPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="lg" sx={{ height: '100vh', overflowY: 'auto' }}>
       <Box py={4}>
         <PropertyPLReport propertyId={propertyId} />
       </Box>

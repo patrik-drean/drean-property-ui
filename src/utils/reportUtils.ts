@@ -41,18 +41,25 @@ export function generatePropertyPLReport(
   const today = new Date();
   const lastCompleteMonth = subMonths(startOfMonth(today), 1); // Go back to start of last month
   const endDate = endOfMonth(lastCompleteMonth); // End of last complete month
-  const startDate = subMonths(endDate, months);
+
+  // Month keys in the window, oldest first
+  const monthKeys: string[] = [];
+  for (let i = months - 1; i >= 0; i--) {
+    monthKeys.push(format(startOfMonth(subMonths(endDate, i)), 'yyyy-MM'));
+  }
+  const monthsInWindow = new Set(monthKeys);
 
   // Group by month using override_date if present, else date
   const byMonth = new Map<string, Transaction[]>();
 
   filtered.forEach(transaction => {
     const reportDate = transaction.overrideDate || transaction.date;
-    const transDate = new Date(reportDate);
+    // Compare month keys as strings. Parsing to a Date reads the value as UTC
+    // midnight, which pushes 1st-of-month entries into the previous month in
+    // timezones behind UTC and drops them from the window.
+    const monthKey = reportDate.substring(0, 7); // Extract 'yyyy-MM' from 'yyyy-MM-dd'
 
-    if (transDate >= startDate && transDate <= endDate) {
-      // Use date string directly to avoid timezone issues (e.g., 12/1 becoming 11/30)
-      const monthKey = reportDate.substring(0, 7); // Extract 'yyyy-MM' from 'yyyy-MM-dd'
+    if (monthsInWindow.has(monthKey)) {
       if (!byMonth.has(monthKey)) {
         byMonth.set(monthKey, []);
       }
@@ -63,10 +70,7 @@ export function generatePropertyPLReport(
   // Generate monthly data
   const monthlyData: MonthlyPLData[] = [];
 
-  // Create array of last N months
-  for (let i = months - 1; i >= 0; i--) {
-    const monthDate = subMonths(endDate, i);
-    const monthKey = format(startOfMonth(monthDate), 'yyyy-MM');
+  monthKeys.forEach(monthKey => {
     const monthTransactions = byMonth.get(monthKey) || [];
 
     const incomeByCategory: Record<string, number> = {};
@@ -94,7 +98,7 @@ export function generatePropertyPLReport(
       totalExpenses,
       netIncome: totalIncome - totalExpenses
     });
-  }
+  });
 
   // Calculate 6-month average
   const avgIncome = monthlyData.reduce((sum, m) => sum + m.totalIncome, 0) / monthlyData.length;
@@ -110,6 +114,51 @@ export function generatePropertyPLReport(
       netIncome: avgIncome - avgExpenses
     }
   };
+}
+
+export interface MonthlyOccupancy {
+  month: string; // "2025-09" format
+  occupied: number;
+  total: number;
+}
+
+/**
+ * Estimate how many units were occupied each month based on rent transactions.
+ * Rent tagged with a unit counts that unit; untagged rent counts as one occupied
+ * unit, since single-unit properties rarely tag their payments.
+ */
+export function calculateMonthlyOccupancy(
+  transactions: Transaction[],
+  totalUnits: number,
+  monthKeys: string[]
+): MonthlyOccupancy[] {
+  const rentTransactions = transactions.filter(t => t.category === 'Rent' && t.amount > 0);
+
+  return monthKeys.map(month => {
+    const monthRent = rentTransactions.filter(
+      t => (t.overrideDate || t.date).substring(0, 7) === month
+    );
+
+    const taggedUnits = new Set<string>();
+    let hasUntagged = false;
+
+    monthRent.forEach(t => {
+      const unit = t.unit?.trim().toUpperCase();
+      if (unit) {
+        taggedUnits.add(unit);
+      } else {
+        hasUntagged = true;
+      }
+    });
+
+    const occupied = taggedUnits.size + (hasUntagged ? 1 : 0);
+
+    return {
+      month,
+      occupied: Math.min(occupied, totalUnits),
+      total: totalUnits
+    };
+  });
 }
 
 /**

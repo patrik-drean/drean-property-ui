@@ -17,3 +17,10 @@ HTMLCanvasElement.prototype.getContext = jest.fn();
 // Mock URL.createObjectURL for PDF downloads
 global.URL.createObjectURL = jest.fn(() => 'mocked-url');
 global.URL.revokeObjectURL = jest.fn();
+
+// Mock ResizeObserver for recharts' ResponsiveContainer
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};

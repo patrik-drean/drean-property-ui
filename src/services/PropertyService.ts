@@ -86,6 +86,7 @@ interface PropertyDTO {
     createdAt: string;
     updatedAt: string;
   } | null;
+  archived?: boolean;
 }
 
 // Convert API PropertyDTO to our frontend Property type
@@ -129,15 +130,19 @@ const mapDTOToProperty = (dto: PropertyDTO): Property => {
     })),
     monthlyExpenses: dto.monthlyExpenses,
     capitalCosts: dto.capitalCosts,
+    archived: dto.archived ?? false,
   };
 };
 
 // The PropertyService - uses shared api client with auth interceptors
 const PropertyService = {
-  // Fetch all properties
-  async getAllProperties(): Promise<Property[]> {
+  // Fetch all properties. Omit showArchived for every property, or pass
+  // false/true to get only active or only archived ones.
+  async getAllProperties(showArchived?: boolean): Promise<Property[]> {
     try {
-      const response = await api.get<PropertyDTO[]>('/api/Properties');
+      const response = await api.get<PropertyDTO[]>('/api/Properties', {
+        params: showArchived === undefined ? undefined : { showArchived }
+      });
       return response.data.map(mapDTOToProperty);
     } catch (error) {
       console.error('Error fetching properties:', error);

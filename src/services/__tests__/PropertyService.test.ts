@@ -351,7 +351,17 @@ describe('PropertyService', () => {
 
       await PropertyService.getAllProperties();
 
-      expect(mockGet).toHaveBeenCalledWith('/api/Properties');
+      expect(mockGet).toHaveBeenCalledWith('/api/Properties', { params: undefined });
+    });
+
+    it('should pass showArchived through when given', async () => {
+      mockGet.mockResolvedValue({ data: [] });
+
+      await PropertyService.getAllProperties(false);
+
+      expect(mockGet).toHaveBeenCalledWith('/api/Properties', {
+        params: { showArchived: false }
+      });
     });
   });
 });

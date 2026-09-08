@@ -1,14 +1,19 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { PortfolioPLReport } from '../PortfolioPLReport';
 import { transactionApi } from '../../../services/transactionApi';
 import PropertyService from '../../../services/PropertyService';
+import { api } from '../../../services/apiConfig';
 
 // Mock the dependencies
 jest.mock('../../../services/transactionApi');
 jest.mock('../../../services/PropertyService');
+jest.mock('../../../services/apiConfig', () => ({
+  api: { archiveProperty: jest.fn() }
+}));
 
 const theme = createTheme();
 const lastFullMonth = format(subMonths(startOfMonth(new Date()), 1), 'yyyy-MM');
@@ -244,6 +249,101 @@ describe('PortfolioPLReport', () => {
         'Good St',
         'Business (No Property)'
       ]);
+    });
+  });
+
+  describe('archiving a property', () => {
+    it('requests only active properties so archived ones drop out of the report', async () => {
+      mockResolved();
+
+      renderWithTheme(<PortfolioPLReport months={6} />);
+
+      await waitFor(() => {
+        expect(PropertyService.getAllProperties).toHaveBeenCalledWith(false);
+      });
+    });
+
+    it('archives the property after confirming and reloads the report', async () => {
+      mockResolved();
+      (api.archiveProperty as jest.Mock).mockResolvedValue(undefined);
+
+      renderWithTheme(<PortfolioPLReport months={6} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('123 Test Street')).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByLabelText('Archive 123 Test Street'));
+      expect(screen.getByText('Archive this property?')).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Archive' }));
+
+      await waitFor(() => {
+        expect(api.archiveProperty).toHaveBeenCalledWith('prop-1');
+      });
+      // Report is refetched so the archived row disappears
+      expect(PropertyService.getAllProperties).toHaveBeenCalledTimes(2);
+      await waitFor(() => {
+        expect(screen.getByText('Archived 123 Test Street')).toBeInTheDocument();
+      });
+    });
+
+    it('does not archive when the dialog is cancelled', async () => {
+      mockResolved();
+
+      renderWithTheme(<PortfolioPLReport months={6} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('123 Test Street')).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByLabelText('Archive 123 Test Street'));
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(api.archiveProperty).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(screen.queryByText('Archive this property?')).not.toBeInTheDocument();
+      });
+    });
+
+    it('reports an error and keeps the row when archiving fails', async () => {
+      mockResolved();
+      (api.archiveProperty as jest.Mock).mockRejectedValue(new Error('Server exploded'));
+
+      renderWithTheme(<PortfolioPLReport months={6} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('123 Test Street')).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByLabelText('Archive 123 Test Street'));
+      await userEvent.click(screen.getByRole('button', { name: 'Archive' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Could not archive: Server exploded')).toBeInTheDocument();
+      });
+      // The dialog stays open so the archive can be retried, and the report was
+      // never refetched, so the row is still there behind it
+      expect(screen.getByText('Archive this property?')).toBeInTheDocument();
+      expect(PropertyService.getAllProperties).toHaveBeenCalledTimes(1);
+    });
+
+    it('offers no archive action for the business row', async () => {
+      const businessTransactions = [
+        {
+          id: '3', propertyId: 'business', date: `${lastFullMonth}-15`,
+          amount: -100, category: 'Office Supplies', expenseType: 'Operating'
+        }
+      ];
+      mockResolved(mockProperties, businessTransactions);
+
+      renderWithTheme(<PortfolioPLReport months={6} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Business (No Property)')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByLabelText('Archive Business (No Property)')).not.toBeInTheDocument();
     });
   });
 

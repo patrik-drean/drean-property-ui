@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Box,
   Table,
@@ -12,11 +12,25 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Link
+  Link,
+  IconButton,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Snackbar,
+  Alert
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, Download as DownloadIcon } from '@mui/icons-material';
+import {
+  ExpandMore as ExpandMoreIcon,
+  Download as DownloadIcon,
+  Archive as ArchiveIcon
+} from '@mui/icons-material';
 import { transactionApi } from '../../services/transactionApi';
 import PropertyService from '../../services/PropertyService';
+import { api } from '../../services/apiConfig';
 import {
   generatePortfolioPLReport,
   getIncomeCategories,
@@ -24,7 +38,11 @@ import {
   calculateMonthlyOccupancy,
   calculatePortfolioMonthlyOccupancy
 } from '../../utils/reportUtils';
-import type { PortfolioPLReport as PLReport, MonthlyOccupancy } from '../../utils/reportUtils';
+import type {
+  PortfolioPLReport as PLReport,
+  MonthlyOccupancy,
+  PropertyBreakdown
+} from '../../utils/reportUtils';
 import type { Property } from '../../types/property';
 import { PortfolioKpiStrip } from './PortfolioKpiStrip';
 import { PropertyPLTrendChart } from './PropertyPLTrendChart';
@@ -46,15 +64,18 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
   const [propertyOccupancy, setPropertyOccupancy] = useState<Record<string, MonthlyOccupancy>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pendingArchive, setPendingArchive] = useState<PropertyBreakdown | null>(null);
+  const [archiving, setArchiving] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadReport = async () => {
+  const loadReport = useCallback(async () => {
       try {
         setLoading(true);
 
-        // Fetch all properties and transactions
+        // Archived properties are excluded server-side so archiving one
+        // removes it from this report
         const [properties, transactions] = await Promise.all([
-          PropertyService.getAllProperties(),
+          PropertyService.getAllProperties(false),
           transactionApi.getAll()
         ]);
 
@@ -98,10 +119,31 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
       } finally {
         setLoading(false);
       }
-    };
-
-    loadReport();
   }, [months]);
+
+  useEffect(() => {
+    loadReport();
+  }, [loadReport]);
+
+  const handleConfirmArchive = async () => {
+    if (!pendingArchive) return;
+
+    const { propertyId, propertyAddress } = pendingArchive;
+    try {
+      setArchiving(true);
+      await api.archiveProperty(propertyId);
+      setPendingArchive(null);
+      await loadReport();
+      setNotice(`Archived ${propertyAddress}`);
+    } catch (err) {
+      console.error('Failed to archive property:', err);
+      setNotice(
+        err instanceof Error ? `Could not archive: ${err.message}` : 'Could not archive property'
+      );
+    } finally {
+      setArchiving(false);
+    }
+  };
 
   const handleExportCSV = () => {
     if (!report) return;
@@ -266,6 +308,7 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
                 <TableCell align="right"><strong>Expenses ({months}mo)</strong></TableCell>
                 <TableCell align="right"><strong>Net ({months}mo)</strong></TableCell>
                 <TableCell align="right"><strong>Last Mo Net</strong></TableCell>
+                <TableCell align="right" />
               </TableRow>
             </TableHead>
             <TableBody>
@@ -313,6 +356,19 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
                     >
                       {formatCurrency(prop.lastMonthNetIncome)}
                     </TableCell>
+                    <TableCell align="right" padding="checkbox">
+                      {prop.propertyId !== 'business' && (
+                        <Tooltip title="Archive property">
+                          <IconButton
+                            size="small"
+                            aria-label={`Archive ${prop.propertyAddress}`}
+                            onClick={() => setPendingArchive(prop)}
+                          >
+                            <ArchiveIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -320,6 +376,36 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
           </Table>
         </AccordionDetails>
       </Accordion>
+
+      <Dialog open={!!pendingArchive} onClose={() => setPendingArchive(null)}>
+        <DialogTitle>Archive this property?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            <strong>{pendingArchive?.propertyAddress}</strong> will be removed from the portfolio
+            report, including the months it contributed to above, so the totals and averages will
+            change. Its transactions are kept, and you can find it again under Archived Properties.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingArchive(null)} disabled={archiving}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmArchive} color="error" disabled={archiving}>
+            {archiving ? 'Archiving…' : 'Archive'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={!!notice}
+        autoHideDuration={5000}
+        onClose={() => setNotice(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="info" onClose={() => setNotice(null)}>
+          {notice}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

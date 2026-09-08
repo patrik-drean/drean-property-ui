@@ -164,7 +164,7 @@ export function calculateMonthlyOccupancy(
 /**
  * Get all unique income categories from report
  */
-export function getIncomeCategories(report: PropertyPLReport | PortfolioPLReport): string[] {
+export function getIncomeCategories(report: { months: MonthlyPLData[] }): string[] {
   const categories = new Set<string>();
   report.months.forEach(m => {
     Object.keys(m.incomeByCategory).forEach(cat => categories.add(cat));
@@ -175,7 +175,7 @@ export function getIncomeCategories(report: PropertyPLReport | PortfolioPLReport
 /**
  * Get all unique expense categories from report
  */
-export function getExpenseCategories(report: PropertyPLReport | PortfolioPLReport): string[] {
+export function getExpenseCategories(report: { months: MonthlyPLData[] }): string[] {
   const categories = new Set<string>();
   report.months.forEach(m => {
     Object.keys(m.expensesByCategory).forEach(cat => categories.add(cat));
@@ -209,6 +209,44 @@ export interface PortfolioPLReport {
   propertyBreakdowns: PropertyBreakdown[];
 }
 
+// Statuses excluded from the portfolio report. Compared case-insensitively
+// because the data contains both 'Soft offer' and 'Soft Offer'.
+const EXCLUDED_PORTFOLIO_STATUSES = ['soft offer', 'hard offer', 'opportunity'];
+
+function isActiveStatus(status?: string): boolean {
+  return !EXCLUDED_PORTFOLIO_STATUSES.includes((status || '').toLowerCase());
+}
+
+/**
+ * Sum monthly occupancy across the given properties. The caller decides which
+ * properties belong in the report; properties with no units are skipped.
+ */
+export function calculatePortfolioMonthlyOccupancy(
+  properties: Array<{ id: string; units?: number | null; propertyUnits?: Array<unknown> }>,
+  transactions: Transaction[],
+  monthKeys: string[]
+): MonthlyOccupancy[] {
+  const totals = monthKeys.map(month => ({ month, occupied: 0, total: 0 }));
+
+  properties.forEach(property => {
+    const totalUnits = property.propertyUnits?.length || property.units || 0;
+    if (totalUnits === 0) return;
+
+    const propertyOccupancy = calculateMonthlyOccupancy(
+      transactions.filter(t => t.propertyId === property.id && t.expenseType === 'Operating'),
+      totalUnits,
+      monthKeys
+    );
+
+    propertyOccupancy.forEach((o, i) => {
+      totals[i].occupied += o.occupied;
+      totals[i].total += o.total;
+    });
+  });
+
+  return totals;
+}
+
 /**
  * Generate portfolio P&L report from all transactions
  * Excludes archived properties and properties in Soft Offer, Hard Offer, or Opportunity status
@@ -220,9 +258,7 @@ export function generatePortfolioPLReport(
 ): PortfolioPLReport {
   // Filter to active properties only (exclude archived and specific statuses)
   const activePropertyIds = new Set(
-    properties
-      .filter(p => !p.archived && !['Soft offer', 'Hard offer', 'Opportunity'].includes(p.status || ''))
-      .map(p => p.id)
+    properties.filter(p => !p.archived && isActiveStatus(p.status)).map(p => p.id)
   );
 
   // Filter to operational expenses only for active properties
@@ -231,20 +267,27 @@ export function generatePortfolioPLReport(
     (t.propertyId === null || t.propertyId === 'business' || t.propertyId === undefined || activePropertyIds.has(t.propertyId))
   );
 
-  // Get last N months (use month boundaries)
-  const endDate = endOfMonth(new Date());
-  const startDate = startOfMonth(subMonths(new Date(), months));
+  // Get last N complete months (excluding the current incomplete month)
+  const endDate = endOfMonth(subMonths(startOfMonth(new Date()), 1));
+
+  // Month keys in the window, oldest first
+  const monthKeys: string[] = [];
+  for (let i = months - 1; i >= 0; i--) {
+    monthKeys.push(format(startOfMonth(subMonths(endDate, i)), 'yyyy-MM'));
+  }
+  const monthsInWindow = new Set(monthKeys);
 
   // Group by month
   const byMonth = new Map<string, Transaction[]>();
 
   filtered.forEach(transaction => {
     const reportDate = transaction.overrideDate || transaction.date;
-    const transDate = new Date(reportDate);
+    // Compare month keys as strings. Parsing to a Date reads the value as UTC
+    // midnight, which pushes 1st-of-month entries into the previous month in
+    // timezones behind UTC and drops them from the window.
+    const monthKey = reportDate.substring(0, 7); // Extract 'yyyy-MM' from 'yyyy-MM-dd'
 
-    if (transDate >= startDate && transDate <= endDate) {
-      // Use date string directly to avoid timezone issues
-      const monthKey = reportDate.substring(0, 7); // Extract 'yyyy-MM' from 'yyyy-MM-dd'
+    if (monthsInWindow.has(monthKey)) {
       if (!byMonth.has(monthKey)) {
         byMonth.set(monthKey, []);
       }
@@ -255,9 +298,7 @@ export function generatePortfolioPLReport(
   // Generate monthly data (aggregate across all properties)
   const monthlyData: MonthlyPLData[] = [];
 
-  for (let i = months - 1; i >= 0; i--) {
-    const monthDate = subMonths(endDate, i);
-    const monthKey = format(startOfMonth(monthDate), 'yyyy-MM');
+  monthKeys.forEach(monthKey => {
     const monthTransactions = byMonth.get(monthKey) || [];
 
     const incomeByCategory: Record<string, number> = {};
@@ -283,35 +324,32 @@ export function generatePortfolioPLReport(
       totalExpenses,
       netIncome: totalIncome - totalExpenses
     });
-  }
+  });
 
   // Calculate 6-month average
   const avgIncome = monthlyData.reduce((sum, m) => sum + m.totalIncome, 0) / monthlyData.length;
   const avgExpenses = monthlyData.reduce((sum, m) => sum + m.totalExpenses, 0) / monthlyData.length;
 
-  // Get last full month (previous month, not current)
-  const lastFullMonthDate = subMonths(startOfMonth(new Date()), 1);
-  const lastFullMonthKey = format(lastFullMonthDate, 'yyyy-MM');
-  const lastFullMonthData = monthlyData.find(m => m.month === lastFullMonthKey) || {
-    totalIncome: 0,
-    totalExpenses: 0,
-    netIncome: 0,
-    month: lastFullMonthKey,
-    incomeByCategory: {},
-    expensesByCategory: {}
-  };
+  // Last full month is the newest month in the window
+  const lastFullMonthData = monthlyData[monthlyData.length - 1];
+  const lastFullMonthKey = lastFullMonthData.month;
 
-  // Property-level breakdown (totals for entire period + last full month)
+  // Property-level breakdown (totals across the window + last full month)
   const propertyMap = new Map(
     properties
-      .filter(p => !p.archived && !['Soft offer', 'Hard offer', 'Opportunity'].includes(p.status || ''))
+      .filter(p => !p.archived && isActiveStatus(p.status))
       .map(p => [p.id, p.address])
   );
   const breakdowns: PropertyBreakdown[] = [];
 
-  // Group by property
+  // Group by property, restricted to the reporting window so the period
+  // totals match the months shown in the table
   const byProperty = new Map<string, Transaction[]>();
+
   filtered.forEach(t => {
+    const monthKey = (t.overrideDate || t.date).substring(0, 7);
+    if (!monthsInWindow.has(monthKey)) return;
+
     const propId = t.propertyId || 'business';
     if (!byProperty.has(propId)) {
       byProperty.set(propId, []);
@@ -352,8 +390,12 @@ export function generatePortfolioPLReport(
     });
   });
 
-  // Sort by net income descending
-  breakdowns.sort((a, b) => b.netIncome - a.netIncome);
+  // Worst last-month performers first, with the business row pinned to the end
+  breakdowns.sort((a, b) => {
+    if (a.propertyId === 'business') return 1;
+    if (b.propertyId === 'business') return -1;
+    return a.lastMonthNetIncome - b.lastMonthNetIncome;
+  });
 
   return {
     months: monthlyData,

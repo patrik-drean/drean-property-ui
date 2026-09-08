@@ -80,8 +80,9 @@ describe('PropertyPLReport', () => {
       expect(screen.getByText('Units Occupied')).toBeInTheDocument();
     });
 
-    // One unit paid rent last month, out of two units
-    expect(screen.getByText('1/2')).toBeInTheDocument();
+    // One unit paid rent last month, out of two units. The KPI tile shows the
+    // same figure, so it appears more than once.
+    expect(screen.getAllByText('1/2').length).toBeGreaterThan(0);
 
     // Net income appears in the summary block and again after expenses
     expect(screen.getAllByText('Net Income')).toHaveLength(2);
@@ -94,9 +95,11 @@ describe('PropertyPLReport', () => {
     await waitFor(() => {
       expect(screen.getByText('Last Month Cashflow')).toBeInTheDocument();
     });
-    expect(screen.getByText('Occupancy Rate')).toBeInTheDocument();
+    expect(screen.getByText('Occupancy')).toBeInTheDocument();
     expect(screen.getByText('Top Expense')).toBeInTheDocument();
     expect(screen.queryByText('Performance Metrics')).not.toBeInTheDocument();
+    // Tile occupancy is rent-based, matching the table rather than unit status
+    expect(screen.getByText('50% last month')).toBeInTheDocument();
   });
 
   it('renders the trend chart', async () => {

@@ -1,17 +1,19 @@
 import React from 'react';
 import { Box, Paper, Typography, Grid } from '@mui/material';
 import { Property } from '../../types/property';
-import { PropertyPLReport } from '../../utils/reportUtils';
+import { PropertyPLReport, MonthlyOccupancy } from '../../utils/reportUtils';
 import { calculateOperationalMetrics, OperationalMetrics } from '../../utils/propertyMetricsCalculator';
 
 interface PropertyKpiStripProps {
   property: Property;
   plReport: PropertyPLReport;
+  occupancy?: MonthlyOccupancy[];
 }
 
-type TileColor = 'success' | 'error' | 'warning' | 'text.primary';
+export type TileColor = 'success' | 'error' | 'warning' | 'text.primary';
 
-const formatCurrency = (amount: number) => {
+/** Whole-dollar currency, used by the KPI tiles */
+export const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -20,7 +22,7 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const StatTile: React.FC<{
+export const StatTile: React.FC<{
   label: string;
   value: string;
   caption?: string;
@@ -52,12 +54,23 @@ const StatTile: React.FC<{
   );
 };
 
-export const PropertyKpiStrip: React.FC<PropertyKpiStripProps> = ({ property, plReport }) => {
+export const PropertyKpiStrip: React.FC<PropertyKpiStripProps> = ({
+  property,
+  plReport,
+  occupancy = []
+}) => {
   const metrics: OperationalMetrics = calculateOperationalMetrics(property, plReport);
   const topExpense = metrics.topExpenseCategories[0];
 
+  // Rent-based occupancy for the last full month, so this agrees with the
+  // Units Occupied row in the table rather than the unit status snapshot
+  const lastMonthOccupancy = occupancy[occupancy.length - 1];
+  const occupancyRate = lastMonthOccupancy && lastMonthOccupancy.total > 0
+    ? Math.round((lastMonthOccupancy.occupied / lastMonthOccupancy.total) * 100)
+    : 0;
+
   const occupancyColor: TileColor =
-    metrics.occupancyRate >= 90 ? 'success' : metrics.occupancyRate >= 75 ? 'warning' : 'error';
+    occupancyRate >= 90 ? 'success' : occupancyRate >= 75 ? 'warning' : 'error';
 
   const tiles: Array<{ label: string; value: string; caption?: string; color: TileColor }> = [
     {
@@ -76,8 +89,9 @@ export const PropertyKpiStrip: React.FC<PropertyKpiStripProps> = ({ property, pl
       color: 'text.primary',
     },
     {
-      label: 'Occupancy Rate',
-      value: `${metrics.occupancyRate}%`,
+      label: 'Occupancy',
+      value: lastMonthOccupancy ? `${lastMonthOccupancy.occupied}/${lastMonthOccupancy.total}` : '—',
+      caption: `${occupancyRate}% last month`,
       color: occupancyColor,
     },
     {

@@ -6,19 +6,35 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Paper,
   Typography,
   CircularProgress,
+  Button,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  Link
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import { format, subMonths, startOfMonth } from 'date-fns';
+import { ExpandMore as ExpandMoreIcon, Download as DownloadIcon } from '@mui/icons-material';
 import { transactionApi } from '../../services/transactionApi';
 import PropertyService from '../../services/PropertyService';
-import { generatePortfolioPLReport, getIncomeCategories, getExpenseCategories } from '../../utils/reportUtils';
-import type { PortfolioPLReport as PLReport } from '../../utils/reportUtils';
+import {
+  generatePortfolioPLReport,
+  getIncomeCategories,
+  getExpenseCategories,
+  calculateMonthlyOccupancy,
+  calculatePortfolioMonthlyOccupancy
+} from '../../utils/reportUtils';
+import type { PortfolioPLReport as PLReport, MonthlyOccupancy } from '../../utils/reportUtils';
+import type { Property } from '../../types/property';
+import { PortfolioKpiStrip } from './PortfolioKpiStrip';
+import { PropertyPLTrendChart } from './PropertyPLTrendChart';
+import {
+  PLMonthlyTable,
+  formatCurrency,
+  formatMonth,
+  formatOccupancy,
+  averageOccupied
+} from './PLMonthlyTable';
 
 interface PortfolioPLReportProps {
   months?: number;
@@ -26,6 +42,8 @@ interface PortfolioPLReportProps {
 
 export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6 }) => {
   const [report, setReport] = useState<PLReport | null>(null);
+  const [occupancy, setOccupancy] = useState<MonthlyOccupancy[]>([]);
+  const [propertyOccupancy, setPropertyOccupancy] = useState<Record<string, MonthlyOccupancy>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,8 +60,38 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
 
         // Generate portfolio report
         const plReport = generatePortfolioPLReport(transactions, properties, months);
+        const monthKeys = plReport.months.map(m => m.month);
+
+        // Occupancy covers exactly the properties the report reports on, so the
+        // KPI tile, the Units Occupied row and the breakdown all agree
+        const reportedIds = new Set(plReport.propertyBreakdowns.map(p => p.propertyId));
+        const reportedProperties = properties.filter((p: Property) => reportedIds.has(p.id));
+
+        const portfolioOccupancy = calculatePortfolioMonthlyOccupancy(
+          reportedProperties,
+          transactions,
+          monthKeys
+        );
+
+        // Last full month occupancy per property, for the breakdown table
+        const lastMonthKey = monthKeys[monthKeys.length - 1];
+        const perProperty: Record<string, MonthlyOccupancy> = {};
+        reportedProperties.forEach((property: Property) => {
+          const totalUnits = property.propertyUnits?.length || property.units || 0;
+          if (totalUnits === 0) return;
+
+          perProperty[property.id] = calculateMonthlyOccupancy(
+            transactions.filter(
+              t => t.propertyId === property.id && t.expenseType === 'Operating'
+            ),
+            totalUnits,
+            [lastMonthKey]
+          )[0];
+        });
 
         setReport(plReport);
+        setOccupancy(portfolioOccupancy);
+        setPropertyOccupancy(perProperty);
       } catch (err) {
         console.error('Failed to load portfolio report:', err);
         setError(err instanceof Error ? err.message : 'Failed to load report');
@@ -55,40 +103,93 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
     loadReport();
   }, [months]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+  const handleExportCSV = () => {
+    if (!report) return;
 
-  const formatMonth = (monthKey: string) => {
-    const [year, month] = monthKey.split('-');
-    return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', {
-      month: 'short',
-      year: 'numeric'
+    const rows = [];
+    const avgLabel = `${months}-Mo Avg`;
+
+    rows.push(['Category', ...report.months.map(m => formatMonth(m.month)), avgLabel]);
+
+    rows.push(['SUMMARY']);
+    if (occupancy.length > 0) {
+      rows.push([
+        'Units Occupied',
+        ...occupancy.map(o => formatOccupancy(o.occupied, o.total)),
+        `${averageOccupied(occupancy).toFixed(1)}/${occupancy[0].total}`
+      ]);
+    }
+    rows.push([
+      'Net Income',
+      ...report.months.map(m => m.netIncome),
+      report.sixMonthAverage.netIncome
+    ]);
+
+    rows.push(['INCOME']);
+    getIncomeCategories(report).forEach(category => {
+      rows.push([
+        category,
+        ...report.months.map(m => m.incomeByCategory[category] || 0),
+        report.months.reduce((sum, m) => sum + (m.incomeByCategory[category] || 0), 0) / report.months.length
+      ]);
     });
-  };
+    rows.push([
+      'Total Income',
+      ...report.months.map(m => m.totalIncome),
+      report.sixMonthAverage.totalIncome
+    ]);
 
-  // Get last full month (e.g., if today is Oct 7, last full month is Sep)
-  const getLastFullMonth = () => {
-    const lastMonth = subMonths(startOfMonth(new Date()), 1);
-    return format(lastMonth, 'yyyy-MM');
-  };
+    rows.push(['EXPENSES']);
+    getExpenseCategories(report).forEach(category => {
+      rows.push([
+        category,
+        ...report.months.map(m => m.expensesByCategory[category] || 0),
+        report.months.reduce((sum, m) => sum + (m.expensesByCategory[category] || 0), 0) / report.months.length
+      ]);
+    });
+    rows.push([
+      'Total Expenses',
+      ...report.months.map(m => m.totalExpenses),
+      report.sixMonthAverage.totalExpenses
+    ]);
 
-  const isLastFullMonth = (monthKey: string) => {
-    return monthKey === getLastFullMonth();
-  };
+    rows.push([
+      'Net Income',
+      ...report.months.map(m => m.netIncome),
+      report.sixMonthAverage.netIncome
+    ]);
 
-  // Subtle highlight style for last full month following UX best practices
-  const getHighlightStyle = (isHighlighted: boolean, baseColor?: string) => {
-    if (!isHighlighted) return { bgcolor: baseColor || 'inherit' };
-    return {
-      bgcolor: 'rgba(74, 222, 128, 0.15)',
-      borderLeft: '3px solid',
-      borderColor: '#4ade80',
-      color: '#4ade80 !important'
-    };
+    // Property breakdown
+    rows.push([]);
+    rows.push([
+      'PROPERTY BREAKDOWN',
+      'Occupancy',
+      `Income (${months}mo)`,
+      `Expenses (${months}mo)`,
+      `Net (${months}mo)`,
+      'Last Mo Net'
+    ]);
+    report.propertyBreakdowns.forEach(prop => {
+      const occ = propertyOccupancy[prop.propertyId];
+      rows.push([
+        `"${prop.propertyAddress}"`,
+        occ ? formatOccupancy(occ.occupied, occ.total) : '',
+        prop.totalIncome,
+        prop.totalExpenses,
+        prop.netIncome,
+        prop.lastMonthNetIncome
+      ]);
+    });
+
+    const csvContent = rows.map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'portfolio-pl.csv';
+    link.click();
+    window.URL.revokeObjectURL(url);
   };
 
   if (loading) {
@@ -117,230 +218,104 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
     );
   }
 
-  const incomeCategories = getIncomeCategories(report);
-  const expenseCategories = getExpenseCategories(report);
+  const dateRange = `${formatMonth(report.months[0].month)} – ${formatMonth(report.months[report.months.length - 1].month)}`;
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} px={2}>
-        <Typography variant="h5" sx={{ color: '#f0f6fc' }}>Portfolio P&L Report</Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={3} px={2}>
+        <Box>
+          <Typography variant="h5" fontWeight="bold">Portfolio P&L Report</Typography>
+          <Typography variant="subtitle2" color="text.secondary">
+            {dateRange}
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          startIcon={<DownloadIcon />}
+          onClick={handleExportCSV}
+        >
+          Export CSV
+        </Button>
       </Box>
 
-      {/* Main P&L Table */}
-      <Paper sx={{ overflowX: 'auto', mb: 3, bgcolor: '#161b22' }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell><strong>Category</strong></TableCell>
-              {report.months.map(m => (
-                <TableCell
-                  key={m.month}
-                  align="right"
-                  sx={{
-                    ...(isLastFullMonth(m.month) ? {
-                      bgcolor: '#238636 !important',
-                      borderLeft: '3px solid',
-                      borderColor: '#4ade80',
-                      fontWeight: 600,
-                      color: '#f0f6fc !important'
-                    } : {
-                      fontWeight: 400,
-                      color: '#f0f6fc'
-                    })
-                  }}
-                >
-                  <strong>{formatMonth(m.month)}</strong>
-                </TableCell>
-              ))}
-              <TableCell align="right">
-                <strong>6-Mo Avg</strong>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {/* Income */}
-            <TableRow>
-              <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: '#21262d', color: '#f0f6fc' }}>
-                <strong>INCOME</strong>
-              </TableCell>
-            </TableRow>
-            {incomeCategories.map(category => (
-              <TableRow key={`income-${category}`}>
-                <TableCell sx={{ pl: 4, color: '#f0f6fc' }}>{category}</TableCell>
-                {report.months.map(m => (
-                  <TableCell
-                    key={m.month}
-                    align="right"
-                    sx={getHighlightStyle(isLastFullMonth(m.month))}
-                  >
-                    {formatCurrency(m.incomeByCategory[category] || 0)}
-                  </TableCell>
-                ))}
-                <TableCell align="right">
-                  {formatCurrency(
-                    report.months.reduce((sum, m) => sum + (m.incomeByCategory[category] || 0), 0) / report.months.length
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-            <TableRow sx={{ bgcolor: '#21262d' }}>
-              <TableCell sx={{ color: '#f0f6fc' }}><strong>Total Income</strong></TableCell>
-              {report.months.map(m => (
-                <TableCell
-                  key={m.month}
-                  align="right"
-                  sx={{
-                    ...getHighlightStyle(isLastFullMonth(m.month)),
-                    ...(!isLastFullMonth(m.month) && { bgcolor: '#21262d' }),
-                    color: '#f0f6fc'
-                  }}
-                >
-                  <strong>{formatCurrency(m.totalIncome)}</strong>
-                </TableCell>
-              ))}
-              <TableCell align="right" sx={{ color: '#f0f6fc' }}>
-                <strong>{formatCurrency(report.sixMonthAverage.totalIncome)}</strong>
-              </TableCell>
-            </TableRow>
+      <PortfolioKpiStrip report={report} occupancy={occupancy} />
 
-            {/* Expenses */}
-            <TableRow>
-              <TableCell colSpan={report.months.length + 2} sx={{ bgcolor: '#21262d', color: '#f0f6fc' }}>
-                <strong>EXPENSES</strong>
-              </TableCell>
-            </TableRow>
-            {expenseCategories.map(category => (
-              <TableRow key={`expense-${category}`}>
-                <TableCell sx={{ pl: 4, color: '#f0f6fc' }}>{category}</TableCell>
-                {report.months.map(m => (
-                  <TableCell
-                    key={m.month}
-                    align="right"
-                    sx={getHighlightStyle(isLastFullMonth(m.month))}
-                  >
-                    {formatCurrency(m.expensesByCategory[category] || 0)}
-                  </TableCell>
-                ))}
-                <TableCell align="right">
-                  {formatCurrency(
-                    report.months.reduce((sum, m) => sum + (m.expensesByCategory[category] || 0), 0) / report.months.length
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-            <TableRow sx={{ bgcolor: '#21262d' }}>
-              <TableCell sx={{ color: '#f0f6fc' }}><strong>Total Expenses</strong></TableCell>
-              {report.months.map(m => (
-                <TableCell
-                  key={m.month}
-                  align="right"
-                  sx={{
-                    ...getHighlightStyle(isLastFullMonth(m.month)),
-                    ...(!isLastFullMonth(m.month) && { bgcolor: '#21262d' }),
-                    color: '#f0f6fc'
-                  }}
-                >
-                  <strong>{formatCurrency(m.totalExpenses)}</strong>
-                </TableCell>
-              ))}
-              <TableCell align="right" sx={{ color: '#f0f6fc' }}>
-                <strong>{formatCurrency(report.sixMonthAverage.totalExpenses)}</strong>
-              </TableCell>
-            </TableRow>
+      <PropertyPLTrendChart months={report.months} />
 
-            {/* Net Income */}
-            <TableRow>
-              <TableCell sx={{ color: '#f0f6fc' }}><strong>Net Income</strong></TableCell>
-              {report.months.map(m => (
-                <TableCell
-                  key={m.month}
-                  align="right"
-                  sx={getHighlightStyle(isLastFullMonth(m.month))}
-                >
-                  <strong style={{ color: m.netIncome >= 0 ? '#4ade80' : '#f87171' }}>
-                    {formatCurrency(m.netIncome)}
-                  </strong>
-                </TableCell>
-              ))}
-              <TableCell align="right">
-                <strong style={{ color: report.sixMonthAverage.netIncome >= 0 ? '#4ade80' : '#f87171' }}>
-                  {formatCurrency(report.sixMonthAverage.netIncome)}
-                </strong>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Paper>
+      <Box mb={3}>
+        <PLMonthlyTable
+          months={report.months}
+          average={report.sixMonthAverage}
+          occupancy={occupancy}
+          avgLabel={`${months}-Mo Avg`}
+        />
+      </Box>
 
       {/* Property Breakdown */}
-      <Accordion defaultExpanded sx={{ bgcolor: '#161b22' }}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#8b949e' }} />}>
-          <Typography variant="h6" sx={{ color: '#f0f6fc' }}>Property Breakdown</Typography>
+      <Accordion defaultExpanded>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6">Property Breakdown</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell><strong>Property</strong></TableCell>
-                <TableCell align="right"><strong>Total Income (6mo)</strong></TableCell>
-                <TableCell align="right"><strong>Total Expenses (6mo)</strong></TableCell>
-                <TableCell align="right"><strong>Net Income (6mo)</strong></TableCell>
-                <TableCell align="right"><strong>Last Mo Income</strong></TableCell>
-                <TableCell align="right"><strong>Last Mo Expenses</strong></TableCell>
-                <TableCell
-                  align="right"
-                  sx={{
-                    bgcolor: '#238636 !important',
-                    borderLeft: '3px solid',
-                    borderColor: '#4ade80',
-                    fontWeight: 600,
-                    color: '#f0f6fc !important'
-                  }}
-                >
-                  <strong>Last Mo Net</strong>
-                </TableCell>
+                <TableCell align="right"><strong>Occupancy</strong></TableCell>
+                <TableCell align="right"><strong>Income ({months}mo)</strong></TableCell>
+                <TableCell align="right"><strong>Expenses ({months}mo)</strong></TableCell>
+                <TableCell align="right"><strong>Net ({months}mo)</strong></TableCell>
+                <TableCell align="right"><strong>Last Mo Net</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {report.propertyBreakdowns.map((prop, idx) => (
-                <TableRow key={idx}>
-                  <TableCell sx={{ color: '#f0f6fc' }}>
-                    {prop.propertyId === 'business' ? (
-                      prop.propertyAddress
-                    ) : (
-                      <a
-                        href={`#/reports/property-pl/${prop.propertyId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: '#60a5fa', textDecoration: 'underline' }}
-                      >
-                        {prop.propertyAddress}
-                      </a>
-                    )}
-                  </TableCell>
-                  <TableCell align="right" sx={{ color: '#f0f6fc' }}>{formatCurrency(prop.totalIncome)}</TableCell>
-                  <TableCell align="right" sx={{ color: '#f0f6fc' }}>{formatCurrency(prop.totalExpenses)}</TableCell>
-                  <TableCell align="right">
-                    <strong style={{ color: prop.netIncome >= 0 ? '#4ade80' : '#f87171' }}>
+              {report.propertyBreakdowns.map(prop => {
+                const occ = propertyOccupancy[prop.propertyId];
+                return (
+                  <TableRow key={prop.propertyId}>
+                    <TableCell>
+                      {prop.propertyId === 'business' ? (
+                        prop.propertyAddress
+                      ) : (
+                        <Link
+                          href={`#/reports/property-pl/${prop.propertyId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          color="secondary.main"
+                        >
+                          {prop.propertyAddress}
+                        </Link>
+                      )}
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={occ && occ.total > 0 && occ.occupied === 0 ? { color: 'error.main' } : undefined}
+                    >
+                      {occ ? formatOccupancy(occ.occupied, occ.total) : '—'}
+                    </TableCell>
+                    <TableCell align="right">{formatCurrency(prop.totalIncome)}</TableCell>
+                    <TableCell align="right">{formatCurrency(prop.totalExpenses)}</TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{
+                        color: prop.netIncome >= 0 ? 'success.main' : 'error.main',
+                        fontWeight: 700
+                      }}
+                    >
                       {formatCurrency(prop.netIncome)}
-                    </strong>
-                  </TableCell>
-                  <TableCell align="right" sx={{ color: '#f0f6fc' }}>{formatCurrency(prop.lastMonthIncome)}</TableCell>
-                  <TableCell align="right" sx={{ color: '#f0f6fc' }}>{formatCurrency(prop.lastMonthExpenses)}</TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      bgcolor: 'rgba(74, 222, 128, 0.15)',
-                      borderLeft: '3px solid',
-                      borderColor: '#4ade80',
-                    }}
-                  >
-                    <strong style={{ color: prop.lastMonthNetIncome >= 0 ? '#4ade80' : '#f87171' }}>
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{
+                        color: prop.lastMonthNetIncome >= 0 ? 'success.main' : 'error.main',
+                        fontWeight: 700
+                      }}
+                    >
                       {formatCurrency(prop.lastMonthNetIncome)}
-                    </strong>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </AccordionDetails>

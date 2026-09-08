@@ -3,7 +3,8 @@ import {
   generatePortfolioPLReport,
   getIncomeCategories,
   getExpenseCategories,
-  calculateMonthlyOccupancy
+  calculateMonthlyOccupancy,
+  calculatePortfolioMonthlyOccupancy
 } from '../reportUtils';
 import { Transaction } from '../../types/transaction';
 import { format, subMonths, startOfMonth } from 'date-fns';
@@ -374,56 +375,116 @@ describe('reportUtils', () => {
       updatedAt: new Date().toISOString(),
     });
 
+    const lastFullMonth = format(subMonths(startOfMonth(new Date()), 1), 'yyyy-MM');
+
     it('should aggregate transactions across multiple properties', () => {
-      const currentMonth = format(startOfMonth(new Date()), 'yyyy-MM');
       const transactions: Transaction[] = [
-        createTransaction(1000, 'Rent', `${currentMonth}-01`, 'prop-1'),
-        createTransaction(800, 'Rent', `${currentMonth}-01`, 'prop-2'),
-        createTransaction(-200, 'Utilities', `${currentMonth}-05`, 'prop-1'),
-        createTransaction(-150, 'Utilities', `${currentMonth}-05`, 'prop-2'),
+        createTransaction(1000, 'Rent', `${lastFullMonth}-01`, 'prop-1'),
+        createTransaction(800, 'Rent', `${lastFullMonth}-01`, 'prop-2'),
+        createTransaction(-200, 'Utilities', `${lastFullMonth}-05`, 'prop-1'),
+        createTransaction(-150, 'Utilities', `${lastFullMonth}-05`, 'prop-2'),
       ];
 
       const report = generatePortfolioPLReport(transactions, properties);
 
-      const currentMonthData = report.months.find(m => m.month === currentMonth);
-      expect(currentMonthData?.totalIncome).toBe(1800);
-      expect(currentMonthData?.totalExpenses).toBe(350);
-      expect(currentMonthData?.netIncome).toBe(1450);
+      const monthData = report.months.find(m => m.month === lastFullMonth);
+      expect(monthData?.totalIncome).toBe(1800);
+      expect(monthData?.totalExpenses).toBe(350);
+      expect(monthData?.netIncome).toBe(1450);
+    });
+
+    it('should exclude the current incomplete month from the window', () => {
+      const currentMonth = format(startOfMonth(new Date()), 'yyyy-MM');
+      const transactions: Transaction[] = [
+        createTransaction(-5000, 'Mortgage & Escrow', `${currentMonth}-02`, 'prop-1'),
+      ];
+
+      const report = generatePortfolioPLReport(transactions, properties);
+
+      // The partial month must not appear, nor distort the average
+      expect(report.months.find(m => m.month === currentMonth)).toBeUndefined();
+      expect(report.months[report.months.length - 1].month).toBe(lastFullMonth);
+      expect(report.sixMonthAverage.totalExpenses).toBe(0);
+    });
+
+    it('should include transactions dated the 1st of the oldest month in the window', () => {
+      const endDate = subMonths(startOfMonth(new Date()), 1);
+      const oldestMonth = format(subMonths(endDate, 5), 'yyyy-MM');
+
+      const transactions: Transaction[] = [
+        createTransaction(1000, 'Rent', `${oldestMonth}-01`, 'prop-1'),
+      ];
+
+      const report = generatePortfolioPLReport(transactions, properties);
+
+      const oldestMonthData = report.months.find(m => m.month === oldestMonth);
+      expect(oldestMonthData!.totalIncome).toBe(1000);
     });
 
     it('should exclude archived properties', () => {
-      const currentMonth = format(startOfMonth(new Date()), 'yyyy-MM');
       const transactions: Transaction[] = [
-        createTransaction(1000, 'Rent', `${currentMonth}-01`, 'prop-1'),
-        createTransaction(500, 'Rent', `${currentMonth}-01`, 'prop-3'), // Archived
+        createTransaction(1000, 'Rent', `${lastFullMonth}-01`, 'prop-1'),
+        createTransaction(500, 'Rent', `${lastFullMonth}-01`, 'prop-3'), // Archived
       ];
 
       const report = generatePortfolioPLReport(transactions, properties);
 
-      const currentMonthData = report.months.find(m => m.month === currentMonth);
-      expect(currentMonthData?.totalIncome).toBe(1000); // Archived property excluded
+      const monthData = report.months.find(m => m.month === lastFullMonth);
+      expect(monthData?.totalIncome).toBe(1000); // Archived property excluded
     });
 
-    it('should exclude properties in Soft Offer, Hard Offer, and Opportunity status', () => {
-      const currentMonth = format(startOfMonth(new Date()), 'yyyy-MM');
+    it('should exclude offer and opportunity statuses regardless of casing', () => {
       const testProperties = [
         { id: 'prop-1', address: '123 Main St', archived: false, status: 'Operational' },
         { id: 'prop-2', address: '456 Oak Ave', archived: false, status: 'Soft offer' },
-        { id: 'prop-3', address: '789 Pine Rd', archived: false, status: 'Hard offer' },
+        { id: 'prop-3', address: '789 Pine Rd', archived: false, status: 'Hard Offer' },
         { id: 'prop-4', address: '321 Elm St', archived: false, status: 'Opportunity' },
+        { id: 'prop-5', address: '654 Ash Ln', archived: false, status: 'Soft Offer' },
       ];
 
       const transactions: Transaction[] = [
-        createTransaction(1000, 'Rent', `${currentMonth}-01`, 'prop-1'),
-        createTransaction(500, 'Rent', `${currentMonth}-01`, 'prop-2'),
-        createTransaction(500, 'Rent', `${currentMonth}-01`, 'prop-3'),
-        createTransaction(500, 'Rent', `${currentMonth}-01`, 'prop-4'),
+        createTransaction(1000, 'Rent', `${lastFullMonth}-01`, 'prop-1'),
+        createTransaction(500, 'Rent', `${lastFullMonth}-01`, 'prop-2'),
+        createTransaction(500, 'Rent', `${lastFullMonth}-01`, 'prop-3'),
+        createTransaction(500, 'Rent', `${lastFullMonth}-01`, 'prop-4'),
+        createTransaction(500, 'Rent', `${lastFullMonth}-01`, 'prop-5'),
       ];
 
       const report = generatePortfolioPLReport(transactions, testProperties);
 
-      const currentMonthData = report.months.find(m => m.month === currentMonth);
-      expect(currentMonthData?.totalIncome).toBe(1000); // Only operational property
+      const monthData = report.months.find(m => m.month === lastFullMonth);
+      expect(monthData?.totalIncome).toBe(1000); // Only operational property
+    });
+
+    it('should sort breakdowns by last month net ascending with business last', () => {
+      const transactions: Transaction[] = [
+        createTransaction(1000, 'Rent', `${lastFullMonth}-01`, 'prop-1'),
+        createTransaction(-100, 'Utilities', `${lastFullMonth}-05`, 'prop-1'), // net +900
+        createTransaction(200, 'Rent', `${lastFullMonth}-01`, 'prop-2'),
+        createTransaction(-900, 'Utilities', `${lastFullMonth}-05`, 'prop-2'), // net -700
+        createTransaction(-50, 'Software', `${lastFullMonth}-05`, undefined), // business
+      ];
+
+      const report = generatePortfolioPLReport(transactions, properties);
+
+      expect(report.propertyBreakdowns.map(p => p.propertyId)).toEqual([
+        'prop-2',
+        'prop-1',
+        'business'
+      ]);
+    });
+
+    it('should restrict breakdown period totals to the reporting window', () => {
+      const outsideWindow = format(subMonths(startOfMonth(new Date()), 12), 'yyyy-MM');
+      const transactions: Transaction[] = [
+        createTransaction(1000, 'Rent', `${lastFullMonth}-01`, 'prop-1'),
+        createTransaction(9999, 'Rent', `${outsideWindow}-15`, 'prop-1'),
+      ];
+
+      const report = generatePortfolioPLReport(transactions, properties);
+
+      const prop1 = report.propertyBreakdowns.find(p => p.propertyId === 'prop-1');
+      expect(prop1!.totalIncome).toBe(1000);
     });
 
     it('should calculate last full month correctly', () => {
@@ -556,6 +617,62 @@ describe('reportUtils', () => {
       );
 
       expect(result[0].occupied).toBe(0);
+    });
+  });
+
+  describe('calculatePortfolioMonthlyOccupancy', () => {
+    const createRent = (date: string, propertyId: string, unit?: string): Transaction => ({
+      id: `trans-${Math.random()}`,
+      date,
+      amount: 1000,
+      category: 'Rent',
+      unit,
+      propertyId,
+      expenseType: 'Operating',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    const portfolio = [
+      { id: 'prop-1', propertyUnits: [{}, {}, {}, {}] },
+      { id: 'prop-2', units: 1 }
+    ];
+
+    it('sums occupied and total units across properties', () => {
+      const result = calculatePortfolioMonthlyOccupancy(
+        portfolio,
+        [
+          createRent('2026-05-01', 'prop-1', '1'),
+          createRent('2026-05-02', 'prop-1', '2'),
+          createRent('2026-05-03', 'prop-2')
+        ],
+        ['2026-05']
+      );
+
+      expect(result).toEqual([{ month: '2026-05', occupied: 3, total: 5 }]);
+    });
+
+    it('only counts the properties it is given', () => {
+      const result = calculatePortfolioMonthlyOccupancy(
+        portfolio,
+        [
+          createRent('2026-05-01', 'prop-1', '1'),
+          createRent('2026-05-01', 'prop-3') // not in the portfolio list
+        ],
+        ['2026-05']
+      );
+
+      expect(result[0]).toEqual({ month: '2026-05', occupied: 1, total: 5 });
+    });
+
+    it('skips properties with no units', () => {
+      const result = calculatePortfolioMonthlyOccupancy(
+        [{ id: 'prop-1', units: 0 }],
+        [createRent('2026-05-01', 'prop-1')],
+        ['2026-05']
+      );
+
+      expect(result[0]).toEqual({ month: '2026-05', occupied: 0, total: 0 });
     });
   });
 });

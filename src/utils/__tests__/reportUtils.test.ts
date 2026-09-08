@@ -474,6 +474,39 @@ describe('reportUtils', () => {
       ]);
     });
 
+    it('should give held properties a row even with no activity', () => {
+      const testProperties = [
+        { id: 'prop-1', address: 'Quiet Rehab', archived: false, status: 'Rehab' },
+        { id: 'prop-2', address: 'Quiet Operational', archived: false, status: 'Operational' },
+        { id: 'prop-3', address: 'Quiet Needs Tenant', archived: false, status: 'Needs Tenant' },
+        { id: 'prop-4', address: 'Quiet Selling', archived: false, status: 'Selling' },
+      ];
+
+      const report = generatePortfolioPLReport([], testProperties);
+
+      expect(report.propertyBreakdowns.map(p => p.propertyId).sort()).toEqual([
+        'prop-1',
+        'prop-2',
+        'prop-3',
+        'prop-4'
+      ]);
+      const quiet = report.propertyBreakdowns.find(p => p.propertyId === 'prop-1');
+      expect(quiet).toMatchObject({ totalIncome: 0, totalExpenses: 0, lastMonthNetIncome: 0 });
+    });
+
+    it('should not create rows for opportunities and offers without activity', () => {
+      const testProperties = [
+        { id: 'prop-1', address: 'Held', archived: false, status: 'Operational' },
+        { id: 'prop-2', address: 'An Opportunity', archived: false, status: 'Opportunity' },
+        { id: 'prop-3', address: 'A Soft Offer', archived: false, status: 'Soft Offer' },
+        { id: 'prop-4', address: 'Archived Rehab', archived: true, status: 'Rehab' },
+      ];
+
+      const report = generatePortfolioPLReport([], testProperties);
+
+      expect(report.propertyBreakdowns.map(p => p.propertyId)).toEqual(['prop-1']);
+    });
+
     it('should restrict breakdown period totals to the reporting window', () => {
       const outsideWindow = format(subMonths(startOfMonth(new Date()), 12), 'yyyy-MM');
       const transactions: Transaction[] = [

@@ -213,8 +213,16 @@ export interface PortfolioPLReport {
 // because the data contains both 'Soft offer' and 'Soft Offer'.
 const EXCLUDED_PORTFOLIO_STATUSES = ['soft offer', 'hard offer', 'opportunity'];
 
+// Properties you actually hold. These always get a breakdown row, even with no
+// activity in the window, so they stay reachable for editing.
+const PORTFOLIO_STATUSES = ['operational', 'selling', 'needs tenant', 'rehab'];
+
 function isActiveStatus(status?: string): boolean {
   return !EXCLUDED_PORTFOLIO_STATUSES.includes((status || '').toLowerCase());
+}
+
+function isPortfolioStatus(status?: string): boolean {
+  return PORTFOLIO_STATUSES.includes((status || '').toLowerCase());
 }
 
 /**
@@ -343,8 +351,12 @@ export function generatePortfolioPLReport(
   const breakdowns: PropertyBreakdown[] = [];
 
   // Group by property, restricted to the reporting window so the period
-  // totals match the months shown in the table
+  // totals match the months shown in the table. Held properties are seeded so
+  // one that has gone quiet still gets a row.
   const byProperty = new Map<string, Transaction[]>();
+  properties
+    .filter(p => !p.archived && isPortfolioStatus(p.status))
+    .forEach(p => byProperty.set(p.id, []));
 
   filtered.forEach(t => {
     const monthKey = (t.overrideDate || t.date).substring(0, 7);

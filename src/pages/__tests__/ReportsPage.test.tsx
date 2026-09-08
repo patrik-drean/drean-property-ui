@@ -70,7 +70,10 @@ const mockCashFlowReport = {
     potentialTotalExpenses: { total: 2196, mortgage: 0, propertyTax: 0, insurance: 0, propertyManagement: 0, maintenance: 0, vacancy: 0, other: 0 },
     potentialTotalNetCashFlow: -396,
     propertiesCount: 1,
-    operationalPropertiesCount: 1
+    operationalPropertiesCount: 1,
+    totalOperationalUnits: 1,
+    totalBehindRentUnits: 0,
+    totalVacantUnits: 0
   },
   generatedAt: new Date()
 };
@@ -109,43 +112,34 @@ describe('ReportsPage', () => {
   });
 
   describe('tab order', () => {
-    it('should display all 4 tabs in correct order', async () => {
+    // Portfolio P&L now lives on /properties, not here
+    it('should display all 3 tabs in correct order', async () => {
       renderWithProviders(<ReportsPage />);
 
       await waitFor(() => {
         const tabs = screen.getAllByRole('tab');
-        expect(tabs).toHaveLength(4);
-        expect(tabs[0]).toHaveTextContent('Portfolio P&L');
-        expect(tabs[1]).toHaveTextContent('Cash Flow Analysis');
-        expect(tabs[2]).toHaveTextContent('Asset Analysis');
-        expect(tabs[3]).toHaveTextContent('Sales Funnel');
+        expect(tabs).toHaveLength(3);
+        expect(tabs[0]).toHaveTextContent('Cash Flow Analysis');
+        expect(tabs[1]).toHaveTextContent('Asset Analysis');
+        expect(tabs[2]).toHaveTextContent('Sales Funnel');
       });
     });
 
-    it('should have Portfolio P&L tab selected by default', async () => {
+    it('should not offer a Portfolio P&L tab', async () => {
       renderWithProviders(<ReportsPage />);
 
       await waitFor(() => {
-        const portfolioPLTab = screen.getByRole('tab', { name: /Portfolio P&L/i });
-        expect(portfolioPLTab).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getAllByRole('tab').length).toBeGreaterThan(0);
       });
+      expect(screen.queryByRole('tab', { name: /Portfolio P&L/i })).not.toBeInTheDocument();
     });
 
-    it('should display Cash Flow Analysis as the second tab', async () => {
+    it('should have Cash Flow Analysis selected by default', async () => {
       renderWithProviders(<ReportsPage />);
 
       await waitFor(() => {
-        const tabs = screen.getAllByRole('tab');
-        expect(tabs[1]).toHaveTextContent('Cash Flow Analysis');
-      });
-    });
-
-    it('should display Asset Analysis as the third tab', async () => {
-      renderWithProviders(<ReportsPage />);
-
-      await waitFor(() => {
-        const tabs = screen.getAllByRole('tab');
-        expect(tabs[2]).toHaveTextContent('Asset Analysis');
+        const cashFlowTab = screen.getByRole('tab', { name: /Cash Flow Analysis/i });
+        expect(cashFlowTab).toHaveAttribute('aria-selected', 'true');
       });
     });
   });
@@ -185,7 +179,7 @@ describe('ReportsPage', () => {
   });
 
   describe('default tab content', () => {
-    it('should load Portfolio P&L report content by default', async () => {
+    it('should load Cash Flow report content by default', async () => {
       renderWithProviders(<ReportsPage />);
 
       await waitFor(() => {
@@ -194,22 +188,6 @@ describe('ReportsPage', () => {
         // First tabpanel should be visible (not hidden)
         expect(tabPanels[0]).not.toHaveAttribute('hidden');
       });
-    });
-  });
-
-  describe('export button visibility', () => {
-    it('should NOT show export button when Portfolio P&L tab is selected (first tab)', async () => {
-      renderWithProviders(<ReportsPage />);
-
-      await waitFor(() => {
-        // Portfolio P&L tab is selected by default
-        const portfolioPLTab = screen.getByRole('tab', { name: /Portfolio P&L/i });
-        expect(portfolioPLTab).toHaveAttribute('aria-selected', 'true');
-      });
-
-      // Export button should NOT be visible for Portfolio P&L
-      const exportButtons = screen.queryAllByRole('button', { name: /Export/i });
-      expect(exportButtons.length).toBe(0);
     });
   });
 
@@ -230,12 +208,12 @@ describe('ReportsPage', () => {
   });
 
   describe('Sales Funnel Integration', () => {
-    it('should render Sales Funnel tab as 4th tab', async () => {
+    it('should render Sales Funnel tab as the last tab', async () => {
       renderWithProviders(<ReportsPage />);
 
       await waitFor(() => {
-        const salesFunnelTab = screen.getByRole('tab', { name: /Sales Funnel/i });
-        expect(salesFunnelTab).toBeInTheDocument();
+        const tabs = screen.getAllByRole('tab');
+        expect(tabs[tabs.length - 1]).toHaveTextContent('Sales Funnel');
       });
     });
 
@@ -247,11 +225,11 @@ describe('ReportsPage', () => {
         fireEvent.click(salesFunnelTab);
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/reports?tab=3', { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith('/reports?tab=2', { replace: true });
     });
 
-    it('should select Sales Funnel tab when URL has tab=3 parameter', async () => {
-      mockLocation.search = '?tab=3';
+    it('should select Sales Funnel tab when URL has tab=2 parameter', async () => {
+      mockLocation.search = '?tab=2';
 
       renderWithProviders(<ReportsPage />);
 

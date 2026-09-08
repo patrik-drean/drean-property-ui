@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { MemoryRouter } from 'react-router-dom';
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { PortfolioPLReport } from '../PortfolioPLReport';
 import { transactionApi } from '../../../services/transactionApi';
@@ -12,7 +13,11 @@ import { api } from '../../../services/apiConfig';
 jest.mock('../../../services/transactionApi');
 jest.mock('../../../services/PropertyService');
 jest.mock('../../../services/apiConfig', () => ({
-  api: { archiveProperty: jest.fn() }
+  api: {
+    archiveProperty: jest.fn(),
+    updateProperty: jest.fn(),
+    addProperty: jest.fn()
+  }
 }));
 
 const theme = createTheme();
@@ -42,25 +47,48 @@ const mockTransactions = [
   }
 ];
 
-const mockProperties = [
-  {
-    id: 'prop-1',
-    address: '123 Test Street',
-    archived: false,
-    status: 'Operational',
-    units: 2,
-    propertyUnits: [
-      { id: 'u1', unitNumber: '1' },
-      { id: 'u2', unitNumber: '2' }
-    ]
-  }
-];
+// The dialog reads every numeric field, so fixtures must be complete properties
+const buildProperty = (overrides: Record<string, unknown> = {}) => ({
+  id: 'prop-1',
+  address: '123 Test Street',
+  archived: false,
+  status: 'Operational',
+  propertyLeadId: null,
+  listingPrice: 200000,
+  offerPrice: 180000,
+  rehabCosts: 10000,
+  potentialRent: 2000,
+  arv: 250000,
+  rentCastEstimates: { price: 0, priceLow: 0, priceHigh: 0, rent: 0, rentLow: 0, rentHigh: 0 },
+  todoMetaData: { todoistSectionId: null },
+  hasRentcastData: false,
+  saleComparables: [],
+  notes: '',
+  score: 0,
+  zillowLink: '',
+  squareFootage: null,
+  units: 2,
+  actualRent: 2000,
+  currentHouseValue: 0,
+  currentLoanValue: null,
+  monthlyExpenses: null,
+  capitalCosts: null,
+  propertyUnits: [
+    { id: 'u1', propertyId: 'prop-1', unitNumber: '1', status: 'Operational', rent: 1000, notes: '', statusHistory: [] },
+    { id: 'u2', propertyId: 'prop-1', unitNumber: '2', status: 'Vacant', rent: 0, notes: '', statusHistory: [] }
+  ],
+  ...overrides
+});
+
+const mockProperties = [buildProperty()];
 
 const renderWithTheme = (component: React.ReactElement) => {
   return render(
-    <ThemeProvider theme={theme}>
-      {component}
-    </ThemeProvider>
+    <MemoryRouter>
+      <ThemeProvider theme={theme}>
+        {component}
+      </ThemeProvider>
+    </MemoryRouter>
   );
 };
 
@@ -249,6 +277,106 @@ describe('PortfolioPLReport', () => {
         'Good St',
         'Business (No Property)'
       ]);
+    });
+  });
+
+  describe('property management actions', () => {
+    it('offers Add Property and opens the dialog in add mode', async () => {
+      mockResolved();
+
+      renderWithTheme(<PortfolioPLReport months={6} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Add Property')).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByRole('button', { name: /Add Property/ }));
+      expect(screen.getByText('Add New Property')).toBeInTheDocument();
+    });
+
+    it('opens the edit dialog prefilled from the row action', async () => {
+      mockResolved();
+
+      renderWithTheme(<PortfolioPLReport months={6} />);
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Edit 123 Test Street')).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByLabelText('Edit 123 Test Street'));
+
+      expect(screen.getByText('Edit Property')).toBeInTheDocument();
+      // The dialog prefills from the property in an effect, so wait for it
+      await waitFor(() => {
+        const addressInput = screen.getByRole('textbox', { name: /Address/ }) as HTMLInputElement;
+        expect(addressInput.value).toBe('123 Test Street');
+      });
+    });
+
+    it('saves an edit and reloads the report', async () => {
+      mockResolved();
+      (api.updateProperty as jest.Mock).mockResolvedValue({});
+
+      renderWithTheme(<PortfolioPLReport months={6} />);
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Edit 123 Test Street')).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByLabelText('Edit 123 Test Street'));
+      // Wait for the prefill, otherwise validation blocks the save on a blank address
+      await waitFor(() => {
+        expect(
+          (screen.getByRole('textbox', { name: /Address/ }) as HTMLInputElement).value
+        ).toBe('123 Test Street');
+      });
+
+      await userEvent.click(screen.getByRole('button', { name: 'Update Property' }));
+
+      await waitFor(() => {
+        expect(api.updateProperty).toHaveBeenCalledWith('prop-1', expect.any(Object));
+      });
+      expect(PropertyService.getAllProperties).toHaveBeenCalledTimes(2);
+    });
+
+    it('links to the archived properties page', async () => {
+      mockResolved();
+
+      renderWithTheme(<PortfolioPLReport months={6} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('link', { name: /Archived Properties/ })).toHaveAttribute(
+          'href',
+          '/archived'
+        );
+      });
+    });
+
+    it('shows a Zillow shortcut only when the property has a listing link', async () => {
+      mockResolved([
+        buildProperty({ zillowLink: 'https://zillow.com/homedetails/x' }),
+        buildProperty({
+          id: 'prop-2',
+          address: 'No Link Ave',
+          units: 1,
+          propertyUnits: [
+            { id: 'u3', propertyId: 'prop-2', unitNumber: '1', status: 'Operational', rent: 500, notes: '', statusHistory: [] }
+          ]
+        })
+      ], [
+        ...mockTransactions,
+        {
+          id: '9', propertyId: 'prop-2', date: `${lastFullMonth}-05`,
+          amount: 500, category: 'Rent', expenseType: 'Operating'
+        }
+      ]);
+
+      renderWithTheme(<PortfolioPLReport months={6} />);
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Zillow listing for 123 Test Street')).toBeInTheDocument();
+      });
+      expect(screen.queryByLabelText('Zillow listing for No Link Ave')).not.toBeInTheDocument();
     });
   });
 

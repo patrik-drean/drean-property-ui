@@ -18,9 +18,12 @@ export const PortfolioKpiStrip: React.FC<PortfolioKpiStripProps> = ({ report, oc
   const occupancyColor: TileColor =
     occupancyRate >= 90 ? 'success' : occupancyRate >= 75 ? 'warning' : 'error';
 
-  // The business row is not a property, so it does not count either way
-  const propertyRows = report.propertyBreakdowns.filter(p => p.propertyId !== 'business');
-  const positiveCount = propertyRows.filter(p => p.lastMonthNetIncome >= 0).length;
+  // The business row is not a property, and a property with no money moving
+  // last month is neither positive nor negative
+  const propertyRows = report.propertyBreakdowns.filter(
+    p => p.propertyId !== 'business' && p.lastMonthNetIncome !== 0
+  );
+  const positiveCount = propertyRows.filter(p => p.lastMonthNetIncome > 0).length;
 
   const positiveColor: TileColor =
     propertyRows.length === 0
@@ -56,7 +59,7 @@ export const PortfolioKpiStrip: React.FC<PortfolioKpiStripProps> = ({ report, oc
     {
       label: 'Cashflow Positive',
       value: `${positiveCount} of ${propertyRows.length}`,
-      caption: 'properties last month',
+      caption: 'active properties last month',
       color: positiveColor,
     },
   ];

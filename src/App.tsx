@@ -14,7 +14,6 @@ import { TrialExpiredPaywall } from './components/shared/TrialExpiredPaywall';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navigation from './components/Navigation';
 import LoginPage from './pages/LoginPage';
-import PropertiesPage from './components/PropertiesPage';
 import ArchivedPropertiesPage from './components/ArchivedPropertiesPage';
 import Calculator from './components/Calculator';
 import PropertyLeadsPage from './components/PropertyLeadsPage';
@@ -25,6 +24,7 @@ import TeamPage from './components/TeamPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { TransactionsPage } from './pages/TransactionsPage';
 import { PropertyPLReportPage } from './pages/PropertyPLReportPage';
+import { PortfolioPLReportPage } from './pages/PortfolioPLReportPage';
 import { MessagingPage } from './pages/MessagingPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import PricingPage from './pages/PricingPage';
@@ -60,7 +60,7 @@ const router = createHashRouter(
       <Route element={<ProtectedRoute />}>
         <Route element={<Navigation />}>
           <Route path="/" element={<Navigate to="/leads" replace />} />
-          <Route path="/properties" element={<PropertiesPage />} />
+          <Route path="/properties" element={<PortfolioPLReportPage />} />
           <Route path="/properties/:id" element={<PropertyDetailsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />

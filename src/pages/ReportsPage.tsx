@@ -21,7 +21,6 @@ import {
   Home as HomeIcon,
   Refresh as RefreshIcon,
   GetApp as DownloadIcon,
-  AccountBalance as AccountBalanceIcon,
   Leaderboard as LeaderboardIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
@@ -33,7 +32,6 @@ import {
 } from '../types/portfolioReport';
 import { PortfolioCashFlowReport } from '../components/Reports/PortfolioCashFlowReport';
 import { PortfolioAssetReport } from '../components/Reports/PortfolioAssetReport';
-import { PortfolioPLReport } from '../components/Reports/PortfolioPLReport';
 import { SalesFunnelReportComponent } from '../components/Reports/SalesFunnelReport';
 import { portfolioReportService } from '../services/portfolioReportService';
 
@@ -234,10 +232,10 @@ export const ReportsPage: React.FC = () => {
             </IconButton>
           </Tooltip>
 
-          {!isMobile && currentTab !== 0 && currentTab !== 3 && (
-            <Tooltip title={`Export ${currentTab === 1 ? 'Cash Flow' : 'Asset'} Report`}>
+          {!isMobile && currentTab !== 2 && (
+            <Tooltip title={`Export ${currentTab === 0 ? 'Cash Flow' : 'Asset'} Report`}>
               <IconButton
-                onClick={() => handleExport(currentTab === 1 ? 'cashflow' : 'assets')}
+                onClick={() => handleExport(currentTab === 0 ? 'cashflow' : 'assets')}
                 disabled={loading || (!cashFlowReport && !assetReport)}
                 color="primary"
               >
@@ -318,38 +316,28 @@ export const ReportsPage: React.FC = () => {
               scrollButtons={isMobile ? 'auto' : false}
             >
               <Tab
-                label="Portfolio P&L"
-                icon={<AccountBalanceIcon />}
-                iconPosition={isMobile ? 'top' : 'start'}
-                {...a11yProps(0)}
-              />
-              <Tab
                 label="Cash Flow Analysis"
                 icon={<TrendingUpIcon />}
                 iconPosition={isMobile ? 'top' : 'start'}
-                {...a11yProps(1)}
+                {...a11yProps(0)}
               />
               <Tab
                 label="Asset Analysis"
                 icon={<HomeIcon />}
                 iconPosition={isMobile ? 'top' : 'start'}
-                {...a11yProps(2)}
+                {...a11yProps(1)}
               />
               <Tab
                 label="Sales Funnel"
                 icon={<LeaderboardIcon />}
                 iconPosition={isMobile ? 'top' : 'start'}
-                {...a11yProps(3)}
+                {...a11yProps(2)}
               />
             </Tabs>
           </Box>
 
           {/* Tab panels */}
           <TabPanel value={currentTab} index={0}>
-            <PortfolioPLReport months={6} />
-          </TabPanel>
-
-          <TabPanel value={currentTab} index={1}>
             <PortfolioCashFlowReport
               properties={properties}
               report={cashFlowReport}
@@ -360,7 +348,7 @@ export const ReportsPage: React.FC = () => {
             />
           </TabPanel>
 
-          <TabPanel value={currentTab} index={2}>
+          <TabPanel value={currentTab} index={1}>
             <PortfolioAssetReport
               properties={properties}
               report={assetReport}
@@ -370,21 +358,21 @@ export const ReportsPage: React.FC = () => {
             />
           </TabPanel>
 
-          <TabPanel value={currentTab} index={3}>
+          <TabPanel value={currentTab} index={2}>
             <SalesFunnelReportComponent />
           </TabPanel>
 
           {/* Mobile export buttons */}
-          {isMobile && currentTab !== 0 && currentTab !== 3 && (
+          {isMobile && currentTab !== 2 && (
             <Box p={2} textAlign="center">
               <Button
                 variant="outlined"
                 startIcon={<DownloadIcon />}
-                onClick={() => handleExport(currentTab === 1 ? 'cashflow' : 'assets')}
+                onClick={() => handleExport(currentTab === 0 ? 'cashflow' : 'assets')}
                 disabled={!cashFlowReport && !assetReport}
                 fullWidth
               >
-                Export {currentTab === 1 ? 'Cash Flow' : 'Asset'} Report
+                Export {currentTab === 0 ? 'Cash Flow' : 'Asset'} Report
               </Button>
             </Box>
           )}

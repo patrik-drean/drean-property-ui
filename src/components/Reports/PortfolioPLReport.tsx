@@ -26,11 +26,18 @@ import {
 import {
   ExpandMore as ExpandMoreIcon,
   Download as DownloadIcon,
-  Archive as ArchiveIcon
+  Archive as ArchiveIcon,
+  Edit as EditIcon,
+  Add as AddIcon,
+  OpenInNew as OpenInNewIcon,
+  Inventory2 as ArchivedIcon
 } from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router-dom';
 import { transactionApi } from '../../services/transactionApi';
 import PropertyService from '../../services/PropertyService';
 import { api } from '../../services/apiConfig';
+import { calculateHoldScore } from '../../utils/scoreCalculator';
+import PropertyDialog from '../PropertyDialog';
 import {
   generatePortfolioPLReport,
   getIncomeCategories,
@@ -62,11 +69,14 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
   const [report, setReport] = useState<PLReport | null>(null);
   const [occupancy, setOccupancy] = useState<MonthlyOccupancy[]>([]);
   const [propertyOccupancy, setPropertyOccupancy] = useState<Record<string, MonthlyOccupancy>>({});
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingArchive, setPendingArchive] = useState<PropertyBreakdown | null>(null);
   const [archiving, setArchiving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
 
   const loadReport = useCallback(async () => {
       try {
@@ -110,6 +120,7 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
           )[0];
         });
 
+        setAllProperties(properties);
         setReport(plReport);
         setOccupancy(portfolioOccupancy);
         setPropertyOccupancy(perProperty);
@@ -124,6 +135,29 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
   useEffect(() => {
     loadReport();
   }, [loadReport]);
+
+  const handleSaveProperty = async (propertyData: Omit<Property, 'id'>) => {
+    const withScore = { ...propertyData, score: calculateHoldScore(propertyData) };
+
+    if (editingProperty) {
+      const { id, ...existing } = editingProperty;
+      await api.updateProperty(id, { ...existing, ...withScore });
+    } else {
+      await api.addProperty(withScore);
+    }
+
+    setDialogOpen(false);
+    setEditingProperty(null);
+    await loadReport();
+    setNotice(editingProperty ? 'Property updated' : 'Property added');
+  };
+
+  const openEditDialog = (propertyId: string) => {
+    const property = allProperties.find(p => p.id === propertyId);
+    if (!property) return;
+    setEditingProperty(property);
+    setDialogOpen(true);
+  };
 
   const handleConfirmArchive = async () => {
     if (!pendingArchive) return;
@@ -271,13 +305,25 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
             {dateRange}
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportCSV}
-        >
-          Export CSV
-        </Button>
+        <Box display="flex" gap={1}>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportCSV}
+          >
+            Export CSV
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              setEditingProperty(null);
+              setDialogOpen(true);
+            }}
+          >
+            Add Property
+          </Button>
+        </Box>
       </Box>
 
       <PortfolioKpiStrip report={report} occupancy={occupancy} />
@@ -314,20 +360,36 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
             <TableBody>
               {report.propertyBreakdowns.map(prop => {
                 const occ = propertyOccupancy[prop.propertyId];
+                const property = allProperties.find(p => p.id === prop.propertyId);
                 return (
                   <TableRow key={prop.propertyId}>
                     <TableCell>
                       {prop.propertyId === 'business' ? (
                         prop.propertyAddress
                       ) : (
-                        <Link
-                          href={`#/reports/property-pl/${prop.propertyId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          color="secondary.main"
-                        >
-                          {prop.propertyAddress}
-                        </Link>
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          {property?.zillowLink && (
+                            <Tooltip title="Open Zillow listing">
+                              <IconButton
+                                size="small"
+                                aria-label={`Zillow listing for ${prop.propertyAddress}`}
+                                href={property.zillowLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <OpenInNewIcon fontSize="inherit" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          <Link
+                            href={`#/reports/property-pl/${prop.propertyId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            color="secondary.main"
+                          >
+                            {prop.propertyAddress}
+                          </Link>
+                        </Box>
                       )}
                     </TableCell>
                     <TableCell
@@ -358,15 +420,28 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
                     </TableCell>
                     <TableCell align="right" padding="checkbox">
                       {prop.propertyId !== 'business' && (
-                        <Tooltip title="Archive property">
-                          <IconButton
-                            size="small"
-                            aria-label={`Archive ${prop.propertyAddress}`}
-                            onClick={() => setPendingArchive(prop)}
-                          >
-                            <ArchiveIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <Box display="flex" justifyContent="flex-end">
+                          {property && (
+                            <Tooltip title="Edit property">
+                              <IconButton
+                                size="small"
+                                aria-label={`Edit ${prop.propertyAddress}`}
+                                onClick={() => openEditDialog(prop.propertyId)}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          <Tooltip title="Archive property">
+                            <IconButton
+                              size="small"
+                              aria-label={`Archive ${prop.propertyAddress}`}
+                              onClick={() => setPendingArchive(prop)}
+                            >
+                              <ArchiveIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       )}
                     </TableCell>
                   </TableRow>
@@ -376,6 +451,28 @@ export const PortfolioPLReport: React.FC<PortfolioPLReportProps> = ({ months = 6
           </Table>
         </AccordionDetails>
       </Accordion>
+
+      <Box display="flex" justifyContent="center" mt={3}>
+        <Button
+          component={RouterLink}
+          to="/archived"
+          startIcon={<ArchivedIcon />}
+          color="inherit"
+        >
+          Archived Properties
+        </Button>
+      </Box>
+
+      <PropertyDialog
+        open={dialogOpen}
+        onClose={() => {
+          setDialogOpen(false);
+          setEditingProperty(null);
+        }}
+        onSave={handleSaveProperty}
+        property={editingProperty}
+        isEditing={!!editingProperty}
+      />
 
       <Dialog open={!!pendingArchive} onClose={() => setPendingArchive(null)}>
         <DialogTitle>Archive this property?</DialogTitle>

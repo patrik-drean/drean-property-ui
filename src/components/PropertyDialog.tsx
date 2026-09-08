@@ -15,9 +15,8 @@ import {
   Typography,
   Chip,
   Tooltip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Divider,
+  InputAdornment,
   IconButton,
   Card,
 } from '@mui/material';
@@ -45,6 +44,23 @@ const StyledMenuItem = styled(MenuItem)<{ statuscolor: string }>(({ statuscolor 
   },
 }));
 
+/** Quiet section label with a hairline rule, matching the report tables */
+const SectionHeader: React.FC<{ label: string; action?: React.ReactNode }> = ({ label, action }) => (
+  <Box sx={{ mt: 3, mb: 2 }}>
+    <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
+      <Typography
+        variant="overline"
+        color="text.secondary"
+        sx={{ letterSpacing: 1, fontWeight: 600 }}
+      >
+        {label}
+      </Typography>
+      {action}
+    </Box>
+    <Divider />
+  </Box>
+);
+
 interface PropertyDialogProps {
   open: boolean;
   onClose: () => void;
@@ -63,6 +79,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
   // Use the property form hook for state management
   const {
     formData,
+    errors,
     updateField,
     updateExpense,
     updateCapitalCost,
@@ -70,35 +87,12 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     updateUnit: hookUpdateUnit,
     updateUnitStatus: hookUpdateUnitStatus,
     removeUnit: hookRemoveUnit,
+    validate,
     reset,
     getSubmitData
   } = usePropertyForm(isEditing ? property || undefined : undefined);
 
-  // Determine which sections should be expanded based on status
-  const getInitialExpandedSections = (status: PropertyStatus) => {
-    const operationalStatuses = ['Selling', 'Needs Tenant', 'Operational'];
-    if (operationalStatuses.includes(status)) {
-      return ['operational'];
-    } else {
-      return ['investment'];
-    }
-  };
-
-  const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [unitStatusChangeDates, setUnitStatusChangeDates] = useState<{ [key: number]: string }>({});
-
-  // Helper function to get today's date in YYYY-MM-DD format
-  const getTodayDateString = () => {
-    return new Date().toISOString().split('T')[0];
-  };
-
-  const handleAccordionChange = (section: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-    setExpandedSections(prev => 
-      isExpanded 
-        ? [...prev, section]
-        : prev.filter(s => s !== section)
-    );
-  };
 
 
   // Validation helpers for unit numbers
@@ -279,7 +273,14 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
     }
   };
 
+  // Unit numbers are validated inline; the hook covers the rest of the form
+  const hasUnitNumberErrors = formData.propertyUnits.some(
+    (unit, index) => getUnitNumberError(unit.unitNumber, index) !== ''
+  );
+
   const handleSave = async () => {
+    if (!validate() || hasUnitNumberErrors) return;
+
     try {
       // Get the form data and calculate actual rent before saving
       const submitData = getSubmitData();
@@ -297,7 +298,6 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
 
   const handleClose = () => {
     reset();
-    setExpandedSections(getInitialExpandedSections('Opportunity'));
     setUnitStatusChangeDates({});
     onClose();
   };
@@ -318,15 +318,8 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         // No default date - leave empty if no status history
       });
       setUnitStatusChangeDates(initialStatusChangeDates);
-
-      setExpandedSections(getInitialExpandedSections(property.status));
     }
   }, [property, isEditing, reset]);
-
-  // Update expanded sections when status changes
-  useEffect(() => {
-    setExpandedSections(getInitialExpandedSections(formData.status));
-  }, [formData.status]);
 
   return (
     <Dialog 
@@ -343,9 +336,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
         <Box sx={{ p: 1 }}>
           {/* Basic Information */}
           <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2, color: '#2c3e50', fontWeight: 600 }}>
-              Basic Information
-            </Typography>
+            <SectionHeader label="Basic Information" />
             <TextField
               fullWidth
               label="Zillow Link"
@@ -362,6 +353,9 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
               value={formData.address}
               onChange={(e) => updateField('address', e.target.value)}
               margin="normal"
+              required
+              error={!!errors.address}
+              helperText={errors.address}
             />
             <FormControl fullWidth margin="normal">
               <InputLabel>Status</InputLabel>
@@ -417,23 +411,9 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
           </Box>
 
           {/* Investment Details Section */}
-          <Accordion 
-            expanded={expandedSections.includes('investment')} 
-            onChange={handleAccordionChange('investment')}
-            sx={{ mb: 2, '&:before': { display: 'none' } }}
-          >
-            <AccordionSummary 
-              expandIcon={<Icons.ExpandMore />}
-              sx={{ 
-                backgroundColor: 'accent.main', 
-                borderRadius: 1
-              }}
-            >
-              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                Investment Details
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 2 }}>
+          <Box sx={{ mb: 2 }}>
+            <SectionHeader label="Investment Details" />
+            <Box>
               <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2, 1fr)' }} gap={2}>
                 <TextField
                   fullWidth
@@ -442,7 +422,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   onChange={(e) => updateField('listingPrice', handleCurrencyInput(e.target.value))}
                   margin="normal"
                   InputProps={{
-                    startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
                 />
                 <TextField
@@ -452,7 +432,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   onChange={(e) => updateField('offerPrice', handleCurrencyInput(e.target.value))}
                   margin="normal"
                   InputProps={{
-                    startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
                 />
                 <TextField
@@ -462,7 +442,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   onChange={(e) => updateField('rehabCosts', handleCurrencyInput(e.target.value))}
                   margin="normal"
                   InputProps={{
-                    startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
                 />
                 <TextField
@@ -518,7 +498,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   onChange={(e) => updateField('potentialRent', handleCurrencyInput(e.target.value))}
                   margin="normal"
                   InputProps={{
-                    startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
                   helperText={
                     getPerfectRentRecommendation() ? (
@@ -569,7 +549,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                   onChange={(e) => updateField('arv', handleCurrencyInput(e.target.value))}
                   margin="normal"
                   InputProps={{
-                    startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
                   helperText={
                     getPerfectARVRecommendation() ? (
@@ -600,32 +580,15 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                 margin="normal"
                 placeholder="Optional - link to original lead"
               />
-            </AccordionDetails>
-          </Accordion>
-
-
+            </Box>
+          </Box>
 
           {/* Operational Details Section */}
-          <Accordion 
-            expanded={expandedSections.includes('operational')} 
-            onChange={handleAccordionChange('operational')}
-            sx={{ mb: 2, '&:before': { display: 'none' } }}
-          >
-            <AccordionSummary 
-              expandIcon={<Icons.ExpandMore />}
-              sx={{ 
-                backgroundColor: 'accent.main', 
-                borderRadius: 1
-              }}
-            >
-              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                Operational Details
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 2 }}>
+          <Box sx={{ mb: 2 }}>
+            <Box>
               {/* Monthly Expenses */}
               <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Monthly Expenses</Typography>
+                <SectionHeader label="Monthly Expenses" />
                 <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2, 1fr)' }} gap={2}>
                   <TextField
                     fullWidth
@@ -634,7 +597,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateExpense('mortgage', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                   <TextField
@@ -644,7 +607,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateExpense('taxes', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                   <TextField
@@ -654,7 +617,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateExpense('insurance', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                   <TextField
@@ -664,7 +627,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateExpense('propertyManagement', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                   <TextField
@@ -674,7 +637,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateExpense('utilities', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                   <TextField
@@ -684,7 +647,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateExpense('vacancy', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                   <TextField
@@ -694,7 +657,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateExpense('capEx', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                   <TextField
@@ -704,12 +667,12 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateExpense('other', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                 </Box>
                 <Box sx={{ mt: 2, p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
-                  <Typography variant="h6" color="error">
+                  <Typography variant="subtitle1" fontWeight={600} color="error.main">
                     Total Monthly Expenses: {formatCurrency(formData.monthlyExpenses?.total || 0)}
                   </Typography>
                 </Box>
@@ -717,22 +680,22 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
 
               {/* Units */}
               <Box>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    Units ({formData.propertyUnits.length})
-                  </Typography>
-                  <Button 
-                    variant="outlined" 
-                    size="small" 
-                    onClick={addUnit}
-                    startIcon={<Icons.Add />}
-                  >
-                    Add Unit
-                  </Button>
-                </Box>
-                
+                <SectionHeader
+                  label={`Units (${formData.propertyUnits.length})`}
+                  action={
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={addUnit}
+                      startIcon={<Icons.Add />}
+                    >
+                      Add Unit
+                    </Button>
+                  }
+                />
+
                 {formData.propertyUnits.map((unit, index) => (
-                  <Card key={unit.id} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0' }}>
+                  <Card key={unit.id} variant="outlined" sx={{ p: 2, mb: 2 }}>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                       <Typography variant="subtitle2" fontWeight={600}>
                         Unit {unit.unitNumber}
@@ -784,7 +747,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                         value={formatInputCurrency(unit.rent)}
                         onChange={(e) => updateUnit(index, 'rent', handleCurrencyInput(e.target.value))}
                         InputProps={{
-                          startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                          startAdornment: <InputAdornment position="start">$</InputAdornment>,
                         }}
                       />
                     </Box>
@@ -878,34 +841,19 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                 )}
 
                 <Box sx={{ mt: 2, p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
-                  <Typography variant="h6" color="success.main">
+                  <Typography variant="subtitle1" fontWeight={600} color="success.main">
                     Total Actual Rent: {formatCurrency(formData.actualRent)}
                   </Typography>
                 </Box>
               </Box>
-            </AccordionDetails>
-          </Accordion>
+            </Box>
+          </Box>
 
           {/* Asset Details Section */}
-          <Accordion 
-            expanded={expandedSections.includes('asset')} 
-            onChange={handleAccordionChange('asset')}
-            sx={{ mb: 2, '&:before': { display: 'none' } }}
-          >
-            <AccordionSummary 
-              expandIcon={<Icons.ExpandMore />}
-              sx={{ 
-                backgroundColor: 'accent.main', 
-                borderRadius: 1
-              }}
-            >
-              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                Asset Details
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 2 }}>
+          <Box sx={{ mb: 2 }}>
+            <Box>
               <Box>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Property Value</Typography>
+                <SectionHeader label="Property Value" />
                 <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2, 1fr)' }} gap={2}>
                   <TextField
                     fullWidth
@@ -914,7 +862,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateField('currentHouseValue', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                   <TextField
@@ -925,14 +873,14 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     margin="normal"
                     placeholder="Optional"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                 </Box>
               </Box>
               
               <Box sx={{ mt: 3 }}>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Capital Costs</Typography>
+                <SectionHeader label="Capital Costs" />
                 <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2, 1fr)' }} gap={2}>
                   <TextField
                     fullWidth
@@ -941,7 +889,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateCapitalCost('closingCosts', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                   <TextField
@@ -951,7 +899,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateCapitalCost('upfrontRepairs', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                   <TextField
@@ -961,7 +909,7 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateCapitalCost('downPayment', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                   <TextField
@@ -971,28 +919,29 @@ const PropertyDialog: React.FC<PropertyDialogProps> = ({
                     onChange={(e) => updateCapitalCost('other', handleCurrencyInput(e.target.value))}
                     margin="normal"
                     InputProps={{
-                      startAdornment: <span style={{ marginRight: '8px' }}>$</span>,
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
                   />
                 </Box>
                 <Box sx={{ mt: 2, p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
-                  <Typography variant="h6" color="primary">
+                  <Typography variant="subtitle1" fontWeight={600} color="primary.main">
                     Total Capital Costs: {formatCurrency(formData.capitalCosts?.total || 0)}
                   </Typography>
                 </Box>
               </Box>
-            </AccordionDetails>
-          </Accordion>
+            </Box>
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={handleClose} color="inherit" sx={{ borderRadius: 2 }}>
           Cancel
         </Button>
-        <Button 
-          onClick={handleSave} 
-          variant="contained" 
+        <Button
+          onClick={handleSave}
+          variant="contained"
           color="primary"
+          disabled={hasUnitNumberErrors}
           sx={{ borderRadius: 2 }}
         >
           {isEditing ? 'Update' : 'Add'} Property
